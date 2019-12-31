@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Codevoid.Test.OAuth
 {
     [TestClass]
-    public class OAuthRequestTests
+    public class OAuthSigningHelperTests
     {
         private class TestEntropyHelper : IEntropyHelper
         {
@@ -62,28 +62,28 @@ namespace Codevoid.Test.OAuth
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenConstructingRequestWithoutClientInformation()
         {
-            _ = new OAuthRequest(null!, new Uri("https://www.example.com"), HttpMethod.Post);
+            _ = new OAuthSigningHelper(null!, new Uri("https://www.example.com"), HttpMethod.Post);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenConstructingRequestWithoutUrl()
         {
-            _ = new OAuthRequest(new ClientInformation("abc", "def"), null!, HttpMethod.Post);
+            _ = new OAuthSigningHelper(new ClientInformation("abc", "def"), null!, HttpMethod.Post);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
         public void ThrowsWhenConstructingRequestWithNonHttpsUrl()
         {
-            _ = new OAuthRequest(new ClientInformation("abc", "def"), new Uri("http://www.example.com"), HttpMethod.Post);
+            _ = new OAuthSigningHelper(new ClientInformation("abc", "def"), new Uri("http://www.example.com"), HttpMethod.Post);
         }
 
         [TestMethod]
         public void AuthenticationHeaderIsCorrectlyGenerated()
         {
-            IEntropyHelper oldEntropyHelper = OAuthRequest.EntropyHelper;
-            OAuthRequest.EntropyHelper = new TestEntropyHelper()
+            IEntropyHelper oldEntropyHelper = OAuthSigningHelper.EntropyHelper;
+            OAuthSigningHelper.EntropyHelper = new TestEntropyHelper()
             {
                 nonce = "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
                 timestamp = DateTimeOffset.FromUnixTimeSeconds(1318622958)
@@ -98,7 +98,7 @@ namespace Codevoid.Test.OAuth
                     { "include_entities", "true" }
                 };
 
-                var request = new OAuthRequest(GetFakeClientInformation(), url, HttpMethod.Post);
+                var request = new OAuthSigningHelper(GetFakeClientInformation(), url, HttpMethod.Post);
                 request.Data = data;
 
                 var result = request.GenerateAuthHeader();
@@ -108,7 +108,7 @@ namespace Codevoid.Test.OAuth
             }
             finally
             {
-                OAuthRequest.EntropyHelper = oldEntropyHelper;
+                OAuthSigningHelper.EntropyHelper = oldEntropyHelper;
             }
         }
     }

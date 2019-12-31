@@ -12,7 +12,7 @@ namespace Codevoid.Utilities.OAuth
         DateTimeOffset GetDateTime();
     }
 
-    public class OAuthRequest
+    public class OAuthSigningHelper
     {
         /// <summary>
         /// Abstract nonce + timestamp info for testing puroses
@@ -41,15 +41,15 @@ namespace Codevoid.Utilities.OAuth
 
         internal static IEntropyHelper EntropyHelper = new EntropyHelperImpl();
 
-        public Dictionary<string, string> Data = new Dictionary<string, string>();
+        public FormUrlEncodedContent Data = new FormUrlEncodedContent(null);
 
         private readonly Uri url;
         private readonly ClientInformation clientInfo;
         private readonly HttpMethod operation;
 
-        public OAuthRequest(ClientInformation clientInformation,
-                            Uri url,
-                            HttpMethod operation)
+        public OAuthSigningHelper(ClientInformation clientInformation,
+                                  Uri url,
+                                  HttpMethod operation)
         {
             if (clientInformation == null)
             {
@@ -86,9 +86,9 @@ namespace Codevoid.Utilities.OAuth
             var oauthHeaders = new Dictionary<string, string>
             {
                 { "oauth_consumer_key", this.clientInfo.ClientId },
-                { "oauth_nonce", OAuthRequest.EntropyHelper.GetNonce() },
+                { "oauth_nonce", OAuthSigningHelper.EntropyHelper.GetNonce() },
                 { "oauth_signature_method", "HMAC-SHA1" },
-                { "oauth_timestamp", OAuthRequest.EntropyHelper.GetDateTime().ToUnixTimeSeconds().ToString() },
+                { "oauth_timestamp", OAuthSigningHelper.EntropyHelper.GetDateTime().ToUnixTimeSeconds().ToString() },
                 { "oauth_version", "1.0" }
             };
 
