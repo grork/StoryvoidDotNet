@@ -39,9 +39,19 @@ namespace Codevoid.Utilities.OAuth
             };
         }
 
+        private static string GetUrlComponentsForSigning(Uri url)
+        {
+            return url.GetComponents(
+                UriComponents.Scheme
+              | UriComponents.UserInfo
+              | UriComponents.Host
+              | UriComponents.Port
+              | UriComponents.Path, UriFormat.SafeUnescaped);
+        }
+
         internal static IEntropyHelper EntropyHelper = new EntropyHelperImpl();
 
-        public FormUrlEncodedContent Data = new FormUrlEncodedContent(null);
+        public Dictionary<string, string> Data = new Dictionary<string, string>();
 
         private readonly Uri url;
         private readonly ClientInformation clientInfo;
@@ -110,7 +120,7 @@ namespace Codevoid.Utilities.OAuth
 
             // Get the signature of the payload + oauth_headers
             var encodedPayloadToSign = OperationTypeToString(this.operation) + "&"
-                + Uri.EscapeDataString(this.url.ToString()) + "&"
+                + Uri.EscapeDataString(GetUrlComponentsForSigning(this.url)) + "&"
                 + Uri.EscapeDataString(ParameterEncoder.FormEncodeValues(merged));
             var signature = this.SignString(encodedPayloadToSign);
 
