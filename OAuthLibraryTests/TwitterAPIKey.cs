@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Codevoid.Tests.OAuth
+namespace Codevoid.Test.OAuth
 {
     /// <summary>
     /// Holds the API Key for twitter so that you can run tests that actually
