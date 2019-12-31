@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Codevoid.Utilities.OAuth;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -9,7 +10,7 @@ namespace Codevoid.Test.OAuth
     [TestClass]
     public class OAuthSigningHelperTests
     {
-        private class TestEntropyHelper : IEntropyHelper
+        private class TestEntropyProvider : IEntropProvider
         {
             public string nonce = String.Empty;
             public DateTimeOffset timestamp;
@@ -33,6 +34,24 @@ namespace Codevoid.Test.OAuth
                                          clientSecret: "kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw",
                                          token: "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
                                          tokenSecret: "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE");
+        }
+
+        private static HttpRequestMessage GetRequestForData(IDictionary<string, string> data, Uri url)
+        {
+            var content = new FormUrlEncodedContent(data);
+            var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
+            return request;
+        }
+
+        private static IEntropProvider SetEntropyHelper(string nonce, long unixTimeInSeconds)
+        {
+            var oldEntropyHelper = OAuthSigningHelper.EntropyProvider;
+            OAuthSigningHelper.EntropyProvider = new TestEntropyProvider()
+            {
+                nonce = nonce,
+                timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimeInSeconds)
+            };
+            return oldEntropyHelper;
         }
 
         [TestMethod]
@@ -62,32 +81,16 @@ namespace Codevoid.Test.OAuth
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenConstructingRequestWithoutClientInformation()
         {
-            _ = new OAuthSigningHelper(null!, new Uri("https://www.example.com"), HttpMethod.Post);
+            var signingHelper = new OAuthSigningHelper(null!);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
-        public void ThrowsWhenConstructingRequestWithoutUrl()
+        public async Task AuthenticationHeaderIsCorrectlyGenerated()
         {
-            _ = new OAuthSigningHelper(new ClientInformation("abc", "def"), null!, HttpMethod.Post);
-        }
-
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
-        public void ThrowsWhenConstructingRequestWithNonHttpsUrl()
-        {
-            _ = new OAuthSigningHelper(new ClientInformation("abc", "def"), new Uri("http://www.example.com"), HttpMethod.Post);
-        }
-
-        [TestMethod]
-        public void AuthenticationHeaderIsCorrectlyGenerated()
-        {
-            IEntropyHelper oldEntropyHelper = OAuthSigningHelper.EntropyHelper;
-            OAuthSigningHelper.EntropyHelper = new TestEntropyHelper()
-            {
-                nonce = "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
-                timestamp = DateTimeOffset.FromUnixTimeSeconds(1318622958)
-            };
+            IEntropProvider oldEntropyHelper = SetEntropyHelper(
+                nonce: "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
+                unixTimeInSeconds: 1318622958
+            );
 
             try
             {
@@ -98,17 +101,45 @@ namespace Codevoid.Test.OAuth
                     { "include_entities", "true" }
                 };
 
-                var request = new OAuthSigningHelper(GetFakeClientInformation(), url, HttpMethod.Post);
-                request.Data = data;
-
-                var result = request.GenerateAuthHeader();
+                var signingHelper = new OAuthSigningHelper(GetFakeClientInformation());
+                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetRequestForData(data, url));
                 Assert.AreEqual("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"tnnArxj06cWHq44gCs1OSKk%2FjLY%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
                                 result,
                                 "Authentication headers did not match");
             }
             finally
             {
-                OAuthSigningHelper.EntropyHelper = oldEntropyHelper;
+                OAuthSigningHelper.EntropyProvider = oldEntropyHelper;
+            }
+        }
+
+        [TestMethod]
+        public async Task XAuthAuthenticationHeaderCorrectlyGenerated()
+        {
+            IEntropProvider oldEntropyHelper = SetEntropyHelper(
+                nonce: "6AN2dKRzxyGhmIXUKSmp1JcB4pckM8rD3frKMTmVAo",
+                unixTimeInSeconds: 1284565601
+            );
+
+            try
+            {
+                var url = new Uri("https://api.twitter.com/oauth/access_token");
+                var data = new Dictionary<string, string>
+                {
+                    { "x_auth_username", "oauth_test_exec" },
+                    { "x_auth_password", "twitter-xauth" },
+                    { "x_auth_mode", "client_auth" }
+                };
+
+                var signingHelper = new OAuthSigningHelper(new ClientInformation("JvyS7DO2qd6NNTsXJ4E7zA", "9z6157pUbOBqtbm0A0q4r29Y2EYzIHlUwbF4Cl9c"));
+                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetRequestForData(data, url));
+                Assert.AreEqual("oauth_consumer_key=\"JvyS7DO2qd6NNTsXJ4E7zA\", oauth_nonce=\"6AN2dKRzxyGhmIXUKSmp1JcB4pckM8rD3frKMTmVAo\", oauth_signature=\"1L1oXQmawZAkQ47FHLwcOV%2Bkjwc%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1284565601\", oauth_version=\"1.0\"",
+                                result,
+                                "Authentication headers did not match");
+            }
+            finally
+            {
+                OAuthSigningHelper.EntropyProvider = oldEntropyHelper;
             }
         }
     }

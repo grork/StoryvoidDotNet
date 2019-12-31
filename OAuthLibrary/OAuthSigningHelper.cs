@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Codevoid.Utilities.OAuth
 {
-    internal interface IEntropyHelper
+    internal interface IEntropProvider
     {
         string GetNonce();
         DateTimeOffset GetDateTime();
@@ -17,7 +20,7 @@ namespace Codevoid.Utilities.OAuth
         /// <summary>
         /// Abstract nonce + timestamp info for testing puroses
         /// </summary>
-        private class EntropyHelperImpl : IEntropyHelper
+        private class EntropyProviderImpl : IEntropProvider
         {
             public string GetNonce()
             {
@@ -49,56 +52,43 @@ namespace Codevoid.Utilities.OAuth
               | UriComponents.Path, UriFormat.SafeUnescaped);
         }
 
-        internal static IEntropyHelper EntropyHelper = new EntropyHelperImpl();
+        internal static IEntropProvider EntropyProvider = new EntropyProviderImpl();
 
-        public Dictionary<string, string> Data = new Dictionary<string, string>();
-
-        private readonly Uri url;
         private readonly ClientInformation clientInfo;
-        private readonly HttpMethod operation;
+        private readonly HMACSHA1 hmacProvider;
 
-        public OAuthSigningHelper(ClientInformation clientInformation,
-                                  Uri url,
-                                  HttpMethod operation)
+        public OAuthSigningHelper(ClientInformation clientInformation)
         {
             if (clientInformation == null)
             {
                 throw new ArgumentNullException(nameof(clientInformation), "Client Information is required");
             }
 
-            if (url == null)
-            {
-                throw new ArgumentNullException(nameof(url), "URL Required");
-            }
-
-            if (url.Scheme.ToLowerInvariant() != "https")
-            {
-                throw new ArgumentException("Only HTTPS urls are supported", nameof(url));
-            }
-
             this.clientInfo = clientInformation;
-            this.url = url;
-            this.operation = operation;
+            this.hmacProvider = CreateSigningProvider(this.clientInfo);
+        }
+
+        private static HMACSHA1 CreateSigningProvider(ClientInformation clientInfo)
+        {
+            var keyText = $"{clientInfo.ClientSecret}&{clientInfo.TokenSecret ?? ""}";
+            var keyMaterial = Encoding.UTF8.GetBytes(keyText);
+            return new HMACSHA1(keyMaterial);
         }
 
         private string SignString(string data)
         {
-            var keyText = $"{this.clientInfo.ClientSecret}&{this.clientInfo.TokenSecret ?? ""}";
-            var keyMaterial = Encoding.UTF8.GetBytes(keyText);
-            var hmacProvider = new HMACSHA1(keyMaterial);
-            var signature = hmacProvider.ComputeHash(Encoding.UTF8.GetBytes(data));
-
+            var signature = this.hmacProvider.ComputeHash(Encoding.UTF8.GetBytes(data));
             return Convert.ToBase64String(signature);
         }
 
-        internal string GenerateAuthHeader()
+        internal async Task<string> GenerateAuthHeaderForHttpRequest(HttpRequestMessage message)
         {
             var oauthHeaders = new Dictionary<string, string>
             {
                 { "oauth_consumer_key", this.clientInfo.ClientId },
-                { "oauth_nonce", OAuthSigningHelper.EntropyHelper.GetNonce() },
+                { "oauth_nonce", OAuthSigningHelper.EntropyProvider.GetNonce() },
                 { "oauth_signature_method", "HMAC-SHA1" },
-                { "oauth_timestamp", OAuthSigningHelper.EntropyHelper.GetDateTime().ToUnixTimeSeconds().ToString() },
+                { "oauth_timestamp", OAuthSigningHelper.EntropyProvider.GetDateTime().ToUnixTimeSeconds().ToString() },
                 { "oauth_version", "1.0" }
             };
 
@@ -107,20 +97,19 @@ namespace Codevoid.Utilities.OAuth
                 oauthHeaders.Add("oauth_token", this.clientInfo.Token!);
             }
 
-            // Because the signature is over the data AND oauth headers, we need
-            // to merge them all into one giant dictionary before we encode it
+            var requestContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var requestPayload = FormReader.ReadForm(requestContent);
+
             var merged = new Dictionary<string, string>(oauthHeaders);
-            if (this.Data != null)
+            foreach (var kvp in requestPayload)
             {
-                foreach (var kvp in this.Data)
-                {
-                    merged.Add(kvp.Key, kvp.Value);
-                }
+                Debug.Assert(kvp.Value.Count == 1, "Unexpected number of values in the payload");
+                merged.Add(kvp.Key, kvp.Value[0]);
             }
 
             // Get the signature of the payload + oauth_headers
-            var encodedPayloadToSign = OperationTypeToString(this.operation) + "&"
-                + Uri.EscapeDataString(GetUrlComponentsForSigning(this.url)) + "&"
+            var encodedPayloadToSign = OperationTypeToString(message.Method) + "&"
+                + Uri.EscapeDataString(GetUrlComponentsForSigning(message.RequestUri)) + "&"
                 + Uri.EscapeDataString(ParameterEncoder.FormEncodeValues(merged));
             var signature = this.SignString(encodedPayloadToSign);
 
