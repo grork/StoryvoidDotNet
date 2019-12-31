@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Codevoid.Utilities.OAuth
 {
-    public enum OperationType
-    {
-        None = 0,
-        Get = 1,
-        Post = 2,
-    }
-
     internal interface IEntropyHelper
     {
         string GetNonce();
@@ -36,30 +30,26 @@ namespace Codevoid.Utilities.OAuth
             }
         }
 
-        private static string OperationTypeToString(OperationType operation)
+        private static string OperationTypeToString(HttpMethod operation)
         {
-            switch (operation)
+            return operation switch
             {
-                case OperationType.Get:
-                    return "GET";
-
-                case OperationType.Post:
-                default:
-                    return "POST";
-            }
+                HttpMethod _ when operation == HttpMethod.Get => "GET",
+                _ => "POST",
+            };
         }
 
         internal static IEntropyHelper EntropyHelper = new EntropyHelperImpl();
 
         public Dictionary<string, string> Data = new Dictionary<string, string>();
 
-        private Uri url;
-        private ClientInformation clientInfo;
-        private OperationType operation;
+        private readonly Uri url;
+        private readonly ClientInformation clientInfo;
+        private readonly HttpMethod operation;
 
         public OAuthRequest(ClientInformation clientInformation,
                             Uri url,
-                            OperationType operation = OperationType.Post)
+                            HttpMethod operation)
         {
             if (clientInformation == null)
             {

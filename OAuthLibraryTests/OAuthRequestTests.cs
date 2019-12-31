@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using Codevoid.Utilities.OAuth;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -61,21 +62,21 @@ namespace Codevoid.Test.OAuth
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenConstructingRequestWithoutClientInformation()
         {
-            _ = new OAuthRequest(null!, new Uri("https://www.example.com"));
+            _ = new OAuthRequest(null!, new Uri("https://www.example.com"), HttpMethod.Post);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenConstructingRequestWithoutUrl()
         {
-            _ = new OAuthRequest(new ClientInformation("abc", "def"), null!);
+            _ = new OAuthRequest(new ClientInformation("abc", "def"), null!, HttpMethod.Post);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentException))]
         public void ThrowsWhenConstructingRequestWithNonHttpsUrl()
         {
-            _ = new OAuthRequest(new ClientInformation("abc", "def"), new Uri("http://www.example.com"));
+            _ = new OAuthRequest(new ClientInformation("abc", "def"), new Uri("http://www.example.com"), HttpMethod.Post);
         }
 
         [TestMethod]
@@ -97,7 +98,7 @@ namespace Codevoid.Test.OAuth
                     { "include_entities", "true" }
                 };
 
-                var request = new OAuthRequest(GetFakeClientInformation(), url);
+                var request = new OAuthRequest(GetFakeClientInformation(), url, HttpMethod.Post);
                 request.Data = data;
 
                 var result = request.GenerateAuthHeader();
