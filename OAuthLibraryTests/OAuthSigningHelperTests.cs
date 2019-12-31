@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using Codevoid.Utilities.OAuth;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -36,11 +37,25 @@ namespace Codevoid.Test.OAuth
                                          tokenSecret: "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE");
         }
 
-        private static HttpRequestMessage GetRequestForData(IDictionary<string, string> data, Uri url)
+        private static HttpRequestMessage GetPostRequestForData(IDictionary<string, string> data, Uri url)
         {
             var content = new FormUrlEncodedContent(data);
             var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
             return request;
+        }
+
+        private static HttpRequestMessage GetGetRequestForData(IDictionary<string, string> data, Uri baseUri)
+        {
+            var builder = new UriBuilder(baseUri);
+            var queryParams = HttpUtility.ParseQueryString(builder.Query);
+            foreach (var kvp in data)
+            {
+                queryParams.Add(kvp.Key, kvp.Value);
+            }
+
+            builder.Query = queryParams.ToString();
+
+            return new HttpRequestMessage(HttpMethod.Get, builder.Uri);
         }
 
         private static IEntropProvider SetEntropyHelper(string nonce, long unixTimeInSeconds)
@@ -114,7 +129,7 @@ namespace Codevoid.Test.OAuth
         }
 
         [TestMethod]
-        public async Task AuthenticationHeaderIsCorrectlyGenerated()
+        public async Task AuthenticationHeaderIsCorrectlyGeneratedForPostMethod()
         {
             IEntropProvider oldEntropyHelper = SetEntropyHelper(
                 nonce: "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
@@ -131,8 +146,37 @@ namespace Codevoid.Test.OAuth
                 };
 
                 var signingHelper = new OAuthSigningHelper(GetFakeClientInformation());
-                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetRequestForData(data, url));
+                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetPostRequestForData(data, url));
                 Assert.AreEqual("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"tnnArxj06cWHq44gCs1OSKk%2FjLY%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
+                                result,
+                                "Authentication headers did not match");
+            }
+            finally
+            {
+                OAuthSigningHelper.EntropyProvider = oldEntropyHelper;
+            }
+        }
+
+        [TestMethod]
+        public async Task AuthenticationHeaderIsCorrectlyGeneratedForGetMethod()
+        {
+            IEntropProvider oldEntropyHelper = SetEntropyHelper(
+                nonce: "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
+                unixTimeInSeconds: 1318622958
+            );
+
+            try
+            {
+                var url = new Uri("https://api.twitter.com/1/statuses/update.json");
+                var data = new Dictionary<string, string>
+                {
+                    { "status", "Hello Ladies + Gentlemen, a signed OAuth request!" },
+                    { "include_entities", "true" }
+                };
+
+                var signingHelper = new OAuthSigningHelper(GetFakeClientInformation());
+                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetGetRequestForData(data, url));
+                Assert.AreEqual("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"OgeXpQpLHCLpVVnrQjAwHmPrU7c%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
                                 result,
                                 "Authentication headers did not match");
             }
@@ -161,7 +205,7 @@ namespace Codevoid.Test.OAuth
                 };
 
                 var signingHelper = new OAuthSigningHelper(new ClientInformation("JvyS7DO2qd6NNTsXJ4E7zA", "9z6157pUbOBqtbm0A0q4r29Y2EYzIHlUwbF4Cl9c"));
-                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetRequestForData(data, url));
+                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetPostRequestForData(data, url));
                 Assert.AreEqual("oauth_consumer_key=\"JvyS7DO2qd6NNTsXJ4E7zA\", oauth_nonce=\"6AN2dKRzxyGhmIXUKSmp1JcB4pckM8rD3frKMTmVAo\", oauth_signature=\"1L1oXQmawZAkQ47FHLwcOV%2Bkjwc%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1284565601\", oauth_version=\"1.0\"",
                                 result,
                                 "Authentication headers did not match");

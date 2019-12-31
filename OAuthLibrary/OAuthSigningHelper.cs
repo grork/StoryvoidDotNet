@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Codevoid.Utilities.OAuth
@@ -97,14 +98,29 @@ namespace Codevoid.Utilities.OAuth
                 oauthHeaders.Add("oauth_token", this.clientInfo.Token!);
             }
 
-            var requestContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var requestPayload = FormReader.ReadForm(requestContent);
-
             var merged = new Dictionary<string, string>(oauthHeaders);
-            foreach (var kvp in requestPayload)
+
+            // If it's a post, we need to get the parameters that are in the
+            // body if it's form encoded
+            if (message.Method == HttpMethod.Post
+             && message.Content.Headers.ContentType.MediaType == "application/x-www-form-urlencoded")
             {
-                Debug.Assert(kvp.Value.Count == 1, "Unexpected number of values in the payload");
-                merged.Add(kvp.Key, kvp.Value[0]);
+                var requestContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+                var requestPayload = FormReader.ReadForm(requestContent);
+                foreach (var kvp in requestPayload)
+                {
+                    Debug.Assert(kvp.Value.Count == 1, "Unexpected number of values in the payload");
+                    merged.Add(kvp.Key, kvp.Value[0]);
+                }
+            }
+            else
+            {
+                // Assume it's get, and merge in anything in the query params
+                var queryParams = HttpUtility.ParseQueryString(message.RequestUri.Query);
+                for (var i = 0; i < queryParams.Count; i++)
+                {
+                    merged.Add(queryParams.GetKey(i), queryParams.Get(i));
+                }
             }
 
             // Get the signature of the payload + oauth_headers
