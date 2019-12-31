@@ -7,17 +7,17 @@ namespace Codevoid.Utilities.OAuth
     {
         private string productName = "Codevoid OAuth Library";
         private string productVersion = "1.0";
-        private ProductInfoHeaderValue userAgentValue;
+        private ProductInfoHeaderValue? userAgentValue;
 
         public readonly string ClientId;
         public readonly string ClientSecret;
-        public readonly string Token;
-        public readonly string TokenSecret;
+        public readonly string? Token;
+        public readonly string? TokenSecret;
 
         public ClientInformation(string clientId,
                                  string clientSecret,
-                                 string token = null,
-                                 string tokenSecret = null)
+                                 string? token = null,
+                                 string? tokenSecret = null)
         {
             if (String.IsNullOrWhiteSpace(clientId))
             {

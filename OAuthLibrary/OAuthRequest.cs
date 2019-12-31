@@ -51,7 +51,7 @@ namespace Codevoid.Utilities.OAuth
 
         internal static IEntropyHelper EntropyHelper = new EntropyHelperImpl();
 
-        public Dictionary<string, string> Data;
+        public Dictionary<string, string> Data = new Dictionary<string, string>();
 
         private Uri url;
         private ClientInformation clientInfo;
@@ -104,7 +104,7 @@ namespace Codevoid.Utilities.OAuth
 
             if (!String.IsNullOrWhiteSpace(this.clientInfo.Token))
             {
-                oauthHeaders.Add("oauth_token", this.clientInfo.Token);
+                oauthHeaders.Add("oauth_token", this.clientInfo.Token!);
             }
 
             // Because the signature is over the data AND oauth headers, we need

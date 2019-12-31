@@ -10,7 +10,7 @@ namespace Codevoid.Test.OAuth
     {
         private class TestEntropyHelper : IEntropyHelper
         {
-            public string nonce;
+            public string nonce = String.Empty;
             public DateTimeOffset timestamp;
 
             public DateTimeOffset GetDateTime()
@@ -47,28 +47,28 @@ namespace Codevoid.Test.OAuth
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenClientIdMissing()
         {
-            _ = new ClientInformation(null, "def");
+            _ = new ClientInformation(null!, "def");
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenClientSecretMissing()
         {
-            _ = new ClientInformation("abc", null);
+            _ = new ClientInformation("abc", null!);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenConstructingRequestWithoutClientInformation()
         {
-            _ = new OAuthRequest(null, new Uri("https://www.example.com"));
+            _ = new OAuthRequest(null!, new Uri("https://www.example.com"));
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ThrowsWhenConstructingRequestWithoutUrl()
         {
-            _ = new OAuthRequest(new ClientInformation("abc", "def"), null);
+            _ = new OAuthRequest(new ClientInformation("abc", "def"), null!);
         }
 
         [TestMethod]
