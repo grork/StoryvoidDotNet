@@ -75,7 +75,7 @@ namespace Codevoid.Utilities.OAuth
             return new HMACSHA1(keyMaterial);
         }
 
-        private string SignString(string data)
+        internal string SignString(string data)
         {
             var signature = this.hmacProvider.ComputeHash(Encoding.UTF8.GetBytes(data));
             return Convert.ToBase64String(signature);
