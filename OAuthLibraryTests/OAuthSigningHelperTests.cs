@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
 using Codevoid.Utilities.OAuth;
@@ -37,6 +38,14 @@ namespace Codevoid.Test.OAuth
                                          tokenSecret: "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE");
         }
 
+        private static ClientInformation GetRealClientInformation()
+        {
+            return new ClientInformation(clientId: TwitterAPIKey.CLIENT_ID,
+                                         clientSecret: TwitterAPIKey.CLIENT_SECRET,
+                                         token: TwitterAPIKey.ACCESS_TOKEN,
+                                         tokenSecret: TwitterAPIKey.TOKEN_SECRET);
+        }
+
         private static HttpRequestMessage GetPostRequestForData(IDictionary<string, string> data, Uri url)
         {
             var content = new FormUrlEncodedContent(data);
@@ -44,7 +53,7 @@ namespace Codevoid.Test.OAuth
             return request;
         }
 
-        private static HttpRequestMessage GetGetRequestForData(IDictionary<string, string> data, Uri baseUri)
+        private static Uri GetUriWithDataAsQueryParams(IDictionary<string, string> data, Uri baseUri)
         {
             var builder = new UriBuilder(baseUri);
             var queryParams = HttpUtility.ParseQueryString(builder.Query);
@@ -55,7 +64,12 @@ namespace Codevoid.Test.OAuth
 
             builder.Query = queryParams.ToString();
 
-            return new HttpRequestMessage(HttpMethod.Get, builder.Uri);
+            return builder.Uri;
+        }
+
+        private static HttpRequestMessage GetGetRequestForData(IDictionary<string, string> data, Uri baseUri)
+        {
+            return new HttpRequestMessage(HttpMethod.Get, GetUriWithDataAsQueryParams(data, baseUri));
         }
 
         private static IEntropProvider SetEntropyHelper(string nonce, long unixTimeInSeconds)
@@ -215,5 +229,46 @@ namespace Codevoid.Test.OAuth
                 OAuthSigningHelper.EntropyProvider = oldEntropyHelper;
             }
         }
+
+        [TestMethod]
+        public async Task CanVerifyTwitterCredentials()
+        {
+            using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
+            var url = new Uri("https://api.twitter.com/1.1/account/verify_credentials.json");
+            var body = await client.GetStringAsync(url);
+            var responsePayload = JsonDocument.Parse(body);
+            Assert.IsTrue(responsePayload.RootElement.TryGetProperty("screen_name", out var value), "screen_name field was missing");
+            Assert.AreEqual("CodevoidTest", value.ToString(), "Wrong screen name returned");
+        }
+
+        [TestMethod]
+        public async Task CanPostStatusToTwitter()
+        {
+            using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
+            var url = new Uri("https://api.twitter.com/1.1/statuses/update.json");
+            var data = new Dictionary<string, string> { { "status", $"Test@Status % 78 update: {DateTimeOffset.Now.ToUnixTimeSeconds().ToString()}" } };
+            var response = await client.PostAsync(url, new FormUrlEncodedContent(data));
+            var rawResponse = await response.Content.ReadAsStringAsync();
+            var responsePayload = JsonDocument.Parse(rawResponse);
+
+            // Get the response out of the nested payload
+            Assert.IsTrue(responsePayload.RootElement.TryGetProperty("text", out var textField), "Text field was missing");
+            Assert.AreEqual(data["status"], textField.ToString(), "Wrong Status");
+        }
+
+        [TestMethod]
+        public async Task CanMakeGetRequestWithPayload()
+        {
+            using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
+            var url = new Uri("https://api.twitter.com/1.1/statuses/home_timeline.json");
+            var data = new Dictionary<string, string> { { "count", "1" } };
+            var body = await client.GetStringAsync(GetUriWithDataAsQueryParams(data, url));
+            var responsePayload = JsonDocument.Parse(body);
+
+            // Get the response out of the nested payload
+            Assert.AreEqual(JsonValueKind.Array, responsePayload.RootElement.ValueKind, "Root response was not an array");
+            Assert.AreEqual(1, responsePayload.RootElement.GetArrayLength(), "Wrong Number of elements returned");
+        }
+
     }
 }

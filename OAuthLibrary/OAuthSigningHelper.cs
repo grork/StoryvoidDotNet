@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using Microsoft.AspNetCore.WebUtilities;
@@ -16,7 +18,32 @@ namespace Codevoid.Utilities.OAuth
         DateTimeOffset GetDateTime();
     }
 
-    public class OAuthSigningHelper
+    public class OAuthMessageHandler : DelegatingHandler
+    {
+        private OAuthSigningHelper signingHelper;
+
+        private OAuthMessageHandler(ClientInformation clientInformation) :
+            base(new HttpClientHandler())
+        {
+            this.signingHelper = new OAuthSigningHelper(clientInformation);
+        }
+
+        protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var signature = await this.signingHelper.GenerateAuthHeaderForHttpRequest(request).ConfigureAwait(false);
+            request.Headers.Authorization = new AuthenticationHeaderValue("OAuth", signature);
+            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+
+
+        public static HttpClient CreateOAuthHttpClient(ClientInformation clientInformation)
+        {
+            var client = new HttpClient(new OAuthMessageHandler(clientInformation));
+            return client;
+        }
+    }
+
+    internal class OAuthSigningHelper
     {
         /// <summary>
         /// Abstract nonce + timestamp info for testing puroses
