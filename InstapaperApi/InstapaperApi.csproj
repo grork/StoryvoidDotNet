@@ -8,7 +8,4 @@
   <ItemGroup>
     <ProjectReference Include="..\OAuthLibrary\OAuthLibrary.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="EndPoints.cs" />
-  </ItemGroup>
 </Project>
