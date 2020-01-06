@@ -12,7 +12,7 @@ namespace Codevoid.Test.OAuth
     [TestClass]
     public class OAuthSigningHelperTests
     {
-        private class TestEntropyProvider : IEntropProvider
+        private class TestEntropyProvider : IEntropyProvider
         {
             public string nonce = String.Empty;
             public DateTimeOffset timestamp;
@@ -72,7 +72,7 @@ namespace Codevoid.Test.OAuth
             return new HttpRequestMessage(HttpMethod.Get, GetUriWithDataAsQueryParams(data, baseUri));
         }
 
-        private static IEntropProvider SetEntropyHelper(string nonce, long unixTimeInSeconds)
+        private static IEntropyProvider SetEntropyHelper(string nonce, long unixTimeInSeconds)
         {
             var oldEntropyHelper = OAuthSigningHelper.EntropyProvider;
             OAuthSigningHelper.EntropyProvider = new TestEntropyProvider()
@@ -116,7 +116,7 @@ namespace Codevoid.Test.OAuth
         [TestMethod]
         public void SignatureGeneratedCorrectly()
         {
-            IEntropProvider oldEntropyHelper = SetEntropyHelper(
+            IEntropyProvider oldEntropyHelper = SetEntropyHelper(
                 nonce: "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
                 unixTimeInSeconds: 1318622958
             );
@@ -145,7 +145,7 @@ namespace Codevoid.Test.OAuth
         [TestMethod]
         public async Task AuthenticationHeaderIsCorrectlyGeneratedForPostMethod()
         {
-            IEntropProvider oldEntropyHelper = SetEntropyHelper(
+            IEntropyProvider oldEntropyHelper = SetEntropyHelper(
                 nonce: "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
                 unixTimeInSeconds: 1318622958
             );
@@ -174,7 +174,7 @@ namespace Codevoid.Test.OAuth
         [TestMethod]
         public async Task AuthenticationHeaderIsCorrectlyGeneratedForGetMethod()
         {
-            IEntropProvider oldEntropyHelper = SetEntropyHelper(
+            IEntropyProvider oldEntropyHelper = SetEntropyHelper(
                 nonce: "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg",
                 unixTimeInSeconds: 1318622958
             );
@@ -203,7 +203,7 @@ namespace Codevoid.Test.OAuth
         [TestMethod]
         public async Task XAuthAuthenticationHeaderCorrectlyGenerated()
         {
-            IEntropProvider oldEntropyHelper = SetEntropyHelper(
+            IEntropyProvider oldEntropyHelper = SetEntropyHelper(
                 nonce: "6AN2dKRzxyGhmIXUKSmp1JcB4pckM8rD3frKMTmVAo",
                 unixTimeInSeconds: 1284565601
             );

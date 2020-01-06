@@ -4,6 +4,10 @@ using System.Text;
 
 namespace Codevoid.Utilities.OAuth
 {
+    /// <summary>
+    /// Helper class for performing appropriate encoding of values to be included
+    /// in OAuth header
+    /// </summary>
     internal static class ParameterEncoder
     {
         internal static string FormEncodeValues(IDictionary<string, string> valuesToEncode, string delimiter = "&", bool shouldQuoteValues = false)

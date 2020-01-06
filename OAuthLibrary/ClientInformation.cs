@@ -3,6 +3,11 @@ using System.Net.Http.Headers;
 
 namespace Codevoid.Utilities.OAuth
 {
+    /// <summary>
+    /// Holds the OAuth token (both client, and authenticated tokens)
+    /// for use with <see cref="OAuthMessageHandler"/> to automatically sign
+    /// requests.
+    /// </summary>
     public class ClientInformation
     {
         private string productName = "Codevoid OAuth Library";
@@ -14,6 +19,14 @@ namespace Codevoid.Utilities.OAuth
         public readonly string? Token;
         public readonly string? TokenSecret;
 
+        /// <summary>
+        /// Constructs this class with the supplied client information &amp;
+        /// optional authentication tokens for use with <see cref="OAuthMessageHandler"/>
+        /// </summary>
+        /// <param name="clientId">Client Identifier (aka identify your app)</param>
+        /// <param name="clientSecret">Client signing secret (aka unique to your app)</param>
+        /// <param name="token">Authentication token (identifying the user)</param>
+        /// <param name="tokenSecret">Authentication secret for signing requests</param>
         public ClientInformation(string clientId,
                                  string clientSecret,
                                  string? token = null,
@@ -37,6 +50,9 @@ namespace Codevoid.Utilities.OAuth
             this.TokenSecret = tokenSecret;
         }
 
+        /// <summary>
+        /// A friendly name that is included in the User-Agent header
+        /// </summary>
         public string ProductName
         {
             get { return this.productName; }
@@ -47,6 +63,9 @@ namespace Codevoid.Utilities.OAuth
             }
         }
 
+        /// <summary>
+        /// A representative version included in the User-Agent header
+        /// </summary>
         public string ProductVersion
         {
             get { return this.productVersion; }
@@ -57,6 +76,9 @@ namespace Codevoid.Utilities.OAuth
             }
         }
 
+        /// <summary>
+        /// User-Agent header instance to be used with HttpClient
+        /// </summary>
         public ProductInfoHeaderValue UserAgent
         {
             get

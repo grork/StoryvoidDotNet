@@ -12,12 +12,19 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace Codevoid.Utilities.OAuth
 {
-    internal interface IEntropProvider
+    /// <summary>
+    /// Abstracts away the entropy information used when singing oauth requests
+    /// so that it can be fully controlled in tests for reproducability.
+    /// </summary>
+    internal interface IEntropyProvider
     {
         string GetNonce();
         DateTimeOffset GetDateTime();
     }
 
+    /// <summary>
+    /// Automatically signs requests for OAuth 1.0a
+    /// </summary>
     public class OAuthMessageHandler : DelegatingHandler
     {
         private OAuthSigningHelper signingHelper;
@@ -35,7 +42,12 @@ namespace Codevoid.Utilities.OAuth
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
 
-
+        /// <summary>
+        /// Creates an HttpClient instance that will automatically sign requests
+        /// using the supplied <see cref="ClientInformation"/>
+        /// </summary>
+        /// <param name="clientInformation">OAuth token information</param>
+        /// <returns>HttpClient that signs requests inline with OAuth 1.0a</returns>
         public static HttpClient CreateOAuthHttpClient(ClientInformation clientInformation)
         {
             var client = new HttpClient(new OAuthMessageHandler(clientInformation));
@@ -46,9 +58,9 @@ namespace Codevoid.Utilities.OAuth
     internal class OAuthSigningHelper
     {
         /// <summary>
-        /// Abstract nonce + timestamp info for testing puroses
+        /// Abstract nonce + timestamp info for testing purposes
         /// </summary>
-        private class EntropyProviderImpl : IEntropProvider
+        private class EntropyProviderImpl : IEntropyProvider
         {
             public string GetNonce()
             {
@@ -80,7 +92,7 @@ namespace Codevoid.Utilities.OAuth
               | UriComponents.Path, UriFormat.SafeUnescaped);
         }
 
-        internal static IEntropProvider EntropyProvider = new EntropyProviderImpl();
+        internal static IEntropyProvider EntropyProvider = new EntropyProviderImpl();
 
         private readonly ClientInformation clientInfo;
         private readonly HMACSHA1 hmacProvider;

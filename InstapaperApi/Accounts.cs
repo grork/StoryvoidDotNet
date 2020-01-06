@@ -7,10 +7,18 @@ using Codevoid.Utilities.OAuth;
 
 namespace Codevoid.Instapaper
 {
+    /// <summary>
+    /// The information, returned from Instapaper, representing the User
+    /// Information for the user that made the request.
+    /// </summary>
     public class UserInformation
     {
         public readonly long UserId;
         public readonly string Username;
+
+        /// <summary>
+        /// Does the user have an active subscription with Instapaper
+        /// </summary>
         public readonly bool HasSubscription;
 
         internal UserInformation(
@@ -25,17 +33,28 @@ namespace Codevoid.Instapaper
         }
     }
 
+    /// <summary>
+    /// Accounts API for Instapaper -- getting tokens, verifying creds.
+    /// </summary>
     public class Accounts
     {
         private readonly ClientInformation clientInformation;
         private readonly HttpClient client;
 
+        /// <summary>
+        /// Constructs instance using the supplied OAuth client information
+        /// </summary>
+        /// <param name="clientInformation">Information to sign requests with</param>
         public Accounts(ClientInformation clientInformation)
         {
             this.clientInformation = clientInformation;
             this.client = OAuthMessageHandler.CreateOAuthHttpClient(this.clientInformation);
         }
 
+        /// <summary>
+        /// Gets a full access token + secret for the supplied credentials
+        /// </summary>
+        /// <returns><see cref="ClientInformation"/> with authentication tokens</returns>
         public async Task<ClientInformation> GetAccessTokenAsync(string username, string password)
         {
             var parameters = new FormUrlEncodedContent(
@@ -70,6 +89,10 @@ namespace Codevoid.Instapaper
                 secret);
         }
 
+        /// <summary>
+        /// Verify the authentication token stored by this instance.
+        /// </summary>
+        /// <returns>User information if successful</returns>
         public async Task<UserInformation> VerifyCredentials()
         {
             var payload = new FormUrlEncodedContent(new Dictionary<string, string>());
