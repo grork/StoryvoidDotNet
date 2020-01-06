@@ -14,5 +14,6 @@ namespace Codevoid.Test.Instapaper
         public const string TOKEN_SECRET = "PLACEHOLDER";
         public const string INSTAPAPER_ACCOUNT = "PLACEHOLDER";
         public const string INSTAPAPER_PASSWORD = "PLACEHOLDER";
+        public const long INSTAPAPER_USER_ID = -1; // Placeholder
     }
 }

@@ -9,7 +9,7 @@ namespace Codevoid.Instapaper
         internal static class Access
         {
             internal static readonly Uri AccessToken = new Uri(baseUri, "oauth/access_token");
-            internal static readonly Uri VerifyCredentials = new Uri(baseUri, "oauth/verify_credentials");
+            internal static readonly Uri VerifyCredentials = new Uri(baseUri, "account/verify_credentials");
         }
     }
 }

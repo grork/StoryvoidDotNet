@@ -28,5 +28,23 @@ namespace Codevoid.Test.Instapaper
             Assert.IsFalse(String.IsNullOrWhiteSpace(clientInfoWithAccessToken.Token), "Token missing");
             Assert.IsFalse(String.IsNullOrWhiteSpace(clientInfoWithAccessToken.TokenSecret), "Secret Missing");
         }
+
+        [TestMethod]
+        public async Task CanVerifyCredentials()
+        {
+            var clientInfo = new ClientInformation(
+                InstapaperAPIKey.CLIENT_ID,
+                InstapaperAPIKey.CLIENT_SECRET,
+                InstapaperAPIKey.ACCESS_TOKEN,
+                InstapaperAPIKey.TOKEN_SECRET
+            );
+
+            var accounts = new Accounts(clientInfo);
+            var userInformation = await accounts.VerifyCredentials();
+
+            Assert.IsNotNull(userInformation, "User info wasn't returned");
+            Assert.AreEqual(InstapaperAPIKey.INSTAPAPER_USER_ID, userInformation.UserId, "User ID didn't match");
+            Assert.AreEqual(InstapaperAPIKey.INSTAPAPER_ACCOUNT, userInformation.Username, "Username didn't match");
+        }
     }
 }
