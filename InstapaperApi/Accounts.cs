@@ -48,7 +48,7 @@ namespace Codevoid.Instapaper
         public Accounts(ClientInformation clientInformation)
         {
             this.clientInformation = clientInformation;
-            this.client = OAuthMessageHandler.CreateOAuthHttpClient(this.clientInformation);
+            this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
         }
 
         /// <summary>
