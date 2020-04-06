@@ -1,51 +1,48 @@
 ﻿using System;
 using Codevoid.Instapaper;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Codevoid.Test.Instapaper
 {
-    [TestClass]
     public class BookmarksHaveTests
     {
-        [TestMethod]
+        [Fact]
         public void HaveWithOnlyIdReturnsJustTheId()
         {
             HaveStatus status = new HaveStatus("1234");
-            Assert.AreEqual("1234", status.ToString());
+            Assert.Equal("1234", status.ToString());
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
-        [DataRow("", DisplayName = "Empty String")]
-        [DataRow("\t   ", DisplayName = "Whitespace")]
+        [Theory]
+        [InlineData("")] // Empty String
+        [InlineData("\t   ")] // Whitespace
         public void EmptyIdThrows(string idData)
         {
-            HaveStatus status = new HaveStatus(idData);
+            Assert.Throws<ArgumentNullException>(() => _ = new HaveStatus(idData));
         }
 
-        [TestMethod]
+        [Fact]
         public void HaveWithIdAndHashReturnsCorrectString()
         {
             HaveStatus status = new HaveStatus("12345", "OjMuzFp6");
-            Assert.AreEqual("12345:OjMuzFp6", status.ToString());
+            Assert.Equal("12345:OjMuzFp6", status.ToString());
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
-        [DataRow("", "HASH", DisplayName = "ID Empty, has hash")]
-        [DataRow("\t   ", "HASH", DisplayName = "ID whitespace, has hash")]
-        [DataRow("1234", "", DisplayName = "Has ID, empty hash")]
-        [DataRow("1234", "\t    ", DisplayName = "Has ID, whitespace hash")]
+        [Theory]
+        [InlineData("", "HASH")] // ID Empty, has hash
+        [InlineData("\t   ", "HASH")] // ID whitespace, has hash
+        [InlineData("1234", "")] // Has ID, empty hash
+        [InlineData("1234", "\t    ")] // Has ID, whitespace hash
         public void EmptyHashOrIdThrows(string id, string hash)
         {
-            HaveStatus status = new HaveStatus(id, hash);
+            Assert.Throws<ArgumentNullException>(() => _ = new HaveStatus(id, hash));
         }
 
-        [TestMethod]
+        [Fact]
         public void HaveStatusCorrectlyStringifysProgressAndTimestamp()
         {
             HaveStatus status = new HaveStatus("12345", "OjMuzFp6", 0.5, DateTimeOffset.FromUnixTimeSeconds(1288584076));
-            Assert.AreEqual("12345:OjMuzFp6:0.5:1288584076", status.ToString());
+            Assert.Equal("12345:OjMuzFp6:0.5:1288584076", status.ToString());
         }
     }
 }

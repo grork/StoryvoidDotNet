@@ -5,11 +5,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
 using Codevoid.Utilities.OAuth;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Codevoid.Test.OAuth
 {
-    [TestClass]
     public class OAuthSigningHelperTests
     {
         private class TestEntropyProvider : IEntropyProvider
@@ -83,37 +82,34 @@ namespace Codevoid.Test.OAuth
             return oldEntropyHelper;
         }
 
-        [TestMethod]
+        [Fact]
         public void CanConstructClientInformation()
         {
             var clientInfo = new ClientInformation("abc", "def");
-            Assert.IsNotNull(clientInfo, $"{nameof(ClientInformation)} couldn't be constructed");
-            Assert.AreEqual("abc", clientInfo.ClientId, $"{nameof(ClientInformation.ClientId)} didn't match");
-            Assert.AreEqual("def", clientInfo.ClientSecret, $"{nameof(ClientInformation.ClientSecret)} didn't match");
+            Assert.NotNull(clientInfo);
+            Assert.Equal("abc", clientInfo.ClientId);
+            Assert.Equal("def", clientInfo.ClientSecret);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void ThrowsWhenClientIdMissing()
         {
-            _ = new ClientInformation(null!, "def");
+            Assert.Throws<ArgumentNullException>(() => _ = new ClientInformation(null!, "def"));
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void ThrowsWhenClientSecretMissing()
         {
-            _ = new ClientInformation("abc", null!);
+            Assert.Throws<ArgumentNullException>(() => _ = new ClientInformation("abc", null!));
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
+        [Fact]
         public void ThrowsWhenConstructingRequestWithoutClientInformation()
         {
-            var signingHelper = new OAuthSigningHelper(null!);
+            Assert.Throws<ArgumentNullException>(() => _ = new OAuthSigningHelper(null!));
         }
 
-        [TestMethod]
+        [Fact]
         public void SignatureGeneratedCorrectly()
         {
             IEntropyProvider oldEntropyHelper = SetEntropyHelper(
@@ -132,9 +128,7 @@ namespace Codevoid.Test.OAuth
 
                 var signingHelper = new OAuthSigningHelper(GetFakeClientInformation());
                 var signature = signingHelper.SignString("POST&https%3A%2F%2Fapi.twitter.com%2F1%2Fstatuses%2Fupdate.json&include_entities%3Dtrue%26oauth_consumer_key%3Dxvz1evFS4wEEPTGEFPHBog%26oauth_nonce%3DkYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1318622958%26oauth_token%3D370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb%26oauth_version%3D1.0%26status%3DHello%2520Ladies%2520%252B%2520Gentlemen%252C%2520a%2520signed%2520OAuth%2520request%2521");
-                Assert.AreEqual("tnnArxj06cWHq44gCs1OSKk/jLY=",
-                                signature,
-                                "Signature wasn't generated properly");
+                Assert.Equal("tnnArxj06cWHq44gCs1OSKk/jLY=", signature); // Signature wasn't generated properly"
             }
             finally
             {
@@ -142,7 +136,7 @@ namespace Codevoid.Test.OAuth
             }
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AuthenticationHeaderIsCorrectlyGeneratedForPostMethod()
         {
             IEntropyProvider oldEntropyHelper = SetEntropyHelper(
@@ -161,9 +155,8 @@ namespace Codevoid.Test.OAuth
 
                 var signingHelper = new OAuthSigningHelper(GetFakeClientInformation());
                 var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetPostRequestForData(data, url));
-                Assert.AreEqual("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"tnnArxj06cWHq44gCs1OSKk%2FjLY%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
-                                result,
-                                "Authentication headers did not match");
+                Assert.Equal("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"tnnArxj06cWHq44gCs1OSKk%2FjLY%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
+                             result); // Authentication headers did not match
             }
             finally
             {
@@ -171,7 +164,7 @@ namespace Codevoid.Test.OAuth
             }
         }
 
-        [TestMethod]
+        [Fact]
         public async Task AuthenticationHeaderIsCorrectlyGeneratedForGetMethod()
         {
             IEntropyProvider oldEntropyHelper = SetEntropyHelper(
@@ -190,9 +183,8 @@ namespace Codevoid.Test.OAuth
 
                 var signingHelper = new OAuthSigningHelper(GetFakeClientInformation());
                 var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetGetRequestForData(data, url));
-                Assert.AreEqual("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"OgeXpQpLHCLpVVnrQjAwHmPrU7c%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
-                                result,
-                                "Authentication headers did not match");
+                Assert.Equal("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"OgeXpQpLHCLpVVnrQjAwHmPrU7c%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
+                             result); // Authentication headers did not match
             }
             finally
             {
@@ -200,7 +192,7 @@ namespace Codevoid.Test.OAuth
             }
         }
 
-        [TestMethod]
+        [Fact]
         public async Task XAuthAuthenticationHeaderCorrectlyGenerated()
         {
             IEntropyProvider oldEntropyHelper = SetEntropyHelper(
@@ -220,9 +212,8 @@ namespace Codevoid.Test.OAuth
 
                 var signingHelper = new OAuthSigningHelper(new ClientInformation("JvyS7DO2qd6NNTsXJ4E7zA", "9z6157pUbOBqtbm0A0q4r29Y2EYzIHlUwbF4Cl9c"));
                 var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetPostRequestForData(data, url));
-                Assert.AreEqual("oauth_consumer_key=\"JvyS7DO2qd6NNTsXJ4E7zA\", oauth_nonce=\"6AN2dKRzxyGhmIXUKSmp1JcB4pckM8rD3frKMTmVAo\", oauth_signature=\"1L1oXQmawZAkQ47FHLwcOV%2Bkjwc%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1284565601\", oauth_version=\"1.0\"",
-                                result,
-                                "Authentication headers did not match");
+                Assert.Equal("oauth_consumer_key=\"JvyS7DO2qd6NNTsXJ4E7zA\", oauth_nonce=\"6AN2dKRzxyGhmIXUKSmp1JcB4pckM8rD3frKMTmVAo\", oauth_signature=\"1L1oXQmawZAkQ47FHLwcOV%2Bkjwc%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1284565601\", oauth_version=\"1.0\"",
+                                result); // Authentication headers did not match
             }
             finally
             {
@@ -230,18 +221,18 @@ namespace Codevoid.Test.OAuth
             }
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CanVerifyTwitterCredentials()
         {
             using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
             var url = new Uri("https://api.twitter.com/1.1/account/verify_credentials.json");
             var body = await client.GetStringAsync(url);
             var responsePayload = JsonDocument.Parse(body);
-            Assert.IsTrue(responsePayload.RootElement.TryGetProperty("screen_name", out var value), "screen_name field was missing");
-            Assert.AreEqual("CodevoidTest", value.ToString(), "Wrong screen name returned");
+            Assert.True(responsePayload.RootElement.TryGetProperty("screen_name", out var value)); // screen_name field was missing
+            Assert.Equal("CodevoidTest", value.ToString()); // Wrong screen name returned
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CanPostStatusToTwitter()
         {
             using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
@@ -252,11 +243,11 @@ namespace Codevoid.Test.OAuth
             var responsePayload = JsonDocument.Parse(rawResponse);
 
             // Get the response out of the nested payload
-            Assert.IsTrue(responsePayload.RootElement.TryGetProperty("text", out var textField), "Text field was missing");
-            Assert.AreEqual(data["status"], textField.ToString(), "Wrong Status");
+            Assert.True(responsePayload.RootElement.TryGetProperty("text", out var textField)); // Text field was missing
+            Assert.Equal(data["status"], textField.ToString()); // Wrong Status
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CanMakeGetRequestWithPayload()
         {
             using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
@@ -266,8 +257,8 @@ namespace Codevoid.Test.OAuth
             var responsePayload = JsonDocument.Parse(body);
 
             // Get the response out of the nested payload
-            Assert.AreEqual(JsonValueKind.Array, responsePayload.RootElement.ValueKind, "Root response was not an array");
-            Assert.AreEqual(1, responsePayload.RootElement.GetArrayLength(), "Wrong Number of elements returned");
+            Assert.Equal(JsonValueKind.Array, responsePayload.RootElement.ValueKind); // Root response was not an array
+            Assert.Equal(1, responsePayload.RootElement.GetArrayLength()); // Wrong Number of elements returned
         }
 
     }

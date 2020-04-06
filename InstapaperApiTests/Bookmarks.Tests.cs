@@ -1,9 +1,8 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Codevoid.Test.Instapaper
 {
-    [TestClass]
     public class BookmarksTests
     {
     }

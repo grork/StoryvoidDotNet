@@ -2,14 +2,13 @@ using System;
 using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Codevoid.Test.Instapaper
 {
-    [TestClass]
     public class AuthenticationTests
     {
-        [TestMethod]
+        [Fact]
         public async Task CanGetAccessToken()
         {
             var clientInfo = new ClientInformation(
@@ -22,14 +21,14 @@ namespace Codevoid.Test.Instapaper
                 InstapaperAPIKey.INSTAPAPER_PASSWORD
             );
 
-            Assert.IsNotNull(clientInfoWithAccessToken, "Client info wasn't returned");
-            Assert.AreEqual(clientInfo.ClientId, clientInfoWithAccessToken.ClientId, "Client ID didn't match");
-            Assert.AreEqual(clientInfo.ClientSecret, clientInfoWithAccessToken.ClientSecret, "Client Secret didn't match");
-            Assert.IsFalse(String.IsNullOrWhiteSpace(clientInfoWithAccessToken.Token), "Token missing");
-            Assert.IsFalse(String.IsNullOrWhiteSpace(clientInfoWithAccessToken.TokenSecret), "Secret Missing");
+            Assert.NotNull(clientInfoWithAccessToken); // Client info wasn't returned
+            Assert.Equal(clientInfo.ClientId, clientInfoWithAccessToken.ClientId); // Client ID didn't match
+            Assert.Equal(clientInfo.ClientSecret, clientInfoWithAccessToken.ClientSecret); // Client Secret didn't match
+            Assert.False(String.IsNullOrWhiteSpace(clientInfoWithAccessToken.Token)); // Token missing
+            Assert.False(String.IsNullOrWhiteSpace(clientInfoWithAccessToken.TokenSecret)); // Secret Missing
         }
 
-        [TestMethod]
+        [Fact]
         public async Task CanVerifyCredentials()
         {
             var clientInfo = new ClientInformation(
@@ -42,9 +41,9 @@ namespace Codevoid.Test.Instapaper
             var accounts = new Accounts(clientInfo);
             var userInformation = await accounts.VerifyCredentials();
 
-            Assert.IsNotNull(userInformation, "User info wasn't returned");
-            Assert.AreEqual(InstapaperAPIKey.INSTAPAPER_USER_ID, userInformation.UserId, "User ID didn't match");
-            Assert.AreEqual(InstapaperAPIKey.INSTAPAPER_ACCOUNT, userInformation.Username, "Username didn't match");
+            Assert.NotNull(userInformation); // User info wasn't returned
+            Assert.Equal(InstapaperAPIKey.INSTAPAPER_USER_ID, userInformation.UserId); // User ID didn't match
+            Assert.Equal(InstapaperAPIKey.INSTAPAPER_ACCOUNT, userInformation.Username); // Username didn't match
         }
     }
 }
