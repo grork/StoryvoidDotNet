@@ -41,7 +41,6 @@ namespace Codevoid.Test.Instapaper
             var accounts = new Accounts(clientInfo);
             var userInformation = await accounts.VerifyCredentials();
 
-            Assert.NotNull(userInformation); // User info wasn't returned
             Assert.Equal(InstapaperAPIKey.INSTAPAPER_USER_ID, userInformation.UserId); // User ID didn't match
             Assert.Equal(InstapaperAPIKey.INSTAPAPER_ACCOUNT, userInformation.Username); // Username didn't match
         }

@@ -11,7 +11,7 @@ namespace Codevoid.Instapaper
     /// The information, returned from Instapaper, representing the User
     /// Information for the user that made the request.
     /// </summary>
-    public class UserInformation
+    public readonly struct UserInformation
     {
         public readonly long UserId;
         public readonly string Username;
@@ -105,7 +105,6 @@ namespace Codevoid.Instapaper
             long userId = userInfoElement.GetProperty("user_id").GetInt64();
             string username = userInfoElement.GetProperty("username").ToString();
             string hasSubscription = userInfoElement.GetProperty("subscription_is_active").ToString();
-
 
             return new UserInformation(userId, username, (hasSubscription == "1" ? true : false));
         }
