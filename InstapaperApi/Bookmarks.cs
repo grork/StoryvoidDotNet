@@ -1,10 +1,73 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Codevoid.Utilities.OAuth;
 
 namespace Codevoid.Instapaper
 {
+    /// <summary>
+    /// A Bookmark from the service
+    /// </summary>
+    public interface IBookmark { }
+
+    /// <summary>
+    /// Client for manipulating Bookmarks on the Instapaper Service
+    /// </summary>
+    public interface IBookmarksClient
+    {
+        /// <summary>
+        /// List the bookmarks for a specific folder. For wellknown folders
+        /// <see cref="WellKnownFolderIds"/>. Other folders can be listed using
+        /// the folder ID from the <see cref="FoldersClient"/> API
+        /// </summary>
+        /// <param name="folderId">Folder ID to list bookmarks in</param>
+        /// <returns>
+        /// Result of listing bookmarks, which may include bookmarks that have
+        /// been deleted.
+        /// </returns>
+        public Task<BookmarksListResult> List(string folderId);
+    }
+
+    /// <summary>
+    /// Folder IDs that are defined by the service, and always exist.
+    /// </summary>
+    public static class WellKnownFolderIds
+    {
+        public const string Unread = "unread";
+        public const string Liked = "starred";
+        public const string Archived = "archive";
+    }
+
+    /// <summary>
+    /// Contains result information from listing bookmarks
+    /// </summary>
+    public class BookmarksListResult
+    {
+        /// <summary>
+        /// Concstructor for all fields.
+        /// </summary>
+        /// <param name="bookmarks">
+        /// Bookmarks that were found in this listing call.
+        /// </param>
+        public BookmarksListResult(IReadOnlyList<IBookmark> bookmarks)
+        {
+            this.Bookmarks = bookmarks;
+        }
+
+        /// <summary>
+        /// Bookmarks returned by this list call inc. all information about
+        /// each of those bookmarks.
+        /// </summary>
+        public readonly IReadOnlyList<IBookmark> Bookmarks;
+    }
+
+    internal class Bookmark : IBookmark
+    { }
+
     /// <summary>
     /// Lightweight information about the status of a bookmark for syncing
     /// purposes. Encapsulates having the bookmark & it's state, as well as
@@ -109,15 +172,41 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// Bookmark operations for Instapaper -- adding removing, changing states
     /// </summary>
-    public class Bookmarks
+    public class BookmarksClient : IBookmarksClient
     {
         private readonly ClientInformation clientInformation;
         private readonly HttpClient client;
 
-        public Bookmarks(ClientInformation clientInformation)
+        public BookmarksClient(ClientInformation clientInformation)
         {
             this.clientInformation = clientInformation;
             this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
+        }
+
+        public async Task<BookmarksListResult> List(string folderId)
+        {
+            var result = await this.client.PostAsync(Endpoints.Bookmarks.List, new StringContent(String.Empty));
+            result.EnsureSuccessStatusCode();
+
+            var document = JsonDocument.Parse(await result.Content.ReadAsStreamAsync()).RootElement;
+            Debug.Assert(JsonValueKind.Array == document.ValueKind, "Not an array");
+
+            var bookmarks = new List<IBookmark>();
+            foreach (var element in document.EnumerateArray())
+            {
+                var itemType = element.GetProperty("type").GetString();
+                switch (itemType)
+                {
+                    case "meta":
+                        continue;
+
+                    case "bookmark":
+                        bookmarks.Add(new Bookmark());
+                        break;
+                }
+            }
+
+            return new BookmarksListResult(bookmarks.AsReadOnly());
         }
     }
 }

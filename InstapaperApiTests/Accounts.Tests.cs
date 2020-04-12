@@ -31,13 +31,7 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task CanVerifyCredentials()
         {
-            var clientInfo = new ClientInformation(
-                InstapaperAPIKey.CLIENT_ID,
-                InstapaperAPIKey.CLIENT_SECRET,
-                InstapaperAPIKey.ACCESS_TOKEN,
-                InstapaperAPIKey.TOKEN_SECRET
-            );
-
+            var clientInfo = TestUtilities.GetClientInformation();
             var accounts = new Accounts(clientInfo);
             var userInformation = await accounts.VerifyCredentials();
 
