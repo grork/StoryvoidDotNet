@@ -29,17 +29,7 @@ namespace Codevoid.Instapaper
         /// Result of listing bookmarks, which may include bookmarks that have
         /// been deleted.
         /// </returns>
-        public Task<BookmarksListResult> List(string folderId);
-    }
-
-    /// <summary>
-    /// Folder IDs that are defined by the service, and always exist.
-    /// </summary>
-    public static class WellKnownFolderIds
-    {
-        public const string Unread = "unread";
-        public const string Liked = "starred";
-        public const string Archived = "archive";
+        Task<BookmarksListResult> List(string folderId);
     }
 
     /// <summary>
@@ -174,12 +164,10 @@ namespace Codevoid.Instapaper
     /// </summary>
     public class BookmarksClient : IBookmarksClient
     {
-        private readonly ClientInformation clientInformation;
         private readonly HttpClient client;
 
         public BookmarksClient(ClientInformation clientInformation)
         {
-            this.clientInformation = clientInformation;
             this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
         }
 

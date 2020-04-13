@@ -25,5 +25,12 @@ namespace Codevoid.Instapaper
             internal static readonly Uri Unarchive = new Uri(baseUri, "bookmarks/unarchive");
             internal static readonly Uri GetText = new Uri(baseUri, "bookmarks/get_text");
         }
+
+        internal static class Folders
+        {
+            internal static readonly Uri List = new Uri(baseUri, "folders/list");
+            internal static readonly Uri Add = new Uri(baseUri, "folders/add");
+            internal static readonly Uri Delete = new Uri(baseUri, "folders/delete");
+        }
     }
 }
