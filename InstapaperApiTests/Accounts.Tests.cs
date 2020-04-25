@@ -3,9 +3,11 @@ using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
 using Xunit;
+using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper
 {
+    [Order(1), Collection(TestUtilities.TestCollectionName)]
     public class AuthenticationTests
     {
         [Fact]

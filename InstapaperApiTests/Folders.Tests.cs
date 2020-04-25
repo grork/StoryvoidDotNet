@@ -2,19 +2,21 @@
 using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Xunit;
+using Xunit.Abstractions;
+using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper
 {
+    [Order(2), Collection(TestUtilities.TestCollectionName)]
     public class FoldersTests
     {
-        [Fact]
-        public async Task CanListFolders()
+        private CurrentServiceStateFixture SharedState;
+        public FoldersTests(CurrentServiceStateFixture state)
         {
-            var client = new FoldersClient(TestUtilities.GetClientInformation());
-            await client.List();
+            this.SharedState = state;
         }
 
-        [Fact]
+        [Fact, Order(0)]
         public async Task CanAddFolder()
         {
             var folderName = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
@@ -23,5 +25,13 @@ namespace Codevoid.Test.Instapaper
             var createdFolder = await client.Add(folderName);
             Assert.Equal(folderName, createdFolder.Title);
         }
+
+        [Fact, Order(1)]
+        public async Task CanListFolders()
+        {
+            var client = new FoldersClient(TestUtilities.GetClientInformation());
+            await client.List();
+        }
+
     }
 }

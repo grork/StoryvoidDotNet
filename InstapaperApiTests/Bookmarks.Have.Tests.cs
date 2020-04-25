@@ -1,9 +1,11 @@
 ﻿using System;
 using Codevoid.Instapaper;
 using Xunit;
+using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper
 {
+    [Order(3), Collection(TestUtilities.TestCollectionName)]
     public class BookmarksHaveTests
     {
         [Fact]
