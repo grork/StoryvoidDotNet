@@ -16,7 +16,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState = state;
         }
 
-        [Fact, Order(0)]
+        [Fact, Order(1)]
         public async Task CanAddFolder()
         {
             var folderName = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
@@ -26,7 +26,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(folderName, createdFolder.Title);
         }
 
-        [Fact, Order(1)]
+        [Fact, Order(2)]
         public async Task CanListFolders()
         {
             var client = new FoldersClient(TestUtilities.GetClientInformation());

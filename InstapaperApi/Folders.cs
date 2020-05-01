@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -30,10 +31,16 @@ namespace Codevoid.Instapaper
         {
             this.Title = title;
         }
+
+        internal static IFolder FromJsonElement(JsonElement folderElement)
+        {
+            var folderTitle = folderElement.GetProperty("title").GetString();
+            return new Folder(folderTitle);
+        }
     }
 
     /// <summary>
-    /// Client for manipulating folders on the service
+    /// Access the Folders API for Instapaper
     /// </summary>
     public interface IFoldersClient
     {
@@ -60,7 +67,7 @@ namespace Codevoid.Instapaper
         public const string Archived = "archive";
     }
 
-
+    /// <inheritdoc cref="IFoldersClient"/>
     public class FoldersClient : IFoldersClient
     {
         private readonly HttpClient client;
@@ -70,30 +77,44 @@ namespace Codevoid.Instapaper
             this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
         }
 
-        public async Task<IList<IFolder>> List()
+        private async Task<IList<IFolder>> PerformRequestAsync(Uri endpoint, HttpContent content)
         {
-            var result = await this.client.PostAsync(Endpoints.Folders.List, new StringContent(String.Empty));
+            // Request data convert to JSON
+            var result = await this.client.PostAsync(endpoint, content);
             result.EnsureSuccessStatusCode();
 
-            var document = JsonDocument.Parse(await result.Content.ReadAsStreamAsync()).RootElement;
-            Debug.Assert(JsonValueKind.Array == document.ValueKind, "Root Element was not an array");
+            var stream = await result.Content.ReadAsStreamAsync();
+            var payload = JsonDocument.Parse(stream).RootElement;
+            Debug.Assert(JsonValueKind.Array == payload.ValueKind, "API is always supposed to return an array as the root element");
 
-            var folders = new List<IFolder>();
-            foreach (var element in document.EnumerateArray())
+            // Turn the JSON into strongly typed objects
+            IList<IFolder> folders = new List<IFolder>();
+            foreach (var element in payload.EnumerateArray())
             {
                 var itemType = element.GetProperty("type").GetString();
                 switch (itemType)
                 {
                     case "meta":
+                        // Folders API is not expected to have any meta objects
+                        Debug.Fail("Unexpected meta object in folders API");
                         continue;
 
                     case "folder":
-                        var folderTitle = element.GetProperty("title").GetString();
-                        folders.Add(new Folder(folderTitle));
+                        folders.Add(Folder.FromJsonElement(element));
                         break;
                 }
             }
 
+            return folders;
+        }
+
+        /// <summary>
+        /// Request
+        /// </summary>
+        /// <returns></returns>
+        public async Task<IList<IFolder>> List()
+        {
+            var folders = await this.PerformRequestAsync(Endpoints.Folders.List, new StringContent(String.Empty));
             return folders;
         }
 
@@ -104,34 +125,14 @@ namespace Codevoid.Instapaper
                 { "title", folderTitle }
             });
 
-            var result = await this.client.PostAsync(Endpoints.Folders.Add, payload);
-            result.EnsureSuccessStatusCode();
-
-            var document = JsonDocument.Parse(await result.Content.ReadAsStreamAsync()).RootElement;
-            Debug.Assert(JsonValueKind.Array == document.ValueKind, "Root Element wasn't an array");
-
-            IFolder? folder = null;
-            foreach (var element in document.EnumerateArray())
-            {
-                var itemType = element.GetProperty("type").GetString();
-                switch (itemType)
-                {
-                    case "meta":
-                        continue;
-
-                    case "folder":
-                        var returnedFolderTitle = element.GetProperty("title").GetString();
-                        folder = new Folder(returnedFolderTitle);
-                        break;
-                }
-            }
-
-            if (folder == null)
+            var folders = await this.PerformRequestAsync(Endpoints.Folders.Add, payload);
+            if (folders.Count == 0)
             {
                 throw new InvalidOperationException("Folder wasn't created");
             }
 
-            return folder;
+            Debug.Assert(folders.Count == 1, $"Expected one folder created, {folders.Count} found");
+            return folders.First();
         }
     }
 }
