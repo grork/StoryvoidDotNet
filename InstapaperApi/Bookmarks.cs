@@ -24,35 +24,11 @@ namespace Codevoid.Instapaper
         /// <see cref="WellKnownFolderIds"/>. Other folders can be listed using
         /// the folder ID from the <see cref="FoldersClient"/> API
         /// </summary>
-        /// <param name="folderId">Folder ID to list bookmarks in</param>
+        /// <param name="folderId">Folder ID to list bookmarks for</param>
         /// <returns>
-        /// Result of listing bookmarks, which may include bookmarks that have
-        /// been deleted.
+        /// List of bookmarks
         /// </returns>
-        Task<BookmarksListResult> List(string folderId);
-    }
-
-    /// <summary>
-    /// Contains result information from listing bookmarks
-    /// </summary>
-    public class BookmarksListResult
-    {
-        /// <summary>
-        /// Concstructor for all fields.
-        /// </summary>
-        /// <param name="bookmarks">
-        /// Bookmarks that were found in this listing call.
-        /// </param>
-        public BookmarksListResult(IReadOnlyList<IBookmark> bookmarks)
-        {
-            this.Bookmarks = bookmarks;
-        }
-
-        /// <summary>
-        /// Bookmarks returned by this list call inc. all information about
-        /// each of those bookmarks.
-        /// </summary>
-        public readonly IReadOnlyList<IBookmark> Bookmarks;
+        Task<IList<IBookmark>> List(string folderId);
     }
 
     internal class Bookmark : IBookmark
@@ -171,7 +147,7 @@ namespace Codevoid.Instapaper
             this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
         }
 
-        public async Task<BookmarksListResult> List(string folderId)
+        public async Task<IList<IBookmark>> List(string folderId)
         {
             var result = await this.client.PostAsync(Endpoints.Bookmarks.List, new StringContent(String.Empty));
             result.EnsureSuccessStatusCode();
@@ -194,7 +170,7 @@ namespace Codevoid.Instapaper
                 }
             }
 
-            return new BookmarksListResult(bookmarks.AsReadOnly());
+            return bookmarks;
         }
     }
 }
