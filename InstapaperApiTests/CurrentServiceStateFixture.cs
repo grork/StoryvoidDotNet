@@ -58,5 +58,19 @@ namespace Codevoid.Test.Instapaper
                 this.Folders.Add(folder);
             }
         }
+
+        private IFoldersClient? _foldersClient;
+        public IFoldersClient FoldersClient
+        {
+            get
+            {
+                if (this._foldersClient == null)
+                {
+                    this._foldersClient = new FoldersClient(TestUtilities.GetClientInformation());
+                }
+
+                return this._foldersClient;
+            }
+        }
     }
 }
