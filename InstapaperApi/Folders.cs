@@ -15,7 +15,15 @@ namespace Codevoid.Instapaper
     /// </summary>
     public interface IFolder
     {
+        /// <summary>
+        /// Title of the folder
+        /// </summary>
         string Title { get; }
+
+        /// <summary>
+        /// ID of this folder on the service
+        /// </summary>
+        ulong FolderId { get; }
     }
 
     /// <summary>
@@ -24,19 +32,24 @@ namespace Codevoid.Instapaper
     internal class Folder : IFolder
     {
         /// <summary>
-        /// Title of the folder
+        /// <inheritdoc/>
         /// </summary>
-        public string Title { get; private set; }
+        public string Title { get; private set; } = String.Empty;
 
-        public Folder(string title)
-        {
-            this.Title = title;
-        }
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        public ulong FolderId { get; private set; } = 0;
 
         internal static IFolder FromJsonElement(JsonElement folderElement)
         {
             var folderTitle = folderElement.GetProperty("title").GetString();
-            return new Folder(folderTitle);
+            var folderId = folderElement.GetProperty("folder_id").GetUInt64();
+            return new Folder()
+            {
+                Title = folderTitle,
+                FolderId = folderId
+            };
         }
     }
 
@@ -56,6 +69,15 @@ namespace Codevoid.Instapaper
         /// <param name="folderTitle">Title of the folder to be added</param>
         /// <returns>Created folder from the service</returns>
         Task<IFolder> Add(string folderTitle);
+
+        /// <summary>
+        /// Delete the specified folder from the service.
+        /// </summary>
+        /// <param name="folderId">
+        /// ID of the folder to delete. Must be greater than zero
+        /// </param>
+        /// <returns>Task that completes when folder is successfully deleted</returns>
+        Task Delete(ulong folderId);
     }
 
     /// <summary>
@@ -138,16 +160,14 @@ namespace Codevoid.Instapaper
             return folders;
         }
 
-        /// <summary>
-        /// Request
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public async Task<IList<IFolder>> List()
         {
             var folders = await this.PerformRequestAsync(Endpoints.Folders.List, new StringContent(String.Empty));
             return folders;
         }
 
+        /// <inheritdoc/>
         public async Task<IFolder> Add(string folderTitle)
         {
             var payload = new FormUrlEncodedContent(new Dictionary<string, string>
@@ -163,6 +183,29 @@ namespace Codevoid.Instapaper
 
             Debug.Assert(folders.Count == 1, $"Expected one folder created, {folders.Count} found");
             return folders.First();
+        }
+
+        /// <inheritdoc/>
+        public async Task Delete(ulong folderId)
+        {
+            if (folderId < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(folderId), "Folder ID must be greater than zero");
+            }
+
+            var payload = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                { "folder_id", folderId.ToString() }
+            });
+
+            var shouldBeEmptyFolders = await this.PerformRequestAsync(Endpoints.Folders.Delete, payload);
+            if (shouldBeEmptyFolders.Count > 0)
+            {
+                throw new InvalidOperationException("Service did not return empty folder array for a delete");
+            }
+
+            Debug.Assert(shouldBeEmptyFolders.Count == 0, "Didn't expect any folders in response");
+            return;
         }
     }
 }

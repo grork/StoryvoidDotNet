@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Xunit;
@@ -44,8 +45,41 @@ namespace Codevoid.Test.Instapaper
         public async Task CanListFolders()
         {
             var client = new FoldersClient(TestUtilities.GetClientInformation());
-            await client.List();
+            var folders = await client.List();
+            Assert.NotEmpty(folders); // Expected some elements, since we just created them
+
+            this.SharedState.ReplaceFolderList(folders);
         }
 
+        [Fact, Order(4)]
+        public void FolderIdLessThanOneThrows()
+        {
+            var client = new FoldersClient(TestUtilities.GetClientInformation());
+            Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.Delete(0));
+        }
+
+        [Fact, Order(5)]
+        public async Task CanDeleteFolder()
+        {
+            var client = new FoldersClient(TestUtilities.GetClientInformation());
+
+            // Get the first folder from the shared state, and try to delete it
+            var folderToDelete = this.SharedState.Folders.First();
+
+            await client.Delete(folderToDelete.FolderId);
+
+            // List the remote folders and check it was actually deleted
+            var folders = await client.List();
+            this.SharedState.ReplaceFolderList(folders);
+
+            Assert.DoesNotContain(folders, (folder) => (folderToDelete.Title == folder.Title));
+        }
+
+        [Fact, Order(6)]
+        public async Task DeletingFolderThatDoesntExistThrows()
+        {
+            var client = new FoldersClient(TestUtilities.GetClientInformation());
+            await Assert.ThrowsAsync<UnknownServiceError>(() => client.Delete(42));
+        }
     }
 }

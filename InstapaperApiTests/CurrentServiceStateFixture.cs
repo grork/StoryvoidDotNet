@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Codevoid.Instapaper;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -16,30 +19,44 @@ namespace Codevoid.Test.Instapaper
     /// </summary>
     public class CurrentServiceStateFixture : IAsyncLifetime
     {
+        #region IAsyncLifetime
         private IMessageSink logger;
-
-        public CurrentServiceStateFixture(IMessageSink loggerInstance)
-        {
-            this.logger = loggerInstance;
-        }
 
         private void LogMessage(string message)
         {
             this.logger.OnMessage(new DiagnosticMessage(message));
         }
 
-        public async Task DisposeAsync()
+        async Task IAsyncLifetime.DisposeAsync()
         {
             LogMessage("Starting Cleanup");
             await Task.CompletedTask;
             LogMessage("Completing Cleanup");
         }
 
-        public async Task InitializeAsync()
+        async Task IAsyncLifetime.InitializeAsync()
         {
             LogMessage("Starting Init");
             await Task.CompletedTask;
             LogMessage("Completing Init");
+        }
+        #endregion
+
+        public CurrentServiceStateFixture(IMessageSink loggerInstance)
+        {
+            this.logger = loggerInstance;
+            this.Folders = new List<IFolder>();
+        }
+
+        public IList<IFolder> Folders { get; }
+
+        internal void ReplaceFolderList(IEnumerable<IFolder> folders)
+        {
+            this.Folders.Clear();
+            foreach (var folder in folders)
+            {
+                this.Folders.Add(folder);
+            }
         }
     }
 }
