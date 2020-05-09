@@ -15,7 +15,7 @@ namespace Codevoid.Test.Instapaper
     /// up as the tests execute in a specific order to slowly build up enough
     /// tested functionality to place the API in a known state
     /// </summary>
-    [Order(4), Collection(TestUtilities.TestCollectionName)]
+    [Order(2), Collection(TestUtilities.TestCollectionName)]
     public class BookmarksTests
     {
         private CurrentServiceStateFixture SharedState;
@@ -26,30 +26,10 @@ namespace Codevoid.Test.Instapaper
         }
 
         [Fact, Order(1)]
-        public async Task CoerceUserFolderBookmarksToOneFolder()
-        {
-            // Make sure there are no remote folders. We want to get all
-            // the bookmarks we can into the unread wellknown folder so
-            // we might have a chance of finding them
-            if (this.SharedState.Folders.Count == 0)
-            {
-                var currentFolders = await this.SharedState.FoldersClient.List();
-                this.SharedState.ReplaceFolderList(currentFolders);
-            }
-
-            foreach (var f in this.SharedState.Folders)
-            {
-                await this.SharedState.FoldersClient.Delete(f.FolderId);
-            }
-
-            this.SharedState.Folders.Clear();
-        }
-
-        [Fact, Order(2)]
         public async Task CanSuccessfullyListUnreadFolder()
         {
             var client = new BookmarksClient(TestUtilities.GetClientInformation());
-            await client.List(WellKnownFolderIds.Unread);
+            var currentRemoteFolders = await client.List(WellKnownFolderIds.Unread);
         }
     }
 }

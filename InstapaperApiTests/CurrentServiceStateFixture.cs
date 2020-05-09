@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Codevoid.Instapaper;
+using Codevoid.Utilities.OAuth;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -19,13 +25,237 @@ namespace Codevoid.Test.Instapaper
     /// </summary>
     public class CurrentServiceStateFixture : IAsyncLifetime
     {
+        /// <summary>
+        /// A thin, simple, wrapper on the Instapaper Service API to facilitate
+        /// cleaning up the state. It is intentionally separate from the actual
+        /// API so we aren't trying to clean up with an API that is also being
+        /// changed leading to poor test state.
+        /// </summary>
+        private class SimpleInstapaperApi
+        {
+            private IMessageSink logger;
+            private readonly HttpClient httpClient = OAuthMessageHandler.CreateOAuthHttpClient(TestUtilities.GetClientInformation());
+
+            internal SimpleInstapaperApi(IMessageSink logger) => this.logger = logger;
+            private void LogMessage(string message) => this.logger.OnMessage(new DiagnosticMessage(message));
+
+            private async Task<JsonElement> PerformRequestAsync(Uri endpoint, HttpContent content)
+            {
+                LogMessage($"Requesting {endpoint.ToString()}");
+
+                // Request data convert to JSON
+                var result = await this.httpClient.PostAsync(endpoint, content);
+                result.EnsureSuccessStatusCode();
+
+                var stream = await result.Content.ReadAsStreamAsync();
+                var payload = JsonDocument.Parse(stream).RootElement;
+                Debug.Assert(JsonValueKind.Array == payload.ValueKind, "API is always supposed to return an array as the root element");
+
+                return payload;
+            }
+
+            #region Folder State Reset
+            private async Task<IList<ulong>> ListFolderIds()
+            {
+                LogMessage("Requesting folders: Start");
+                var payload = await this.PerformRequestAsync(Endpoints.Folders.List, new StringContent(String.Empty));
+                LogMessage("Requesting folders: End");
+
+                List<ulong> folders = new List<ulong>();
+                foreach (var element in payload.EnumerateArray())
+                {
+                    switch (element.GetProperty("type").GetString())
+                    {
+                        case "folder":
+                            var folderId = element.GetProperty("folder_id").GetUInt64();
+                            folders.Add(folderId);
+                            break;
+
+                        case "error":
+                            throw new InvalidOperationException("Error listing folders");
+
+                        default:
+                            continue;
+                    }
+                }
+
+                return folders;
+            }
+
+            private async Task DeleteFolder(ulong folderId)
+            {
+                var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+                {
+                    { "folder_id", folderId.ToString() }
+                });
+
+                _ = await this.PerformRequestAsync(Endpoints.Folders.Delete, content);
+            }
+
+            internal async Task DeleteAllFolders()
+            {
+                var folders = await this.ListFolderIds();
+                LogMessage($"Found {folders.Count} folders");
+                foreach (var id in folders)
+                {
+                    LogMessage($"Deleting folder {id}");
+                    await this.DeleteFolder(id);
+                }
+            }
+            #endregion
+
+            #region Bookmarks State Reset
+            private async Task<IList<(ulong id,
+                                      bool liked,
+                                      string hash,
+                                      ulong progress_timestamp,
+                                      string url)>> ListBookmarks(string wellKnownFolderId, string have = "")
+            {
+                var contentKeys = new Dictionary<string, string>()
+                {
+                    { "folder_id", wellKnownFolderId }
+                };
+
+                if (!String.IsNullOrWhiteSpace(have))
+                {
+                    contentKeys.Add("have", have);
+                }
+
+                LogMessage($"Listing Bookmarks for {wellKnownFolderId}: Start");
+                var payload = await this.PerformRequestAsync(Endpoints.Bookmarks.List, new FormUrlEncodedContent(contentKeys));
+                LogMessage($"Listing Bookmarks for {wellKnownFolderId}: End");
+
+                var bookmarks = new List<(ulong, bool, string, ulong, string)>();
+                foreach (var element in payload.EnumerateArray())
+                {
+                    switch (element.GetProperty("type").GetString())
+                    {
+                        case "bookmark":
+                            var id = element.GetProperty("bookmark_id").GetUInt64();
+                            var liked = (element.GetProperty("starred").ToString()) == "1" ? true : false;
+                            var hash = element.GetProperty("hash").GetString();
+                            var progress_timestamp = element.GetProperty("progress_timestamp").GetUInt64();
+                            var url = element.GetProperty("url").GetString();
+                            bookmarks.Add((id, liked, hash, progress_timestamp, url));
+                            break;
+
+                        case "error":
+                            throw new InvalidOperationException("Error listing bookmarks");
+
+                        default:
+                            continue;
+                    }
+                }
+
+                LogMessage($"Found {bookmarks.Count} bookmarks");
+
+                return bookmarks;
+            }
+
+            private async Task Unarchive(ulong bookmarkId)
+            {
+                var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+                {
+                    { "bookmark_id", bookmarkId.ToString() }
+                });
+
+                _ = await this.PerformRequestAsync(Endpoints.Bookmarks.Unarchive, content);
+            }
+
+            private async Task Unlike(ulong bookmarkId)
+            {
+                var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+                {
+                    { "bookmark_id", bookmarkId.ToString() }
+                });
+
+                _ = await this.PerformRequestAsync(Endpoints.Bookmarks.Unstar, content);
+            }
+
+            public async Task DeleteBookmark(ulong bookmarkId)
+            {
+                var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+                {
+                    { "bookmark_id", bookmarkId.ToString() }
+                });
+
+                _ = await this.PerformRequestAsync(Endpoints.Bookmarks.Delete, content);
+            }
+
+            internal async Task MoveArchivedBookmarksToUnread()
+            {
+                var archivedBookmarks = await this.ListBookmarks(WellKnownFolderIds.Archived);
+                foreach (var bookmark in archivedBookmarks)
+                {
+                    await this.Unarchive(bookmark.id);
+                }
+            }
+
+            internal async Task<IList<(ulong id, Uri uri)>> ResetAllUnreadItems()
+            {
+                // List bookmarks so we can compute hashes + known progress
+                var unreadBookmarks = await this.ListBookmarks(WellKnownFolderIds.Unread);
+
+                // Create Have Values for all the bookmarks to reset their progress
+                // to zero. Using the have capability allows this to be one
+                // request, rather than multiple -- e.g. faster!
+                // We're still going to burn a request for each one to unlike it
+                var haves = new List<string>();
+                var uris = new List<(ulong, Uri)>();
+                foreach (var bookmark in unreadBookmarks)
+                {
+                    var haveValue = $"{bookmark.id}:{bookmark.hash}:0.0:{bookmark.progress_timestamp + 1}";
+                    haves.Add(haveValue);
+
+                    uris.Add((bookmark.id, new Uri(bookmark.url)));
+
+                    // Reset the like status
+                    if (bookmark.liked)
+                    {
+                        await this.Unlike(bookmark.id);
+                    }
+                }
+
+                // Actually reset them
+                LogMessage("Performing reset with have information");
+                _ = await this.ListBookmarks(WellKnownFolderIds.Unread, String.Join(',', haves));
+
+                return uris;
+            }
+            #endregion
+        }
+
+        private static class TestUrls
+        {
+            private readonly static Uri BaseTestUri = new Uri("http://www.codevoid.net/articlevoidtest/");
+            internal readonly static Uri TestPage1 = new Uri(BaseTestUri, "TestPage1.html");
+            internal readonly static Uri TestPage2 = new Uri(BaseTestUri, "TestPage2.html");
+            internal readonly static Uri TestPage3 = new Uri(BaseTestUri, "TestPage3.html");
+            internal readonly static Uri TestPage4 = new Uri(BaseTestUri, "TestPage4.html");
+            internal readonly static Uri TestPage5 = new Uri(BaseTestUri, "TestPage5.html");
+            internal readonly static Uri TestPage6 = new Uri(BaseTestUri, "TestPage6.html");
+            internal readonly static Uri TestPage7 = new Uri(BaseTestUri, "TestPage7.html");
+            internal readonly static Uri TestPage8 = new Uri(BaseTestUri, "TestPage8.html");
+            internal readonly static Uri TestPageWithImages = new Uri(BaseTestUri, "TestPage11.html");
+
+            // This page should always 404
+            internal readonly static Uri NonExistantPage = new Uri(BaseTestUri, "NotThere.html");
+
+            // Basic Test URIs
+            internal static IReadOnlyCollection<Uri> BasicRemoteTestUris =>
+                ImmutableList.Create(TestPage1,
+                                     TestPage2,
+                                     TestPage3,
+                                     TestPage4,
+                                     TestPage5,
+                                     TestPage6,
+                                     TestPage7,
+                                     TestPage8);
+        }
+
         #region IAsyncLifetime
         private IMessageSink logger;
-
-        private void LogMessage(string message)
-        {
-            this.logger.OnMessage(new DiagnosticMessage(message));
-        }
+        private void LogMessage(string message) => this.logger.OnMessage(new DiagnosticMessage(message));
 
         async Task IAsyncLifetime.DisposeAsync()
         {
@@ -37,7 +267,34 @@ namespace Codevoid.Test.Instapaper
         async Task IAsyncLifetime.InitializeAsync()
         {
             LogMessage("Starting Init");
-            await Task.CompletedTask;
+            var apiHelper = new SimpleInstapaperApi(this.logger);
+
+            LogMessage("Cleaning up Folders");
+            await apiHelper.DeleteAllFolders();
+
+            LogMessage("Cleaningup Bookmarks");
+            await apiHelper.MoveArchivedBookmarksToUnread();
+            var remoteBookmarks = await apiHelper.ResetAllUnreadItems();
+
+            // Collect all the remote test bookmarks that are available for adding
+            // e.g. those that *don't* appear in the remote list
+            var availableToAdd = (from bookmark in remoteBookmarks
+                                  where !TestUrls.BasicRemoteTestUris.Contains(bookmark.uri)
+                                  select bookmark).Count();
+
+            LogMessage($"There were {availableToAdd} URIs available to add");
+
+            if (availableToAdd < 1)
+            {
+                LogMessage("There weren't any URIs for adding, so deleting one");
+                // There weren't any available URIs, so we need to select
+                // one bookmark to delete
+                var bookmarkToDelete = (from bookmark in remoteBookmarks
+                                        where TestUrls.BasicRemoteTestUris.Contains(bookmark.uri)
+                                        select bookmark).First();
+
+                await apiHelper.DeleteBookmark(bookmarkToDelete.id);
+            }
             LogMessage("Completing Init");
         }
         #endregion
@@ -48,6 +305,9 @@ namespace Codevoid.Test.Instapaper
             this.Folders = new List<IFolder>();
         }
 
+        /// <summary>
+        /// Current set of folders that we know about.
+        /// </summary>
         public IList<IFolder> Folders { get; }
 
         internal void ReplaceFolderList(IEnumerable<IFolder> folders)

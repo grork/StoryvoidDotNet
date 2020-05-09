@@ -8,7 +8,7 @@ using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper
 {
-    [Order(2), Collection(TestUtilities.TestCollectionName)]
+    [Order(1), Collection(TestUtilities.TestCollectionName)]
     public class FoldersTests
     {
         private CurrentServiceStateFixture SharedState;

@@ -23,6 +23,12 @@ using Xunit.Sdk;
 
 namespace Codevoid.Test.Instapaper
 {
+    // Definition only class to group API tests together, allowing for correct
+    // ordering
+    [CollectionDefinition(TestUtilities.TestCollectionName)]
+    public class ApiTestsCollection : ICollectionFixture<CurrentServiceStateFixture>
+    { }
+
     public static class TestUtilities
     {
         public static void ThrowIfValueIsAPIKeyHasntBeenSet(string valueToTest, string valueName)
@@ -52,10 +58,4 @@ namespace Codevoid.Test.Instapaper
 
         public const string TestCollectionName = "Instapaper API Tests";
     }
-
-    // Definition only class to group API tests together, allowing for correct
-    // ordering
-    [CollectionDefinition(TestUtilities.TestCollectionName)]
-    public class ApiTestsCollection : ICollectionFixture<CurrentServiceStateFixture>
-    { }
 }
