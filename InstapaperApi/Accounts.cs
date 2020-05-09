@@ -83,8 +83,8 @@ namespace Codevoid.Instapaper
             }
 
             return new ClientInformation(
-                this.clientInformation.ClientId,
-                this.clientInformation.ClientSecret,
+                this.clientInformation.ConsumerKey,
+                this.clientInformation.ConsumerKeySecret,
                 token,
                 secret);
         }

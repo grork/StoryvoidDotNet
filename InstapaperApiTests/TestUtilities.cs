@@ -1,4 +1,5 @@
-﻿using Codevoid.Utilities.OAuth;
+﻿using System;
+using Codevoid.Utilities.OAuth;
 using Xunit;
 using Xunit.Extensions.Ordering;
 using Xunit.Sdk;
@@ -24,11 +25,26 @@ namespace Codevoid.Test.Instapaper
 {
     public static class TestUtilities
     {
+        public static void ThrowIfValueIsAPIKeyHasntBeenSet(string valueToTest, string valueName)
+        {
+            if (!String.IsNullOrWhiteSpace(valueToTest) && (valueToTest != "PLACEHOLDER"))
+            {
+                return;
+            }
+
+            throw new ArgumentOutOfRangeException(valueName, "You must replace the placeholder value. See README.md");
+        }
+
         public static ClientInformation GetClientInformation()
         {
+            ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY, nameof(InstapaperAPIKey.CONSUMER_KEY));
+            ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY_SECRET, nameof(InstapaperAPIKey.CONSUMER_KEY_SECRET));
+            ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.ACCESS_TOKEN, nameof(InstapaperAPIKey.ACCESS_TOKEN));
+            ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.TOKEN_SECRET, nameof(InstapaperAPIKey.TOKEN_SECRET));
+
             return new ClientInformation(
-                InstapaperAPIKey.CLIENT_ID,
-                InstapaperAPIKey.CLIENT_SECRET,
+                InstapaperAPIKey.CONSUMER_KEY,
+                InstapaperAPIKey.CONSUMER_KEY_SECRET,
                 InstapaperAPIKey.ACCESS_TOKEN,
                 InstapaperAPIKey.TOKEN_SECRET
             );

@@ -110,7 +110,7 @@ namespace Codevoid.Utilities.OAuth
 
         private static HMACSHA1 CreateSigningProvider(ClientInformation clientInfo)
         {
-            var keyText = $"{clientInfo.ClientSecret}&{clientInfo.TokenSecret ?? ""}";
+            var keyText = $"{clientInfo.ConsumerKeySecret}&{clientInfo.TokenSecret ?? ""}";
             var keyMaterial = Encoding.UTF8.GetBytes(keyText);
             return new HMACSHA1(keyMaterial);
         }
@@ -125,7 +125,7 @@ namespace Codevoid.Utilities.OAuth
         {
             var oauthHeaders = new Dictionary<string, string>
             {
-                { "oauth_consumer_key", this.clientInfo.ClientId },
+                { "oauth_consumer_key", this.clientInfo.ConsumerKey },
                 { "oauth_nonce", OAuthSigningHelper.EntropyProvider.GetNonce() },
                 { "oauth_signature_method", "HMAC-SHA1" },
                 { "oauth_timestamp", OAuthSigningHelper.EntropyProvider.GetDateTime().ToUnixTimeSeconds().ToString() },

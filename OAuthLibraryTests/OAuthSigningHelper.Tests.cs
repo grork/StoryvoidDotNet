@@ -11,6 +11,16 @@ namespace Codevoid.Test.OAuth
 {
     public class OAuthSigningHelperTests
     {
+        private static void ThrowIfValueIsAPIKeyHasntBeenSet(string valueToTest, string valueName)
+        {
+            if (!String.IsNullOrWhiteSpace(valueToTest) && (valueToTest != "PLACEHOLDER"))
+            {
+                return;
+            }
+
+            throw new ArgumentOutOfRangeException(valueName, "You must replace the placeholder value. See README.md");
+        }
+
         private class TestEntropyProvider : IEntropyProvider
         {
             public string nonce = String.Empty;
@@ -31,18 +41,23 @@ namespace Codevoid.Test.OAuth
         {
             // These values are from twitters example tutorial, so are intentionally
             // invalid, and well known.
-            return new ClientInformation(clientId: "xvz1evFS4wEEPTGEFPHBog",
-                                         clientSecret: "kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw",
+            return new ClientInformation(consumerKey: "xvz1evFS4wEEPTGEFPHBog",
+                                         consumerKeySecret: "kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw",
                                          token: "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
                                          tokenSecret: "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE");
         }
 
         private static ClientInformation GetRealClientInformation()
         {
-            return new ClientInformation(clientId: TwitterAPIKey.CLIENT_ID,
-                                         clientSecret: TwitterAPIKey.CLIENT_SECRET,
+            ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.API_KEY, nameof(TwitterAPIKey.API_KEY));
+            ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.API_SECRET_KEY, nameof(TwitterAPIKey.API_SECRET_KEY));
+            ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.ACCESS_TOKEN, nameof(TwitterAPIKey.ACCESS_TOKEN));
+            ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.ACCESS_TOKEN_SECRET, nameof(TwitterAPIKey.ACCESS_TOKEN_SECRET));
+
+            return new ClientInformation(consumerKey: TwitterAPIKey.API_KEY,
+                                         consumerKeySecret: TwitterAPIKey.API_SECRET_KEY,
                                          token: TwitterAPIKey.ACCESS_TOKEN,
-                                         tokenSecret: TwitterAPIKey.TOKEN_SECRET);
+                                         tokenSecret: TwitterAPIKey.ACCESS_TOKEN_SECRET);
         }
 
         private static HttpRequestMessage GetPostRequestForData(IDictionary<string, string> data, Uri url)
@@ -87,18 +102,18 @@ namespace Codevoid.Test.OAuth
         {
             var clientInfo = new ClientInformation("abc", "def");
             Assert.NotNull(clientInfo);
-            Assert.Equal("abc", clientInfo.ClientId);
-            Assert.Equal("def", clientInfo.ClientSecret);
+            Assert.Equal("abc", clientInfo.ConsumerKey);
+            Assert.Equal("def", clientInfo.ConsumerKeySecret);
         }
 
         [Fact]
-        public void ThrowsWhenClientIdMissing()
+        public void ThrowsWhenConsumerKeyMissing()
         {
             Assert.Throws<ArgumentNullException>(() => _ = new ClientInformation(null!, "def"));
         }
 
         [Fact]
-        public void ThrowsWhenClientSecretMissing()
+        public void ThrowsWhenConsumerKeySecretMissing()
         {
             Assert.Throws<ArgumentNullException>(() => _ = new ClientInformation("abc", null!));
         }

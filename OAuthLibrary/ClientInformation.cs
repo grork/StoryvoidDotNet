@@ -14,8 +14,8 @@ namespace Codevoid.Utilities.OAuth
         private string productVersion = "1.0";
         private ProductInfoHeaderValue? userAgentValue;
 
-        public readonly string ClientId;
-        public readonly string ClientSecret;
+        public readonly string ConsumerKey;
+        public readonly string ConsumerKeySecret;
         public readonly string? Token;
         public readonly string? TokenSecret;
 
@@ -23,29 +23,29 @@ namespace Codevoid.Utilities.OAuth
         /// Constructs this class with the supplied client information &amp;
         /// optional authentication tokens for use with <see cref="OAuthMessageHandler"/>
         /// </summary>
-        /// <param name="clientId">Client Identifier (aka identify your app)</param>
-        /// <param name="clientSecret">Client signing secret (aka unique to your app)</param>
+        /// <param name="consumerKey">Client Identifier (aka identify your app)</param>
+        /// <param name="consumerKeySecret">Client signing secret (aka unique to your app)</param>
         /// <param name="token">Authentication token (identifying the user)</param>
         /// <param name="tokenSecret">Authentication secret for signing requests</param>
-        public ClientInformation(string clientId,
-                                 string clientSecret,
+        public ClientInformation(string consumerKey,
+                                 string consumerKeySecret,
                                  string? token = null,
                                  string? tokenSecret = null)
         {
-            if (String.IsNullOrWhiteSpace(clientId))
+            if (String.IsNullOrWhiteSpace(consumerKey))
             {
-                throw new ArgumentNullException(nameof(clientId),
-                                               "Client ID is required");
+                throw new ArgumentNullException(nameof(consumerKey),
+                                               "Consumer Key is required");
             }
 
-            if (String.IsNullOrWhiteSpace(clientSecret))
+            if (String.IsNullOrWhiteSpace(consumerKeySecret))
             {
-                throw new ArgumentNullException(nameof(clientSecret),
-                                                "Client Secret is required");
+                throw new ArgumentNullException(nameof(consumerKeySecret),
+                                                "Consumer Key Secret is required");
             }
 
-            this.ClientId = clientId;
-            this.ClientSecret = clientSecret;
+            this.ConsumerKey = consumerKey;
+            this.ConsumerKeySecret = consumerKeySecret;
             this.Token = token;
             this.TokenSecret = tokenSecret;
         }
