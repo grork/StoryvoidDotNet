@@ -58,7 +58,7 @@ namespace Codevoid.Test.Instapaper
             private async Task<IList<ulong>> ListFolderIds()
             {
                 LogMessage("Requesting folders: Start");
-                var payload = await this.PerformRequestAsync(Endpoints.Folders.List, new StringContent(String.Empty));
+                var payload = await this.PerformRequestAsync(EndPoints.Folders.List, new StringContent(String.Empty));
                 LogMessage("Requesting folders: End");
 
                 List<ulong> folders = new List<ulong>();
@@ -89,7 +89,7 @@ namespace Codevoid.Test.Instapaper
                     { "folder_id", folderId.ToString() }
                 });
 
-                _ = await this.PerformRequestAsync(Endpoints.Folders.Delete, content);
+                _ = await this.PerformRequestAsync(EndPoints.Folders.Delete, content);
             }
 
             internal async Task DeleteAllFolders()
@@ -122,7 +122,7 @@ namespace Codevoid.Test.Instapaper
                 }
 
                 LogMessage($"Listing Bookmarks for {wellKnownFolderId}: Start");
-                var payload = await this.PerformRequestAsync(Endpoints.Bookmarks.List, new FormUrlEncodedContent(contentKeys));
+                var payload = await this.PerformRequestAsync(EndPoints.Bookmarks.List, new FormUrlEncodedContent(contentKeys));
                 LogMessage($"Listing Bookmarks for {wellKnownFolderId}: End");
 
                 var bookmarks = new List<(ulong, bool, string, ulong, string)>();
@@ -159,7 +159,7 @@ namespace Codevoid.Test.Instapaper
                     { "bookmark_id", bookmarkId.ToString() }
                 });
 
-                _ = await this.PerformRequestAsync(Endpoints.Bookmarks.Unarchive, content);
+                _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Unarchive, content);
             }
 
             private async Task Unlike(ulong bookmarkId)
@@ -169,7 +169,7 @@ namespace Codevoid.Test.Instapaper
                     { "bookmark_id", bookmarkId.ToString() }
                 });
 
-                _ = await this.PerformRequestAsync(Endpoints.Bookmarks.Unstar, content);
+                _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Unstar, content);
             }
 
             public async Task DeleteBookmark(ulong bookmarkId)
@@ -179,7 +179,7 @@ namespace Codevoid.Test.Instapaper
                     { "bookmark_id", bookmarkId.ToString() }
                 });
 
-                _ = await this.PerformRequestAsync(Endpoints.Bookmarks.Delete, content);
+                _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Delete, content);
             }
 
             internal async Task MoveArchivedBookmarksToUnread()

@@ -66,7 +66,7 @@ namespace Codevoid.Instapaper
                 }
             );
 
-            var result = await this.client.PostAsync(Codevoid.Instapaper.Endpoints.Access.AccessToken, parameters);
+            var result = await this.client.PostAsync(Codevoid.Instapaper.EndPoints.Access.AccessToken, parameters);
             result.EnsureSuccessStatusCode();
 
             var body = await result.Content.ReadAsStringAsync();
@@ -96,7 +96,7 @@ namespace Codevoid.Instapaper
         public async Task<UserInformation> VerifyCredentials()
         {
             var payload = new FormUrlEncodedContent(new Dictionary<string, string>());
-            var result = await this.client.PostAsync(Endpoints.Access.VerifyCredentials, payload);
+            var result = await this.client.PostAsync(EndPoints.Access.VerifyCredentials, payload);
             result.EnsureSuccessStatusCode();
 
             var document = JsonDocument.Parse(await result.Content.ReadAsStreamAsync());

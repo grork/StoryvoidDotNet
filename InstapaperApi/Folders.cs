@@ -194,7 +194,7 @@ namespace Codevoid.Instapaper
         /// <inheritdoc/>
         public async Task<IList<IFolder>> List()
         {
-            var folders = await this.PerformRequestAsync(Endpoints.Folders.List, new StringContent(String.Empty));
+            var folders = await this.PerformRequestAsync(EndPoints.Folders.List, new StringContent(String.Empty));
             return folders;
         }
 
@@ -206,7 +206,7 @@ namespace Codevoid.Instapaper
                 { "title", folderTitle }
             });
 
-            var folders = await this.PerformRequestAsync(Endpoints.Folders.Add, payload);
+            var folders = await this.PerformRequestAsync(EndPoints.Folders.Add, payload);
             if (folders.Count == 0)
             {
                 throw new InvalidOperationException("Folder wasn't created");
@@ -229,7 +229,7 @@ namespace Codevoid.Instapaper
                 { "folder_id", folderId.ToString() }
             });
 
-            var shouldBeEmptyFolders = await this.PerformRequestAsync(Endpoints.Folders.Delete, payload);
+            var shouldBeEmptyFolders = await this.PerformRequestAsync(EndPoints.Folders.Delete, payload);
             if (shouldBeEmptyFolders.Count > 0)
             {
                 throw new InvalidOperationException("Service did not return empty folder array for a delete");

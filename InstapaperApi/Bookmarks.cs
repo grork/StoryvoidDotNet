@@ -227,7 +227,7 @@ namespace Codevoid.Instapaper
 
         public async Task<IList<IBookmark>> List(string wellKnownFolderId)
         {
-            var result = await this.PerformRequestAsync(Endpoints.Bookmarks.List, new StringContent(String.Empty));
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.List, new StringContent(String.Empty));
             return result;
         }
 
@@ -239,7 +239,7 @@ namespace Codevoid.Instapaper
                 throw new ArgumentException("Only HTTP or HTTPS Urls are supported");
             }
 
-            var result = await this.PerformRequestAsync(Endpoints.Bookmarks.Add, new FormUrlEncodedContent(new Dictionary<string, string>()
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Add, new FormUrlEncodedContent(new Dictionary<string, string>()
             {
                 { "url", bookmarkUrl.ToString() }
             }));

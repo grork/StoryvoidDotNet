@@ -2,7 +2,7 @@
 
 namespace Codevoid.Instapaper
 {
-    internal static class Endpoints
+    internal static class EndPoints
     {
         private static readonly Uri baseUri = new Uri("https://www.instapaper.com/api/1/");
 
