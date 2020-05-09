@@ -83,7 +83,6 @@ namespace Microsoft.AspNetCore.WebUtilities
 
         private string ReadWord(char seperator)
         {
-            // TODO: Configurable value size limit
             while (true)
             {
                 // Empty
@@ -111,7 +110,6 @@ namespace Microsoft.AspNetCore.WebUtilities
 
         private async Task<string> ReadWordAsync(char seperator, CancellationToken cancellationToken)
         {
-            // TODO: Configurable value size limit
             while (true)
             {
                 // Empty
@@ -143,7 +141,7 @@ namespace Microsoft.AspNetCore.WebUtilities
             _builder.Replace('+', ' ');
             var result = _builder.ToString();
             _builder.Clear();
-            return Uri.UnescapeDataString(result); // TODO: Replace this, it's not completely accurate.
+            return Uri.UnescapeDataString(result); // Replace this, it's not completely accurate.
         }
 
         private void Buffer()
@@ -154,7 +152,7 @@ namespace Microsoft.AspNetCore.WebUtilities
 
         private async Task BufferAsync(CancellationToken cancellationToken)
         {
-            // TODO: StreamReader doesn't support cancellation?
+            // StreamReader doesn't support cancellation?
             cancellationToken.ThrowIfCancellationRequested();
             _bufferOffset = 0;
             _bufferCount = await _reader.ReadAsync(_buffer, 0, _buffer.Length);
