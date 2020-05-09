@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -29,10 +31,22 @@ namespace Codevoid.Instapaper
         /// List of bookmarks
         /// </returns>
         Task<IList<IBookmark>> List(string folderId);
+
+        /// <summary>
+        /// Add a bookmark for the supplied URL.
+        /// </summary>
+        /// <param name="bookmarkUrl">URL to add</param>
+        /// <returns>The bookmark if successf</returns>
+        Task<IBookmark> Add(Uri bookmarkUrl);
     }
 
     internal class Bookmark : IBookmark
-    { }
+    {
+        internal static IBookmark FromJsonElement(JsonElement bookmarkElement)
+        {
+            return new Bookmark();
+        }
+    }
 
     /// <summary>
     /// Lightweight information about the status of a bookmark for syncing
@@ -147,30 +161,91 @@ namespace Codevoid.Instapaper
             this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
         }
 
-        public async Task<IList<IBookmark>> List(string folderId)
+        /// <summary>
+        /// Instapaper service returns structured errors in 400 (bad request)
+        /// status codes, but not others. This hides those details from consumers
+        /// of the raw http requests
+        /// </summary>
+        /// <param name="statusCode">Status to inspect</param>
+        /// <returns>
+        /// True, if this code is fatal (e.g. don't parse the body)
+        /// </returns>
+        private static bool IsFatalStatusCode(HttpStatusCode statusCode)
         {
-            var result = await this.client.PostAsync(Endpoints.Bookmarks.List, new StringContent(String.Empty));
-            result.EnsureSuccessStatusCode();
+            switch (statusCode)
+            {
+                case HttpStatusCode.BadRequest:
+                    return false;
 
-            var document = JsonDocument.Parse(await result.Content.ReadAsStreamAsync()).RootElement;
-            Debug.Assert(JsonValueKind.Array == document.ValueKind, "Not an array");
+                default:
+                    return true;
+            }
+        }
 
-            var bookmarks = new List<IBookmark>();
-            foreach (var element in document.EnumerateArray())
+        private async Task<IList<IBookmark>> PerformRequestAsync(Uri endpoint, HttpContent content)
+        {
+            // Request data convert to JSON
+            var result = await this.client.PostAsync(endpoint, content);
+            if (!result.IsSuccessStatusCode && IsFatalStatusCode(result.StatusCode))
+            {
+                result.EnsureSuccessStatusCode();
+            }
+
+            var stream = await result.Content.ReadAsStreamAsync();
+            var payload = JsonDocument.Parse(stream).RootElement;
+            Debug.Assert(JsonValueKind.Array == payload.ValueKind, "API is always supposed to return an array as the root element");
+
+            // Turn the JSON into strongly typed objects
+            IList<IBookmark> bookmarks = new List<IBookmark>();
+            foreach (var element in payload.EnumerateArray())
             {
                 var itemType = element.GetProperty("type").GetString();
                 switch (itemType)
                 {
+                    case "bookmark":
+                        bookmarks.Add(Bookmark.FromJsonElement(element));
+                        break;
+
+                    case "error":
+                        // Always throw an error when we encounter it, no matter
+                        // if we've seen other (valid data)
+                        throw ExceptionMapper.FromErrorJson(element);
+
+                    case "user":
                     case "meta":
+                        // We don't process meta or users objects
                         continue;
 
-                    case "bookmark":
-                        bookmarks.Add(new Bookmark());
-                        break;
+                    default:
+                        Debug.Fail($"Unexpected return object type: {itemType}");
+                        continue;
                 }
             }
 
             return bookmarks;
+        }
+
+        public async Task<IList<IBookmark>> List(string wellKnownFolderId)
+        {
+            var result = await this.PerformRequestAsync(Endpoints.Bookmarks.List, new StringContent(String.Empty));
+            return result;
+        }
+
+        public async Task<IBookmark> Add(Uri bookmarkUrl)
+        {
+            if ((bookmarkUrl.Scheme != Uri.UriSchemeHttp)
+                && (bookmarkUrl.Scheme != Uri.UriSchemeHttps))
+            {
+                throw new ArgumentException("Only HTTP or HTTPS Urls are supported");
+            }
+
+            var result = await this.PerformRequestAsync(Endpoints.Bookmarks.Add, new FormUrlEncodedContent(new Dictionary<string, string>()
+            {
+                { "url", bookmarkUrl.ToString() }
+            }));
+
+            Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
+            return result.First();
         }
     }
 }

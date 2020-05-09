@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Xunit;
 using Xunit.Extensions.Ordering;
@@ -28,8 +29,17 @@ namespace Codevoid.Test.Instapaper
         [Fact, Order(1)]
         public async Task CanSuccessfullyListUnreadFolder()
         {
-            var client = new BookmarksClient(TestUtilities.GetClientInformation());
-            var currentRemoteFolders = await client.List(WellKnownFolderIds.Unread);
+            var client = this.SharedState.BookmarksClient;
+            var remoteBookmarks = await client.List(WellKnownFolderIds.Unread);
+            this.SharedState.UpdateBookmarksForFolder(remoteBookmarks, WellKnownFolderIds.Unread);
+        }
+
+        [Fact]
+        public async Task ExceptionThrownWithOutHttpUrl()
+        {
+            var client = this.SharedState.BookmarksClient;
+            await Assert.ThrowsAsync<ArgumentException>(() => client.Add(new Uri("ftp://something/foo.com")));
+            await Assert.ThrowsAsync<ArgumentException>(() => client.Add(new Uri("mailto:test@example.com")));
         }
     }
 }

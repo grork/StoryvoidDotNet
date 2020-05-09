@@ -225,6 +225,9 @@ namespace Codevoid.Test.Instapaper
             #endregion
         }
 
+        /// <summary>
+        /// Well known URLs that we control, and are used for testing purposes
+        /// </summary>
         private static class TestUrls
         {
             private readonly static Uri BaseTestUri = new Uri("http://www.codevoid.net/articlevoidtest/");
@@ -305,20 +308,7 @@ namespace Codevoid.Test.Instapaper
             this.Folders = new List<IFolder>();
         }
 
-        /// <summary>
-        /// Current set of folders that we know about.
-        /// </summary>
-        public IList<IFolder> Folders { get; }
-
-        internal void ReplaceFolderList(IEnumerable<IFolder> folders)
-        {
-            this.Folders.Clear();
-            foreach (var folder in folders)
-            {
-                this.Folders.Add(folder);
-            }
-        }
-
+        #region Folder API & State
         private IFoldersClient? _foldersClient;
         public IFoldersClient FoldersClient
         {
@@ -332,5 +322,55 @@ namespace Codevoid.Test.Instapaper
                 return this._foldersClient;
             }
         }
+        /// <summary>
+        /// Current set of folders that we know about.
+        /// </summary>
+        public IList<IFolder> Folders { get; }
+
+        /// <summary>
+        /// Replace the folder list we have with a new one wholesale.
+        /// </summary>
+        /// <param name="folders">Folders that should replace existing set</param>
+        internal void ReplaceFolderList(IEnumerable<IFolder> folders)
+        {
+            this.Folders.Clear();
+            foreach (var folder in folders)
+            {
+                this.Folders.Add(folder);
+            }
+        }
+        #endregion
+
+        #region Bookmarks API & State
+        private IBookmarksClient? _bookmarksClient;
+        public IBookmarksClient BookmarksClient
+        {
+            get
+            {
+                if (this._bookmarksClient == null)
+                {
+                    this._bookmarksClient = new BookmarksClient(TestUtilities.GetClientInformation());
+                }
+
+                return this._bookmarksClient;
+            }
+        }
+
+        private IDictionary<string, IList<IBookmark>> bookmarksByFolder = new Dictionary<string, IList<IBookmark>>();
+        public IList<IBookmark> BookmarksForFolder(string forWellKnownFolder)
+        {
+            if (!this.bookmarksByFolder.TryGetValue(forWellKnownFolder, out var bookmarks))
+            {
+                throw new KeyNotFoundException("Folder not found in known set");
+            }
+
+            return bookmarks;
+        }
+
+        public void UpdateBookmarksForFolder(IList<IBookmark> bookmarks, string forWellKnownFolder)
+        {
+            this.bookmarksByFolder[forWellKnownFolder] = bookmarks;
+        }
+        #endregion
     }
 }
