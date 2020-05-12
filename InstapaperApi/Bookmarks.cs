@@ -14,7 +14,11 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// A Bookmark from the service
     /// </summary>
-    public interface IBookmark { }
+    public interface IBookmark
+    {
+        Uri Url { get; }
+        ulong Id { get; }
+    }
 
     /// <summary>
     /// Client for manipulating Bookmarks on the Instapaper Service
@@ -44,8 +48,18 @@ namespace Codevoid.Instapaper
     {
         internal static IBookmark FromJsonElement(JsonElement bookmarkElement)
         {
-            return new Bookmark();
+            var urlString = bookmarkElement.GetProperty("url").GetString();
+            var url = new Uri(urlString);
+            var id = bookmarkElement.GetProperty("bookmark_id").GetUInt64();
+            return new Bookmark()
+            {
+                Url = url,
+                Id = id
+            };
         }
+
+        public Uri Url { get; private set; } = new Uri("unset://unset");
+        public ulong Id { get; private set; } = 0L;
     }
 
     /// <summary>

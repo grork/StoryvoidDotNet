@@ -20,6 +20,7 @@ namespace Codevoid.Test.Instapaper
     public class BookmarksTests
     {
         private CurrentServiceStateFixture SharedState;
+        private IBookmarksClient Client => this.SharedState.BookmarksClient;
 
         public BookmarksTests(CurrentServiceStateFixture state)
         {
@@ -27,19 +28,32 @@ namespace Codevoid.Test.Instapaper
         }
 
         [Fact, Order(1)]
+        public async Task CanAddBookmark()
+        {
+            var bookmarkUrl = this.SharedState.GetNextAddableUrl();
+            var result = await this.Client.Add(bookmarkUrl);
+
+            Assert.Equal(bookmarkUrl, result.Url);
+            Assert.NotEqual(0UL, result.Id);
+
+            this.SharedState.AddBookmark(result);
+        }
+
+        [Fact, Order(2)]
         public async Task CanSuccessfullyListUnreadFolder()
         {
-            var client = this.SharedState.BookmarksClient;
-            var remoteBookmarks = await client.List(WellKnownFolderIds.Unread);
+            var remoteBookmarks = await this.Client.List(WellKnownFolderIds.Unread);
             this.SharedState.UpdateBookmarksForFolder(remoteBookmarks, WellKnownFolderIds.Unread);
+
+            // Check the bookmark you had added most recently was found
+            Assert.Contains(remoteBookmarks, (b) => b.Id == this.SharedState.RecentlyAddedBookmark!.Id);
         }
 
         [Fact]
-        public async Task ExceptionThrownWithOutHttpUrl()
+        public async Task ExceptionThrownWithUnsupportedUriScheme()
         {
-            var client = this.SharedState.BookmarksClient;
-            await Assert.ThrowsAsync<ArgumentException>(() => client.Add(new Uri("ftp://something/foo.com")));
-            await Assert.ThrowsAsync<ArgumentException>(() => client.Add(new Uri("mailto:test@example.com")));
+            await Assert.ThrowsAsync<ArgumentException>(() => this.Client.Add(new Uri("ftp://something/foo.com")));
+            await Assert.ThrowsAsync<ArgumentException>(() => this.Client.Add(new Uri("mailto:test@example.com")));
         }
     }
 }

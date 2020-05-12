@@ -230,16 +230,16 @@ namespace Codevoid.Test.Instapaper
         /// </summary>
         private static class TestUrls
         {
-            private readonly static Uri BaseTestUri = new Uri("http://www.codevoid.net/articlevoidtest/");
-            internal readonly static Uri TestPage1 = new Uri(BaseTestUri, "TestPage1.html");
-            internal readonly static Uri TestPage2 = new Uri(BaseTestUri, "TestPage2.html");
-            internal readonly static Uri TestPage3 = new Uri(BaseTestUri, "TestPage3.html");
-            internal readonly static Uri TestPage4 = new Uri(BaseTestUri, "TestPage4.html");
-            internal readonly static Uri TestPage5 = new Uri(BaseTestUri, "TestPage5.html");
-            internal readonly static Uri TestPage6 = new Uri(BaseTestUri, "TestPage6.html");
-            internal readonly static Uri TestPage7 = new Uri(BaseTestUri, "TestPage7.html");
-            internal readonly static Uri TestPage8 = new Uri(BaseTestUri, "TestPage8.html");
-            internal readonly static Uri TestPageWithImages = new Uri(BaseTestUri, "TestPage11.html");
+            private readonly static Uri BaseTestUri = new Uri("https://www.codevoid.net/articlevoidtest/");
+            internal readonly static Uri TestPage1 = new Uri(BaseTestUri, "_TestPage1.html");
+            internal readonly static Uri TestPage2 = new Uri(BaseTestUri, "_TestPage2.html");
+            internal readonly static Uri TestPage3 = new Uri(BaseTestUri, "_TestPage3.html");
+            internal readonly static Uri TestPage4 = new Uri(BaseTestUri, "_TestPage4.html");
+            internal readonly static Uri TestPage5 = new Uri(BaseTestUri, "_TestPage5.html");
+            internal readonly static Uri TestPage6 = new Uri(BaseTestUri, "_TestPage6.html");
+            internal readonly static Uri TestPage7 = new Uri(BaseTestUri, "_TestPage7.html");
+            internal readonly static Uri TestPage8 = new Uri(BaseTestUri, "_TestPage8.html");
+            internal readonly static Uri TestPageWithImages = new Uri(BaseTestUri, "TestPageWithImage.html");
 
             // This page should always 404
             internal readonly static Uri NonExistantPage = new Uri(BaseTestUri, "NotThere.html");
@@ -279,25 +279,35 @@ namespace Codevoid.Test.Instapaper
             await apiHelper.MoveArchivedBookmarksToUnread();
             var remoteBookmarks = await apiHelper.ResetAllUnreadItems();
 
-            // Collect all the remote test bookmarks that are available for adding
-            // e.g. those that *don't* appear in the remote list
-            var availableToAdd = (from bookmark in remoteBookmarks
-                                  where !TestUrls.BasicRemoteTestUris.Contains(bookmark.uri)
-                                  select bookmark).Count();
+            // Collect all the remote test bookmarks that are still available
+            // to be added e.g. those that *don't* appear in the remote list,
+            // and are part of our known set of URLs
+            var availableToAddUris = new List<Uri>(TestUrls.BasicRemoteTestUris);
+            foreach (var remoteBookmark in remoteBookmarks)
+            {
+                if (availableToAddUris.Contains(remoteBookmark.uri))
+                {
+                    availableToAddUris.Remove(remoteBookmark.uri);
+                }
+            }
 
-            LogMessage($"There were {availableToAdd} URIs available to add");
+            LogMessage($"There were {availableToAddUris} URIs available to add");
 
-            if (availableToAdd < 1)
+            if (availableToAddUris.Count < 1)
             {
                 LogMessage("There weren't any URIs for adding, so deleting one");
+
                 // There weren't any available URIs, so we need to select
-                // one bookmark to delete
+                // one bookmark that is one of our test URLs and delete it
                 var bookmarkToDelete = (from bookmark in remoteBookmarks
                                         where TestUrls.BasicRemoteTestUris.Contains(bookmark.uri)
                                         select bookmark).First();
 
                 await apiHelper.DeleteBookmark(bookmarkToDelete.id);
+                availableToAddUris.Add(bookmarkToDelete.uri);
             }
+
+            this.availbleUris = availableToAddUris;
             LogMessage("Completing Init");
         }
         #endregion
@@ -342,6 +352,7 @@ namespace Codevoid.Test.Instapaper
         #endregion
 
         #region Bookmarks API & State
+        private IList<Uri> availbleUris = new List<Uri>();
         private IBookmarksClient? _bookmarksClient;
         public IBookmarksClient BookmarksClient
         {
@@ -355,21 +366,78 @@ namespace Codevoid.Test.Instapaper
                 return this._bookmarksClient;
             }
         }
+        public IBookmark? RecentlyAddedBookmark { get; private set; }
 
         private IDictionary<string, IList<IBookmark>> bookmarksByFolder = new Dictionary<string, IList<IBookmark>>();
-        public IList<IBookmark> BookmarksForFolder(string forWellKnownFolder)
+        public IList<IBookmark>? BookmarksForFolder(string forWellKnownFolder)
         {
-            if (!this.bookmarksByFolder.TryGetValue(forWellKnownFolder, out var bookmarks))
-            {
-                throw new KeyNotFoundException("Folder not found in known set");
-            }
-
+            this.bookmarksByFolder.TryGetValue(forWellKnownFolder, out var bookmarks);
             return bookmarks;
         }
 
         public void UpdateBookmarksForFolder(IList<IBookmark> bookmarks, string forWellKnownFolder)
         {
             this.bookmarksByFolder[forWellKnownFolder] = bookmarks;
+            this.RefreshAvailableBookmarksFromKnownBookmarks();
+        }
+
+        private void RefreshAvailableBookmarksFromKnownBookmarks()
+        {
+            var allBookmarkUrls = new HashSet<Uri>();
+            // Map all remote URLs into URIs
+            foreach (var kvp in this.bookmarksByFolder)
+            {
+                foreach (var b in kvp.Value)
+                {
+                    allBookmarkUrls.Add(b.Url);
+                }
+            }
+
+            // Filter Test URIs by remote URIs
+            var availableUris = (from uri in TestUrls.BasicRemoteTestUris
+                                 where !allBookmarkUrls.Contains(uri)
+                                 select uri).ToList();
+
+            if (availableUris.Count < 1)
+            {
+                Debug.Fail("You ran out of URLs to add");
+                LogMessage("Out of URLs to add");
+            }
+
+            this.availbleUris = availableUris;
+        }
+
+        public Uri GetNextAddableUrl()
+        {
+            Assert.True(this.availbleUris.Count > 0); // Expected a URL to be available
+
+            var uri = this.availbleUris.First();
+            this.availbleUris.Remove(uri);
+
+            return uri;
+        }
+
+        public void AddBookmark(IBookmark bookmark, string inFolder = WellKnownFolderIds.Unread)
+        {
+            var folderBookmarks = this.BookmarksForFolder(inFolder);
+            if (folderBookmarks != null)
+            {
+                var existingBookmark = (from b in folderBookmarks
+                                        where b.Id == bookmark.Id
+                                        select b).First();
+
+                if (existingBookmark != null)
+                {
+                    // Need to remove it if it's there, so we can add it with updated
+                    // information
+                    folderBookmarks.Remove(existingBookmark);
+                }
+
+                folderBookmarks.Add(bookmark);
+                this.RefreshAvailableBookmarksFromKnownBookmarks();
+            }
+
+            this.RecentlyAddedBookmark = bookmark;
         }
         #endregion
     }
