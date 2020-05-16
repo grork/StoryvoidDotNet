@@ -140,7 +140,7 @@ namespace Codevoid.Instapaper
         ///     Amount of bookmark that has been read, between 0.0 and 1.0
         /// </param>
         /// <param name="changed">Last time the progress changed</param>
-        public HaveStatus(string id, string hash, double readProgress, DateTimeOffset changed) : this(id, hash)
+        public HaveStatus(string id, string hash, double readProgress, DateTime changed) : this(id, hash)
         {
             this.ReadProgress = readProgress;
             this.Changed = changed;
@@ -196,7 +196,7 @@ namespace Codevoid.Instapaper
         /// <summary>
         /// The unix epoch time that the progress was last updated.
         /// </summary>
-        public DateTimeOffset? Changed { get; }
+        public DateTime? Changed { get; }
 
         /// <summary>
         /// The 'have' syntax is a very specific string, so overriding it here
@@ -215,7 +215,7 @@ namespace Codevoid.Instapaper
 
             if (this.ReadProgress != null && this.Changed != null)
             {
-                haveText.AppendFormat(":{0}:{1}", this.ReadProgress, this.Changed?.ToUnixTimeSeconds());
+                haveText.AppendFormat(":{0}:{1}", this.ReadProgress, new DateTimeOffset(this.Changed.Value).ToUnixTimeSeconds());
             }
 
             return haveText.ToString();

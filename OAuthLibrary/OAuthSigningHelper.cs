@@ -19,7 +19,7 @@ namespace Codevoid.Utilities.OAuth
     internal interface IEntropyProvider
     {
         string GetNonce();
-        DateTimeOffset GetDateTime();
+        DateTime GetDateTime();
     }
 
     /// <summary>
@@ -67,9 +67,9 @@ namespace Codevoid.Utilities.OAuth
                 return Convert.ToBase64String(new ASCIIEncoding().GetBytes(DateTime.Now.Ticks.ToString()));
             }
 
-            public DateTimeOffset GetDateTime()
+            public DateTime GetDateTime()
             {
-                return DateTimeOffset.Now;
+                return DateTime.Now;
             }
         }
 
@@ -123,12 +123,13 @@ namespace Codevoid.Utilities.OAuth
 
         internal async Task<string> GenerateAuthHeaderForHttpRequest(HttpRequestMessage message)
         {
+            var timestamp = (new DateTimeOffset(OAuthSigningHelper.EntropyProvider.GetDateTime()).ToUnixTimeSeconds());
             var oauthHeaders = new Dictionary<string, string>
             {
                 { "oauth_consumer_key", this.clientInfo.ConsumerKey },
                 { "oauth_nonce", OAuthSigningHelper.EntropyProvider.GetNonce() },
                 { "oauth_signature_method", "HMAC-SHA1" },
-                { "oauth_timestamp", OAuthSigningHelper.EntropyProvider.GetDateTime().ToUnixTimeSeconds().ToString() },
+                { "oauth_timestamp", timestamp.ToString() },
                 { "oauth_version", "1.0" }
             };
 

@@ -42,7 +42,7 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public void HaveStatusCorrectlyStringifysProgressAndTimestamp()
         {
-            HaveStatus status = new HaveStatus("12345", "OjMuzFp6", 0.5, DateTimeOffset.FromUnixTimeSeconds(1288584076));
+            HaveStatus status = new HaveStatus("12345", "OjMuzFp6", 0.5, DateTimeOffset.FromUnixTimeSeconds(1288584076).LocalDateTime);
             Assert.Equal("12345:OjMuzFp6:0.5:1288584076", status.ToString());
         }
     }

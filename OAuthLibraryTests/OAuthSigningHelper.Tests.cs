@@ -24,9 +24,9 @@ namespace Codevoid.Test.OAuth
         private class TestEntropyProvider : IEntropyProvider
         {
             public string nonce = String.Empty;
-            public DateTimeOffset timestamp;
+            public DateTime timestamp;
 
-            public DateTimeOffset GetDateTime()
+            public DateTime GetDateTime()
             {
                 return this.timestamp;
             }
@@ -92,7 +92,7 @@ namespace Codevoid.Test.OAuth
             OAuthSigningHelper.EntropyProvider = new TestEntropyProvider()
             {
                 nonce = nonce,
-                timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimeInSeconds)
+                timestamp = DateTimeOffset.FromUnixTimeSeconds(unixTimeInSeconds).LocalDateTime
             };
             return oldEntropyHelper;
         }
