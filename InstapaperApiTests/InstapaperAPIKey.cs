@@ -16,6 +16,6 @@
         public const string INSTAPAPER_PASSWORD = "PLACEHOLDER";
         public const string ACCESS_TOKEN = "PLACEHOLDER";
         public const string TOKEN_SECRET = "PLACEHOLDER";
-        public const long INSTAPAPER_USER_ID = -1; // Placeholder
+        public const ulong INSTAPAPER_USER_ID = 0; // Placeholder
     }
 }

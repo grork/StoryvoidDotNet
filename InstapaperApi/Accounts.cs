@@ -13,7 +13,7 @@ namespace Codevoid.Instapaper
     /// </summary>
     public readonly struct UserInformation
     {
-        public readonly long UserId;
+        public readonly ulong UserId;
         public readonly string Username;
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace Codevoid.Instapaper
         public readonly bool HasSubscription;
 
         internal UserInformation(
-            long userId,
+            ulong userId,
             string username,
             bool hasSubscription
         )
@@ -102,9 +102,9 @@ namespace Codevoid.Instapaper
             var document = JsonDocument.Parse(await result.Content.ReadAsStreamAsync());
             var userInfoElement = document.RootElement[0];
 
-            long userId = userInfoElement.GetProperty("user_id").GetInt64();
-            string username = userInfoElement.GetProperty("username").ToString();
-            string hasSubscription = userInfoElement.GetProperty("subscription_is_active").ToString();
+            var userId = userInfoElement.GetProperty("user_id").GetUInt64();
+            var username = userInfoElement.GetProperty("username").ToString();
+            var hasSubscription = userInfoElement.GetProperty("subscription_is_active").ToString();
 
             return new UserInformation(userId, username, (hasSubscription == "1" ? true : false));
         }
