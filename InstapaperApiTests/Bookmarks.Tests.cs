@@ -205,7 +205,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
         }
 
-        [Fact, Order(9)]
+        [Fact, Order(10)]
         public async Task CanUnlikeBookmarkThatIsNotLiked()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
@@ -223,6 +223,62 @@ namespace Codevoid.Test.Instapaper
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
 
             this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
+        }
+
+        [Fact, Order(11)]
+        public async Task CanListArchiveFolderAndItIsEmpty()
+        {
+            var result = await this.Client.List(WellKnownFolderIds.Archived);
+            Assert.Empty(result); // Didn't expect any bookmarks in this folder
+
+            this.SharedState.UpdateBookmarksForFolder(result, WellKnownFolderIds.Archived);
+        }
+
+        [Fact, Order(12)]
+        public async Task CanArchiveBookmark()
+        {
+            var bookmark = this.SharedState.RecentlyAddedBookmark!;
+            var result = await this.Client.Archive(bookmark.Id);
+
+            Assert.Equal(bookmark.Id, result.Id);
+            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Archived);
+
+            // Check that it is actually liked in the listing
+            var archivedBookmarks = await this.Client.List(WellKnownFolderIds.Archived);
+            Assert.Equal(1, archivedBookmarks.Count); // Only expected one bookmark
+
+            // Check the one we JUST added is actually present
+            Assert.Equal(result.Id, archivedBookmarks.First().Id);
+
+            this.SharedState.UpdateBookmarksForFolder(archivedBookmarks, WellKnownFolderIds.Archived);
+        }
+
+        [Fact, Order(13)]
+        public async Task CanArchiveBookmarkThatIsAlreadyArchived()
+        {
+            await this.CanArchiveBookmark();
+        }
+
+        [Fact, Order(14)]
+        public async Task CanUnarchiveArchivedBookmark()
+        {
+            var bookmark = this.SharedState.RecentlyAddedBookmark!;
+            var result = await this.Client.Unarchive(bookmark.Id);
+
+            Assert.Equal(bookmark.Id, result.Id);
+            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Unread);
+
+            // Check that it is actually liked in the listing
+            var archivedBookmarks = await this.Client.List(WellKnownFolderIds.Archived);
+            Assert.Empty(archivedBookmarks); // Only expected one bookmark
+
+            this.SharedState.UpdateBookmarksForFolder(archivedBookmarks, WellKnownFolderIds.Archived);
+        }
+
+        [Fact, Order(15)]
+        public async Task CanUnarchiveANonArchivedBookmark()
+        {
+            await this.CanUnarchiveArchivedBookmark();
         }
     }
 }

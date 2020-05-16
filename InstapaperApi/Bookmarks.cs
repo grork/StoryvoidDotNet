@@ -69,7 +69,23 @@ namespace Codevoid.Instapaper
         /// </summary>
         /// <param name="id">Bookmark to unlike</param>
         /// <returns>The updated bookmark</returns>
-        Task<IBookmark> Unlike(ulong id);
+        Task<IBookmark> Unlike(ulong bookmark_id);
+
+        /// <summary>
+        /// Archives a bookmark -- which moves it out of the unread folder and
+        /// into the well known 'Archive' folder
+        /// </summary>
+        /// <param name="id">Bookmark to archive</param>
+        /// <returns>The updated bookmark</returns>
+        Task<IBookmark> Archive(ulong bookmark_id);
+
+        /// <summary>
+        /// Unarchives a bookmark -- which moves it to the well known 'unread'
+        /// folder, and is no longer in the 'Archive' folder
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>The updated bookmark</returns>
+        Task<IBookmark> Unarchive(ulong bookmark_id);
     }
 
     internal class Bookmark : IBookmark
@@ -87,7 +103,6 @@ namespace Codevoid.Instapaper
             var progressTimestampRaw = bookmarkElement.GetProperty("progress_timestamp").GetInt64();
             var progressTimestampUnixEpoch = DateTimeOffset.FromUnixTimeMilliseconds(progressTimestampRaw);
             var progressTimestamp = progressTimestampUnixEpoch.LocalDateTime;
-
 
             return new Bookmark()
             {
@@ -375,6 +390,36 @@ namespace Codevoid.Instapaper
             }));
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark unliked, {result.Count} found");
+            return result.First();
+        }
+
+        public async Task<IBookmark> Archive(ulong bookmark_id)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
+            }
+
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Archive, new FormUrlEncodedContent(new Dictionary<string, string>() {
+                { "bookmark_id", bookmark_id.ToString() }
+            }));
+
+            Debug.Assert(result.Count == 1, $"Expected one bookmark archived, {result.Count} found");
+            return result.First();
+        }
+
+        public async Task<IBookmark> Unarchive(ulong bookmark_id)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
+            }
+
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Unarchive, new FormUrlEncodedContent(new Dictionary<string, string>() {
+                { "bookmark_id", bookmark_id.ToString() }
+            }));
+
+            Debug.Assert(result.Count == 1, $"Expected one bookmark unarchived, {result.Count} found");
             return result.First();
         }
     }
