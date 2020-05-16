@@ -150,6 +150,29 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmark.Id, result.Id);
             Assert.True(result.Liked); // Bookmark should be liked now
 
+            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Liked);
+
+            // Check that it is actually liked in the listing
+            var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
+            Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
+
+            // Check the one we JUST added is actually present
+            Assert.Equal(result.Id, likedBookmarks.First().Id);
+
+            this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
+        }
+
+        [Fact, Order(8)]
+        public async Task CanLikeBookmarkThatIsAlreadyLiked()
+        {
+            var bookmark = this.SharedState.RecentlyAddedBookmark!;
+            Assert.True(bookmark.Liked); // Need a non-liked bookmark
+
+            var result = await this.Client.Like(bookmark.Id);
+
+            Assert.Equal(bookmark.Id, result.Id);
+            Assert.True(result.Liked); // Bookmark should be liked now
+
             // Check that it is actually liked in the listing
             var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
