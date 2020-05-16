@@ -173,12 +173,54 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmark.Id, result.Id);
             Assert.True(result.Liked); // Bookmark should be liked now
 
+            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Liked);
+
             // Check that it is actually liked in the listing
             var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
 
             // Check the one we JUST added is actually present
             Assert.Equal(result.Id, likedBookmarks.First().Id);
+
+            this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
+        }
+
+        [Fact, Order(9)]
+        public async Task CanUnlikeLikedBookmark()
+        {
+            var bookmark = this.SharedState.RecentlyAddedBookmark!;
+            Assert.True(bookmark.Liked); // Need a non-liked bookmark
+
+            var result = await this.Client.Unlike(bookmark.Id);
+
+            Assert.Equal(bookmark.Id, result.Id);
+            Assert.False(result.Liked); // Bookmark should not be liked now
+
+            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Unread);
+
+            // Check that it is actually liked in the listing
+            var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
+            Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
+
+            this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
+        }
+
+        [Fact, Order(9)]
+        public async Task CanUnlikeBookmarkThatIsNotLiked()
+        {
+            var bookmark = this.SharedState.RecentlyAddedBookmark!;
+            Assert.False(bookmark.Liked); // Need a non-liked bookmark
+
+            var result = await this.Client.Unlike(bookmark.Id);
+
+            Assert.Equal(bookmark.Id, result.Id);
+            Assert.False(result.Liked); // Bookmark should not be liked now
+
+            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Liked);
+
+            // Check that it is actually liked in the listing
+            var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
+            Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
 
             this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
         }

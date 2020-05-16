@@ -62,6 +62,14 @@ namespace Codevoid.Instapaper
         /// <param name="bookmark_id">Bookmark to like</param>
         /// <returns>The updated bookmark</returns>
         Task<IBookmark> Like(ulong bookmark_id);
+
+        /// <summary>
+        /// Sets the state of a bookmark to be 'unliked', irrespective of it's
+        /// current like state
+        /// </summary>
+        /// <param name="id">Bookmark to unlike</param>
+        /// <returns>The updated bookmark</returns>
+        Task<IBookmark> Unlike(ulong id);
     }
 
     internal class Bookmark : IBookmark
@@ -336,7 +344,7 @@ namespace Codevoid.Instapaper
 
             var result = await this.PerformRequestAsync(EndPoints.Bookmarks.UpdateReadProgress, new FormUrlEncodedContent(parameters));
 
-            Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
+            Debug.Assert(result.Count == 1, $"Expected one bookmark progress updated, {result.Count} found");
             return result.First();
         }
 
@@ -351,7 +359,22 @@ namespace Codevoid.Instapaper
                 { "bookmark_id", bookmark_id.ToString() }
             }));
 
-            Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
+            Debug.Assert(result.Count == 1, $"Expected one bookmark liked, {result.Count} found");
+            return result.First();
+        }
+
+        public async Task<IBookmark> Unlike(ulong bookmark_id)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
+            }
+
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Unstar, new FormUrlEncodedContent(new Dictionary<string, string>() {
+                { "bookmark_id", bookmark_id.ToString() }
+            }));
+
+            Debug.Assert(result.Count == 1, $"Expected one bookmark unliked, {result.Count} found");
             return result.First();
         }
     }
