@@ -20,6 +20,7 @@ namespace Codevoid.Instapaper
         ulong Id { get; }
         double Progress { get; }
         DateTime ProgressTimestamp { get; }
+        bool Liked { get; }
     }
 
     /// <summary>
@@ -53,6 +54,14 @@ namespace Codevoid.Instapaper
         /// <param name="progress_timestamp">Time when progress was changed</param>
         /// <returns>The bookmark as returned by the service after the update</returns>
         Task<IBookmark> UpdateReadProgress(ulong bookmark_id, double progress, DateTime progress_timestamp);
+
+        /// <summary>
+        /// Sets the state of a bookmark to be 'Liked', irrespective of it's
+        /// current like state
+        /// </summary>
+        /// <param name="bookmark_id">Bookmark to like</param>
+        /// <returns>The updated bookmark</returns>
+        Task<IBookmark> Like(ulong bookmark_id);
     }
 
     internal class Bookmark : IBookmark
@@ -62,6 +71,10 @@ namespace Codevoid.Instapaper
             var urlString = bookmarkElement.GetProperty("url").GetString();
             var url = new Uri(urlString);
             var id = bookmarkElement.GetProperty("bookmark_id").GetUInt64();
+            var likedRaw = bookmarkElement.GetProperty("starred").GetString();
+            var liked = (likedRaw == "1");
+
+            // Progress
             var progress = bookmarkElement.GetProperty("progress").GetDouble();
             var progressTimestampRaw = bookmarkElement.GetProperty("progress_timestamp").GetInt64();
             var progressTimestampUnixEpoch = DateTimeOffset.FromUnixTimeMilliseconds(progressTimestampRaw);
@@ -73,7 +86,8 @@ namespace Codevoid.Instapaper
                 Url = url,
                 Id = id,
                 Progress = progress,
-                ProgressTimestamp = progressTimestamp
+                ProgressTimestamp = progressTimestamp,
+                Liked = liked
             };
         }
 
@@ -81,6 +95,7 @@ namespace Codevoid.Instapaper
         public ulong Id { get; private set; } = 0L;
         public double Progress { get; private set; } = 0.0;
         public DateTime ProgressTimestamp { get; private set; } = DateTime.MinValue;
+        public bool Liked { get; private set; } = false;
     }
 
     /// <summary>
@@ -262,7 +277,18 @@ namespace Codevoid.Instapaper
 
         public async Task<IList<IBookmark>> List(string wellKnownFolderId)
         {
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.List, new StringContent(String.Empty));
+            HttpContent payload = new StringContent(String.Empty);
+            if (!String.IsNullOrWhiteSpace(wellKnownFolderId))
+            {
+                // Pass the folder ID to list for if it's provided
+                payload = new FormUrlEncodedContent(new Dictionary<string, string>()
+                {
+                    { "folder_id", wellKnownFolderId }
+                });
+
+            }
+
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.List, payload);
             return result;
         }
 
@@ -309,6 +335,21 @@ namespace Codevoid.Instapaper
             };
 
             var result = await this.PerformRequestAsync(EndPoints.Bookmarks.UpdateReadProgress, new FormUrlEncodedContent(parameters));
+
+            Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
+            return result.First();
+        }
+
+        public async Task<IBookmark> Like(ulong bookmark_id)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
+            }
+
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Star, new FormUrlEncodedContent(new Dictionary<string, string>() {
+                { "bookmark_id", bookmark_id.ToString() }
+            }));
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
             return result.First();

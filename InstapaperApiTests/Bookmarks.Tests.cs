@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Xunit;
@@ -127,6 +128,36 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(updateTime, result.ProgressTimestamp, TimeSpan.FromMilliseconds(300));
 
             this.SharedState.AddOrUpdateBookmark(result);
+        }
+
+        [Fact, Order(6)]
+        public async Task CanListLikedFolderAndItIsEmpty()
+        {
+            var result = await this.Client.List(WellKnownFolderIds.Liked);
+            Assert.Empty(result); // Didn't expect any bookmarks in this folder
+
+            this.SharedState.UpdateBookmarksForFolder(result, WellKnownFolderIds.Liked);
+        }
+
+        [Fact, Order(7)]
+        public async Task CanLikeBookmark()
+        {
+            var bookmark = this.SharedState.RecentlyAddedBookmark!;
+            Assert.False(bookmark.Liked); // Need a non-liked bookmark
+
+            var result = await this.Client.Like(bookmark.Id);
+
+            Assert.Equal(bookmark.Id, result.Id);
+            Assert.True(result.Liked); // Bookmark should be liked now
+
+            // Check that it is actually liked in the listing
+            var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
+            Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
+
+            // Check the one we JUST added is actually present
+            Assert.Equal(result.Id, likedBookmarks.First().Id);
+
+            this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
         }
     }
 }
