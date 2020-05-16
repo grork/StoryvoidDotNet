@@ -352,6 +352,8 @@ namespace Codevoid.Test.Instapaper
         #endregion
 
         #region Bookmarks API & State
+        public Uri NonExistantUrl => TestUrls.NonExistantPage;
+
         private IList<Uri> availbleUris = new List<Uri>();
         private IBookmarksClient? _bookmarksClient;
         public IBookmarksClient BookmarksClient
@@ -398,12 +400,6 @@ namespace Codevoid.Test.Instapaper
                                  where !allBookmarkUrls.Contains(uri)
                                  select uri).ToList();
 
-            if (availableUris.Count < 1)
-            {
-                Debug.Fail("You ran out of URLs to add");
-                LogMessage("Out of URLs to add");
-            }
-
             this.availbleUris = availableUris;
         }
 
@@ -424,7 +420,7 @@ namespace Codevoid.Test.Instapaper
             {
                 var existingBookmark = (from b in folderBookmarks
                                         where b.Id == bookmark.Id
-                                        select b).First();
+                                        select b).FirstOrDefault();
 
                 if (existingBookmark != null)
                 {

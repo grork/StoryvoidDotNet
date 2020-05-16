@@ -49,6 +49,30 @@ namespace Codevoid.Test.Instapaper
             Assert.Contains(remoteBookmarks, (b) => b.Id == this.SharedState.RecentlyAddedBookmark!.Id);
         }
 
+        [Fact, Order(3)]
+        public async Task CanSuccessfullyAddDuplicateBookmark()
+        {
+            // Use a bookmark we just added
+            var existingBookmark = this.SharedState.RecentlyAddedBookmark!;
+            Assert.NotNull(existingBookmark); // Need existing bookmark
+
+            var result = await this.Client.Add(existingBookmark.Url);
+            Assert.Equal(existingBookmark.Id, result.Id);
+            Assert.Equal(existingBookmark.Url, result.Url);
+        }
+
+        [Fact, Order(4)]
+        public async Task CanSuccessfullyAddA404Bookmark()
+        {
+            // Adding URLs that don't exist is allowed by the API. However,
+            // when trying to get the content (separate API), then it will fail
+            var result = await this.Client.Add(this.SharedState.NonExistantUrl);
+            Assert.Equal(this.SharedState.NonExistantUrl, result.Url);
+            Assert.NotEqual(0UL, result.Id);
+
+            this.SharedState.AddBookmark(result);
+        }
+
         [Fact]
         public async Task ExceptionThrownWithUnsupportedUriScheme()
         {
