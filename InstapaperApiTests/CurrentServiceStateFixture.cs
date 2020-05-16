@@ -413,7 +413,7 @@ namespace Codevoid.Test.Instapaper
             return uri;
         }
 
-        public void AddBookmark(IBookmark bookmark, string inFolder = WellKnownFolderIds.Unread)
+        public void AddOrUpdateBookmark(IBookmark bookmark, string inFolder = WellKnownFolderIds.Unread)
         {
             var folderBookmarks = this.BookmarksForFolder(inFolder);
             if (folderBookmarks != null)

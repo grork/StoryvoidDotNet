@@ -18,6 +18,8 @@ namespace Codevoid.Instapaper
     {
         Uri Url { get; }
         ulong Id { get; }
+        double Progress { get; }
+        DateTime ProgressTimestamp { get; }
     }
 
     /// <summary>
@@ -42,6 +44,15 @@ namespace Codevoid.Instapaper
         /// <param name="bookmarkUrl">URL to add</param>
         /// <returns>The bookmark if successf</returns>
         Task<IBookmark> Add(Uri bookmarkUrl);
+
+        /// <summary>
+        /// Updates the progress of a specific bookmark, explicitly.
+        /// </summary>
+        /// <param name="bookmark_id">Bookmark to update</param>
+        /// <param name="progress">The progress, between 0.0 and 1.0</param>
+        /// <param name="progress_timestamp">Time when progress was changed</param>
+        /// <returns>The bookmark as returned by the service after the update</returns>
+        Task<IBookmark> UpdateReadProgress(ulong bookmark_id, double progress, DateTime progress_timestamp);
     }
 
     internal class Bookmark : IBookmark
@@ -51,15 +62,25 @@ namespace Codevoid.Instapaper
             var urlString = bookmarkElement.GetProperty("url").GetString();
             var url = new Uri(urlString);
             var id = bookmarkElement.GetProperty("bookmark_id").GetUInt64();
+            var progress = bookmarkElement.GetProperty("progress").GetDouble();
+            var progressTimestampRaw = bookmarkElement.GetProperty("progress_timestamp").GetInt64();
+            var progressTimestampUnixEpoch = DateTimeOffset.FromUnixTimeMilliseconds(progressTimestampRaw);
+            var progressTimestamp = progressTimestampUnixEpoch.LocalDateTime;
+
+
             return new Bookmark()
             {
                 Url = url,
-                Id = id
+                Id = id,
+                Progress = progress,
+                ProgressTimestamp = progressTimestamp
             };
         }
 
         public Uri Url { get; private set; } = new Uri("unset://unset");
         public ulong Id { get; private set; } = 0L;
+        public double Progress { get; private set; } = 0.0;
+        public DateTime ProgressTimestamp { get; private set; } = DateTime.MinValue;
     }
 
     /// <summary>
@@ -257,6 +278,37 @@ namespace Codevoid.Instapaper
             {
                 { "url", bookmarkUrl.ToString() }
             }));
+
+            Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
+            return result.First();
+        }
+
+        public async Task<IBookmark> UpdateReadProgress(ulong bookmark_id, double progress, DateTime progress_timestamp)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
+            }
+
+            if (progress < 0.0 || progress > 1.0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(progress), "Progress for a bookmark must be between 0.0 and 1.0");
+            }
+
+            var progressInUnixEpoch = new DateTimeOffset(progress_timestamp).ToUnixTimeMilliseconds();
+            if (progressInUnixEpoch < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(progress_timestamp), "Progress was before Unix epoch");
+            }
+
+            var parameters = new Dictionary<string, string>()
+            {
+                { "bookmark_id", bookmark_id.ToString() },
+                { "progress", progress.ToString() },
+                { "progress_timestamp", progressInUnixEpoch.ToString() }
+            };
+
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.UpdateReadProgress, new FormUrlEncodedContent(parameters));
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
             return result.First();
