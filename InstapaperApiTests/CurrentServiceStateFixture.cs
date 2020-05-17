@@ -315,7 +315,6 @@ namespace Codevoid.Test.Instapaper
         public CurrentServiceStateFixture(IMessageSink loggerInstance)
         {
             this.logger = loggerInstance;
-            this.Folders = new List<IFolder>();
         }
 
         #region Folder API & State
@@ -332,22 +331,11 @@ namespace Codevoid.Test.Instapaper
                 return this._foldersClient;
             }
         }
-        /// <summary>
-        /// Current set of folders that we know about.
-        /// </summary>
-        public IList<IFolder> Folders { get; }
 
-        /// <summary>
-        /// Replace the folder list we have with a new one wholesale.
-        /// </summary>
-        /// <param name="folders">Folders that should replace existing set</param>
-        internal void ReplaceFolderList(IEnumerable<IFolder> folders)
+        public IFolder? RecentlyAddedFolder { get; private set; }
+        public void UpdateOrSetRecentFolder(IFolder folder)
         {
-            this.Folders.Clear();
-            foreach (var folder in folders)
-            {
-                this.Folders.Add(folder);
-            }
+            this.RecentlyAddedFolder = folder;
         }
         #endregion
 
@@ -368,39 +356,12 @@ namespace Codevoid.Test.Instapaper
                 return this._bookmarksClient;
             }
         }
+
         public IBookmark? RecentlyAddedBookmark { get; private set; }
 
-        private IDictionary<string, IList<IBookmark>> bookmarksByFolder = new Dictionary<string, IList<IBookmark>>();
-        public IList<IBookmark>? BookmarksForFolder(string forWellKnownFolder)
+        public void UpdateOrSetRecentBookmark(IBookmark bookmark)
         {
-            this.bookmarksByFolder.TryGetValue(forWellKnownFolder, out var bookmarks);
-            return bookmarks;
-        }
-
-        public void UpdateBookmarksForFolder(IList<IBookmark> bookmarks, string forWellKnownFolder)
-        {
-            this.bookmarksByFolder[forWellKnownFolder] = bookmarks;
-            this.RefreshAvailableBookmarksFromKnownBookmarks();
-        }
-
-        private void RefreshAvailableBookmarksFromKnownBookmarks()
-        {
-            var allBookmarkUrls = new HashSet<Uri>();
-            // Map all remote URLs into URIs
-            foreach (var kvp in this.bookmarksByFolder)
-            {
-                foreach (var b in kvp.Value)
-                {
-                    allBookmarkUrls.Add(b.Url);
-                }
-            }
-
-            // Filter Test URIs by remote URIs
-            var availableUris = (from uri in TestUrls.BasicRemoteTestUris
-                                 where !allBookmarkUrls.Contains(uri)
-                                 select uri).ToList();
-
-            this.availbleUris = availableUris;
+            this.RecentlyAddedBookmark = bookmark;
         }
 
         public Uri GetNextAddableUrl()
@@ -411,29 +372,6 @@ namespace Codevoid.Test.Instapaper
             this.availbleUris.Remove(uri);
 
             return uri;
-        }
-
-        public void AddOrUpdateBookmark(IBookmark bookmark, string inFolder = WellKnownFolderIds.Unread)
-        {
-            var folderBookmarks = this.BookmarksForFolder(inFolder);
-            if (folderBookmarks != null)
-            {
-                var existingBookmark = (from b in folderBookmarks
-                                        where b.Id == bookmark.Id
-                                        select b).FirstOrDefault();
-
-                if (existingBookmark != null)
-                {
-                    // Need to remove it if it's there, so we can add it with updated
-                    // information
-                    folderBookmarks.Remove(existingBookmark);
-                }
-
-                folderBookmarks.Add(bookmark);
-                this.RefreshAvailableBookmarksFromKnownBookmarks();
-            }
-
-            this.RecentlyAddedBookmark = bookmark;
         }
         #endregion
     }

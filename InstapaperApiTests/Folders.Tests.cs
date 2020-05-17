@@ -29,22 +29,16 @@ namespace Codevoid.Test.Instapaper
             Assert.InRange(createdFolder.Position, 1UL, ulong.MaxValue);
             Assert.InRange(createdFolder.FolderId, 1UL, ulong.MaxValue);
 
-            this.SharedState.Folders.Add(createdFolder);
+            this.SharedState.UpdateOrSetRecentFolder(createdFolder);
         }
 
         [Fact, Order(2)]
         public async Task AddingExistingFolderThrowsError()
         {
-            var folderName = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
             var client = this.SharedState.FoldersClient;
 
-            // Create the folder, but we don't need the result since we're
-            // just going to add another one.
-            var createdFolder = await client.Add(folderName);
-            this.SharedState.Folders.Add(createdFolder);
-
             // Try adding the folder again, and expect a DuplicateFolderException
-            await Assert.ThrowsAsync<DuplicateFolderException>(() => client.Add(folderName));
+            await Assert.ThrowsAsync<DuplicateFolderException>(() => client.Add(this.SharedState.RecentlyAddedFolder!.Title));
         }
 
         [Fact, Order(3)]
@@ -63,19 +57,8 @@ namespace Codevoid.Test.Instapaper
                 Assert.InRange(folder.FolderId, 1UL, ulong.MaxValue);
             });
 
-            // Check that the folders we thought we'd created earlier are
-            // present.
-            //
-            // Yes, this is a bit weird to assess the creation at this point
-            // rather than in the actual creation test, but given listing
-            // requires user folders to be present which requires add to also
-            // be functional, this seems like a sensible trade off.
-            foreach (var f in this.SharedState.Folders)
-            {
-                Assert.Contains(folders, (folder) => folder.FolderId == f.FolderId);
-            }
-
-            this.SharedState.ReplaceFolderList(folders);
+            // Check that the folder we'd added recently is in the list
+            Assert.Contains(folders, (IFolder f) => this.SharedState.RecentlyAddedFolder!.FolderId == f.FolderId);
         }
 
         [Fact, Order(4)]
@@ -91,14 +74,11 @@ namespace Codevoid.Test.Instapaper
             var client = this.SharedState.FoldersClient;
 
             // Get the first folder from the shared state, and try to delete it
-            var folderToDelete = this.SharedState.Folders.First();
-
+            var folderToDelete = this.SharedState.RecentlyAddedFolder!;
             await client.Delete(folderToDelete.FolderId);
 
             // List the remote folders and check it was actually deleted
             var folders = await client.List();
-            this.SharedState.ReplaceFolderList(folders);
-
             Assert.DoesNotContain(folders, (folder) => (folderToDelete.Title == folder.Title));
         }
 

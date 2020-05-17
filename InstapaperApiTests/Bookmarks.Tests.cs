@@ -44,14 +44,13 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmarkUrl, result.Url);
             Assert.NotEqual(0UL, result.Id);
 
-            this.SharedState.AddOrUpdateBookmark(result);
+            this.SharedState.UpdateOrSetRecentBookmark(result);
         }
 
         [Fact, Order(2)]
         public async Task CanSuccessfullyListUnreadFolder()
         {
             var remoteBookmarks = await this.Client.List(WellKnownFolderIds.Unread);
-            this.SharedState.UpdateBookmarksForFolder(remoteBookmarks, WellKnownFolderIds.Unread);
 
             // Check the bookmark you had added most recently was found
             Assert.Contains(remoteBookmarks, (b) => b.Id == this.SharedState.RecentlyAddedBookmark!.Id);
@@ -77,8 +76,6 @@ namespace Codevoid.Test.Instapaper
             var result = await this.Client.Add(this.SharedState.NonExistantUrl);
             Assert.Equal(this.SharedState.NonExistantUrl, result.Url);
             Assert.NotEqual(0UL, result.Id);
-
-            this.SharedState.AddOrUpdateBookmark(result);
         }
 
         [Fact]
@@ -127,7 +124,7 @@ namespace Codevoid.Test.Instapaper
             // wiggle room (300ms) on the equality check
             Assert.Equal(updateTime, result.ProgressTimestamp, TimeSpan.FromMilliseconds(300));
 
-            this.SharedState.AddOrUpdateBookmark(result);
+            this.SharedState.UpdateOrSetRecentBookmark(result);
         }
 
         [Fact, Order(6)]
@@ -135,8 +132,6 @@ namespace Codevoid.Test.Instapaper
         {
             var result = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Empty(result); // Didn't expect any bookmarks in this folder
-
-            this.SharedState.UpdateBookmarksForFolder(result, WellKnownFolderIds.Liked);
         }
 
         [Fact, Order(7)]
@@ -150,7 +145,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmark.Id, result.Id);
             Assert.True(result.Liked); // Bookmark should be liked now
 
-            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Liked);
+            this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
             var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
@@ -158,8 +153,6 @@ namespace Codevoid.Test.Instapaper
 
             // Check the one we JUST added is actually present
             Assert.Equal(result.Id, likedBookmarks.First().Id);
-
-            this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
         }
 
         [Fact, Order(8)]
@@ -173,7 +166,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmark.Id, result.Id);
             Assert.True(result.Liked); // Bookmark should be liked now
 
-            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Liked);
+            this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
             var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
@@ -181,8 +174,6 @@ namespace Codevoid.Test.Instapaper
 
             // Check the one we JUST added is actually present
             Assert.Equal(result.Id, likedBookmarks.First().Id);
-
-            this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
         }
 
         [Fact, Order(9)]
@@ -196,13 +187,11 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmark.Id, result.Id);
             Assert.False(result.Liked); // Bookmark should not be liked now
 
-            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Unread);
+            this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
             var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
-
-            this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
         }
 
         [Fact, Order(10)]
@@ -216,13 +205,11 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmark.Id, result.Id);
             Assert.False(result.Liked); // Bookmark should not be liked now
 
-            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Liked);
+            this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
             var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
-
-            this.SharedState.UpdateBookmarksForFolder(likedBookmarks, WellKnownFolderIds.Liked);
         }
 
         [Fact, Order(11)]
@@ -230,8 +217,6 @@ namespace Codevoid.Test.Instapaper
         {
             var result = await this.Client.List(WellKnownFolderIds.Archived);
             Assert.Empty(result); // Didn't expect any bookmarks in this folder
-
-            this.SharedState.UpdateBookmarksForFolder(result, WellKnownFolderIds.Archived);
         }
 
         [Fact, Order(12)]
@@ -241,7 +226,7 @@ namespace Codevoid.Test.Instapaper
             var result = await this.Client.Archive(bookmark.Id);
 
             Assert.Equal(bookmark.Id, result.Id);
-            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Archived);
+            this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
             var archivedBookmarks = await this.Client.List(WellKnownFolderIds.Archived);
@@ -249,8 +234,6 @@ namespace Codevoid.Test.Instapaper
 
             // Check the one we JUST added is actually present
             Assert.Equal(result.Id, archivedBookmarks.First().Id);
-
-            this.SharedState.UpdateBookmarksForFolder(archivedBookmarks, WellKnownFolderIds.Archived);
         }
 
         [Fact, Order(13)]
@@ -266,13 +249,11 @@ namespace Codevoid.Test.Instapaper
             var result = await this.Client.Unarchive(bookmark.Id);
 
             Assert.Equal(bookmark.Id, result.Id);
-            this.SharedState.AddOrUpdateBookmark(result, WellKnownFolderIds.Unread);
+            this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
             var archivedBookmarks = await this.Client.List(WellKnownFolderIds.Archived);
             Assert.Empty(archivedBookmarks); // Only expected one bookmark
-
-            this.SharedState.UpdateBookmarksForFolder(archivedBookmarks, WellKnownFolderIds.Archived);
         }
 
         [Fact, Order(15)]
