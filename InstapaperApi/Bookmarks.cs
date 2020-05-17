@@ -255,6 +255,18 @@ namespace Codevoid.Instapaper
             }
         }
 
+        private Task<IList<IBookmark>> PerformRequestAsync(Uri endpoint, string parameterName, string parameterValue)
+        {
+            var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>(parameterName, parameterValue) });
+            return this.PerformRequestAsync(endpoint, content);
+        }
+
+        private Task<IList<IBookmark>> PerformRequestAsync(Uri endpoint, IEnumerable<KeyValuePair<string, string>> parameters)
+        {
+            var content = new FormUrlEncodedContent(parameters);
+            return this.PerformRequestAsync(endpoint, content);
+        }
+
         private async Task<IList<IBookmark>> PerformRequestAsync(Uri endpoint, HttpContent content)
         {
             // Request data convert to JSON
@@ -298,7 +310,27 @@ namespace Codevoid.Instapaper
             return bookmarks;
         }
 
-        public async Task<IList<IBookmark>> List(string wellKnownFolderId)
+        /// <summary>
+        /// Makes request, based only on the bookmark ID, and expects to only to
+        /// return a single bookmark as the result.
+        /// </summary>
+        /// <param name="endpoint">URI to post the data to</param>
+        /// <param name="bookmark_id">The bookmark to operate on</param>
+        /// <returns>Single bookmark on success</returns>
+        private async Task<IBookmark> SingleBookmarkOperation(Uri endpoint, ulong bookmark_id)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
+            }
+
+            var result = await this.PerformRequestAsync(endpoint, "bookmark_id", bookmark_id.ToString());
+
+            Debug.Assert(result.Count == 1, $"Expected one bookmark in result, {result.Count} found");
+            return result.First();
+        }
+
+        public Task<IList<IBookmark>> List(string wellKnownFolderId)
         {
             HttpContent payload = new StringContent(String.Empty);
             if (!String.IsNullOrWhiteSpace(wellKnownFolderId))
@@ -308,11 +340,9 @@ namespace Codevoid.Instapaper
                 {
                     { "folder_id", wellKnownFolderId }
                 });
-
             }
 
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.List, payload);
-            return result;
+            return this.PerformRequestAsync(EndPoints.Bookmarks.List, payload);
         }
 
         public async Task<IBookmark> Add(Uri bookmarkUrl)
@@ -323,10 +353,7 @@ namespace Codevoid.Instapaper
                 throw new ArgumentException("Only HTTP or HTTPS Urls are supported");
             }
 
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Add, new FormUrlEncodedContent(new Dictionary<string, string>()
-            {
-                { "url", bookmarkUrl.ToString() }
-            }));
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Add, "url", bookmarkUrl.ToString());
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
             return result.First();
@@ -357,70 +384,15 @@ namespace Codevoid.Instapaper
                 { "progress_timestamp", progressInUnixEpoch.ToString() }
             };
 
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.UpdateReadProgress, new FormUrlEncodedContent(parameters));
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.UpdateReadProgress, parameters);
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark progress updated, {result.Count} found");
             return result.First();
         }
 
-        public async Task<IBookmark> Like(ulong bookmark_id)
-        {
-            if (bookmark_id == 0UL)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
-            }
-
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Star, new FormUrlEncodedContent(new Dictionary<string, string>() {
-                { "bookmark_id", bookmark_id.ToString() }
-            }));
-
-            Debug.Assert(result.Count == 1, $"Expected one bookmark liked, {result.Count} found");
-            return result.First();
-        }
-
-        public async Task<IBookmark> Unlike(ulong bookmark_id)
-        {
-            if (bookmark_id == 0UL)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
-            }
-
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Unstar, new FormUrlEncodedContent(new Dictionary<string, string>() {
-                { "bookmark_id", bookmark_id.ToString() }
-            }));
-
-            Debug.Assert(result.Count == 1, $"Expected one bookmark unliked, {result.Count} found");
-            return result.First();
-        }
-
-        public async Task<IBookmark> Archive(ulong bookmark_id)
-        {
-            if (bookmark_id == 0UL)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
-            }
-
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Archive, new FormUrlEncodedContent(new Dictionary<string, string>() {
-                { "bookmark_id", bookmark_id.ToString() }
-            }));
-
-            Debug.Assert(result.Count == 1, $"Expected one bookmark archived, {result.Count} found");
-            return result.First();
-        }
-
-        public async Task<IBookmark> Unarchive(ulong bookmark_id)
-        {
-            if (bookmark_id == 0UL)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
-            }
-
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Unarchive, new FormUrlEncodedContent(new Dictionary<string, string>() {
-                { "bookmark_id", bookmark_id.ToString() }
-            }));
-
-            Debug.Assert(result.Count == 1, $"Expected one bookmark unarchived, {result.Count} found");
-            return result.First();
-        }
+        public Task<IBookmark> Like(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Star, bookmark_id);
+        public Task<IBookmark> Unlike(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unstar, bookmark_id);
+        public Task<IBookmark> Archive(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Archive, bookmark_id);
+        public Task<IBookmark> Unarchive(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unarchive, bookmark_id);
     }
 }
