@@ -80,6 +80,9 @@ namespace Codevoid.Test.Instapaper
             // List the remote folders and check it was actually deleted
             var folders = await client.List();
             Assert.DoesNotContain(folders, (folder) => (folderToDelete.Title == folder.Title));
+
+            // We removed a folder, so clear it from our recent ones
+            this.SharedState.UpdateOrSetRecentFolder(null);
         }
 
         [Fact, Order(6)]

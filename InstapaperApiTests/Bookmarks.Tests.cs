@@ -261,5 +261,24 @@ namespace Codevoid.Test.Instapaper
         {
             await this.CanUnarchiveArchivedBookmark();
         }
+
+        [Fact, Order(16)]
+        public async Task CanMoveBookmarkToFolderById()
+        {
+            var folderName = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
+            var folder = await this.SharedState.FoldersClient.Add(folderName);
+            this.SharedState.UpdateOrSetRecentFolder(folder);
+
+            var client = this.SharedState.BookmarksClient;
+            var bookmarkToMove = this.SharedState.RecentlyAddedBookmark!;
+            var movedBookmark = await client.Move(bookmarkToMove.Id, folder.FolderId);
+            Assert.Equal(bookmarkToMove.Id, movedBookmark.Id);
+
+            // Check that the bookmark is in the remote folder
+            var folderContents = await client.List(folder.FolderId);
+            Assert.Contains(folderContents, (b) => b.Id == movedBookmark.Id);
+
+            this.SharedState.UpdateOrSetRecentBookmark(movedBookmark);
+        }
     }
 }

@@ -33,11 +33,22 @@ namespace Codevoid.Instapaper
         /// <see cref="WellKnownFolderIds"/>. Other folders can be listed using
         /// the folder ID from the <see cref="FoldersClient"/> API
         /// </summary>
-        /// <param name="folderId">Folder ID to list bookmarks for</param>
+        /// <param name="folderId">Wellknown Folder to list bookmarks for</param>
         /// <returns>
         /// List of bookmarks
         /// </returns>
         Task<IList<IBookmark>> List(string folderId);
+
+        /// <summary>
+        /// List the bookmarks for a specific folder. For wellknown folders
+        /// <see cref="WellKnownFolderIds"/>. Other folders can be listed using
+        /// the folder ID from the <see cref="FoldersClient"/> API
+        /// </summary>
+        /// <param name="folderId">Folder Id to list bookmarks for</param>
+        /// <returns>
+        /// List of bookmarks
+        /// </returns>
+        Task<IList<IBookmark>> List(ulong folderId);
 
         /// <summary>
         /// Add a bookmark for the supplied URL.
@@ -86,6 +97,14 @@ namespace Codevoid.Instapaper
         /// <param name="id"></param>
         /// <returns>The updated bookmark</returns>
         Task<IBookmark> Unarchive(ulong bookmark_id);
+
+        /// <summary>
+        /// Moves the supplied bookmark to the supplied folder.
+        /// </summary>
+        /// <param name="bookmark_id">Bookmark to move</param>
+        /// <param name="folder_id">Folder to move the bookmark to</param>
+        /// <returns>Bookmark after completing the move</returns>
+        Task<IBookmark> Move(ulong bookmark_id, ulong folder_id);
     }
 
     internal class Bookmark : IBookmark
@@ -345,6 +364,16 @@ namespace Codevoid.Instapaper
             return this.PerformRequestAsync(EndPoints.Bookmarks.List, payload);
         }
 
+        public Task<IList<IBookmark>> List(ulong folder_id)
+        {
+            if (folder_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(folder_id), "Invalid Folder ID");
+            }
+
+            return this.List(folder_id.ToString());
+        }
+
         public async Task<IBookmark> Add(Uri bookmarkUrl)
         {
             if ((bookmarkUrl.Scheme != Uri.UriSchemeHttp)
@@ -394,5 +423,29 @@ namespace Codevoid.Instapaper
         public Task<IBookmark> Unlike(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unstar, bookmark_id);
         public Task<IBookmark> Archive(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Archive, bookmark_id);
         public Task<IBookmark> Unarchive(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unarchive, bookmark_id);
+
+        public async Task<IBookmark> Move(ulong bookmark_id, ulong folder_id)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid Bookmark ID");
+            }
+
+            if (folder_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(folder_id), "Invalid Folder ID");
+            }
+
+            var parameters = new Dictionary<string, string>()
+            {
+                { "bookmark_id", bookmark_id.ToString() },
+                { "folder_id", folder_id.ToString() }
+            };
+
+            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Move, parameters);
+
+            Debug.Assert(result.Count == 1, $"Expected one bookmark to be moved, {result.Count} found");
+            return result.First();
+        }
     }
 }

@@ -333,7 +333,7 @@ namespace Codevoid.Test.Instapaper
         }
 
         public IFolder? RecentlyAddedFolder { get; private set; }
-        public void UpdateOrSetRecentFolder(IFolder folder)
+        public void UpdateOrSetRecentFolder(IFolder? folder)
         {
             this.RecentlyAddedFolder = folder;
         }
