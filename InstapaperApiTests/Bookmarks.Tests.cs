@@ -280,5 +280,63 @@ namespace Codevoid.Test.Instapaper
 
             this.SharedState.UpdateOrSetRecentBookmark(movedBookmark);
         }
+
+        [Fact, Order(17)]
+        public async Task CanUpdateProgressViaListWithHave()
+        {
+            var client = this.SharedState.BookmarksClient;
+            var folder = this.SharedState.RecentlyAddedFolder!;
+
+            // Move a second bookmark into the added folder
+            var candidate = this.SharedState.RemoteBookmarksAtStart.FirstOrDefault();
+            _ = await client.Move(candidate.id, folder.FolderId);
+
+            // Get the current state of bookmarks in that folder
+            var folderContent = await client.List(folder.FolderId);
+            Assert.Equal(2, folderContent.Count);
+
+            var bookmark1 = folderContent[0];
+            var bookmark2 = folderContent[1];
+
+            // Calculate new progress for bookmark 1
+            var bookmark1ProgressTimestamp = DateTime.Now;
+            var bookmark1Progress = bookmark1.Progress + 0.1;
+            if (bookmark1Progress > 1.0)
+            {
+                bookmark1Progress = 0.1;
+            }
+
+            // Calculate new progress for bookmark 2
+            var bookmark2ProgressTimestamp = DateTime.Now;
+            var bookmark2Progress = bookmark2.Progress + 0.1;
+            if (bookmark2Progress > 1.0)
+            {
+                bookmark2Progress = 0.1;
+            }
+
+            // Create Have Items
+            var bookmark1Have = new HaveStatus(bookmark1.Id, "X", bookmark1Progress, bookmark1ProgressTimestamp);
+            var bookmark2Have = new HaveStatus(bookmark2.Id, "X", bookmark2Progress, bookmark2ProgressTimestamp);
+
+            // Perform the list with the have information
+            var updatedBookmarks = await client.List(folder.FolderId, new[] { bookmark1Have, bookmark2Have });
+            Assert.Equal(2, updatedBookmarks.Count); // Expected two bookmarks
+
+            var updatedBookmark1 = (from b in updatedBookmarks
+                                    where b.Id == bookmark1.Id
+                                    select b).First();
+
+            var updatedBookmark2 = (from b in updatedBookmarks
+                                    where b.Id == bookmark2.Id
+                                    select b).First();
+
+            // Check progress has been updated
+            Assert.Equal(bookmark1Progress, updatedBookmark1.Progress);
+            Assert.Equal(bookmark2Progress, updatedBookmark2.Progress);
+
+            // Check that the timestamps match
+            Assert.Equal(bookmark1ProgressTimestamp, updatedBookmark1.ProgressTimestamp, TimeSpan.FromMilliseconds(300));
+            Assert.Equal(bookmark2ProgressTimestamp, updatedBookmark2.ProgressTimestamp, TimeSpan.FromMilliseconds(300));
+        }
     }
 }

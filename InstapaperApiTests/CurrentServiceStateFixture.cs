@@ -304,10 +304,12 @@ namespace Codevoid.Test.Instapaper
                                         select bookmark).First();
 
                 await apiHelper.DeleteBookmark(bookmarkToDelete.id);
+                remoteBookmarks.Remove(bookmarkToDelete);
                 availableToAddUris.Add(bookmarkToDelete.uri);
             }
 
             this.availbleUris = availableToAddUris;
+            this.RemoteBookmarksAtStart = remoteBookmarks;
             LogMessage("Completing Init");
         }
         #endregion
@@ -373,6 +375,8 @@ namespace Codevoid.Test.Instapaper
 
             return uri;
         }
+
+        public IList<(ulong id, Uri uri)> RemoteBookmarksAtStart { get; private set; } = new List<(ulong, Uri)>();
         #endregion
     }
 }

@@ -10,40 +10,37 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public void HaveWithOnlyIdReturnsJustTheId()
         {
-            HaveStatus status = new HaveStatus("1234");
+            HaveStatus status = new HaveStatus(1234UL);
             Assert.Equal("1234", status.ToString());
         }
 
-        [Theory]
-        [InlineData("")] // Empty String
-        [InlineData("\t   ")] // Whitespace
-        public void EmptyIdThrows(string idData)
+        [Fact]
+        public void EmptyIdThrows()
         {
-            Assert.Throws<ArgumentNullException>(() => _ = new HaveStatus(idData));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new HaveStatus(0UL));
         }
 
         [Fact]
         public void HaveWithIdAndHashReturnsCorrectString()
         {
-            HaveStatus status = new HaveStatus("12345", "OjMuzFp6");
+            HaveStatus status = new HaveStatus(12345UL, "OjMuzFp6");
             Assert.Equal("12345:OjMuzFp6", status.ToString());
         }
 
         [Theory]
-        [InlineData("", "HASH")] // ID Empty, has hash
-        [InlineData("\t   ", "HASH")] // ID whitespace, has hash
-        [InlineData("1234", "")] // Has ID, empty hash
-        [InlineData("1234", "\t    ")] // Has ID, whitespace hash
-        public void EmptyHashOrIdThrows(string id, string hash)
+        [InlineData(0UL, "HASH")] // ID Empty, has hash
+        [InlineData(1234UL, "")] // Has ID, empty hash
+        [InlineData(1234UL, "\t    ")] // Has ID, whitespace hash
+        public void EmptyHashOrIdThrows(ulong id, string hash)
         {
-            Assert.Throws<ArgumentNullException>(() => _ = new HaveStatus(id, hash));
+            Assert.Throws<ArgumentOutOfRangeException>(() => _ = new HaveStatus(id, hash));
         }
 
         [Fact]
         public void HaveStatusCorrectlyStringifysProgressAndTimestamp()
         {
-            HaveStatus status = new HaveStatus("12345", "OjMuzFp6", 0.5, DateTimeOffset.FromUnixTimeSeconds(1288584076).LocalDateTime);
-            Assert.Equal("12345:OjMuzFp6:0.5:1288584076", status.ToString());
+            HaveStatus status = new HaveStatus(12345UL, "OjMuzFp6", 0.5, DateTimeOffset.FromUnixTimeSeconds(1288584076).LocalDateTime);
+            Assert.Equal("12345:OjMuzFp6:0.5:1288584076000", status.ToString());
         }
     }
 }
