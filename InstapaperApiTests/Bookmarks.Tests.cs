@@ -314,7 +314,8 @@ namespace Codevoid.Test.Instapaper
                 bookmark2Progress = 0.1;
             }
 
-            // Create Have Items
+            // Create Have Items. Note that we are sending up a random hash
+            // value to ensure that the service returns back the changes
             var bookmark1Have = new HaveStatus(bookmark1.Id, "X", bookmark1Progress, bookmark1ProgressTimestamp);
             var bookmark2Have = new HaveStatus(bookmark2.Id, "X", bookmark2Progress, bookmark2ProgressTimestamp);
 
