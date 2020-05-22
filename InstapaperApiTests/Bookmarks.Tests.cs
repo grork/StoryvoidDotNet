@@ -154,6 +154,12 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
         }
 
+        [Fact]
+        public async Task UpdatingProgressForNonExistantBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UpdateReadProgress(1UL, 0.5, DateTime.Now));
+        }
+
         [Fact, Order(7)]
         public async Task CanListLikedFolderAndItIsEmpty()
         {
@@ -239,6 +245,18 @@ namespace Codevoid.Test.Instapaper
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
         }
 
+        [Fact]
+        public async Task LikingNonExistantBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Like(1UL));
+        }
+
+        [Fact]
+        public async Task UnlikingNonExistantBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Unlike(1UL));
+        }
+
         [Fact, Order(12)]
         public async Task CanListArchiveFolderAndItIsEmpty()
         {
@@ -289,6 +307,18 @@ namespace Codevoid.Test.Instapaper
             await this.CanUnarchiveArchivedBookmark();
         }
 
+        [Fact]
+        public async Task ArchivingNonExistantBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Archive(1UL));
+        }
+
+        [Fact]
+        public async Task UnarchiveNonExistantBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Unarchive(1UL));
+        }
+
         [Fact, Order(17)]
         public async Task CanMoveBookmarkToFolderById()
         {
@@ -309,6 +339,12 @@ namespace Codevoid.Test.Instapaper
         }
 
         [Fact, Order(18)]
+        public async Task MovingNonExistantBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Move(1UL, this.SharedState.RecentlyAddedFolder!.Id));
+        }
+
+        [Fact, Order(19)]
         public async Task CanAddBookmarkDirectlyToFolder()
         {
             var client = this.SharedState.BookmarksClient;
@@ -325,7 +361,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Contains(folderContent, (b) => b.Id == candidate.Id);
         }
 
-        [Fact, Order(19)]
+        [Fact, Order(20)]
         public async Task CanUpdateProgressViaListWithHave()
         {
             var client = this.SharedState.BookmarksClient;
@@ -380,7 +416,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmark2ProgressTimestamp, updatedBookmark2.ProgressTimestamp, TimeSpan.FromMilliseconds(300));
         }
 
-        [Fact, Order(20)]
+        [Fact, Order(21)]
         public async Task ListingWithAccurateHaveInformationReturnsNoItems()
         {
             var client = this.SharedState.BookmarksClient;
@@ -401,7 +437,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Empty(folderContentWithHave);
         }
 
-        [Fact, Order(21)]
+        [Fact, Order(22)]
         public async Task ListingWithDeletedBookmarkInHaveInformationReturnsDeletedId()
         {
             var client = this.SharedState.BookmarksClient;
@@ -434,7 +470,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Contains(deletedIds, (id) => id == fakeHave2.Id);
         }
 
-        [Fact, Order(22)]
+        [Fact, Order(23)]
         public async Task ListingWithPartiallyOutOfDateHaveReturnsOnlyChangedItems()
         {
             var client = this.SharedState.BookmarksClient;
@@ -459,6 +495,8 @@ namespace Codevoid.Test.Instapaper
                 newProgress = 0.1;
             }
 
+            newProgress = Math.Round(newProgress, 1);
+
             _ = await client.UpdateReadProgress(secondBookmark.Id, newProgress, DateTime.Now);
             var (folderContentWithHave, _) = await client.List(folder.Id, haveInformation);
 
@@ -471,7 +509,7 @@ namespace Codevoid.Test.Instapaper
             });
         }
 
-        [Fact, Order(23)]
+        [Fact, Order(24)]
         public async Task ListingLimitRespected()
         {
             var client = this.SharedState.BookmarksClient;
@@ -491,7 +529,7 @@ namespace Codevoid.Test.Instapaper
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.GetText(0));
         }
 
-        [Fact, Order(24)]
+        [Fact, Order(25)]
         public async Task CanGetArticleText()
         {
             var client = this.SharedState.BookmarksClient;
@@ -499,7 +537,7 @@ namespace Codevoid.Test.Instapaper
             Assert.False(String.IsNullOrWhiteSpace(content)); // Check we have content
         }
 
-        [Fact, Order(25)]
+        [Fact, Order(26)]
         public async Task Requesting404ingArticleThrowsCorrectError()
         {
             var client = this.SharedState.BookmarksClient;
@@ -507,6 +545,32 @@ namespace Codevoid.Test.Instapaper
             {
                 return client.GetText(this.SharedState.NotFoundBookmark!.Id);
             });
+        }
+
+        [Fact, Order(27)]
+        public async Task CanDeletedAddedBookmark()
+        {
+            var client = this.SharedState.BookmarksClient;
+
+            await client.Delete(this.SharedState.RecentlyAddedBookmark!.Id);
+
+            var (folderContents, _) = await client.List(this.SharedState.RecentlyAddedFolder!.Id);
+            Assert.Equal(1, folderContents.Count);
+            Assert.DoesNotContain(folderContents, (b) => (b.Id == this.SharedState.RecentlyAddedBookmark!.Id));
+
+            this.SharedState.UpdateOrSetRecentBookmark(null);
+        }
+
+        [Fact]
+        public async Task DeletingWithInvalidBookmarkIdThrows()
+        {
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.Delete(0UL));
+        }
+
+        [Fact]
+        public async Task DeleteNonExistantBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Delete(1UL));
         }
     }
 }

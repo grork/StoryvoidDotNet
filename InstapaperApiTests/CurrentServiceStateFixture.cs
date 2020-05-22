@@ -361,7 +361,7 @@ namespace Codevoid.Test.Instapaper
 
         public IBookmark? RecentlyAddedBookmark { get; private set; }
 
-        public void UpdateOrSetRecentBookmark(IBookmark bookmark)
+        public void UpdateOrSetRecentBookmark(IBookmark? bookmark)
         {
             this.RecentlyAddedBookmark = bookmark;
         }

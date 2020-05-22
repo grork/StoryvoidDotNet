@@ -200,6 +200,11 @@ namespace Codevoid.Instapaper
         /// <param name="bookmark_id"></param>
         /// <returns></returns>
         Task<string> GetText(ulong bookmark_id);
+
+        /// <summary>
+        /// Delete a bookmark
+        /// </summary>
+        Task Delete(ulong bookmark_id);
     }
 
     public static class IBookmarksClientExtension
@@ -742,6 +747,16 @@ namespace Codevoid.Instapaper
             }
 
             return await result.Content.ReadAsStringAsync();
+        }
+
+        public async Task Delete(ulong bookmark_id)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid Bookmark ID");
+            }
+
+            _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Delete, "bookmark_id", bookmark_id.ToString());
         }
     }
 }

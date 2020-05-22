@@ -9,6 +9,7 @@ namespace Codevoid.Instapaper
         private const int UNKNOWN_ERROR = 1250;
         private const int DUPLICATE_FOLDER = 1251;
         private const int BOOKMARK_CONTENTS_UNAVAILABLE = 1550;
+        private const int BOOKMARK_NOT_FOUND = 1241;
 
         public static InstapaperServiceException FromErrorJson(JsonElement errorElement)
         {
@@ -23,6 +24,9 @@ namespace Codevoid.Instapaper
 
                 case BOOKMARK_CONTENTS_UNAVAILABLE:
                     return new BookmarkContentsUnavailableException();
+
+                case BOOKMARK_NOT_FOUND:
+                    return new BookmarkNotFoundException();
 
                 case UNKNOWN_ERROR:
                 default:
@@ -71,6 +75,15 @@ namespace Codevoid.Instapaper
     public class BookmarkContentsUnavailableException : InstapaperServiceException
     {
         internal BookmarkContentsUnavailableException() : base("Bookmark contents are unavailable")
+        { }
+    }
+
+    /// <summary>
+    /// Bookmark being operated on wasn't found on the service
+    /// </summary>
+    public class BookmarkNotFoundException : InstapaperServiceException
+    {
+        internal BookmarkNotFoundException() : base("Bookmark not found")
         { }
     }
 }
