@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Codevoid.Instapaper;
@@ -77,6 +78,9 @@ namespace Codevoid.Test.Instapaper
             var result = await this.Client.Add(this.SharedState.NonExistantUrl);
             Assert.Equal(this.SharedState.NonExistantUrl, result.Url);
             Assert.NotEqual(0UL, result.Id);
+
+            // Make sure we keep this bookmark for later use
+            this.SharedState.SetNotFoundBookmark(result);
         }
 
         [Fact]
@@ -289,8 +293,8 @@ namespace Codevoid.Test.Instapaper
             var folder = this.SharedState.RecentlyAddedFolder!;
 
             // Move a second bookmark into the added folder
-            var candidate = this.SharedState.RemoteBookmarksAtStart.FirstOrDefault();
-            _ = await client.Move(candidate.id, folder.Id);
+            var candidate = this.SharedState.NotFoundBookmark!;
+            _ = await client.Move(candidate.Id, folder.Id);
 
             // Get the current state of bookmarks in that folder
             var folderContent = await client.List(folder.Id);
@@ -339,6 +343,27 @@ namespace Codevoid.Test.Instapaper
             // Check that the timestamps match
             Assert.Equal(bookmark1ProgressTimestamp, updatedBookmark1.ProgressTimestamp, TimeSpan.FromMilliseconds(300));
             Assert.Equal(bookmark2ProgressTimestamp, updatedBookmark2.ProgressTimestamp, TimeSpan.FromMilliseconds(300));
+        }
+
+        [Fact, Order(18)]
+        public async Task ListingWithAccurateHaveInformationReturnsNoItems()
+        {
+            var client = this.SharedState.BookmarksClient;
+            var folder = this.SharedState.RecentlyAddedFolder!;
+
+            // Get the current state of bookmarks in that folder
+            var folderContent = await client.List(folder.Id);
+            Assert.Equal(2, folderContent.Count);
+
+            var haveInformation = new List<HaveStatus>();
+            foreach (var bookmark in folderContent)
+            {
+                var have = new HaveStatus(bookmark.Id, bookmark.Hash, bookmark.Progress, bookmark.ProgressTimestamp);
+                haveInformation.Add(have);
+            }
+
+            var folderContentWithHave = await client.List(folder.Id, haveInformation);
+            Assert.Empty(folderContentWithHave);
         }
     }
 }

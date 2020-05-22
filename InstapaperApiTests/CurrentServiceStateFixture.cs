@@ -366,6 +366,13 @@ namespace Codevoid.Test.Instapaper
             this.RecentlyAddedBookmark = bookmark;
         }
 
+        public IBookmark? NotFoundBookmark { get; private set; }
+
+        internal void SetNotFoundBookmark(IBookmark bookmark)
+        {
+            this.NotFoundBookmark = bookmark;
+        }
+
         public Uri GetNextAddableUrl()
         {
             Assert.True(this.available.Count > 0); // Expected a URL to be available
