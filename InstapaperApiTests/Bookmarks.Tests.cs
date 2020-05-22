@@ -32,15 +32,15 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task AddingBookmarkUnsupportedUriSchemeThrows()
         {
-            await Assert.ThrowsAsync<ArgumentException>(async () => await this.Client.Add(new Uri("ftp://something/foo.com")));
-            await Assert.ThrowsAsync<ArgumentException>(async () => await this.Client.Add(new Uri("mailto:test@example.com")));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await this.Client.AddAsync(new Uri("ftp://something/foo.com")));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await this.Client.AddAsync(new Uri("mailto:test@example.com")));
         }
 
         [Fact, Order(1)]
         public async Task CanAddBookmark()
         {
             var bookmarkUrl = this.SharedState.GetNextAddableUrl();
-            var result = await this.Client.Add(bookmarkUrl);
+            var result = await this.Client.AddAsync(bookmarkUrl);
 
             Assert.Equal(bookmarkUrl, result.Url);
             Assert.NotEqual(0UL, result.Id);
@@ -60,7 +60,7 @@ namespace Codevoid.Test.Instapaper
                 ResolveToFinalUrl = false
             };
 
-            var result = await this.Client.Add(bookmarkUrl, options);
+            var result = await this.Client.AddAsync(bookmarkUrl, options);
 
             Assert.Equal(bookmarkUrl, result.Url);
             Assert.NotEqual(0UL, result.Id);
@@ -74,7 +74,7 @@ namespace Codevoid.Test.Instapaper
         [Fact, Order(3)]
         public async Task CanSuccessfullyListUnreadFolder()
         {
-            var (remoteBookmarks, _) = await this.Client.List(WellKnownFolderIds.Unread);
+            var (remoteBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Unread);
 
             // Check the bookmark you had added most recently was found
             Assert.Contains(remoteBookmarks, (b) => b.Id == this.SharedState.RecentlyAddedBookmark!.Id);
@@ -87,7 +87,7 @@ namespace Codevoid.Test.Instapaper
             var existingBookmark = this.SharedState.RecentlyAddedBookmark!;
             Assert.NotNull(existingBookmark); // Need existing bookmark
 
-            var result = await this.Client.Add(existingBookmark.Url);
+            var result = await this.Client.AddAsync(existingBookmark.Url);
             Assert.Equal(existingBookmark.Id, result.Id);
             Assert.Equal(existingBookmark.Url, result.Url);
         }
@@ -97,7 +97,7 @@ namespace Codevoid.Test.Instapaper
         {
             // Adding URLs that don't exist is allowed by the API. However,
             // when trying to get the content (separate API), then it will fail
-            var result = await this.Client.Add(this.SharedState.NonExistantUrl);
+            var result = await this.Client.AddAsync(this.SharedState.NonExistantUrl);
             Assert.Equal(this.SharedState.NonExistantUrl, result.Url);
             Assert.NotEqual(0UL, result.Id);
 
@@ -108,25 +108,25 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task UpdatingProgressWithoutBookmarkIdThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgress(0, 0.0, DateTime.Now));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(0, 0.0, DateTime.Now));
         }
 
         [Fact]
         public async Task UpdatingProgressWithNegativeProgressThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgress(1, -0.5, DateTime.Now));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, -0.5, DateTime.Now));
         }
 
         [Fact]
         public async Task UpdatingProgressWithProgressGreaterThan1Throws()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgress(1, 1.1, DateTime.Now));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, 1.1, DateTime.Now));
         }
 
         [Fact]
         public async Task UpdatingProgressWithTimeStampBeforeUnixEpochThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgress(1, 0.0, new DateTime(1956, 2, 11)));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, 0.0, new DateTime(1956, 2, 11)));
         }
 
         [Fact, Order(6)]
@@ -144,7 +144,7 @@ namespace Codevoid.Test.Instapaper
                 progress = 0.1;
             }
 
-            var result = await this.Client.UpdateReadProgress(bookmark.Id, progress, updateTime);
+            var result = await this.Client.UpdateReadProgressAsync(bookmark.Id, progress, updateTime);
             Assert.Equal(bookmark.Id, result.Id);
             Assert.Equal(progress, result.Progress);
             // We lose precision in the conversion to unix epoc, so give it some
@@ -157,13 +157,13 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task UpdatingProgressForNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UpdateReadProgress(1UL, 0.5, DateTime.Now));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UpdateReadProgressAsync(1UL, 0.5, DateTime.Now));
         }
 
         [Fact, Order(7)]
         public async Task CanListLikedFolderAndItIsEmpty()
         {
-            var (result, _) = await this.Client.List(WellKnownFolderIds.Liked);
+            var (result, _) = await this.Client.ListAsync(WellKnownFolderIds.Liked);
             Assert.Empty(result); // Didn't expect any bookmarks in this folder
         }
 
@@ -173,7 +173,7 @@ namespace Codevoid.Test.Instapaper
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
             Assert.False(bookmark.Liked); // Need a non-liked bookmark
 
-            var result = await this.Client.Like(bookmark.Id);
+            var result = await this.Client.LikeAsync(bookmark.Id);
 
             Assert.Equal(bookmark.Id, result.Id);
             Assert.True(result.Liked); // Bookmark should be liked now
@@ -181,7 +181,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var (likedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Liked);
+            var (likedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Liked);
             Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
 
             // Check the one we JUST added is actually present
@@ -194,7 +194,7 @@ namespace Codevoid.Test.Instapaper
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
             Assert.True(bookmark.Liked); // Need a non-liked bookmark
 
-            var result = await this.Client.Like(bookmark.Id);
+            var result = await this.Client.LikeAsync(bookmark.Id);
 
             Assert.Equal(bookmark.Id, result.Id);
             Assert.True(result.Liked); // Bookmark should be liked now
@@ -202,7 +202,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var (likedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Liked);
+            var (likedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Liked);
             Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
 
             // Check the one we JUST added is actually present
@@ -215,7 +215,7 @@ namespace Codevoid.Test.Instapaper
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
             Assert.True(bookmark.Liked); // Need a non-liked bookmark
 
-            var result = await this.Client.Unlike(bookmark.Id);
+            var result = await this.Client.UnlikeAsync(bookmark.Id);
 
             Assert.Equal(bookmark.Id, result.Id);
             Assert.False(result.Liked); // Bookmark should not be liked now
@@ -223,7 +223,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var (likedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Liked);
+            var (likedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Liked);
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
         }
 
@@ -233,7 +233,7 @@ namespace Codevoid.Test.Instapaper
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
             Assert.False(bookmark.Liked); // Need a non-liked bookmark
 
-            var result = await this.Client.Unlike(bookmark.Id);
+            var result = await this.Client.UnlikeAsync(bookmark.Id);
 
             Assert.Equal(bookmark.Id, result.Id);
             Assert.False(result.Liked); // Bookmark should not be liked now
@@ -241,26 +241,26 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var (likedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Liked);
+            var (likedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Liked);
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
         }
 
         [Fact]
         public async Task LikingNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Like(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.LikeAsync(1UL));
         }
 
         [Fact]
         public async Task UnlikingNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Unlike(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UnlikeAsync(1UL));
         }
 
         [Fact, Order(12)]
         public async Task CanListArchiveFolderAndItIsEmpty()
         {
-            var (result, _) = await this.Client.List(WellKnownFolderIds.Archived);
+            var (result, _) = await this.Client.ListAsync(WellKnownFolderIds.Archived);
             Assert.Empty(result); // Didn't expect any bookmarks in this folder
         }
 
@@ -268,13 +268,13 @@ namespace Codevoid.Test.Instapaper
         public async Task CanArchiveBookmark()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
-            var result = await this.Client.Archive(bookmark.Id);
+            var result = await this.Client.ArchiveAsync(bookmark.Id);
 
             Assert.Equal(bookmark.Id, result.Id);
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var (archivedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Archived);
+            var (archivedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Archived);
             Assert.Equal(1, archivedBookmarks.Count); // Only expected one bookmark
 
             // Check the one we JUST added is actually present
@@ -291,13 +291,13 @@ namespace Codevoid.Test.Instapaper
         public async Task CanUnarchiveArchivedBookmark()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
-            var result = await this.Client.Unarchive(bookmark.Id);
+            var result = await this.Client.UnarchiveAsync(bookmark.Id);
 
             Assert.Equal(bookmark.Id, result.Id);
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var (archivedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Archived);
+            var (archivedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Archived);
             Assert.Empty(archivedBookmarks); // Only expected one bookmark
         }
 
@@ -310,29 +310,29 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task ArchivingNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Archive(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.ArchiveAsync(1UL));
         }
 
         [Fact]
         public async Task UnarchiveNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Unarchive(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UnarchiveAsync(1UL));
         }
 
         [Fact, Order(17)]
         public async Task CanMoveBookmarkToFolderById()
         {
             var folderName = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
-            var folder = await this.SharedState.FoldersClient.Add(folderName);
+            var folder = await this.SharedState.FoldersClient.AddAsync(folderName);
             this.SharedState.UpdateOrSetRecentFolder(folder);
 
             var client = this.SharedState.BookmarksClient;
             var bookmarkToMove = this.SharedState.RecentlyAddedBookmark!;
-            var movedBookmark = await client.Move(bookmarkToMove.Id, folder.Id);
+            var movedBookmark = await client.MoveAsync(bookmarkToMove.Id, folder.Id);
             Assert.Equal(bookmarkToMove.Id, movedBookmark.Id);
 
             // Check that the bookmark is in the remote folder
-            var (folderContents, _) = await client.List(folder.Id);
+            var (folderContents, _) = await client.ListAsync(folder.Id);
             Assert.Contains(folderContents, (b) => b.Id == movedBookmark.Id);
 
             this.SharedState.UpdateOrSetRecentBookmark(movedBookmark);
@@ -341,7 +341,7 @@ namespace Codevoid.Test.Instapaper
         [Fact, Order(18)]
         public async Task MovingNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Move(1UL, this.SharedState.RecentlyAddedFolder!.Id));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.MoveAsync(1UL, this.SharedState.RecentlyAddedFolder!.Id));
         }
 
         [Fact, Order(19)]
@@ -352,10 +352,10 @@ namespace Codevoid.Test.Instapaper
 
             var candidate = this.SharedState.NotFoundBookmark;
             var options = new AddBookmarkOptions() { DestinationFolderId = folder.Id };
-            _ = await client.Add(candidate!.Url, options);
+            _ = await client.AddAsync(candidate!.Url, options);
 
             // Get the current state of bookmarks in that folder
-            var (folderContent, _) = await client.List(folder.Id);
+            var (folderContent, _) = await client.ListAsync(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
             Assert.Contains(folderContent, (b) => b.Id == candidate.Id);
@@ -368,7 +368,7 @@ namespace Codevoid.Test.Instapaper
             var folder = this.SharedState.RecentlyAddedFolder!;
 
             // Get the current state of bookmarks in that folder
-            var (folderContent, _) = await client.List(folder.Id);
+            var (folderContent, _) = await client.ListAsync(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
             var bookmark1 = folderContent[0];
@@ -396,7 +396,7 @@ namespace Codevoid.Test.Instapaper
             var bookmark2Have = new HaveStatus(bookmark2.Id, "X", bookmark2Progress, bookmark2ProgressTimestamp);
 
             // Perform the list with the have information
-            var (updatedBookmarks, _) = await client.List(folder.Id, new[] { bookmark1Have, bookmark2Have });
+            var (updatedBookmarks, _) = await client.ListAsync(folder.Id, new[] { bookmark1Have, bookmark2Have });
             Assert.Equal(2, updatedBookmarks.Count); // Expected two bookmarks
 
             var updatedBookmark1 = (from b in updatedBookmarks
@@ -423,7 +423,7 @@ namespace Codevoid.Test.Instapaper
             var folder = this.SharedState.RecentlyAddedFolder!;
 
             // Get the current state of bookmarks in that folder
-            var (folderContent, _) = await client.List(folder.Id);
+            var (folderContent, _) = await client.ListAsync(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
             var haveInformation = new List<HaveStatus>();
@@ -433,7 +433,7 @@ namespace Codevoid.Test.Instapaper
                 haveInformation.Add(have);
             }
 
-            var (folderContentWithHave, _) = await client.List(folder.Id, haveInformation);
+            var (folderContentWithHave, _) = await client.ListAsync(folder.Id, haveInformation);
             Assert.Empty(folderContentWithHave);
         }
 
@@ -444,7 +444,7 @@ namespace Codevoid.Test.Instapaper
             var folder = this.SharedState.RecentlyAddedFolder!;
 
             // Get the current state of bookmarks in that folder
-            var (folderContent, _) = await client.List(folder.Id);
+            var (folderContent, _) = await client.ListAsync(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
             var haveInformation = new List<HaveStatus>();
@@ -461,7 +461,7 @@ namespace Codevoid.Test.Instapaper
             var fakeHave2 = new HaveStatus(2UL, "X", 0.5, DateTime.Now);
             haveInformation.Add(fakeHave2);
 
-            var (folderContentWithHave, deletedIds) = await client.List(folder.Id, haveInformation);
+            var (folderContentWithHave, deletedIds) = await client.ListAsync(folder.Id, haveInformation);
             Assert.Empty(folderContentWithHave);
 
             // Check the two things we expected to be deleted were deleted
@@ -477,7 +477,7 @@ namespace Codevoid.Test.Instapaper
             var folder = this.SharedState.RecentlyAddedFolder!;
 
             // Get the current state of bookmarks in that folder
-            var (folderContent, _) = await client.List(folder.Id);
+            var (folderContent, _) = await client.ListAsync(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
             var haveInformation = new List<HaveStatus>();
@@ -497,8 +497,8 @@ namespace Codevoid.Test.Instapaper
 
             newProgress = Math.Round(newProgress, 1);
 
-            _ = await client.UpdateReadProgress(secondBookmark.Id, newProgress, DateTime.Now);
-            var (folderContentWithHave, _) = await client.List(folder.Id, haveInformation);
+            _ = await client.UpdateReadProgressAsync(secondBookmark.Id, newProgress, DateTime.Now);
+            var (folderContentWithHave, _) = await client.ListAsync(folder.Id, haveInformation);
 
             // Check the two things we expected to be deleted were deleted
             Assert.Equal(1, folderContentWithHave.Count);
@@ -516,24 +516,24 @@ namespace Codevoid.Test.Instapaper
             var folder = this.SharedState.RecentlyAddedFolder!;
 
             // Get the current state of bookmarks in that folder
-            var (folderContent, _) = await client.List(folder.Id);
+            var (folderContent, _) = await client.ListAsync(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
-            var (folderContentWithHave, _) = await client.List(folder.Id, limit: 1);
+            var (folderContentWithHave, _) = await client.ListAsync(folder.Id, limit: 1);
             Assert.Equal(1, folderContentWithHave.Count); // Limited to 1 item, should only get one
         }
 
         [Fact]
         public async Task RequestingBookmarkTextForInvalidBookmarkThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.GetText(0));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.GetTextAsync(0));
         }
 
         [Fact, Order(25)]
         public async Task CanGetArticleText()
         {
             var client = this.SharedState.BookmarksClient;
-            var content = await client.GetText(this.SharedState.RecentlyAddedBookmark!.Id);
+            var content = await client.GetTextAsync(this.SharedState.RecentlyAddedBookmark!.Id);
             Assert.False(String.IsNullOrWhiteSpace(content)); // Check we have content
         }
 
@@ -543,7 +543,7 @@ namespace Codevoid.Test.Instapaper
             var client = this.SharedState.BookmarksClient;
             await Assert.ThrowsAsync<BookmarkContentsUnavailableException>(() =>
             {
-                return client.GetText(this.SharedState.NotFoundBookmark!.Id);
+                return client.GetTextAsync(this.SharedState.NotFoundBookmark!.Id);
             });
         }
 
@@ -552,9 +552,9 @@ namespace Codevoid.Test.Instapaper
         {
             var client = this.SharedState.BookmarksClient;
 
-            await client.Delete(this.SharedState.RecentlyAddedBookmark!.Id);
+            await client.DeleteAsync(this.SharedState.RecentlyAddedBookmark!.Id);
 
-            var (folderContents, _) = await client.List(this.SharedState.RecentlyAddedFolder!.Id);
+            var (folderContents, _) = await client.ListAsync(this.SharedState.RecentlyAddedFolder!.Id);
             Assert.Equal(1, folderContents.Count);
             Assert.DoesNotContain(folderContents, (b) => (b.Id == this.SharedState.RecentlyAddedBookmark!.Id));
 
@@ -564,13 +564,13 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task DeletingWithInvalidBookmarkIdThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.Delete(0UL));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.DeleteAsync(0UL));
         }
 
         [Fact]
         public async Task DeleteNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.Delete(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.DeleteAsync(1UL));
         }
     }
 }

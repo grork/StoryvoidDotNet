@@ -23,7 +23,7 @@ namespace Codevoid.Test.Instapaper
             var folderName = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
             var client = this.SharedState.FoldersClient;
 
-            var createdFolder = await client.Add(folderName);
+            var createdFolder = await client.AddAsync(folderName);
             Assert.Equal(folderName, createdFolder.Title);
             Assert.True(createdFolder.SyncToMobile);
             Assert.InRange(createdFolder.Position, 1UL, ulong.MaxValue);
@@ -38,14 +38,14 @@ namespace Codevoid.Test.Instapaper
             var client = this.SharedState.FoldersClient;
 
             // Try adding the folder again, and expect a DuplicateFolderException
-            await Assert.ThrowsAsync<DuplicateFolderException>(() => client.Add(this.SharedState.RecentlyAddedFolder!.Title));
+            await Assert.ThrowsAsync<DuplicateFolderException>(() => client.AddAsync(this.SharedState.RecentlyAddedFolder!.Title));
         }
 
         [Fact, Order(3)]
         public async Task CanListFolders()
         {
             var client = this.SharedState.FoldersClient;
-            var folders = await client.List();
+            var folders = await client.ListAsync();
             Assert.NotEmpty(folders); // Expected some elements, since we just created them
 
             // Check that all the values are correct
@@ -65,7 +65,7 @@ namespace Codevoid.Test.Instapaper
         public void FolderIdLessThanOneThrows()
         {
             var client = this.SharedState.FoldersClient;
-            Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.Delete(0));
+            Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.DeleteAsync(0));
         }
 
         [Fact, Order(5)]
@@ -75,10 +75,10 @@ namespace Codevoid.Test.Instapaper
 
             // Get the first folder from the shared state, and try to delete it
             var folderToDelete = this.SharedState.RecentlyAddedFolder!;
-            await client.Delete(folderToDelete.Id);
+            await client.DeleteAsync(folderToDelete.Id);
 
             // List the remote folders and check it was actually deleted
-            var folders = await client.List();
+            var folders = await client.ListAsync();
             Assert.DoesNotContain(folders, (folder) => (folderToDelete.Title == folder.Title));
 
             // We removed a folder, so clear it from our recent ones
@@ -89,7 +89,7 @@ namespace Codevoid.Test.Instapaper
         public async Task DeletingFolderThatDoesntExistThrows()
         {
             var client = this.SharedState.FoldersClient;
-            await Assert.ThrowsAsync<UnknownServiceError>(() => client.Delete(42));
+            await Assert.ThrowsAsync<UnknownServiceError>(() => client.DeleteAsync(42));
         }
     }
 }

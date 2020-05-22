@@ -92,14 +92,14 @@ namespace Codevoid.Instapaper
         /// service. This means folders refrenced by <see cref="WellKnownFolderIds"/>
         /// will not be returned by this call, and must be assumed to exist.
         /// </summary>
-        Task<IList<IFolder>> List();
+        Task<IList<IFolder>> ListAsync();
 
         /// <summary>
         /// Adds a folder to the service, with the supplied parameters
         /// </summary>
         /// <param name="folderTitle">Title of the folder to be added</param>
         /// <returns>Created folder from the service</returns>
-        Task<IFolder> Add(string folderTitle);
+        Task<IFolder> AddAsync(string folderTitle);
 
         /// <summary>
         /// Delete the specified folder from the service.
@@ -108,7 +108,7 @@ namespace Codevoid.Instapaper
         /// ID of the folder to delete. Must be greater than zero
         /// </param>
         /// <returns>Task that completes when folder is successfully deleted</returns>
-        Task Delete(ulong folderId);
+        Task DeleteAsync(ulong folderId);
     }
 
     /// <summary>
@@ -192,14 +192,14 @@ namespace Codevoid.Instapaper
         }
 
         /// <inheritdoc/>
-        public async Task<IList<IFolder>> List()
+        public async Task<IList<IFolder>> ListAsync()
         {
             var folders = await this.PerformRequestAsync(EndPoints.Folders.List, new StringContent(String.Empty));
             return folders;
         }
 
         /// <inheritdoc/>
-        public async Task<IFolder> Add(string folderTitle)
+        public async Task<IFolder> AddAsync(string folderTitle)
         {
             var payload = new FormUrlEncodedContent(new Dictionary<string, string>
             {
@@ -217,7 +217,7 @@ namespace Codevoid.Instapaper
         }
 
         /// <inheritdoc/>
-        public async Task Delete(ulong folderId)
+        public async Task DeleteAsync(ulong folderId)
         {
             if (folderId < 1)
             {

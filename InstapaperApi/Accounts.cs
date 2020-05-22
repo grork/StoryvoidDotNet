@@ -93,7 +93,7 @@ namespace Codevoid.Instapaper
         /// Verify the authentication token stored by this instance.
         /// </summary>
         /// <returns>User information if successful</returns>
-        public async Task<UserInformation> VerifyCredentials()
+        public async Task<UserInformation> VerifyCredentialsAsync()
         {
             var payload = new FormUrlEncodedContent(new Dictionary<string, string>());
             var result = await this.client.PostAsync(EndPoints.Access.VerifyCredentials, payload);
