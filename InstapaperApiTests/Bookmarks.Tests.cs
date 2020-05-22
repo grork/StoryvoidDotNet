@@ -52,7 +52,7 @@ namespace Codevoid.Test.Instapaper
         [Fact, Order(2)]
         public async Task CanSuccessfullyListUnreadFolder()
         {
-            var remoteBookmarks = await this.Client.List(WellKnownFolderIds.Unread);
+            var (remoteBookmarks, _) = await this.Client.List(WellKnownFolderIds.Unread);
 
             // Check the bookmark you had added most recently was found
             Assert.Contains(remoteBookmarks, (b) => b.Id == this.SharedState.RecentlyAddedBookmark!.Id);
@@ -135,7 +135,7 @@ namespace Codevoid.Test.Instapaper
         [Fact, Order(6)]
         public async Task CanListLikedFolderAndItIsEmpty()
         {
-            var result = await this.Client.List(WellKnownFolderIds.Liked);
+            var (result, _) = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Empty(result); // Didn't expect any bookmarks in this folder
         }
 
@@ -153,7 +153,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
+            var (likedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
 
             // Check the one we JUST added is actually present
@@ -174,7 +174,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
+            var (likedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
 
             // Check the one we JUST added is actually present
@@ -195,7 +195,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
+            var (likedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
         }
 
@@ -213,14 +213,14 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var likedBookmarks = await this.Client.List(WellKnownFolderIds.Liked);
+            var (likedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
         }
 
         [Fact, Order(11)]
         public async Task CanListArchiveFolderAndItIsEmpty()
         {
-            var result = await this.Client.List(WellKnownFolderIds.Archived);
+            var (result, _) = await this.Client.List(WellKnownFolderIds.Archived);
             Assert.Empty(result); // Didn't expect any bookmarks in this folder
         }
 
@@ -234,7 +234,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var archivedBookmarks = await this.Client.List(WellKnownFolderIds.Archived);
+            var (archivedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Archived);
             Assert.Equal(1, archivedBookmarks.Count); // Only expected one bookmark
 
             // Check the one we JUST added is actually present
@@ -257,7 +257,7 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
 
             // Check that it is actually liked in the listing
-            var archivedBookmarks = await this.Client.List(WellKnownFolderIds.Archived);
+            var (archivedBookmarks, _) = await this.Client.List(WellKnownFolderIds.Archived);
             Assert.Empty(archivedBookmarks); // Only expected one bookmark
         }
 
@@ -280,7 +280,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmarkToMove.Id, movedBookmark.Id);
 
             // Check that the bookmark is in the remote folder
-            var folderContents = await client.List(folder.Id);
+            var (folderContents, _) = await client.List(folder.Id);
             Assert.Contains(folderContents, (b) => b.Id == movedBookmark.Id);
 
             this.SharedState.UpdateOrSetRecentBookmark(movedBookmark);
@@ -297,7 +297,7 @@ namespace Codevoid.Test.Instapaper
             _ = await client.Move(candidate.Id, folder.Id);
 
             // Get the current state of bookmarks in that folder
-            var folderContent = await client.List(folder.Id);
+            var (folderContent, _) = await client.List(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
             var bookmark1 = folderContent[0];
@@ -325,7 +325,7 @@ namespace Codevoid.Test.Instapaper
             var bookmark2Have = new HaveStatus(bookmark2.Id, "X", bookmark2Progress, bookmark2ProgressTimestamp);
 
             // Perform the list with the have information
-            var updatedBookmarks = await client.List(folder.Id, new[] { bookmark1Have, bookmark2Have });
+            var (updatedBookmarks, _) = await client.List(folder.Id, new[] { bookmark1Have, bookmark2Have });
             Assert.Equal(2, updatedBookmarks.Count); // Expected two bookmarks
 
             var updatedBookmark1 = (from b in updatedBookmarks
@@ -352,7 +352,7 @@ namespace Codevoid.Test.Instapaper
             var folder = this.SharedState.RecentlyAddedFolder!;
 
             // Get the current state of bookmarks in that folder
-            var folderContent = await client.List(folder.Id);
+            var (folderContent, _) = await client.List(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
             var haveInformation = new List<HaveStatus>();
@@ -362,8 +362,41 @@ namespace Codevoid.Test.Instapaper
                 haveInformation.Add(have);
             }
 
-            var folderContentWithHave = await client.List(folder.Id, haveInformation);
+            var (folderContentWithHave, _) = await client.List(folder.Id, haveInformation);
             Assert.Empty(folderContentWithHave);
+        }
+
+        [Fact, Order(19)]
+        public async Task ListingWithDeletedBookmarkInHaveInformationReturnsDeletedId()
+        {
+            var client = this.SharedState.BookmarksClient;
+            var folder = this.SharedState.RecentlyAddedFolder!;
+
+            // Get the current state of bookmarks in that folder
+            var (folderContent, _) = await client.List(folder.Id);
+            Assert.Equal(2, folderContent.Count);
+
+            var haveInformation = new List<HaveStatus>();
+            foreach (var bookmark in folderContent)
+            {
+                var have = new HaveStatus(bookmark.Id, bookmark.Hash, bookmark.Progress, bookmark.ProgressTimestamp);
+                haveInformation.Add(have);
+            }
+
+            // Add 2 fake deleted items
+            var fakeHave = new HaveStatus(1UL, "X", 0.5, DateTime.Now);
+            haveInformation.Add(fakeHave);
+
+            var fakeHave2 = new HaveStatus(2UL, "X", 0.5, DateTime.Now);
+            haveInformation.Add(fakeHave2);
+
+            var (folderContentWithHave, deletedIds) = await client.List(folder.Id, haveInformation);
+            Assert.Empty(folderContentWithHave);
+
+            // Check the two things we expected to be deleted were deleted
+            Assert.Equal(2, deletedIds.Count);
+            Assert.Contains(deletedIds, (id) => id == fakeHave.Id);
+            Assert.Contains(deletedIds, (id) => id == fakeHave2.Id);
         }
     }
 }

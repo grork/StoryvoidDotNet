@@ -68,7 +68,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        Task<IList<IBookmark>> List(string folderId, IEnumerable<HaveStatus>? haveInformation);
+        Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(string folderId, IEnumerable<HaveStatus>? haveInformation);
 
         /// <summary>
         /// List the bookmarks for a specific folder. For wellknown folders
@@ -82,7 +82,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        Task<IList<IBookmark>> List(ulong folderId, IEnumerable<HaveStatus>? haveInformation);
+        Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(ulong folderId, IEnumerable<HaveStatus>? haveInformation);
 
         /// <summary>
         /// Add a bookmark for the supplied URL.
@@ -152,7 +152,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<IList<IBookmark>> List(this IBookmarksClient instance, string wellKnownFolderId)
+        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(this IBookmarksClient instance, string wellKnownFolderId)
         {
             return instance.List(wellKnownFolderId, null);
         }
@@ -165,7 +165,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<IList<IBookmark>> List(this IBookmarksClient instance, ulong folder_id)
+        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(this IBookmarksClient instance, ulong folder_id)
         {
             return instance.List(folder_id, null);
         }
@@ -346,19 +346,19 @@ namespace Codevoid.Instapaper
             }
         }
 
-        private Task<IList<IBookmark>> PerformRequestAsync(Uri endpoint, string parameterName, string parameterValue)
+        private Task<(IList<IBookmark>, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, string parameterName, string parameterValue)
         {
             var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>(parameterName, parameterValue) });
             return this.PerformRequestAsync(endpoint, content);
         }
 
-        private Task<IList<IBookmark>> PerformRequestAsync(Uri endpoint, IEnumerable<KeyValuePair<string, string>> parameters)
+        private Task<(IList<IBookmark>, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, IEnumerable<KeyValuePair<string, string>> parameters)
         {
             var content = new FormUrlEncodedContent(parameters);
             return this.PerformRequestAsync(endpoint, content);
         }
 
-        private async Task<IList<IBookmark>> PerformRequestAsync(Uri endpoint, HttpContent content)
+        private async Task<(IList<IBookmark> Bookmarks, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, HttpContent content)
         {
             // Request data convert to JSON
             var result = await this.client.PostAsync(endpoint, content);
@@ -373,6 +373,7 @@ namespace Codevoid.Instapaper
 
             // Turn the JSON into strongly typed objects
             IList<IBookmark> bookmarks = new List<IBookmark>();
+            JsonElement? meta = null;
             foreach (var element in payload.EnumerateArray())
             {
                 var itemType = element.GetProperty("type").GetString();
@@ -388,8 +389,12 @@ namespace Codevoid.Instapaper
                         throw ExceptionMapper.FromErrorJson(element);
 
                     case "user":
+                        // We don't process users
+                        continue;
+
                     case "meta":
-                        // We don't process meta or users objects
+                        Debug.Assert(meta == null, "Didn't expect more than one meta object");
+                        meta = element;
                         continue;
 
                     default:
@@ -398,7 +403,7 @@ namespace Codevoid.Instapaper
                 }
             }
 
-            return bookmarks;
+            return (bookmarks, meta);
         }
 
         /// <summary>
@@ -415,13 +420,13 @@ namespace Codevoid.Instapaper
                 throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid bookmark");
             }
 
-            var result = await this.PerformRequestAsync(endpoint, "bookmark_id", bookmark_id.ToString());
+            var (result, _) = await this.PerformRequestAsync(endpoint, "bookmark_id", bookmark_id.ToString());
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark in result, {result.Count} found");
             return result.First();
         }
 
-        public Task<IList<IBookmark>> List(string wellKnownFolderId, IEnumerable<HaveStatus>? haveInformation)
+        public async Task<(IList<IBookmark>, IList<ulong>)> List(string wellKnownFolderId, IEnumerable<HaveStatus>? haveInformation)
         {
             var parameters = new Dictionary<string, string>();
 
@@ -439,15 +444,25 @@ namespace Codevoid.Instapaper
                 }
             }
 
-            if (parameters.Count == 0)
+            var (bookmarks, meta) = await this.PerformRequestAsync(EndPoints.Bookmarks.List, parameters);
+            var deletedIds = new List<ulong>();
+
+            // Parse the deleleted ID's if it's present
+            if (meta != null && meta.Value.TryGetProperty("delete_ids", out var deletedIdsElement))
             {
-                return this.PerformRequestAsync(EndPoints.Bookmarks.List, new StringContent(String.Empty));
+                // Deleted IDs comes in as a comma separated string
+                var rawDeletedIds = deletedIdsElement.GetString();
+                var deletedIdsAsStrings = rawDeletedIds.Split(',');
+                foreach (var stringId in deletedIdsAsStrings)
+                {
+                    deletedIds.Add(UInt64.Parse(stringId));
+                }
             }
 
-            return this.PerformRequestAsync(EndPoints.Bookmarks.List, parameters);
+            return (bookmarks, deletedIds);
         }
 
-        public Task<IList<IBookmark>> List(ulong folder_id, IEnumerable<HaveStatus>? haveInformation)
+        public Task<(IList<IBookmark>, IList<ulong>)> List(ulong folder_id, IEnumerable<HaveStatus>? haveInformation)
         {
             if (folder_id == 0UL)
             {
@@ -465,7 +480,7 @@ namespace Codevoid.Instapaper
                 throw new ArgumentException("Only HTTP or HTTPS Urls are supported");
             }
 
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Add, "url", bookmarkUrl.ToString());
+            var (result, _) = await this.PerformRequestAsync(EndPoints.Bookmarks.Add, "url", bookmarkUrl.ToString());
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
             return result.First();
@@ -496,7 +511,7 @@ namespace Codevoid.Instapaper
                 { "progress_timestamp", progressInUnixEpoch.ToString() }
             };
 
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.UpdateReadProgress, parameters);
+            var (result, _) = await this.PerformRequestAsync(EndPoints.Bookmarks.UpdateReadProgress, parameters);
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark progress updated, {result.Count} found");
             return result.First();
@@ -525,7 +540,7 @@ namespace Codevoid.Instapaper
                 { "folder_id", folder_id.ToString() }
             };
 
-            var result = await this.PerformRequestAsync(EndPoints.Bookmarks.Move, parameters);
+            var (result, _) = await this.PerformRequestAsync(EndPoints.Bookmarks.Move, parameters);
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark to be moved, {result.Count} found");
             return result.First();
