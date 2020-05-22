@@ -34,7 +34,7 @@ namespace Codevoid.Instapaper
         /// <summary>
         /// ID of this folder on the service
         /// </summary>
-        ulong FolderId { get; }
+        ulong Id { get; }
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ namespace Codevoid.Instapaper
         public ulong Position { get; private set; } = 0;
 
         /// <inheritdoc/>
-        public ulong FolderId { get; private set; } = 0;
+        public ulong Id { get; private set; } = 0;
 
         internal static IFolder FromJsonElement(JsonElement folderElement)
         {
@@ -77,7 +77,7 @@ namespace Codevoid.Instapaper
                 Title = folderTitle,
                 SyncToMobile = syncToMobile,
                 Position = position,
-                FolderId = folderId
+                Id = folderId
             };
         }
     }

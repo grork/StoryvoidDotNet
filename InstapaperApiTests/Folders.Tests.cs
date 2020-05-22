@@ -27,7 +27,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(folderName, createdFolder.Title);
             Assert.True(createdFolder.SyncToMobile);
             Assert.InRange(createdFolder.Position, 1UL, ulong.MaxValue);
-            Assert.InRange(createdFolder.FolderId, 1UL, ulong.MaxValue);
+            Assert.InRange(createdFolder.Id, 1UL, ulong.MaxValue);
 
             this.SharedState.UpdateOrSetRecentFolder(createdFolder);
         }
@@ -54,11 +54,11 @@ namespace Codevoid.Test.Instapaper
                 Assert.NotEmpty(folder.Title);
                 Assert.True(folder.SyncToMobile);
                 Assert.InRange(folder.Position, 1UL, ulong.MaxValue);
-                Assert.InRange(folder.FolderId, 1UL, ulong.MaxValue);
+                Assert.InRange(folder.Id, 1UL, ulong.MaxValue);
             });
 
             // Check that the folder we'd added recently is in the list
-            Assert.Contains(folders, (IFolder f) => this.SharedState.RecentlyAddedFolder!.FolderId == f.FolderId);
+            Assert.Contains(folders, (IFolder f) => this.SharedState.RecentlyAddedFolder!.Id == f.Id);
         }
 
         [Fact, Order(4)]
@@ -75,7 +75,7 @@ namespace Codevoid.Test.Instapaper
 
             // Get the first folder from the shared state, and try to delete it
             var folderToDelete = this.SharedState.RecentlyAddedFolder!;
-            await client.Delete(folderToDelete.FolderId);
+            await client.Delete(folderToDelete.Id);
 
             // List the remote folders and check it was actually deleted
             var folders = await client.List();

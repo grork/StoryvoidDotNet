@@ -271,11 +271,11 @@ namespace Codevoid.Test.Instapaper
 
             var client = this.SharedState.BookmarksClient;
             var bookmarkToMove = this.SharedState.RecentlyAddedBookmark!;
-            var movedBookmark = await client.Move(bookmarkToMove.Id, folder.FolderId);
+            var movedBookmark = await client.Move(bookmarkToMove.Id, folder.Id);
             Assert.Equal(bookmarkToMove.Id, movedBookmark.Id);
 
             // Check that the bookmark is in the remote folder
-            var folderContents = await client.List(folder.FolderId);
+            var folderContents = await client.List(folder.Id);
             Assert.Contains(folderContents, (b) => b.Id == movedBookmark.Id);
 
             this.SharedState.UpdateOrSetRecentBookmark(movedBookmark);
@@ -289,10 +289,10 @@ namespace Codevoid.Test.Instapaper
 
             // Move a second bookmark into the added folder
             var candidate = this.SharedState.RemoteBookmarksAtStart.FirstOrDefault();
-            _ = await client.Move(candidate.id, folder.FolderId);
+            _ = await client.Move(candidate.id, folder.Id);
 
             // Get the current state of bookmarks in that folder
-            var folderContent = await client.List(folder.FolderId);
+            var folderContent = await client.List(folder.Id);
             Assert.Equal(2, folderContent.Count);
 
             var bookmark1 = folderContent[0];
@@ -320,7 +320,7 @@ namespace Codevoid.Test.Instapaper
             var bookmark2Have = new HaveStatus(bookmark2.Id, "X", bookmark2Progress, bookmark2ProgressTimestamp);
 
             // Perform the list with the have information
-            var updatedBookmarks = await client.List(folder.FolderId, new[] { bookmark1Have, bookmark2Have });
+            var updatedBookmarks = await client.List(folder.Id, new[] { bookmark1Have, bookmark2Have });
             Assert.Equal(2, updatedBookmarks.Count); // Expected two bookmarks
 
             var updatedBookmark1 = (from b in updatedBookmarks
