@@ -145,6 +145,17 @@ namespace Codevoid.Instapaper
         /// <param name="folder_id">Folder to move the bookmark to</param>
         /// <returns>Bookmark after completing the move</returns>
         Task<IBookmark> Move(ulong bookmark_id, ulong folder_id);
+
+        /// <summary>
+        /// Get the text of the bookmark from the service. This is returned in
+        /// HTML format, intending to be displayed in a browser.
+        ///
+        /// Note, that if the bookmark is no longer available or cannot be
+        /// parsed, an exception will be thrown.
+        /// </summary>
+        /// <param name="bookmark_id"></param>
+        /// <returns></returns>
+        Task<string> GetText(ulong bookmark_id);
     }
 
     public static class IBookmarksClientExtension
@@ -596,6 +607,47 @@ namespace Codevoid.Instapaper
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark to be moved, {result.Count} found");
             return result.First();
+        }
+
+        public async Task<string> GetText(ulong bookmark_id)
+        {
+            if (bookmark_id == 0UL)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid Bookmark ID");
+            }
+
+            var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+            {
+                { "bookmark_id", bookmark_id.ToString() }
+            });
+
+            var result = await this.client.PostAsync(EndPoints.Bookmarks.GetText, content);
+            if (!result.IsSuccessStatusCode)
+            {
+                if (IsFatalStatusCode(result.StatusCode))
+                {
+                    result.EnsureSuccessStatusCode();
+                }
+
+                // Assumption is that since it's 400, it'll contain an error
+                // object in the standard format
+                var stream = await result.Content.ReadAsStreamAsync();
+                var payload = JsonDocument.Parse(stream).RootElement;
+                Debug.Assert(JsonValueKind.Array == payload.ValueKind, "API is always supposed to return an array as the root element");
+
+                foreach (var element in payload.EnumerateArray())
+                {
+                    var itemType = element.GetProperty("type").GetString();
+                    if (itemType == "error")
+                    {
+                        // Always throw an error when we encounter it, no matter
+                        // if we've seen other (valid data)
+                        throw ExceptionMapper.FromErrorJson(element);
+                    }
+                }
+            }
+
+            return await result.Content.ReadAsStringAsync();
         }
     }
 }

@@ -8,6 +8,7 @@ namespace Codevoid.Instapaper
     {
         private const int UNKNOWN_ERROR = 1250;
         private const int DUPLICATE_FOLDER = 1251;
+        private const int BOOKMARK_CONTENTS_UNAVAILABLE = 1550;
 
         public static InstapaperServiceException FromErrorJson(JsonElement errorElement)
         {
@@ -19,6 +20,9 @@ namespace Codevoid.Instapaper
             {
                 case DUPLICATE_FOLDER:
                     return new DuplicateFolderException();
+
+                case BOOKMARK_CONTENTS_UNAVAILABLE:
+                    return new BookmarkContentsUnavailableException();
 
                 case UNKNOWN_ERROR:
                 default:
@@ -58,7 +62,15 @@ namespace Codevoid.Instapaper
     public class DuplicateFolderException : InstapaperServiceException
     {
         internal DuplicateFolderException() : base("A folder with this name already exists")
-        {
-        }
+        { }
+    }
+
+    /// <summary>
+    /// The contents for the requested bookmark are unavailable
+    /// </summary>
+    public class BookmarkContentsUnavailableException : InstapaperServiceException
+    {
+        internal BookmarkContentsUnavailableException() : base("Bookmark contents are unavailable")
+        { }
     }
 }

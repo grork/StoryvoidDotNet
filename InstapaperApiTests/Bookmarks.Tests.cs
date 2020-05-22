@@ -449,5 +449,29 @@ namespace Codevoid.Test.Instapaper
             var (folderContentWithHave, _) = await client.List(folder.Id, limit: 1);
             Assert.Equal(1, folderContentWithHave.Count); // Limited to 1 item, should only get one
         }
+
+        [Fact]
+        public async Task RequestingBookmarkTextForInvalidBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.GetText(0));
+        }
+
+        [Fact, Order(22)]
+        public async Task CanGetArticleText()
+        {
+            var client = this.SharedState.BookmarksClient;
+            var content = await client.GetText(this.SharedState.RecentlyAddedBookmark!.Id);
+            Assert.False(String.IsNullOrWhiteSpace(content)); // Check we have content
+        }
+
+        [Fact, Order(23)]
+        public async Task Requesting404ingArticleThrowsCorrectError()
+        {
+            var client = this.SharedState.BookmarksClient;
+            await Assert.ThrowsAsync<BookmarkContentsUnavailableException>(() =>
+            {
+                return client.GetText(this.SharedState.NotFoundBookmark!.Id);
+            });
+        }
     }
 }
