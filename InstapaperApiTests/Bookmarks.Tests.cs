@@ -398,5 +398,42 @@ namespace Codevoid.Test.Instapaper
             Assert.Contains(deletedIds, (id) => id == fakeHave.Id);
             Assert.Contains(deletedIds, (id) => id == fakeHave2.Id);
         }
+
+        [Fact, Order(20)]
+        public async Task ListingWithPartiallyOutOfDateHaveReturnsOnlyChangedItems()
+        {
+            var client = this.SharedState.BookmarksClient;
+            var folder = this.SharedState.RecentlyAddedFolder!;
+
+            // Get the current state of bookmarks in that folder
+            var (folderContent, _) = await client.List(folder.Id);
+            Assert.Equal(2, folderContent.Count);
+
+            var haveInformation = new List<HaveStatus>();
+            foreach (var bookmark in folderContent)
+            {
+                var have = new HaveStatus(bookmark.Id, bookmark.Hash, bookmark.Progress, bookmark.ProgressTimestamp);
+                haveInformation.Add(have);
+            }
+
+            // Explicitly update the progress of the second item
+            var secondBookmark = folderContent[1];
+            var newProgress = secondBookmark.Progress + 0.1;
+            if (newProgress > 1.0)
+            {
+                newProgress = 0.1;
+            }
+
+            _ = await client.UpdateReadProgress(secondBookmark.Id, newProgress, DateTime.Now);
+            var (folderContentWithHave, _) = await client.List(folder.Id, haveInformation);
+
+            // Check the two things we expected to be deleted were deleted
+            Assert.Equal(1, folderContentWithHave.Count);
+            Assert.Contains(folderContentWithHave, (b) =>
+            {
+                return (b.Id == secondBookmark.Id) &&
+                        (b.Progress == newProgress);
+            });
+        }
     }
 }
