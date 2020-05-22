@@ -65,10 +65,13 @@ namespace Codevoid.Instapaper
         /// <param name="haveInformation"><see cref="HaveStatus"/>'s for the
         /// known bookmarks &amp; state for the requested folder
         /// </param>
+        /// <param name="resultLimit">
+        /// Limits the number of articles to return. Specify 0 for service default
+        /// </param>
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(string folderId, IEnumerable<HaveStatus>? haveInformation);
+        Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
 
         /// <summary>
         /// List the bookmarks for a specific folder. For wellknown folders
@@ -79,10 +82,13 @@ namespace Codevoid.Instapaper
         /// <param name="haveInformation"><see cref="HaveStatus"/>'s for the
         /// known bookmarks &amp; state for the requested folder
         /// </param>
+        /// <param name="resultLimit">
+        /// Limits the number of articles to return. Specify 0 for service default
+        /// </param>
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(ulong folderId, IEnumerable<HaveStatus>? haveInformation);
+        Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(ulong folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
 
         /// <summary>
         /// Add a bookmark for the supplied URL.
@@ -149,12 +155,30 @@ namespace Codevoid.Instapaper
         /// the folder ID from the <see cref="FoldersClient"/> API
         /// </summary>
         /// <param name="folderId">Wellknown Folder to list bookmarks for</param>
+        /// <param name="limit">Number of articles to return. 0 specifies service default</param>
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(this IBookmarksClient instance, string wellKnownFolderId)
+        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(this IBookmarksClient instance, string wellKnownFolderId, uint limit = 0)
         {
-            return instance.List(wellKnownFolderId, null);
+            return instance.List(wellKnownFolderId, null, limit);
+        }
+
+        /// <summary>
+        /// List the bookmarks for a specific folder. For wellknown folders
+        /// <see cref="WellKnownFolderIds"/>. Other folders can be listed using
+        /// the folder ID from the <see cref="FoldersClient"/> API
+        /// </summary>
+        /// <param name="folderId">Wellknown Folder to list bookmarks for</param>
+        /// <param name="haveInformation"><see cref="HaveStatus"/>'s for the
+        /// known bookmarks &amp; state for the requested folder
+        /// </param>
+        /// <returns>
+        /// List of bookmarks
+        /// </returns>
+        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(this IBookmarksClient instance, string wellKnownFolderId, IEnumerable<HaveStatus> haveInformation)
+        {
+            return instance.List(wellKnownFolderId, haveInformation, 0);
         }
 
         /// <summary>
@@ -162,12 +186,30 @@ namespace Codevoid.Instapaper
         /// the folder ID from the <see cref="FoldersClient"/> API
         /// </summary>
         /// <param name="folderId">Folder Id to list bookmarks for</param>
+        /// <param name="limit">Number of articles to return. 0 specifies service default</param>
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(this IBookmarksClient instance, ulong folder_id)
+        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(this IBookmarksClient instance, ulong folder_id, uint limit = 0)
         {
-            return instance.List(folder_id, null);
+            return instance.List(folder_id, null, limit);
+        }
+
+        /// <summary>
+        /// List the bookmarks for a specific folder. For wellknown folders
+        /// <see cref="WellKnownFolderIds"/>. Other folders can be listed using
+        /// the folder ID from the <see cref="FoldersClient"/> API
+        /// </summary>
+        /// <param name="folderId">Folder Id to list bookmarks for</param>
+        /// <param name="haveInformation"><see cref="HaveStatus"/>'s for the
+        /// known bookmarks &amp; state for the requested folder
+        /// </param>
+        /// <returns>
+        /// List of bookmarks
+        /// </returns>
+        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> List(this IBookmarksClient instance, ulong folder_id, IEnumerable<HaveStatus> haveInformation)
+        {
+            return instance.List(folder_id, haveInformation, 0);
         }
     }
 
@@ -426,8 +468,13 @@ namespace Codevoid.Instapaper
             return result.First();
         }
 
-        public async Task<(IList<IBookmark>, IList<ulong>)> List(string wellKnownFolderId, IEnumerable<HaveStatus>? haveInformation)
+        public async Task<(IList<IBookmark>, IList<ulong>)> List(string wellKnownFolderId, IEnumerable<HaveStatus>? haveInformation, uint limit)
         {
+            if (limit > 500)
+            {
+                throw new ArgumentOutOfRangeException(nameof(limit), "Article limit must be 500 or less");
+            }
+
             var parameters = new Dictionary<string, string>();
 
             if (!String.IsNullOrWhiteSpace(wellKnownFolderId))
@@ -442,6 +489,11 @@ namespace Codevoid.Instapaper
                 {
                     parameters.Add("have", havePayload);
                 }
+            }
+
+            if (limit != 0)
+            {
+                parameters.Add("limit", limit.ToString());
             }
 
             var (bookmarks, meta) = await this.PerformRequestAsync(EndPoints.Bookmarks.List, parameters);
@@ -462,14 +514,14 @@ namespace Codevoid.Instapaper
             return (bookmarks, deletedIds);
         }
 
-        public Task<(IList<IBookmark>, IList<ulong>)> List(ulong folder_id, IEnumerable<HaveStatus>? haveInformation)
+        public Task<(IList<IBookmark>, IList<ulong>)> List(ulong folder_id, IEnumerable<HaveStatus>? haveInformation, uint limit)
         {
             if (folder_id == 0UL)
             {
                 throw new ArgumentOutOfRangeException(nameof(folder_id), "Invalid Folder ID");
             }
 
-            return this.List(folder_id.ToString(), haveInformation);
+            return this.List(folder_id.ToString(), haveInformation, limit);
         }
 
         public async Task<IBookmark> Add(Uri bookmarkUrl)

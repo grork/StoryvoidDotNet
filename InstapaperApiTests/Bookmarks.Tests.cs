@@ -435,5 +435,19 @@ namespace Codevoid.Test.Instapaper
                         (b.Progress == newProgress);
             });
         }
+
+        [Fact, Order(21)]
+        public async Task ListingLimitRespected()
+        {
+            var client = this.SharedState.BookmarksClient;
+            var folder = this.SharedState.RecentlyAddedFolder!;
+
+            // Get the current state of bookmarks in that folder
+            var (folderContent, _) = await client.List(folder.Id);
+            Assert.Equal(2, folderContent.Count);
+
+            var (folderContentWithHave, _) = await client.List(folder.Id, limit: 1);
+            Assert.Equal(1, folderContentWithHave.Count); // Limited to 1 item, should only get one
+        }
     }
 }
