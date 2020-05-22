@@ -10,7 +10,7 @@ namespace Codevoid.Utilities.OAuth
     /// </summary>
     public class ClientInformation
     {
-        private string productName = "Codevoid OAuth Library";
+        private string productName = "Codevoid+OAuth+Library";
         private string productVersion = "1.0";
         private ProductInfoHeaderValue? userAgentValue;
 

@@ -48,12 +48,17 @@ namespace Codevoid.Test.Instapaper
             ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.ACCESS_TOKEN, nameof(InstapaperAPIKey.ACCESS_TOKEN));
             ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.TOKEN_SECRET, nameof(InstapaperAPIKey.TOKEN_SECRET));
 
-            return new ClientInformation(
+            var clientInfo = new ClientInformation(
                 InstapaperAPIKey.CONSUMER_KEY,
                 InstapaperAPIKey.CONSUMER_KEY_SECRET,
                 InstapaperAPIKey.ACCESS_TOKEN,
                 InstapaperAPIKey.TOKEN_SECRET
             );
+
+            clientInfo.ProductName = "Codevoid+Instapaper+API+Tests";
+            clientInfo.ProductVersion = "0.1";
+
+            return clientInfo;
         }
 
         public const string TestCollectionName = "Instapaper API Tests";

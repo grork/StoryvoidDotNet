@@ -51,6 +51,9 @@ namespace Codevoid.Utilities.OAuth
         public static HttpClient CreateOAuthHttpClient(ClientInformation clientInformation)
         {
             var client = new HttpClient(new OAuthMessageHandler(clientInformation));
+            client.DefaultRequestHeaders.UserAgent.Clear();
+            client.DefaultRequestHeaders.UserAgent.Add(clientInformation.UserAgent);
+
             return client;
         }
     }

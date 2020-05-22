@@ -54,10 +54,15 @@ namespace Codevoid.Test.OAuth
             ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.ACCESS_TOKEN, nameof(TwitterAPIKey.ACCESS_TOKEN));
             ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.ACCESS_TOKEN_SECRET, nameof(TwitterAPIKey.ACCESS_TOKEN_SECRET));
 
-            return new ClientInformation(consumerKey: TwitterAPIKey.API_KEY,
+            var clientInfo = new ClientInformation(consumerKey: TwitterAPIKey.API_KEY,
                                          consumerKeySecret: TwitterAPIKey.API_SECRET_KEY,
                                          token: TwitterAPIKey.ACCESS_TOKEN,
                                          tokenSecret: TwitterAPIKey.ACCESS_TOKEN_SECRET);
+
+            clientInfo.ProductName = "CodevoidOAuthTests";
+            clientInfo.ProductVersion = "0.1";
+
+            return clientInfo;
         }
 
         private static HttpRequestMessage GetPostRequestForData(IDictionary<string, string> data, Uri url)
