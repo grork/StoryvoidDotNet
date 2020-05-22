@@ -291,7 +291,7 @@ namespace Codevoid.Test.Instapaper
                 }
             }
 
-            LogMessage($"There were {availableToAddUris} URIs available to add");
+            LogMessage($"There were {availableToAddUris.Count} URIs available to add");
 
             if (availableToAddUris.Count < 1)
             {
@@ -308,7 +308,7 @@ namespace Codevoid.Test.Instapaper
                 availableToAddUris.Add(bookmarkToDelete.uri);
             }
 
-            this.availbleUris = availableToAddUris;
+            this.available = availableToAddUris;
             this.RemoteBookmarksAtStart = remoteBookmarks;
             LogMessage("Completing Init");
         }
@@ -344,7 +344,7 @@ namespace Codevoid.Test.Instapaper
         #region Bookmarks API & State
         public Uri NonExistantUrl => TestUrls.NonExistantPage;
 
-        private IList<Uri> availbleUris = new List<Uri>();
+        private IList<Uri> available = new List<Uri>();
         private IBookmarksClient? _bookmarksClient;
         public IBookmarksClient BookmarksClient
         {
@@ -368,10 +368,10 @@ namespace Codevoid.Test.Instapaper
 
         public Uri GetNextAddableUrl()
         {
-            Assert.True(this.availbleUris.Count > 0); // Expected a URL to be available
+            Assert.True(this.available.Count > 0); // Expected a URL to be available
 
-            var uri = this.availbleUris.First();
-            this.availbleUris.Remove(uri);
+            var uri = this.available.First();
+            this.available.Remove(uri);
 
             return uri;
         }

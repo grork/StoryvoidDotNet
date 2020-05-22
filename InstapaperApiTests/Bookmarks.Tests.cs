@@ -43,6 +43,7 @@ namespace Codevoid.Test.Instapaper
 
             Assert.Equal(bookmarkUrl, result.Url);
             Assert.NotEqual(0UL, result.Id);
+            Assert.False(String.IsNullOrWhiteSpace(result.Hash));
 
             this.SharedState.UpdateOrSetRecentBookmark(result);
         }

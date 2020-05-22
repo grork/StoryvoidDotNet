@@ -16,11 +16,38 @@ namespace Codevoid.Instapaper
     /// </summary>
     public interface IBookmark
     {
+        /// <summary>
+        /// URL for this bookmark
+        /// </summary>
         Uri Url { get; }
+
+        /// <summary>
+        /// Service ID for this bookmark, uniquely identifying the bookmark
+        /// </summary>
         ulong Id { get; }
+
+        /// <summary>
+        /// Current read progress of the bookmark
+        /// </summary>
         double Progress { get; }
+
+        /// <summary>
+        /// When the progress was last updated
+        /// </summary>
         DateTime ProgressTimestamp { get; }
+
+        /// <summary>
+        /// Is this bookmark currently in a 'liked' state
+        /// </summary>
         bool Liked { get; }
+
+        /// <summary>
+        /// Hash, from the service of when it last saw changes to the bookmark
+        /// This can't be generated locally, and is only so sourced from the
+        /// service. If you want to see what it is after you've made changes
+        /// to the progress etc of this bookmark, make sure those changes are
+        /// on the service, and then request the folder containing the bookmark
+        /// </summary>
         string Hash { get; }
     }
 
