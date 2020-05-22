@@ -50,6 +50,28 @@ namespace Codevoid.Test.Instapaper
         }
 
         [Fact, Order(2)]
+        public async Task CanAddBookmarkWithOptions()
+        {
+            var bookmarkUrl = this.SharedState.RecentlyAddedBookmark!.Url;
+            var options = new AddBookmarkOptions()
+            {
+                Title = "Sample Title",
+                Description = "Sample Description",
+                ResolveToFinalUrl = false
+            };
+
+            var result = await this.Client.Add(bookmarkUrl, options);
+
+            Assert.Equal(bookmarkUrl, result.Url);
+            Assert.NotEqual(0UL, result.Id);
+            Assert.False(String.IsNullOrWhiteSpace(result.Hash));
+            Assert.Equal(options.Title, result.Title);
+            Assert.Equal(options.Description, result.Description);
+
+            this.SharedState.UpdateOrSetRecentBookmark(result);
+        }
+
+        [Fact, Order(3)]
         public async Task CanSuccessfullyListUnreadFolder()
         {
             var (remoteBookmarks, _) = await this.Client.List(WellKnownFolderIds.Unread);
@@ -58,7 +80,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Contains(remoteBookmarks, (b) => b.Id == this.SharedState.RecentlyAddedBookmark!.Id);
         }
 
-        [Fact, Order(3)]
+        [Fact, Order(4)]
         public async Task CanSuccessfullyAddDuplicateBookmark()
         {
             // Use a bookmark we just added
@@ -70,7 +92,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(existingBookmark.Url, result.Url);
         }
 
-        [Fact, Order(4)]
+        [Fact, Order(5)]
         public async Task CanSuccessfullyAddA404Bookmark()
         {
             // Adding URLs that don't exist is allowed by the API. However,
@@ -107,7 +129,7 @@ namespace Codevoid.Test.Instapaper
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgress(1, 0.0, new DateTime(1956, 2, 11)));
         }
 
-        [Fact, Order(5)]
+        [Fact, Order(6)]
         public async Task CanExplicitlyUpdateProgressForBookmark()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
@@ -132,14 +154,14 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(result);
         }
 
-        [Fact, Order(6)]
+        [Fact, Order(7)]
         public async Task CanListLikedFolderAndItIsEmpty()
         {
             var (result, _) = await this.Client.List(WellKnownFolderIds.Liked);
             Assert.Empty(result); // Didn't expect any bookmarks in this folder
         }
 
-        [Fact, Order(7)]
+        [Fact, Order(8)]
         public async Task CanLikeBookmark()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
@@ -160,7 +182,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(result.Id, likedBookmarks.First().Id);
         }
 
-        [Fact, Order(8)]
+        [Fact, Order(9)]
         public async Task CanLikeBookmarkThatIsAlreadyLiked()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
@@ -181,7 +203,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(result.Id, likedBookmarks.First().Id);
         }
 
-        [Fact, Order(9)]
+        [Fact, Order(10)]
         public async Task CanUnlikeLikedBookmark()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
@@ -199,7 +221,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
         }
 
-        [Fact, Order(10)]
+        [Fact, Order(11)]
         public async Task CanUnlikeBookmarkThatIsNotLiked()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
@@ -217,14 +239,14 @@ namespace Codevoid.Test.Instapaper
             Assert.Empty(likedBookmarks); // Didn't expect any bookmarks
         }
 
-        [Fact, Order(11)]
+        [Fact, Order(12)]
         public async Task CanListArchiveFolderAndItIsEmpty()
         {
             var (result, _) = await this.Client.List(WellKnownFolderIds.Archived);
             Assert.Empty(result); // Didn't expect any bookmarks in this folder
         }
 
-        [Fact, Order(12)]
+        [Fact, Order(13)]
         public async Task CanArchiveBookmark()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
@@ -241,13 +263,13 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(result.Id, archivedBookmarks.First().Id);
         }
 
-        [Fact, Order(13)]
+        [Fact, Order(14)]
         public async Task CanArchiveBookmarkThatIsAlreadyArchived()
         {
             await this.CanArchiveBookmark();
         }
 
-        [Fact, Order(14)]
+        [Fact, Order(15)]
         public async Task CanUnarchiveArchivedBookmark()
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
@@ -261,13 +283,13 @@ namespace Codevoid.Test.Instapaper
             Assert.Empty(archivedBookmarks); // Only expected one bookmark
         }
 
-        [Fact, Order(15)]
+        [Fact, Order(16)]
         public async Task CanUnarchiveANonArchivedBookmark()
         {
             await this.CanUnarchiveArchivedBookmark();
         }
 
-        [Fact, Order(16)]
+        [Fact, Order(17)]
         public async Task CanMoveBookmarkToFolderById()
         {
             var folderName = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
@@ -286,15 +308,28 @@ namespace Codevoid.Test.Instapaper
             this.SharedState.UpdateOrSetRecentBookmark(movedBookmark);
         }
 
-        [Fact, Order(17)]
-        public async Task CanUpdateProgressViaListWithHave()
+        [Fact, Order(18)]
+        public async Task CanAddBookmarkDirectlyToFolder()
         {
             var client = this.SharedState.BookmarksClient;
             var folder = this.SharedState.RecentlyAddedFolder!;
 
-            // Move a second bookmark into the added folder
-            var candidate = this.SharedState.NotFoundBookmark!;
-            _ = await client.Move(candidate.Id, folder.Id);
+            var candidate = this.SharedState.NotFoundBookmark;
+            var options = new AddBookmarkOptions() { DestinationFolderId = folder.Id };
+            _ = await client.Add(candidate!.Url, options);
+
+            // Get the current state of bookmarks in that folder
+            var (folderContent, _) = await client.List(folder.Id);
+            Assert.Equal(2, folderContent.Count);
+
+            Assert.Contains(folderContent, (b) => b.Id == candidate.Id);
+        }
+
+        [Fact, Order(19)]
+        public async Task CanUpdateProgressViaListWithHave()
+        {
+            var client = this.SharedState.BookmarksClient;
+            var folder = this.SharedState.RecentlyAddedFolder!;
 
             // Get the current state of bookmarks in that folder
             var (folderContent, _) = await client.List(folder.Id);
@@ -345,7 +380,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Equal(bookmark2ProgressTimestamp, updatedBookmark2.ProgressTimestamp, TimeSpan.FromMilliseconds(300));
         }
 
-        [Fact, Order(18)]
+        [Fact, Order(20)]
         public async Task ListingWithAccurateHaveInformationReturnsNoItems()
         {
             var client = this.SharedState.BookmarksClient;
@@ -366,7 +401,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Empty(folderContentWithHave);
         }
 
-        [Fact, Order(19)]
+        [Fact, Order(21)]
         public async Task ListingWithDeletedBookmarkInHaveInformationReturnsDeletedId()
         {
             var client = this.SharedState.BookmarksClient;
@@ -399,7 +434,7 @@ namespace Codevoid.Test.Instapaper
             Assert.Contains(deletedIds, (id) => id == fakeHave2.Id);
         }
 
-        [Fact, Order(20)]
+        [Fact, Order(22)]
         public async Task ListingWithPartiallyOutOfDateHaveReturnsOnlyChangedItems()
         {
             var client = this.SharedState.BookmarksClient;
@@ -436,7 +471,7 @@ namespace Codevoid.Test.Instapaper
             });
         }
 
-        [Fact, Order(21)]
+        [Fact, Order(23)]
         public async Task ListingLimitRespected()
         {
             var client = this.SharedState.BookmarksClient;
@@ -456,7 +491,7 @@ namespace Codevoid.Test.Instapaper
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.GetText(0));
         }
 
-        [Fact, Order(22)]
+        [Fact, Order(24)]
         public async Task CanGetArticleText()
         {
             var client = this.SharedState.BookmarksClient;
@@ -464,7 +499,7 @@ namespace Codevoid.Test.Instapaper
             Assert.False(String.IsNullOrWhiteSpace(content)); // Check we have content
         }
 
-        [Fact, Order(23)]
+        [Fact, Order(25)]
         public async Task Requesting404ingArticleThrowsCorrectError()
         {
             var client = this.SharedState.BookmarksClient;

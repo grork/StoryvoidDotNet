@@ -17,14 +17,25 @@ namespace Codevoid.Instapaper
     public interface IBookmark
     {
         /// <summary>
+        /// Service ID for this bookmark, uniquely identifying the bookmark
+        /// </summary>
+        ulong Id { get; }
+
+        /// <summary>
         /// URL for this bookmark
         /// </summary>
         Uri Url { get; }
 
         /// <summary>
-        /// Service ID for this bookmark, uniquely identifying the bookmark
+        /// Title of this bookmark. May be user-set, or from the title of the
+        /// the page at the bookmarks original URL.
         /// </summary>
-        ulong Id { get; }
+        string Title { get; }
+
+        /// <summary>
+        /// User specified description
+        /// </summary>
+        string Description { get; }
 
         /// <summary>
         /// Current read progress of the bookmark
@@ -49,6 +60,38 @@ namespace Codevoid.Instapaper
         /// on the service, and then request the folder containing the bookmark
         /// </summary>
         string Hash { get; }
+    }
+
+    /// <summary>
+    /// Options that can be set when adding a URL. Only need to set those
+    /// that are different from the defaults.
+    /// </summary>
+    public class AddBookmarkOptions
+    {
+        /// <summary>
+        /// Title for the article. If not set, the service will resolve this
+        /// from the destination URL of the bookmark being added
+        /// </summary>
+        public string Title = String.Empty;
+
+        /// <summary>
+        /// Description visible in the bookmarks list. Defaults to empty.
+        /// </summary>
+        public string Description = String.Empty;
+
+        /// <summary>
+        /// If the bookmark should be added directly to a folder other than the
+        /// unread folder.
+        /// </summary>
+        public ulong DestinationFolderId = 0UL;
+
+        /// <summary>
+        /// When enabled (the default), the destination URL will follow redirects.
+        /// If you are confident that you are on the final URL, set to this to
+        /// false. An example would be if you are sharing a page directly from
+        /// a web browser
+        /// </summary>
+        public bool ResolveToFinalUrl = true;
     }
 
     /// <summary>
@@ -94,8 +137,9 @@ namespace Codevoid.Instapaper
         /// Add a bookmark for the supplied URL.
         /// </summary>
         /// <param name="bookmarkUrl">URL to add</param>
+        /// <param name="options">Options when adding this bookmark</param>
         /// <returns>The bookmark if successf</returns>
-        Task<IBookmark> Add(Uri bookmarkUrl);
+        Task<IBookmark> Add(Uri bookmarkUrl, AddBookmarkOptions? options);
 
         /// <summary>
         /// Updates the progress of a specific bookmark, explicitly.
@@ -222,17 +266,31 @@ namespace Codevoid.Instapaper
         {
             return instance.List(folder_id, haveInformation, 0);
         }
+
+        /// <summary>
+        /// Add a bookmark for the supplied URL.
+        /// </summary>
+        /// <param name="bookmarkUrl">URL to add</param>
+        /// <returns>The bookmark if successf</returns>
+        public static Task<IBookmark> Add(this IBookmarksClient instance, Uri bookmarkUrl)
+        {
+            return instance.Add(bookmarkUrl, null);
+        }
     }
 
     internal class Bookmark : IBookmark
     {
         internal static IBookmark FromJsonElement(JsonElement bookmarkElement)
         {
+            var id = bookmarkElement.GetProperty("bookmark_id").GetUInt64();
+
+            // Url
             var urlString = bookmarkElement.GetProperty("url").GetString();
             var url = new Uri(urlString);
-            var id = bookmarkElement.GetProperty("bookmark_id").GetUInt64();
-            var likedRaw = bookmarkElement.GetProperty("starred").GetString();
-            var liked = (likedRaw == "1");
+
+            // Title & Description
+            var title = bookmarkElement.GetProperty("title").GetString();
+            var description = bookmarkElement.GetProperty("description").GetString();
 
             // Progress
             var progress = bookmarkElement.GetProperty("progress").GetDouble();
@@ -243,10 +301,16 @@ namespace Codevoid.Instapaper
             // Hash
             var hash = bookmarkElement.GetProperty("hash").GetString();
 
+            // Liked status
+            var likedRaw = bookmarkElement.GetProperty("starred").GetString();
+            var liked = (likedRaw == "1");
+
             return new Bookmark()
             {
-                Url = url,
                 Id = id,
+                Url = url,
+                Title = title,
+                Description = description,
                 Progress = progress,
                 ProgressTimestamp = progressTimestamp,
                 Liked = liked,
@@ -254,8 +318,10 @@ namespace Codevoid.Instapaper
             };
         }
 
-        public Uri Url { get; private set; } = new Uri("unset://unset");
         public ulong Id { get; private set; } = 0L;
+        public Uri Url { get; private set; } = new Uri("unset://unset");
+        public string Title { get; private set; } = String.Empty;
+        public string Description { get; private set; } = String.Empty;
         public double Progress { get; private set; } = 0.0;
         public DateTime ProgressTimestamp { get; private set; } = DateTime.MinValue;
         public bool Liked { get; private set; } = false;
@@ -535,7 +601,7 @@ namespace Codevoid.Instapaper
             return this.List(folder_id.ToString(), haveInformation, limit);
         }
 
-        public async Task<IBookmark> Add(Uri bookmarkUrl)
+        public async Task<IBookmark> Add(Uri bookmarkUrl, AddBookmarkOptions? options)
         {
             if ((bookmarkUrl.Scheme != Uri.UriSchemeHttp)
                 && (bookmarkUrl.Scheme != Uri.UriSchemeHttps))
@@ -543,7 +609,35 @@ namespace Codevoid.Instapaper
                 throw new ArgumentException("Only HTTP or HTTPS Urls are supported");
             }
 
-            var (result, _) = await this.PerformRequestAsync(EndPoints.Bookmarks.Add, "url", bookmarkUrl.ToString());
+            var parameters = new Dictionary<string, string>()
+            {
+                { "url", bookmarkUrl.ToString() }
+            };
+
+            if (options != null)
+            {
+                if (!String.IsNullOrWhiteSpace(options.Title))
+                {
+                    parameters.Add("title", options.Title);
+                }
+
+                if (!String.IsNullOrWhiteSpace(options.Description))
+                {
+                    parameters.Add("description", options.Description);
+                }
+
+                if (options.DestinationFolderId != 0UL)
+                {
+                    parameters.Add("folder_id", options.DestinationFolderId.ToString());
+                }
+
+                if (!options.ResolveToFinalUrl)
+                {
+                    parameters.Add("resolve_final_url", "0");
+                }
+            }
+
+            var (result, _) = await this.PerformRequestAsync(EndPoints.Bookmarks.Add, parameters);
 
             Debug.Assert(result.Count == 1, $"Expected one bookmark added, {result.Count} found");
             return result.First();
