@@ -6,10 +6,22 @@ namespace Codevoid.Instapaper
 {
     internal static class ExceptionMapper
     {
+        private const int RATE_LIMIT_EXCEEDED = 1040;
+        private const int PREMIUM_ACCOUNT_REQUIRED = 1041;
+        private const int APPLICATION_SUSPENDED = 1042;
+        private const int DOMAIN_REQUIRES_FULL_CONTENT = 1220;
+        private const int DOMAIN_BLOCKS_INSTAPAPER = 1221;
+        private const int INVALID_URL_SPECIFIED = 1240;
+        private const int INVALID_OR_MISSING_BOOKMARK_ID = 1241;
+        private const int INVALID_OR_MISSING_FOLDER_ID = 1242;
+        private const int INVALID_OR_MISSING_PROGRESS = 1243;
+        private const int INVALID_OR_MISSING_PROGRESS_TIMESTAMP = 1244;
+        private const int PRIVATE_BOOKMARKS_REQUIRE_SUPPLIED_CONTENT = 1245;
         private const int UNKNOWN_ERROR = 1250;
         private const int DUPLICATE_FOLDER = 1251;
+        private const int CANNOT_ADD_BOOKMARKS_TO_FOLDER = 1252;
+        private const int UNEXPECTED_SERVICE_ERROR = 1500;
         private const int BOOKMARK_CONTENTS_UNAVAILABLE = 1550;
-        private const int BOOKMARK_NOT_FOUND = 1241;
 
         public static InstapaperServiceException FromErrorJson(JsonElement errorElement)
         {
@@ -25,7 +37,7 @@ namespace Codevoid.Instapaper
                 case BOOKMARK_CONTENTS_UNAVAILABLE:
                     return new BookmarkContentsUnavailableException();
 
-                case BOOKMARK_NOT_FOUND:
+                case INVALID_OR_MISSING_BOOKMARK_ID:
                     return new BookmarkNotFoundException();
 
                 case UNKNOWN_ERROR:
