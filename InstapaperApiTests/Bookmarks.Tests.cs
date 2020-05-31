@@ -108,25 +108,25 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task UpdatingProgressWithoutBookmarkIdThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(0, 0.0, DateTime.Now));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(0, 0.0F, DateTime.Now));
         }
 
         [Fact]
         public async Task UpdatingProgressWithNegativeProgressThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, -0.5, DateTime.Now));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, -0.5F, DateTime.Now));
         }
 
         [Fact]
         public async Task UpdatingProgressWithProgressGreaterThan1Throws()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, 1.1, DateTime.Now));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, 1.1F, DateTime.Now));
         }
 
         [Fact]
         public async Task UpdatingProgressWithTimeStampBeforeUnixEpochThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, 0.0, new DateTime(1956, 2, 11)));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.UpdateReadProgressAsync(1, 0.0F, new DateTime(1956, 2, 11)));
         }
 
         [Fact, Order(6)]
@@ -134,14 +134,14 @@ namespace Codevoid.Test.Instapaper
         {
             var bookmark = this.SharedState.RecentlyAddedBookmark!;
             var updateTime = DateTime.Now;
-            var progress = bookmark.Progress + 0.1;
+            var progress = bookmark.Progress + 0.1F;
 
             // Progress needs to be clamped between 0.0 and 1.0. Instead of
             // setting a specific value and not being sure if it changed,
             // check if we've gone to far, and roll it back around again
-            if (progress > 1.0)
+            if (progress > 1.0F)
             {
-                progress = 0.1;
+                progress = 0.1F;
             }
 
             var result = await this.Client.UpdateReadProgressAsync(bookmark.Id, progress, updateTime);
@@ -157,7 +157,7 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task UpdatingProgressForNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UpdateReadProgressAsync(1UL, 0.5, DateTime.Now));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UpdateReadProgressAsync(1UL, 0.5F, DateTime.Now));
         }
 
         [Fact, Order(7)]
@@ -376,18 +376,18 @@ namespace Codevoid.Test.Instapaper
 
             // Calculate new progress for bookmark 1
             var bookmark1ProgressTimestamp = DateTime.Now;
-            var bookmark1Progress = bookmark1.Progress + 0.1;
-            if (bookmark1Progress > 1.0)
+            var bookmark1Progress = bookmark1.Progress + 0.1F;
+            if (bookmark1Progress > 1.0F)
             {
-                bookmark1Progress = 0.1;
+                bookmark1Progress = 0.1F;
             }
 
             // Calculate new progress for bookmark 2
             var bookmark2ProgressTimestamp = DateTime.Now;
-            var bookmark2Progress = bookmark2.Progress + 0.1;
-            if (bookmark2Progress > 1.0)
+            var bookmark2Progress = bookmark2.Progress + 0.1F;
+            if (bookmark2Progress > 1.0F)
             {
-                bookmark2Progress = 0.1;
+                bookmark2Progress = 0.1F;
             }
 
             // Create Have Items. Note that we are sending up a random hash
@@ -455,10 +455,10 @@ namespace Codevoid.Test.Instapaper
             }
 
             // Add 2 fake deleted items
-            var fakeHave = new HaveStatus(1UL, "X", 0.5, DateTime.Now);
+            var fakeHave = new HaveStatus(1UL, "X", 0.5F, DateTime.Now);
             haveInformation.Add(fakeHave);
 
-            var fakeHave2 = new HaveStatus(2UL, "X", 0.5, DateTime.Now);
+            var fakeHave2 = new HaveStatus(2UL, "X", 0.5F, DateTime.Now);
             haveInformation.Add(fakeHave2);
 
             var (folderContentWithHave, deletedIds) = await client.ListAsync(folder.Id, haveInformation);
@@ -489,13 +489,13 @@ namespace Codevoid.Test.Instapaper
 
             // Explicitly update the progress of the second item
             var secondBookmark = folderContent[1];
-            var newProgress = secondBookmark.Progress + 0.1;
-            if (newProgress > 1.0)
+            var newProgress = secondBookmark.Progress + 0.1F;
+            if (newProgress > 1.0F)
             {
-                newProgress = 0.1;
+                newProgress = 0.1F;
             }
 
-            newProgress = Math.Round(newProgress, 1);
+            newProgress = Convert.ToSingle(Math.Round(newProgress, 1));
 
             _ = await client.UpdateReadProgressAsync(secondBookmark.Id, newProgress, DateTime.Now);
             var (folderContentWithHave, _) = await client.ListAsync(folder.Id, haveInformation);

@@ -40,7 +40,7 @@ namespace Codevoid.Instapaper
         /// <summary>
         /// Current read progress of the bookmark
         /// </summary>
-        double Progress { get; }
+        float Progress { get; }
 
         /// <summary>
         /// When the progress was last updated
@@ -148,7 +148,7 @@ namespace Codevoid.Instapaper
         /// <param name="progress">The progress, between 0.0 and 1.0</param>
         /// <param name="progress_timestamp">Time when progress was changed</param>
         /// <returns>The bookmark as returned by the service after the update</returns>
-        Task<IBookmark> UpdateReadProgressAsync(ulong bookmark_id, double progress, DateTime progress_timestamp);
+        Task<IBookmark> UpdateReadProgressAsync(ulong bookmark_id, float progress, DateTime progress_timestamp);
 
         /// <summary>
         /// Sets the state of a bookmark to be 'Liked', irrespective of it's
@@ -299,7 +299,7 @@ namespace Codevoid.Instapaper
             var description = bookmarkElement.GetProperty("description").GetString();
 
             // Progress
-            var progress = bookmarkElement.GetProperty("progress").GetDouble();
+            var progress = bookmarkElement.GetProperty("progress").GetSingle();
             var progressTimestampRaw = bookmarkElement.GetProperty("progress_timestamp").GetInt64();
             var progressTimestampUnixEpoch = DateTimeOffset.FromUnixTimeMilliseconds(progressTimestampRaw);
             var progressTimestamp = progressTimestampUnixEpoch.LocalDateTime;
@@ -328,7 +328,7 @@ namespace Codevoid.Instapaper
         public Uri Url { get; private set; } = new Uri("unset://unset");
         public string Title { get; private set; } = String.Empty;
         public string Description { get; private set; } = String.Empty;
-        public double Progress { get; private set; } = 0.0;
+        public float Progress { get; private set; } = 0.0F;
         public DateTime ProgressTimestamp { get; private set; } = DateTime.MinValue;
         public bool Liked { get; private set; } = false;
         public string Hash { get; private set; } = String.Empty;
@@ -353,7 +353,7 @@ namespace Codevoid.Instapaper
         /// Amount of bookmark that has been read, between 0.0 and 1.0
         /// </param>
         /// <param name="changed">Last time the progress changed</param>
-        public HaveStatus(ulong bookmark_id, string hash, double readProgress, DateTime changed) : this(bookmark_id, hash)
+        public HaveStatus(ulong bookmark_id, string hash, float readProgress, DateTime changed) : this(bookmark_id, hash)
         {
             this.ReadProgress = readProgress;
             this.ProgressLastChanged = changed;
@@ -404,7 +404,7 @@ namespace Codevoid.Instapaper
         /// <summary>
         /// The read progress of this bookmark as a percentage from 0.0 to 1.0
         /// </summary>
-        public double? ReadProgress { get; }
+        public float? ReadProgress { get; }
 
         /// <summary>
         /// The unix epoch time that the progress was last updated.
@@ -649,7 +649,7 @@ namespace Codevoid.Instapaper
             return result.First();
         }
 
-        public async Task<IBookmark> UpdateReadProgressAsync(ulong bookmark_id, double progress, DateTime progress_timestamp)
+        public async Task<IBookmark> UpdateReadProgressAsync(ulong bookmark_id, float progress, DateTime progress_timestamp)
         {
             if (bookmark_id == 0UL)
             {
