@@ -14,6 +14,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstapaperApi", "Instapaper
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstapaperApiTests", "InstapaperApiTests\InstapaperApiTests.csproj", "{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database", "Database\Database.csproj", "{B6722B1A-AAB6-4CCE-B436-218B2B57FBA9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseTests", "DatabaseTests\DatabaseTests.csproj", "{9516B953-7135-426D-A6C5-EF64D663A1E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +40,13 @@ Global
 		{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6722B1A-AAB6-4CCE-B436-218B2B57FBA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6722B1A-AAB6-4CCE-B436-218B2B57FBA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6722B1A-AAB6-4CCE-B436-218B2B57FBA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6722B1A-AAB6-4CCE-B436-218B2B57FBA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9516B953-7135-426D-A6C5-EF64D663A1E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9516B953-7135-426D-A6C5-EF64D663A1E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9516B953-7135-426D-A6C5-EF64D663A1E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9516B953-7135-426D-A6C5-EF64D663A1E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
