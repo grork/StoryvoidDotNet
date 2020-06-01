@@ -11,4 +11,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="3.1.4" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="migrations\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="migrations\v0-to-v1.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
