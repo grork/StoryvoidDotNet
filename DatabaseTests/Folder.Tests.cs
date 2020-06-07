@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Codevoid.Test.Storyvoid
 {
-    public class DatabaseTests
+    public class FolderTests : IAsyncLifetime
     {
         private static void FoldersMatch(DatabaseFolder? folder1, DatabaseFolder? folder2)
         {
@@ -23,38 +23,22 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(folder1!.SyncToMobile, folder2!.SyncToMobile);
         }
 
-        private static async Task<IArticleDatabase> GetDatabase()
+        private IArticleDatabase? db;
+        public async Task InitializeAsync() => this.db = await TestUtilities.GetDatabase();
+        public Task DisposeAsync()
         {
-            var connection = new SqliteConnection("Data Source=:memory:");
-            var db = new ArticleDatabase(connection);
-            await db.OpenOrCreateDatabaseAsync();
+            if (this.db != null)
+            {
+                this.db.Dispose();
+            }
 
-            return db;
-        }
-
-        [Fact]
-        public async Task CanOpenDatabase()
-        {
-            using var db = await GetDatabase();
-            Assert.NotNull(db);
-        }
-
-        [Fact]
-        public async Task CanReopenDatabase()
-        {
-            using var connection = new SqliteConnection("Data Source=:memory:");
-            var first = new ArticleDatabase(connection);
-            await first.OpenOrCreateDatabaseAsync();
-
-            var second = new ArticleDatabase(connection);
-            await first.OpenOrCreateDatabaseAsync();
+            return Task.CompletedTask;
         }
 
         [Fact]
         public async Task DefaultFoldersAreCreated()
         {
-            using var db = await GetDatabase();
-            IList<DatabaseFolder> result = await db.GetFoldersAsync();
+            IList<DatabaseFolder> result = await this.db!.GetFoldersAsync();
             Assert.Equal(2, result.Count);
 
             Assert.Contains(result, (f) => f.ServiceId == WellKnownFolderIds.Unread);
@@ -64,8 +48,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanGetSingleDefaultFolderByServiceId()
         {
-            using var db = await GetDatabase();
-            var folder = await db.GetFolderByServiceIdAsync(WellKnownFolderIds.Unread);
+            var folder = await db!.GetFolderByServiceIdAsync(WellKnownFolderIds.Unread);
 
             Assert.NotNull(folder);
             Assert.Equal("Home", folder!.Title);
@@ -76,9 +59,8 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanGetSingleDefaultFolderByLocalId()
         {
-            using var db = await GetDatabase();
-            var folder = await db.GetFolderByServiceIdAsync(WellKnownFolderIds.Unread);
-            folder = await db.GetFolderByLocalIdAsync(folder!.LocalId);
+            var folder = await this.db!.GetFolderByServiceIdAsync(WellKnownFolderIds.Unread);
+            folder = await this.db!.GetFolderByLocalIdAsync(folder!.LocalId);
 
             Assert.NotNull(folder);
             Assert.Equal("Home", folder!.Title);
@@ -88,8 +70,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task GettingFolderThatDoesntExistByServiceIdDoesntReturnAnything()
         {
-            using var db = await GetDatabase();
-            var folder = await db.GetFolderByServiceIdAsync(1);
+            var folder = await this.db!.GetFolderByServiceIdAsync(1);
 
             Assert.Null(folder);
         }
@@ -97,8 +78,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task GettingFolderThatDoesntExistByLocalIdDoesntReturnAnything()
         {
-            using var db = await GetDatabase();
-            var folder = await db.GetFolderByLocalIdAsync(5);
+            var folder = await this.db!.GetFolderByLocalIdAsync(5);
 
             Assert.Null(folder);
         }
@@ -106,20 +86,18 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanAddFolder()
         {
-            using var db = await GetDatabase();
-
             // Create folder; check results are returned
-            var addedFolder = await db.CreateFolderAsync("Sample");
+            var addedFolder = await this.db!.CreateFolderAsync("Sample");
             Assert.Null(addedFolder.ServiceId);
             Assert.Equal("Sample", addedFolder.Title);
             Assert.NotEqual(0L, addedFolder.LocalId);
 
             // Request the folder explicitily, check it's data
-            DatabaseFolder folder = (await db.GetFolderByLocalIdAsync(addedFolder.LocalId))!;
+            DatabaseFolder folder = (await this.db!.GetFolderByLocalIdAsync(addedFolder.LocalId))!;
             FoldersMatch(addedFolder, folder);
 
             // Check it comes back when listing all folders
-            var allFolders = await db.GetFoldersAsync();
+            var allFolders = await this.db!.GetFoldersAsync();
             Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
             Assert.Equal(3, allFolders.Count);
         }
@@ -127,21 +105,19 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanAddMultipleFolders()
         {
-            using var db = await GetDatabase();
-
             // Create folder; check results are returned
-            var addedFolder = await db.CreateFolderAsync("Sample");
+            var addedFolder = await this.db!.CreateFolderAsync("Sample");
             Assert.Null(addedFolder.ServiceId);
             Assert.Equal("Sample", addedFolder.Title);
             Assert.NotEqual(0L, addedFolder.LocalId);
 
-            var addedFolder2 = await db.CreateFolderAsync("Sample2");
+            var addedFolder2 = await this.db!.CreateFolderAsync("Sample2");
             Assert.Null(addedFolder2.ServiceId);
             Assert.Equal("Sample2", addedFolder2.Title);
             Assert.NotEqual(0L, addedFolder2.LocalId);
 
             // Check it comes back when listing all folders
-            var allFolders = await db.GetFoldersAsync();
+            var allFolders = await this.db!.GetFoldersAsync();
             Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
             Assert.Equal(4, allFolders.Count);
         }
@@ -149,24 +125,20 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task AddingFolderWithDuplicateTitleFails()
         {
-            using var db = await GetDatabase();
-
             // Create folder; then created it again, expecting it to fail
-            _ = await db.CreateFolderAsync("Sample");
-            _ = await Assert.ThrowsAsync<DuplicateNameException>(() => db.CreateFolderAsync("Sample"));
+            _ = await this.db!.CreateFolderAsync("Sample");
+            _ = await Assert.ThrowsAsync<DuplicateNameException>(() => this.db!.CreateFolderAsync("Sample"));
 
             // Check a spurious folder wasn't created
-            var allFolders = await db.GetFoldersAsync();
+            var allFolders = await this.db!.GetFoldersAsync();
             Assert.Equal(3, allFolders.Count);
         }
 
         [Fact]
         public async Task CanAddFolderWithAllServiceInformation()
         {
-            using var db = await GetDatabase();
-
             // Create folder; check results are returned
-            DatabaseFolder addedFolder = await db.AddKnownFolderAsync(
+            DatabaseFolder addedFolder = await this.db!.AddKnownFolderAsync(
                 title: "Sample",
                 serviceId: 10L,
                 position: 9L,
@@ -180,11 +152,11 @@ namespace Codevoid.Test.Storyvoid
             Assert.True(addedFolder.SyncToMobile);
 
             // Request the folder explicitily, check it's data
-            DatabaseFolder folder = (await db.GetFolderByLocalIdAsync(addedFolder.LocalId))!;
+            DatabaseFolder folder = (await this.db!.GetFolderByLocalIdAsync(addedFolder.LocalId))!;
             FoldersMatch(addedFolder, folder);
 
             // Check it comes back when listing all folders
-            var allFolders = await db.GetFoldersAsync();
+            var allFolders = await this.db!.GetFoldersAsync();
             var folderFromList = allFolders.Where((f) => f.LocalId == addedFolder.LocalId).FirstOrDefault();
             FoldersMatch(addedFolder, folderFromList);
         }
@@ -192,17 +164,15 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task AddFolderDuplicateTitleUsingServiceInformationThrows()
         {
-            using var db = await GetDatabase();
-
             // Create folder; check results are returned
-            var addedFolder = await db.AddKnownFolderAsync(
+            var addedFolder = await this.db!.AddKnownFolderAsync(
                 title: "Sample",
                 serviceId: 10L,
                 position: 9L,
                 syncToMobile: true
             );
 
-            _ = await Assert.ThrowsAsync<DuplicateNameException>(() => db.AddKnownFolderAsync(
+            _ = await Assert.ThrowsAsync<DuplicateNameException>(() => this.db!.AddKnownFolderAsync(
                 title: addedFolder.Title,
                 serviceId: addedFolder.ServiceId!.Value,
                 position: addedFolder.Position,
@@ -210,17 +180,15 @@ namespace Codevoid.Test.Storyvoid
             ));
 
             // Check it comes back when listing all folders
-            var allFolders = await db.GetFoldersAsync();
+            var allFolders = await this.db!.GetFoldersAsync();
             Assert.Equal(3, allFolders.Count);
         }
 
         [Fact]
         public async Task CanUpdateAddedFolderWithFullSetOfInformation()
         {
-            using var db = await GetDatabase();
-
             // Create local only folder
-            var folder = await db.CreateFolderAsync("Sample");
+            var folder = await this.db!.CreateFolderAsync("Sample");
             Assert.Null(folder.ServiceId);
             Assert.False(folder.IsOnService);
 
