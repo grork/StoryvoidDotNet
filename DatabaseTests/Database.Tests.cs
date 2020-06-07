@@ -213,5 +213,37 @@ namespace Codevoid.Test.Storyvoid
             var allFolders = await db.GetFoldersAsync();
             Assert.Equal(3, allFolders.Count);
         }
+
+        [Fact]
+        public async Task CanUpdateAddedFolderWithFullSetOfInformation()
+        {
+            using var db = await GetDatabase();
+
+            // Create local only folder
+            var folder = await db.CreateFolderAsync("Sample");
+            Assert.Null(folder.ServiceId);
+            Assert.False(folder.IsOnService);
+
+            // Update the local only folder with additional data
+            DatabaseFolder updatedFolder = await db.UpdateFolderAsync(
+                localId: folder.LocalId,
+                serviceId: 9L,
+                title: "Sample2",
+                position: 999L,
+                syncToMobile: false
+            );
+
+            // Should be the same folder
+            Assert.Equal(folder.LocalId, updatedFolder.LocalId);
+
+            // Values we updated should be reflected
+            Assert.NotNull(updatedFolder.ServiceId);
+            Assert.Equal(9L, updatedFolder.ServiceId);
+            Assert.True(updatedFolder.IsOnService);
+
+            Assert.Equal("Sample2", updatedFolder.Title);
+            Assert.Equal(999L, updatedFolder.Position);
+            Assert.False(updatedFolder.SyncToMobile);
+        }
     }
 }

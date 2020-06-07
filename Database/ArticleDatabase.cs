@@ -52,6 +52,18 @@ namespace Codevoid.Storyvoid
         /// <param name="syncToMobile">Should the folder by synced</param>
         /// <returns>The folder after being added to the database</returns>
         Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool syncToMobile);
+
+        /// <summary>
+        /// Updates the data of a folder with the supplied Local ID. All fields
+        /// must be supplied.
+        /// </summary>
+        /// <param name="localId">Item to update</param>
+        /// <param name="serviceId">Service ID to set</param>
+        /// <param name="title">Title to set</param>
+        /// <param name="position">Position to set</param>
+        /// <param name="syncToMobile">Should be synced</param>
+        /// <returns>Updated folder</returns>
+        Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool syncToMobile);
     }
 
     /// <summary>
@@ -302,6 +314,38 @@ namespace Codevoid.Storyvoid
 
                 var newFolderRowId = CreateFolder();
                 return GetFolderByLocalId(c, newFolderRowId)!;
+            });
+        }
+
+        public Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool syncToMobile)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+            void UpdateFolder()
+            {
+                var query = c!.CreateCommand(@"
+                    UPDATE folders SET
+                        service_id = @service_id,
+                        title = @title,
+                        position = @position,
+                        sync_to_mobile = @sync_to_mobile
+                    WHERE local_id = @local_id
+                ");
+
+                query.AddParameter("@local_id", localId);
+                query.AddParameter("@service_id", serviceId);
+                query.AddParameter("@title", title);
+                query.AddParameter("@position", position);
+                query.AddParameter("@sync_to_mobile", Convert.ToInt64(syncToMobile));
+
+                query.ExecuteScalar();
+            }
+
+            return Task.Run(() =>
+            {
+                UpdateFolder();
+                return GetFolderByLocalId(c, localId)!;
             });
         }
     }
