@@ -19,7 +19,28 @@ namespace Codevoid.Storyvoid
         /// folders (Unread, Archive)
         /// </summary>
         /// <returns>List of folders</returns>
-        Task<IList<object>> GetFoldersAsync();
+        Task<IList<DatabaseFolder>> GetFoldersAsync();
+
+        /// <summary>
+        /// Gets a specific folder using it's service ID
+        /// </summary>
+        /// <param name="serviceId">Service ID of the folder</param>
+        /// <returns>Folder if found, null otherwise</returns>
+        Task<DatabaseFolder?> GetFolderByServiceIdAsync(long serviceId);
+
+        /// <summary>
+        /// Gets a specific folder using it's local ID
+        /// </summary>
+        /// <param name="serviceId">Local ID of the folder</param>
+        /// <returns>Folder if found, null otherwise</returns>
+        Task<DatabaseFolder?> GetFolderByLocalIdAsync(long localId);
+
+        /// <summary>
+        /// Creates a new, local folder
+        /// </summary>
+        /// <param name="title">Title of the folder</param>
+        /// <returns>A new folder instance</returns>
+        Task<DatabaseFolder> CreateFolderAsync(string title);
     }
 
     /// <summary>
@@ -47,7 +68,7 @@ namespace Codevoid.Storyvoid
         // To help diagnose calls that skipped initialization
         private int initialized = 0;
 
-        private IDbConnection connection; 
+        private readonly IDbConnection connection; 
         public ArticleDatabase(IDbConnection connection)
         {
             this.connection = connection;
@@ -116,28 +137,123 @@ namespace Codevoid.Storyvoid
             return Task.Run(OpenAndCreateDatabase);
         }
         /// <inheritdoc/>
-        public Task<IList<object>> GetFoldersAsync()
+        public Task<IList<DatabaseFolder>> GetFoldersAsync()
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            IList<Object> ListFolders()
+            IList<DatabaseFolder> ListFolders()
             {
                 using var listFolders = c.CreateCommand("SELECT * FROM folders");
                 using var folders = listFolders.ExecuteReader();
 
-                var result = new List<Object>();
+                var result = new List<DatabaseFolder>();
 
                 while(folders.Read())
                 {
-                    result.Add(new object());
+                    var f = DatabaseFolder.FromRow(folders);
+                    result.Add(f);
                 }
 
                 return result;
             }
 
-            return Task<IList<Object>>.Run(ListFolders);
+            return Task.Run(ListFolders);
+        }
+
+        /// <inheritdoc/>
+        public Task<DatabaseFolder?> GetFolderByServiceIdAsync(long serviceId)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+            DatabaseFolder? GetFolder()
+            {
+                using var folderQuery = c.CreateCommand("SELECT * FROM folders WHERE service_id = @serviceId");
+                folderQuery.AddParameter("@serviceId", serviceId);
+
+                using var folderRow = folderQuery.ExecuteReader();
+
+                DatabaseFolder? folder = null;
+                if (folderRow.Read())
+                {
+                    folder = DatabaseFolder.FromRow(folderRow);
+                }
+
+                return folder;
+            }
+
+            return Task.Run(GetFolder);
+        }
+
+        /// <inheritdoc/>
+        public Task<DatabaseFolder?> GetFolderByLocalIdAsync(long localId)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+            return Task.Run(() => GetFolderByLocalId(c, localId));
+        }
+
+        private static DatabaseFolder? GetFolderByLocalId(IDbConnection connection, long localId)
+        {
+            using var folderQuery = connection.CreateCommand("SELECT * FROM folders WHERE local_id = @localId");
+            folderQuery.AddParameter("@localId", localId);
+
+            using var folderRow = folderQuery.ExecuteReader();
+
+            DatabaseFolder? folder = null;
+            if (folderRow.Read())
+            {
+                folder = DatabaseFolder.FromRow(folderRow);
+            }
+
+            return folder;
+        }
+
+        /// <inheritdoc/>
+        public Task<DatabaseFolder> CreateFolderAsync(string title)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+
+            bool FolderWithTitleExists()
+            {
+                using var folderWithTitle = c!.CreateCommand("SELECT COUNT(*) FROM folders WHERE title = @title");
+                folderWithTitle.AddParameter("@title", title);
+
+                var foldersWithTitleCount = (long)folderWithTitle.ExecuteScalar();
+
+                return (foldersWithTitleCount > 0);
+            }
+
+            long CreateFolder()
+            {
+                var query = c!.CreateCommand(@"
+                    INSERT INTO folders(title)
+                    VALUES (@title);
+
+                    SELECT last_insert_rowid();
+                ");
+
+                query.AddParameter("@title", title);
+                var rowId = (long)query.ExecuteScalar();
+
+                return rowId;
+            }
+
+            return Task.Run(() =>
+            {
+                if (FolderWithTitleExists())
+                {
+                    throw new DuplicateNameException($"Folder with name '{title}' already exists");
+                }
+
+                var newFolderRowId = CreateFolder();
+                return GetFolderByLocalId(c, newFolderRowId)!;
+            });
         }
     }
 }

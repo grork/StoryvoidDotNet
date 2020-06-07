@@ -20,5 +20,83 @@ namespace Codevoid.Storyvoid
 
             return command;
         }
+
+        /// <summary>
+        /// Get a string from a row, using it's name rather than ordinal
+        /// </summary>
+        /// <param name="name">Column to return</param>
+        /// <returns>Value from that column</returns>
+        public static string GetString(this IDataReader instance, string name)
+        {
+            var columnIndex = instance.GetOrdinal(name);
+            return instance.GetString(columnIndex);
+        }
+
+        /// <summary>
+        /// Get a Long from a row, using it's name rather than ordinal
+        /// </summary>
+        /// <param name="name">Column to return</param>
+        /// <returns>Value from that column</returns>
+        public static long GetInt64(this IDataReader instance, string name)
+        {
+            var columnIndex = instance.GetOrdinal(name);
+            return instance.GetInt64(columnIndex);
+        }
+
+        /// <summary>
+        /// Is a particular column in this row null, by name
+        /// </summary>
+        /// <param name="name">Column Name to check</param>
+        /// <returns>True if null, false otherwise</returns>
+        public static bool IsDBNull(this IDataReader instance, string name)
+        {
+            var columnIndex = instance.GetOrdinal(name);
+            return instance.IsDBNull(columnIndex);
+        }
+
+        /// <summary>
+        /// Add a named parameter of type long to this command.
+        /// </summary>
+        /// <param name="name">Name of the parameter in the query</param>
+        /// <param name="value">Value of the parameter</param>
+        public static void AddParameter(this IDbCommand instance, string name, long value)
+        {
+            var parameter = instance.CreateParameter();
+            parameter.DbType = DbType.Int64;
+            parameter.ParameterName = name;
+            parameter.Value = value;
+
+            instance.Parameters.Add(parameter);
+        }
+
+        /// <summary>
+        /// Add a named parameter of type string to this command.
+        /// </summary>
+        /// <param name="name">Name of the parameter in the query</param>
+        /// <param name="value">Value of the parameter</param>
+        public static void AddParameter(this IDbCommand instance, string name, string value)
+        {
+            var parameter = instance.CreateParameter();
+            parameter.DbType = DbType.String;
+            parameter.ParameterName = name;
+            parameter.Value = value;
+
+            instance.Parameters.Add(parameter);
+        }
+
+        /// <summary>
+        /// Add a named parameter of type float to this command.
+        /// </summary>
+        /// <param name="name">Name of the parameter in the query</param>
+        /// <param name="value">Value of the parameter</param>
+        public static void AddParameter(this IDbCommand instance, string name, float value)
+        {
+            var parameter = instance.CreateParameter();
+            parameter.DbType = DbType.Single;
+            parameter.ParameterName = name;
+            parameter.Value = value;
+
+            instance.Parameters.Add(parameter);
+        }
     }
 }

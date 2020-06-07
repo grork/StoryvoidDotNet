@@ -11,7 +11,7 @@
 
 CREATE TABLE folders (
     local_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    service_id INTEGER NOT NULL, -- Cant have this as a primary key, since temporary folders wont have an ID
+    service_id INTEGER, -- Cant have this as a primary key, since temporary folders wont have an ID
     title TEXT NOT NULL,
     position INTEGER NOT NULL DEFAULT 0,
     sync_to_mobile INTEGER NOT NULL DEFAULT 1
