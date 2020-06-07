@@ -9,10 +9,10 @@ namespace Codevoid.Test.Storyvoid
 {
     public class DatabaseTests
     {
-        private static async Task<IInstapaperDatabase> GetDatabase()
+        private static async Task<IArticleDatabase> GetDatabase()
         {
             var connection = new SqliteConnection("Data Source=:memory:");
-            var db = new Database(connection);
+            var db = new ArticleDatabase(connection);
             await db.OpenOrCreateDatabaseAsync();
 
             return db;
@@ -29,10 +29,10 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanReopenDatabase()
         {
             using var connection = new SqliteConnection("Data Source=:memory:");
-            var first = new Database(connection);
+            var first = new ArticleDatabase(connection);
             await first.OpenOrCreateDatabaseAsync();
 
-            var second = new Database(connection);
+            var second = new ArticleDatabase(connection);
             await first.OpenOrCreateDatabaseAsync();
         }
 

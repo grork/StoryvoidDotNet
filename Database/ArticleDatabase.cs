@@ -12,7 +12,7 @@ namespace Codevoid.Storyvoid
     /// <summary>
     /// Database store for Bookmarks &amp; Folders from the Instapaper Service
     /// </summary>
-    public interface IInstapaperDatabase : IDisposable
+    public interface IArticleDatabase : IDisposable
     {
         /// <summary>
         /// Gets all locally known folders, including the default
@@ -40,7 +40,7 @@ namespace Codevoid.Storyvoid
         public const long Archive = -2;
     }
 
-    public sealed class Database : IInstapaperDatabase, IDisposable
+    public sealed class ArticleDatabase : IArticleDatabase, IDisposable
     {
         private const int CURRENT_DB_VERSION = 1;
 
@@ -48,7 +48,7 @@ namespace Codevoid.Storyvoid
         private int initialized = 0;
 
         private IDbConnection connection; 
-        public Database(IDbConnection connection)
+        public ArticleDatabase(IDbConnection connection)
         {
             this.connection = connection;
         }
