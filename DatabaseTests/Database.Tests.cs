@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using Codevoid.Storyvoid;
 using Microsoft.Data.Sqlite;
@@ -72,6 +73,24 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public async Task GettingFolderThatDoesntExistByServiceIdDoesntReturnAnything()
+        {
+            using var db = await GetDatabase();
+            var folder = await db.GetFolderByServiceIdAsync(1);
+
+            Assert.Null(folder);
+        }
+
+        [Fact]
+        public async Task GettingFolderThatDoesntExistByLocalIdDoesntReturnAnything()
+        {
+            using var db = await GetDatabase();
+            var folder = await db.GetFolderByLocalIdAsync(5);
+
+            Assert.Null(folder);
+        }
+
+        [Fact]
         public async Task CanAddFolder()
         {
             using var db = await GetDatabase();
@@ -91,6 +110,20 @@ namespace Codevoid.Test.Storyvoid
             // Check it comes back when listing all folders
             var allFolders = await db.GetFoldersAsync();
             Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
+            Assert.Equal(3, allFolders.Count);
+        }
+
+        [Fact]
+        public async Task AddingFolderWithDuplicateTitleFails()
+        {
+            using var db = await GetDatabase();
+
+            // Create folder; then created it again, expecting it to fail
+            _ = await db.CreateFolderAsync("Sample");
+            _ = await Assert.ThrowsAsync<DuplicateNameException>(() => db.CreateFolderAsync("Sample"));
+
+            // Check a spurious folder wasn't created
+            var allFolders = await db.GetFoldersAsync();
             Assert.Equal(3, allFolders.Count);
         }
     }
