@@ -58,7 +58,7 @@ namespace Codevoid.Test.Instapaper
             });
 
             // Check that the folder we'd added recently is in the list
-            Assert.Contains(folders, (IFolder f) => this.SharedState.RecentlyAddedFolder!.Id == f.Id);
+            Assert.Contains(folders, (IInstapaperFolder f) => this.SharedState.RecentlyAddedFolder!.Id == f.Id);
         }
 
         [Fact, Order(4)]

@@ -334,8 +334,8 @@ namespace Codevoid.Test.Instapaper
             }
         }
 
-        public IFolder? RecentlyAddedFolder { get; private set; }
-        public void UpdateOrSetRecentFolder(IFolder? folder)
+        public IInstapaperFolder? RecentlyAddedFolder { get; private set; }
+        public void UpdateOrSetRecentFolder(IInstapaperFolder? folder)
         {
             this.RecentlyAddedFolder = folder;
         }
@@ -359,16 +359,16 @@ namespace Codevoid.Test.Instapaper
             }
         }
 
-        public IBookmark? RecentlyAddedBookmark { get; private set; }
+        public IInstapaperBookmark? RecentlyAddedBookmark { get; private set; }
 
-        public void UpdateOrSetRecentBookmark(IBookmark? bookmark)
+        public void UpdateOrSetRecentBookmark(IInstapaperBookmark? bookmark)
         {
             this.RecentlyAddedBookmark = bookmark;
         }
 
-        public IBookmark? NotFoundBookmark { get; private set; }
+        public IInstapaperBookmark? NotFoundBookmark { get; private set; }
 
-        internal void SetNotFoundBookmark(IBookmark bookmark)
+        internal void SetNotFoundBookmark(IInstapaperBookmark bookmark)
         {
             this.NotFoundBookmark = bookmark;
         }

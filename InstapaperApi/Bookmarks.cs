@@ -14,7 +14,7 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// A Bookmark from the service
     /// </summary>
-    public interface IBookmark
+    public interface IInstapaperBookmark
     {
         /// <summary>
         /// Service ID for this bookmark, uniquely identifying the bookmark
@@ -114,7 +114,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
+        Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
 
         /// <summary>
         /// List the bookmarks for a specific folder. For wellknown folders
@@ -131,7 +131,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(ulong folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
+        Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(ulong folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
 
         /// <summary>
         /// Add a bookmark for the supplied URL.
@@ -139,7 +139,7 @@ namespace Codevoid.Instapaper
         /// <param name="bookmarkUrl">URL to add</param>
         /// <param name="options">Options when adding this bookmark</param>
         /// <returns>The bookmark if successf</returns>
-        Task<IBookmark> AddAsync(Uri bookmarkUrl, AddBookmarkOptions? options);
+        Task<IInstapaperBookmark> AddAsync(Uri bookmarkUrl, AddBookmarkOptions? options);
 
         /// <summary>
         /// Updates the progress of a specific bookmark, explicitly.
@@ -148,7 +148,7 @@ namespace Codevoid.Instapaper
         /// <param name="progress">The progress, between 0.0 and 1.0</param>
         /// <param name="progress_timestamp">Time when progress was changed</param>
         /// <returns>The bookmark as returned by the service after the update</returns>
-        Task<IBookmark> UpdateReadProgressAsync(ulong bookmark_id, float progress, DateTime progress_timestamp);
+        Task<IInstapaperBookmark> UpdateReadProgressAsync(ulong bookmark_id, float progress, DateTime progress_timestamp);
 
         /// <summary>
         /// Sets the state of a bookmark to be 'Liked', irrespective of it's
@@ -156,7 +156,7 @@ namespace Codevoid.Instapaper
         /// </summary>
         /// <param name="bookmark_id">Bookmark to like</param>
         /// <returns>The updated bookmark</returns>
-        Task<IBookmark> LikeAsync(ulong bookmark_id);
+        Task<IInstapaperBookmark> LikeAsync(ulong bookmark_id);
 
         /// <summary>
         /// Sets the state of a bookmark to be 'unliked', irrespective of it's
@@ -164,7 +164,7 @@ namespace Codevoid.Instapaper
         /// </summary>
         /// <param name="id">Bookmark to unlike</param>
         /// <returns>The updated bookmark</returns>
-        Task<IBookmark> UnlikeAsync(ulong bookmark_id);
+        Task<IInstapaperBookmark> UnlikeAsync(ulong bookmark_id);
 
         /// <summary>
         /// Archives a bookmark -- which moves it out of the unread folder and
@@ -172,7 +172,7 @@ namespace Codevoid.Instapaper
         /// </summary>
         /// <param name="id">Bookmark to archive</param>
         /// <returns>The updated bookmark</returns>
-        Task<IBookmark> ArchiveAsync(ulong bookmark_id);
+        Task<IInstapaperBookmark> ArchiveAsync(ulong bookmark_id);
 
         /// <summary>
         /// Unarchives a bookmark -- which moves it to the well known 'unread'
@@ -180,7 +180,7 @@ namespace Codevoid.Instapaper
         /// </summary>
         /// <param name="id"></param>
         /// <returns>The updated bookmark</returns>
-        Task<IBookmark> UnarchiveAsync(ulong bookmark_id);
+        Task<IInstapaperBookmark> UnarchiveAsync(ulong bookmark_id);
 
         /// <summary>
         /// Moves the supplied bookmark to the supplied folder.
@@ -188,7 +188,7 @@ namespace Codevoid.Instapaper
         /// <param name="bookmark_id">Bookmark to move</param>
         /// <param name="folder_id">Folder to move the bookmark to</param>
         /// <returns>Bookmark after completing the move</returns>
-        Task<IBookmark> MoveAsync(ulong bookmark_id, ulong folder_id);
+        Task<IInstapaperBookmark> MoveAsync(ulong bookmark_id, ulong folder_id);
 
         /// <summary>
         /// Get the text of the bookmark from the service. This is returned in
@@ -220,7 +220,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, string wellKnownFolderId, uint limit = 0)
+        public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, string wellKnownFolderId, uint limit = 0)
         {
             return instance.ListAsync(wellKnownFolderId, null, limit);
         }
@@ -237,7 +237,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, string wellKnownFolderId, IEnumerable<HaveStatus> haveInformation)
+        public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, string wellKnownFolderId, IEnumerable<HaveStatus> haveInformation)
         {
             return instance.ListAsync(wellKnownFolderId, haveInformation, 0);
         }
@@ -251,7 +251,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, ulong folder_id, uint limit = 0)
+        public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, ulong folder_id, uint limit = 0)
         {
             return instance.ListAsync(folder_id, null, limit);
         }
@@ -268,7 +268,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<(IList<IBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, ulong folder_id, IEnumerable<HaveStatus> haveInformation)
+        public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, ulong folder_id, IEnumerable<HaveStatus> haveInformation)
         {
             return instance.ListAsync(folder_id, haveInformation, 0);
         }
@@ -278,15 +278,15 @@ namespace Codevoid.Instapaper
         /// </summary>
         /// <param name="bookmarkUrl">URL to add</param>
         /// <returns>The bookmark if successf</returns>
-        public static Task<IBookmark> AddAsync(this IBookmarksClient instance, Uri bookmarkUrl)
+        public static Task<IInstapaperBookmark> AddAsync(this IBookmarksClient instance, Uri bookmarkUrl)
         {
             return instance.AddAsync(bookmarkUrl, null);
         }
     }
 
-    internal class Bookmark : IBookmark
+    internal class Bookmark : IInstapaperBookmark
     {
-        internal static IBookmark FromJsonElement(JsonElement bookmarkElement)
+        internal static IInstapaperBookmark FromJsonElement(JsonElement bookmarkElement)
         {
             var id = bookmarkElement.GetProperty("bookmark_id").GetUInt64();
 
@@ -471,19 +471,19 @@ namespace Codevoid.Instapaper
             }
         }
 
-        private Task<(IList<IBookmark>, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, string parameterName, string parameterValue)
+        private Task<(IList<IInstapaperBookmark>, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, string parameterName, string parameterValue)
         {
             var content = new FormUrlEncodedContent(new[] { new KeyValuePair<string, string>(parameterName, parameterValue) });
             return this.PerformRequestAsync(endpoint, content);
         }
 
-        private Task<(IList<IBookmark>, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, IEnumerable<KeyValuePair<string, string>> parameters)
+        private Task<(IList<IInstapaperBookmark>, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, IEnumerable<KeyValuePair<string, string>> parameters)
         {
             var content = new FormUrlEncodedContent(parameters);
             return this.PerformRequestAsync(endpoint, content);
         }
 
-        private async Task<(IList<IBookmark> Bookmarks, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, HttpContent content)
+        private async Task<(IList<IInstapaperBookmark> Bookmarks, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, HttpContent content)
         {
             // Request data convert to JSON
             var result = await this.client.PostAsync(endpoint, content);
@@ -497,7 +497,7 @@ namespace Codevoid.Instapaper
             Debug.Assert(JsonValueKind.Array == payload.ValueKind, "API is always supposed to return an array as the root element");
 
             // Turn the JSON into strongly typed objects
-            IList<IBookmark> bookmarks = new List<IBookmark>();
+            IList<IInstapaperBookmark> bookmarks = new List<IInstapaperBookmark>();
             JsonElement? meta = null;
             foreach (var element in payload.EnumerateArray())
             {
@@ -538,7 +538,7 @@ namespace Codevoid.Instapaper
         /// <param name="endpoint">URI to post the data to</param>
         /// <param name="bookmark_id">The bookmark to operate on</param>
         /// <returns>Single bookmark on success</returns>
-        private async Task<IBookmark> SingleBookmarkOperation(Uri endpoint, ulong bookmark_id)
+        private async Task<IInstapaperBookmark> SingleBookmarkOperation(Uri endpoint, ulong bookmark_id)
         {
             if (bookmark_id == 0UL)
             {
@@ -551,7 +551,7 @@ namespace Codevoid.Instapaper
             return result.First();
         }
 
-        public async Task<(IList<IBookmark>, IList<ulong>)> ListAsync(string wellKnownFolderId, IEnumerable<HaveStatus>? haveInformation, uint limit)
+        public async Task<(IList<IInstapaperBookmark>, IList<ulong>)> ListAsync(string wellKnownFolderId, IEnumerable<HaveStatus>? haveInformation, uint limit)
         {
             if (limit > 500)
             {
@@ -597,7 +597,7 @@ namespace Codevoid.Instapaper
             return (bookmarks, deletedIds);
         }
 
-        public Task<(IList<IBookmark>, IList<ulong>)> ListAsync(ulong folder_id, IEnumerable<HaveStatus>? haveInformation, uint limit)
+        public Task<(IList<IInstapaperBookmark>, IList<ulong>)> ListAsync(ulong folder_id, IEnumerable<HaveStatus>? haveInformation, uint limit)
         {
             if (folder_id == 0UL)
             {
@@ -607,7 +607,7 @@ namespace Codevoid.Instapaper
             return this.ListAsync(folder_id.ToString(), haveInformation, limit);
         }
 
-        public async Task<IBookmark> AddAsync(Uri bookmarkUrl, AddBookmarkOptions? options)
+        public async Task<IInstapaperBookmark> AddAsync(Uri bookmarkUrl, AddBookmarkOptions? options)
         {
             if ((bookmarkUrl.Scheme != Uri.UriSchemeHttp)
                 && (bookmarkUrl.Scheme != Uri.UriSchemeHttps))
@@ -649,7 +649,7 @@ namespace Codevoid.Instapaper
             return result.First();
         }
 
-        public async Task<IBookmark> UpdateReadProgressAsync(ulong bookmark_id, float progress, DateTime progress_timestamp)
+        public async Task<IInstapaperBookmark> UpdateReadProgressAsync(ulong bookmark_id, float progress, DateTime progress_timestamp)
         {
             if (bookmark_id == 0UL)
             {
@@ -680,12 +680,12 @@ namespace Codevoid.Instapaper
             return result.First();
         }
 
-        public Task<IBookmark> LikeAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Star, bookmark_id);
-        public Task<IBookmark> UnlikeAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unstar, bookmark_id);
-        public Task<IBookmark> ArchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Archive, bookmark_id);
-        public Task<IBookmark> UnarchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unarchive, bookmark_id);
+        public Task<IInstapaperBookmark> LikeAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Star, bookmark_id);
+        public Task<IInstapaperBookmark> UnlikeAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unstar, bookmark_id);
+        public Task<IInstapaperBookmark> ArchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Archive, bookmark_id);
+        public Task<IInstapaperBookmark> UnarchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unarchive, bookmark_id);
 
-        public async Task<IBookmark> MoveAsync(ulong bookmark_id, ulong folder_id)
+        public async Task<IInstapaperBookmark> MoveAsync(ulong bookmark_id, ulong folder_id)
         {
             if (bookmark_id == 0UL)
             {
