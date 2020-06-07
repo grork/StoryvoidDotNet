@@ -125,6 +125,28 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public async Task CanAddMultipleFolders()
+        {
+            using var db = await GetDatabase();
+
+            // Create folder; check results are returned
+            var addedFolder = await db.CreateFolderAsync("Sample");
+            Assert.Null(addedFolder.ServiceId);
+            Assert.Equal("Sample", addedFolder.Title);
+            Assert.NotEqual(0L, addedFolder.LocalId);
+
+            var addedFolder2 = await db.CreateFolderAsync("Sample2");
+            Assert.Null(addedFolder2.ServiceId);
+            Assert.Equal("Sample2", addedFolder2.Title);
+            Assert.NotEqual(0L, addedFolder2.LocalId);
+
+            // Check it comes back when listing all folders
+            var allFolders = await db.GetFoldersAsync();
+            Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
+            Assert.Equal(4, allFolders.Count);
+        }
+
+        [Fact]
         public async Task AddingFolderWithDuplicateTitleFails()
         {
             using var db = await GetDatabase();
