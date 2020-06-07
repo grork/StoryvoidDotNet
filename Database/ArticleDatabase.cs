@@ -41,6 +41,17 @@ namespace Codevoid.Storyvoid
         /// <param name="title">Title of the folder</param>
         /// <returns>A new folder instance</returns>
         Task<DatabaseFolder> CreateFolderAsync(string title);
+
+        /// <summary>
+        /// Adds a known folder to the database. This intended to be used when
+        /// you have a fully-filled out folder from the service.
+        /// </summary>
+        /// <param name="title">Title for this folder</param>
+        /// <param name="serviceId">The ID of the folder on the service</param>
+        /// <param name="position">The relative order of the folder</param>
+        /// <param name="syncToMobile">Should the folder by synced</param>
+        /// <returns>The folder after being added to the database</returns>
+        Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool syncToMobile);
     }
 
     /// <summary>
@@ -219,16 +230,6 @@ namespace Codevoid.Storyvoid
 
             var c = this.connection;
 
-            bool FolderWithTitleExists()
-            {
-                using var folderWithTitle = c!.CreateCommand("SELECT COUNT(*) FROM folders WHERE title = @title");
-                folderWithTitle.AddParameter("@title", title);
-
-                var foldersWithTitleCount = (long)folderWithTitle.ExecuteScalar();
-
-                return (foldersWithTitleCount > 0);
-            }
-
             long CreateFolder()
             {
                 var query = c!.CreateCommand(@"
@@ -246,7 +247,55 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                if (FolderWithTitleExists())
+                if (FolderWithTitleExists(c, title))
+                {
+                    throw new DuplicateNameException($"Folder with name '{title}' already exists");
+                }
+
+                var newFolderRowId = CreateFolder();
+                return GetFolderByLocalId(c, newFolderRowId)!;
+            });
+        }
+
+        private static bool FolderWithTitleExists(IDbConnection connection, string title)
+        {
+            using var folderWithTitle = connection.CreateCommand("SELECT COUNT(*) FROM folders WHERE title = @title");
+            folderWithTitle.AddParameter("@title", title);
+
+            var foldersWithTitleCount = (long)folderWithTitle.ExecuteScalar();
+
+            return (foldersWithTitleCount > 0);
+        }
+
+        /// <inheritdoc/>
+        public Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool syncToMobile)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+
+            long CreateFolder()
+            {
+                var query = c!.CreateCommand(@"
+                    INSERT INTO folders(title, service_id, position, sync_to_mobile)
+                    VALUES (@title, @serviceId, @position, @syncToMobile);
+
+                    SELECT last_insert_rowid();
+                ");
+
+                query.AddParameter("@title", title);
+                query.AddParameter("@serviceId", serviceId);
+                query.AddParameter("@position", position);
+                query.AddParameter("@syncToMobile", Convert.ToInt64(syncToMobile));
+
+                var rowId = (long)query.ExecuteScalar();
+
+                return rowId;
+            }
+
+            return Task.Run(() =>
+            {
+                if (FolderWithTitleExists(c, title))
                 {
                     throw new DuplicateNameException($"Folder with name '{title}' already exists");
                 }

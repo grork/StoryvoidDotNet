@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Codevoid.Storyvoid;
 using Microsoft.Data.Sqlite;
@@ -10,6 +11,18 @@ namespace Codevoid.Test.Storyvoid
 {
     public class DatabaseTests
     {
+        private static void FoldersMatch(DatabaseFolder? folder1, DatabaseFolder? folder2)
+        {
+            Assert.NotNull(folder1);
+            Assert.NotNull(folder2);
+
+            Assert.Equal(folder1!.LocalId, folder2!.LocalId);
+            Assert.Equal(folder1!.ServiceId, folder2!.ServiceId);
+            Assert.Equal(folder1!.Title, folder2!.Title);
+            Assert.Equal(folder1!.Position, folder2!.Position);
+            Assert.Equal(folder1!.SyncToMobile, folder2!.SyncToMobile);
+        }
+
         private static async Task<IArticleDatabase> GetDatabase()
         {
             var connection = new SqliteConnection("Data Source=:memory:");
@@ -103,9 +116,7 @@ namespace Codevoid.Test.Storyvoid
 
             // Request the folder explicitily, check it's data
             DatabaseFolder folder = (await db.GetFolderByLocalIdAsync(addedFolder.LocalId))!;
-            Assert.Null(folder.ServiceId);
-            Assert.Equal(addedFolder.Title, folder.Title);
-            Assert.Equal(addedFolder.LocalId, folder.LocalId);
+            FoldersMatch(addedFolder, folder);
 
             // Check it comes back when listing all folders
             var allFolders = await db.GetFoldersAsync();
@@ -123,6 +134,60 @@ namespace Codevoid.Test.Storyvoid
             _ = await Assert.ThrowsAsync<DuplicateNameException>(() => db.CreateFolderAsync("Sample"));
 
             // Check a spurious folder wasn't created
+            var allFolders = await db.GetFoldersAsync();
+            Assert.Equal(3, allFolders.Count);
+        }
+
+        [Fact]
+        public async Task CanAddFolderWithAllServiceInformation()
+        {
+            using var db = await GetDatabase();
+
+            // Create folder; check results are returned
+            DatabaseFolder addedFolder = await db.AddKnownFolderAsync(
+                title: "Sample",
+                serviceId: 10L,
+                position: 9L,
+                syncToMobile: true
+            );
+
+            Assert.Equal(10L, addedFolder.ServiceId);
+            Assert.Equal("Sample", addedFolder.Title);
+            Assert.NotEqual(0L, addedFolder.LocalId);
+            Assert.Equal(9L, addedFolder.Position);
+            Assert.True(addedFolder.SyncToMobile);
+
+            // Request the folder explicitily, check it's data
+            DatabaseFolder folder = (await db.GetFolderByLocalIdAsync(addedFolder.LocalId))!;
+            FoldersMatch(addedFolder, folder);
+
+            // Check it comes back when listing all folders
+            var allFolders = await db.GetFoldersAsync();
+            var folderFromList = allFolders.Where((f) => f.LocalId == addedFolder.LocalId).FirstOrDefault();
+            FoldersMatch(addedFolder, folderFromList);
+        }
+
+        [Fact]
+        public async Task AddFolderDuplicateTitleUsingServiceInformationThrows()
+        {
+            using var db = await GetDatabase();
+
+            // Create folder; check results are returned
+            var addedFolder = await db.AddKnownFolderAsync(
+                title: "Sample",
+                serviceId: 10L,
+                position: 9L,
+                syncToMobile: true
+            );
+
+            _ = await Assert.ThrowsAsync<DuplicateNameException>(() => db.AddKnownFolderAsync(
+                title: addedFolder.Title,
+                serviceId: addedFolder.ServiceId!.Value,
+                position: addedFolder.Position,
+                syncToMobile: addedFolder.SyncToMobile
+            ));
+
+            // Check it comes back when listing all folders
             var allFolders = await db.GetFoldersAsync();
             Assert.Equal(3, allFolders.Count);
         }
