@@ -98,5 +98,51 @@ namespace Codevoid.Storyvoid
 
             instance.Parameters.Add(parameter);
         }
+
+        /// <summary>
+        /// Add a named parameter of type Uri to this command. Note, that the
+        /// URL will be turned into a string for storage
+        /// </summary>
+        /// <param name="name">Name of the parameter in the query</param>
+        /// <param name="value">Value of the parameter</param>
+        public static void AddParameter(this IDbCommand instance, string name, Uri value)
+        {
+            var parameter = instance.CreateParameter();
+            parameter.DbType = DbType.String;
+            parameter.ParameterName = name;
+            parameter.Value = value.ToString();
+
+            instance.Parameters.Add(parameter);
+        }
+
+        /// <summary>
+        /// Add a named parameter of type DateTime to this command.
+        /// </summary>
+        /// <param name="name">Name of the parameter in the query</param>
+        /// <param name="value">Value of the parameter</param>
+        public static void AddParameter(this IDbCommand instance, string name, DateTime value)
+        {
+            var parameter = instance.CreateParameter();
+            parameter.DbType = DbType.DateTime;
+            parameter.ParameterName = name;
+            parameter.Value = value;
+
+            instance.Parameters.Add(parameter);
+        }
+
+        /// <summary>
+        /// Add a named parameter of type bool to this command.
+        /// </summary>
+        /// <param name="name">Name of the parameter in the query</param>
+        /// <param name="value">Value of the parameter</param>
+        public static void AddParameter(this IDbCommand instance, string name, bool value)
+        {
+            var parameter = instance.CreateParameter();
+            parameter.DbType = DbType.Boolean;
+            parameter.ParameterName = name;
+            parameter.Value = value;
+
+            instance.Parameters.Add(parameter);
+        }
     }
 }

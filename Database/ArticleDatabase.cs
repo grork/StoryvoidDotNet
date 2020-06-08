@@ -64,6 +64,30 @@ namespace Codevoid.Storyvoid
         /// <param name="syncToMobile">Should be synced</param>
         /// <returns>Updated folder</returns>
         Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool syncToMobile);
+
+        /// <summary>
+        /// Gets Bookmarks for a specific local folder
+        /// </summary>
+        /// <param name="localId">Local Folder ID to get bookmarks for</param>
+        /// <returns>Bookmarks in that folder</returns>
+        Task<IList<object>> GetBookmarks(long localId);
+
+        /// <summary>
+        /// Add a bookmark to the database
+        /// </summary>
+        /// <param name="id">ID of the bookmark on the service</param>
+        /// <param name="title">Title of the bookmark</param>
+        /// <param name="url">URL the bookmark is for</param>
+        /// <param name="description">Description of the bookmark</param>
+        /// <param name="progress">Current read progress</param>
+        /// <param name="progressTimestamp">Last time progress was changed</param>
+        /// <param name="hash">Service-sourced hash of the bookmark state</param>
+        /// <param name="liked">Liked status of the bookmark</param>
+        /// <param name="localFolderId">Folder to place this bookmark into</param>
+        /// <returns>Bookmark from the database</returns>
+        Task<DatabaseBookmark> AddBookmark(
+            (int id, string title, Uri url, string description, float progress, DateTime progressTimestamp, string hash, bool liked) data,
+            long localFolderId);
     }
 
     /// <summary>
@@ -346,6 +370,102 @@ namespace Codevoid.Storyvoid
             {
                 UpdateFolder();
                 return GetFolderByLocalId(c, localId)!;
+            });
+        }
+
+        ///<inheritdoc/>
+        public Task<IList<object>> GetBookmarks(long localFolderId)
+        {
+            var c = this.connection;
+
+            IList<object> GetBookmarks()
+            {
+                using var query = c.CreateCommand(@"
+                    SELECT b.*
+                    FROM bookmark_to_folder
+                    INNER JOIN bookmarks b
+                        ON bookmark_to_folder.bookmark_id = b.id
+                    WHERE bookmark_to_folder.local_folder_id = @local_folder_id
+                ");
+
+                query.AddParameter("@local_folder_id", localFolderId);
+
+                var results = new List<object>();
+                using var rows = query.ExecuteReader();
+                while(rows.Read())
+                {
+                    results.Add(new object());
+                }
+
+                return results;
+            }
+
+            return Task.Run(GetBookmarks);
+        }
+
+        private DatabaseBookmark? GetBookmarkById(IDbConnection connection, long id)
+        {
+            using var query = connection.CreateCommand("SELECT * FROM bookmarks WHERE id = @id");
+            query.AddParameter("@id", id);
+
+            using var row = query.ExecuteReader();
+
+            DatabaseBookmark? bookmark = null;
+            if (row.Read())
+            {
+                bookmark = DatabaseBookmark.FromRow(row);
+            }
+
+            return bookmark;
+        }
+
+        /// <inheritdoc/>
+        public Task<DatabaseBookmark> AddBookmark(
+            (int id, string title, Uri url, string description, float progress, DateTime progressTimestamp, string hash, bool liked) data,
+            long localFolderId
+        )
+        {
+            var c = this.connection;
+
+            void AddBookmark()
+            {
+                var query = c!.CreateCommand(@"
+                    INSERT INTO bookmarks(id, title, url, description, progress, progress_timestamp, hash, liked)
+                    VALUES (@id, @title, @url, @description, @progress, @progress_timestamp, @hash, @liked);
+
+                    SELECT last_insert_rowid();
+                ");
+
+                query.AddParameter("@id", data.id);
+                query.AddParameter("@title", data.title);
+                query.AddParameter("@url", data.url);
+                query.AddParameter("@description", data.description);
+                query.AddParameter("@progress", data.progress);
+                query.AddParameter("@progress_timestamp", data.progressTimestamp);
+                query.AddParameter("@hash", data.hash);
+                query.AddParameter("@liked", data.liked);
+
+                query.ExecuteNonQuery();
+            }
+
+            void PairBookmarkToFolder()
+            {
+                var query = c!.CreateCommand(@"
+                    INSERT INTO bookmark_to_folder(local_folder_id, bookmark_id)
+                    VALUES (@local_folder_id, @bookmark_id);
+                ");
+
+                query.AddParameter("@bookmark_id", data.id);
+                query.AddParameter("@local_folder_id", localFolderId);
+
+                query.ExecuteNonQuery();
+            }
+
+            return Task.Run(() =>
+            {
+                AddBookmark();
+                PairBookmarkToFolder();
+                return GetBookmarkById(c, data.id)!;
             });
         }
     }

@@ -26,7 +26,7 @@ VALUES (-1, 'Home');
 INSERT INTO folders(service_id, title)
 VALUES (-2, 'Archive');
 
-CREATE TABLE folders_to_bookmarks (
+CREATE TABLE bookmark_to_folder (
     pair_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     local_folder_id INTEGER NOT NULL DEFAULT 0,
     bookmark_id INTEGER NOT NULL DEFAULT 0,

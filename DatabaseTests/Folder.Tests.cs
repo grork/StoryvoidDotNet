@@ -27,11 +27,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task InitializeAsync() => this.db = await TestUtilities.GetDatabase();
         public Task DisposeAsync()
         {
-            if (this.db != null)
-            {
-                this.db.Dispose();
-            }
-
+            this.db?.Dispose();
             return Task.CompletedTask;
         }
 
