@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Codevoid.Storyvoid;
 using Xunit;
@@ -53,14 +54,58 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanListBookmarksWhenEmpty()
         {
-            IList<object> bookmarks = await this.db!.GetBookmarks(this.UnreadFolder!.LocalId);
+            var bookmarks = await this.db!.GetBookmarks(this.UnreadFolder!.LocalId);
             Assert.Empty(bookmarks);
         }
 
         [Fact]
         public async Task CanAddBookmark()
         {
-            DatabaseBookmark bookmark = await this.db!.AddBookmark((
+            _ = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+        }
+
+        [Fact]
+        public async Task CanGetSingleBookmark()
+        {
+            var progressTimestamp = DateTime.Now;
+            _ = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: progressTimestamp,
+                hash: "ABC",
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+
+            var retrievedBookmark = (await this.db!.GetBookmarkById(1L))!;
+            Assert.Equal(progressTimestamp, retrievedBookmark.ProgressTimestamp);
+            Assert.Equal("Sample Bookmark", retrievedBookmark.Title);
+            Assert.Equal(new Uri("https://www.bing.com"), retrievedBookmark.Url);
+            Assert.Equal("ABC", retrievedBookmark.Hash);
+        }
+
+        [Fact]
+        public async Task GettingNonExistantBookmarkReturnsNull()
+        {
+            var missingBookmark = await this.db!.GetBookmarkById(1);
+            Assert.Null(missingBookmark);
+        }
+
+        [Fact]
+        public async Task CanListBookmarksInUnreadFolder()
+        {
+            var bookmark = await this.db!.AddBookmark((
                 id: 1,
                 title: "Sample Bookmark",
                 url: new Uri("https://www.bing.com"),
@@ -71,8 +116,40 @@ namespace Codevoid.Test.Storyvoid
                 liked: false
             ), this.UnreadFolder!.LocalId);
 
-            IList<object> bookmarks = await this.db!.GetBookmarks(this.UnreadFolder.LocalId);
+            var bookmarks = await this.db!.GetBookmarks(this.UnreadFolder.LocalId);
             Assert.Equal(1, bookmarks.Count);
+            Assert.Contains(bookmarks, (b) => b.Id == 1);
+
+            var bookmarkFromListing = bookmarks.First();
+            Assert.Equal(bookmark.ProgressTimestamp, bookmarkFromListing.ProgressTimestamp);
+            Assert.Equal(bookmark.Title, bookmarkFromListing.Title);
+            Assert.Equal(bookmark.Url, bookmarkFromListing.Url);
+            Assert.Equal(bookmark.Hash, bookmarkFromListing.Hash);
+        }
+
+        [Fact]
+        public async Task CanAddBookmarkToSpecificFolder()
+        {
+            var bookmark = await this.db!.AddBookmark((
+                   id: 1,
+                   title: "Sample Bookmark",
+                   url: new Uri("https://www.bing.com"),
+                   description: String.Empty,
+                   progress: 0.0F,
+                   progressTimestamp: DateTime.Now,
+                   hash: String.Empty,
+                   liked: false
+               ), this.CustomFolder1!.LocalId);
+
+            var bookmarks = await this.db!.GetBookmarks(this.CustomFolder1.LocalId);
+            Assert.Equal(1, bookmarks.Count);
+            Assert.Contains(bookmarks, (b) => b.Id == 1);
+
+            var bookmarkFromListing = bookmarks.First();
+            Assert.Equal(bookmark.ProgressTimestamp, bookmarkFromListing.ProgressTimestamp);
+            Assert.Equal(bookmark.Title, bookmarkFromListing.Title);
+            Assert.Equal(bookmark.Url, bookmarkFromListing.Url);
+            Assert.Equal(bookmark.Hash, bookmarkFromListing.Hash);
         }
     }
 }

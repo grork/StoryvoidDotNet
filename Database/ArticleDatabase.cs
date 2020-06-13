@@ -70,7 +70,7 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="localId">Local Folder ID to get bookmarks for</param>
         /// <returns>Bookmarks in that folder</returns>
-        Task<IList<object>> GetBookmarks(long localId);
+        Task<IList<DatabaseBookmark>> GetBookmarks(long localId);
 
         /// <summary>
         /// Add a bookmark to the database
@@ -88,6 +88,13 @@ namespace Codevoid.Storyvoid
         Task<DatabaseBookmark> AddBookmark(
             (int id, string title, Uri url, string description, float progress, DateTime progressTimestamp, string hash, bool liked) data,
             long localFolderId);
+
+        /// <summary>
+        /// Gets a bookmark by it's service ID
+        /// </summary>
+        /// <param name="id">ID of the bookmark</param>
+        /// <returns>Bookmark if found, null otherwise</returns>
+        Task<DatabaseBookmark?> GetBookmarkById(long id);
     }
 
     /// <summary>
@@ -374,11 +381,11 @@ namespace Codevoid.Storyvoid
         }
 
         ///<inheritdoc/>
-        public Task<IList<object>> GetBookmarks(long localFolderId)
+        public Task<IList<DatabaseBookmark>> GetBookmarks(long localFolderId)
         {
             var c = this.connection;
 
-            IList<object> GetBookmarks()
+            IList<DatabaseBookmark> GetBookmarks()
             {
                 using var query = c.CreateCommand(@"
                     SELECT b.*
@@ -390,17 +397,23 @@ namespace Codevoid.Storyvoid
 
                 query.AddParameter("@local_folder_id", localFolderId);
 
-                var results = new List<object>();
+                var results = new List<DatabaseBookmark>();
                 using var rows = query.ExecuteReader();
                 while(rows.Read())
                 {
-                    results.Add(new object());
+                    results.Add(DatabaseBookmark.FromRow(rows));
                 }
 
                 return results;
             }
 
             return Task.Run(GetBookmarks);
+        }
+
+        public Task<DatabaseBookmark?> GetBookmarkById(long id)
+        {
+            var c = this.connection;
+            return Task.Run(() => GetBookmarkById(c, id));
         }
 
         private DatabaseBookmark? GetBookmarkById(IDbConnection connection, long id)

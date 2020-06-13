@@ -44,6 +44,50 @@ namespace Codevoid.Storyvoid
         }
 
         /// <summary>
+        /// Get a Uri from a row, using it's name rather than ordinal
+        /// </summary>
+        /// <param name="name">Column to return</param>
+        /// <returns>Value from that column</returns>
+        public static Uri GetUri(this IDataReader instance, string name)
+        {
+            var uriString = instance.GetString(name);
+            return new Uri(uriString);
+        }
+
+        /// <summary>
+        /// Get a Float from a row, using it's name rather than ordinal
+        /// </summary>
+        /// <param name="name">Column to return</param>
+        /// <returns>Value from that column</returns>
+        public static float GetFloat(this IDataReader instance, string name)
+        {
+            var columnIndex = instance.GetOrdinal(name);
+            return instance.GetFloat(columnIndex);
+        }
+
+        /// <summary>
+        /// Get a DateTime from a row, using it's name rather than ordinal
+        /// </summary>
+        /// <param name="name">Column to return</param>
+        /// <returns>Value from that column</returns>
+        public static DateTime GetDateTime(this IDataReader instance, string name)
+        {
+            var columnIndex = instance.GetOrdinal(name);
+            return instance.GetDateTime(columnIndex);
+        }
+
+        /// <summary>
+        /// Get a Boolean from a row, using it's name rather than ordinal
+        /// </summary>
+        /// <param name="name">Column to return</param>
+        /// <returns>Value from that column</returns>
+        public static bool GetBoolean(this IDataReader instance, string name)
+        {
+            var columnIndex = instance.GetOrdinal(name);
+            return instance.GetBoolean(columnIndex);
+        }
+
+        /// <summary>
         /// Is a particular column in this row null, by name
         /// </summary>
         /// <param name="name">Column Name to check</param>

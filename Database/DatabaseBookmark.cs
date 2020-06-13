@@ -23,7 +23,31 @@ namespace Codevoid.Storyvoid
 
         public static DatabaseBookmark FromRow(IDataReader row)
         {
-            return new DatabaseBookmark();
+            var id = row.GetInt64("id");
+            var url = row.GetUri("url");
+            var title = row.GetString("title");
+            var progress = row.GetFloat("progress");
+            var progressTimestamp = row.GetDateTime("progress_timestamp");
+            var hash = row.GetString("hash");
+            var liked = row.GetBoolean("liked");
+
+            var bookmark = new DatabaseBookmark()
+            {
+                Id = id,
+                Url = url,
+                Title = title,
+                Progress = progress,
+                ProgressTimestamp = progressTimestamp,
+                Hash = hash,
+                Liked = liked
+            };
+
+            if(!row.IsDBNull("description"))
+            {
+                bookmark.Description = row.GetString("description");
+            }
+
+            return bookmark;
         }
     }
 }
