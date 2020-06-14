@@ -115,6 +115,16 @@ namespace Codevoid.Storyvoid
         /// <param name="id">Bookmark to Unlike</param>
         /// <returns>The Bookmark after unliking. Represents current database state</returns>
         Task<DatabaseBookmark> UnlikeBookmark(long id);
+
+        /// <summary>
+        /// Update the progress of a specific bookmark, with the supplied
+        /// timestamp of the progress update.
+        /// </summary>
+        /// <param name="progress">Progress </param>
+        /// <param name="progressTimestamp"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        Task<DatabaseBookmark> UpdateProgressForBookmark(float progress, DateTime progressTimestamp, long id);
     }
 
     public sealed partial class ArticleDatabase : IArticleDatabase, IDisposable

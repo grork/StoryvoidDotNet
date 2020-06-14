@@ -11,6 +11,8 @@ namespace Codevoid.Storyvoid
 {
     public sealed partial class ArticleDatabase
     {
+        private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
+
         ///<inheritdoc/>
         public Task<IList<DatabaseBookmark>> GetBookmarks(long localFolderId)
         {
@@ -141,10 +143,10 @@ namespace Codevoid.Storyvoid
         private static void UpdateLikeStatusForBookmark(IDbConnection c, long id, bool liked)
         {
             var query = c!.CreateCommand(@"
-                    UPDATE bookmarks SET
-                        liked = @liked
-                    WHERE id = @id
-                ");
+                UPDATE bookmarks
+                SET liked = @liked
+                WHERE id = @id
+            ");
 
             query.AddParameter("@id", id);
             query.AddParameter("@liked", liked);
@@ -156,6 +158,7 @@ namespace Codevoid.Storyvoid
             }
         }
 
+        /// <inheritdoc/>
         public Task<DatabaseBookmark> LikeBookmark(long id)
         {
             this.ThrowIfNotReady();
@@ -169,6 +172,7 @@ namespace Codevoid.Storyvoid
             });
         }
 
+        /// <inheritdoc/>
         public Task<DatabaseBookmark> UnlikeBookmark(long id)
         {
             this.ThrowIfNotReady();
@@ -178,6 +182,47 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForBookmark(c, id, false);
+                return GetBookmarkById(c, id)!;
+            });
+        }
+
+        public Task<DatabaseBookmark> UpdateProgressForBookmark(float progress, DateTime timestamp, long id)
+        {
+            if(progress < 0.0 || progress > 1.0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(progress), "Progress must be between 0.0 and 1.0");
+            }
+
+            if(timestamp < UnixEpochStart)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timestamp), "Progress Timestamp must be within the Unix Epochs");
+            }
+
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+            void UpdateProgressForBookmark()
+            {
+                using var query = c!.CreateCommand(@"
+                    UPDATE bookmarks
+                    SET progress = @progress, progress_timestamp = @progress_timestamp
+                    WHERE id = @id
+                ");
+
+                query.AddParameter("@id", id);
+                query.AddParameter("@progress", progress);
+                query.AddParameter("@progress_timestamp", timestamp);
+
+                var impactedRows = query.ExecuteNonQuery();
+                if(impactedRows < 1)
+                {
+                    throw new BookmarkNotFoundException(id);
+                }
+            }
+
+            return Task.Run(() =>
+            {
+                UpdateProgressForBookmark();
                 return GetBookmarkById(c, id)!;
             });
         }

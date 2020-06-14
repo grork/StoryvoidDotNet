@@ -348,5 +348,109 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(unlikedBookmarkOriginal.Id, unlikedBookmark.Id);
             Assert.False(unlikedBookmark.Liked);
         }
+
+        [Fact]
+        public async Task CanUpdateBookmarkProgressWithTimeStamp()
+        {
+            var bookmark = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+
+            var progressTimestamp = DateTime.Now.AddMinutes(5);
+            var progress = 0.3F;
+            DatabaseBookmark updatedBookmark = await this.db!.UpdateProgressForBookmark(progress, progressTimestamp, bookmark.Id);
+            Assert.Equal(bookmark.Id, updatedBookmark.Id);
+            Assert.Equal(progressTimestamp, updatedBookmark.ProgressTimestamp);
+            Assert.Equal(progress, updatedBookmark.Progress);
+        }
+
+        [Fact]
+        public async Task ProgressUpdateChangesReflectedInListCall()
+        {
+            var bookmark = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+
+            var beforeUpdate = await this.db!.GetBookmarks(this.UnreadFolder!.LocalId);
+            Assert.Equal(1, beforeUpdate.Count);
+            Assert.Contains(beforeUpdate, (b) =>
+                (b.Id == 1) && b.Progress == bookmark.Progress && b.ProgressTimestamp == bookmark.ProgressTimestamp);
+
+            var progressTimestamp = DateTime.Now.AddMinutes(5);
+            var progress = 0.3F;
+            bookmark = await this.db!.UpdateProgressForBookmark(progress, progressTimestamp, bookmark.Id);
+            var afterUpdate = await this.db!.GetBookmarks(this.UnreadFolder!.LocalId);
+            Assert.Equal(1, afterUpdate.Count);
+            Assert.Contains(afterUpdate, (b) =>
+                (b.Id == 1) && b.Progress == progress && b.ProgressTimestamp == progressTimestamp);
+        }
+
+        [Fact]
+        public async Task UpdatingProgressOfNonExistantBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () =>
+            {
+                await this.db!.UpdateProgressForBookmark(0.4F, DateTime.Now, 1);
+            });
+        }
+
+        [Fact]
+        public async Task UpdatingProgressOutsideSupportedRangeThrows()
+        {
+            _ = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            {
+                await this.db!.UpdateProgressForBookmark(-0.01F, DateTime.Now, 1);
+            });
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            {
+                await this.db!.UpdateProgressForBookmark(1.01F, DateTime.Now, 1);
+            });
+        }
+
+        [Fact]
+        public async Task UpdatingProgressWithTimeStampOutsideUnixEpochThrows()
+        {
+            _ = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            {
+                await this.db!.UpdateProgressForBookmark(0.5F, new DateTime(1969, 12, 31, 23, 59, 59), 1);
+            });
+        }
     }
 }
