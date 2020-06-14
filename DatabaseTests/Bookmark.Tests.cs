@@ -151,5 +151,51 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(bookmark.Url, bookmarkFromListing.Url);
             Assert.Equal(bookmark.Hash, bookmarkFromListing.Hash);
         }
+
+        [Fact]
+        public async Task BookmarksAreOnlyReturnedInTheirOwningFolders()
+        {
+            var customFolderBookmark = await this.db!.AddBookmark((
+                  id: 1,
+                  title: "Sample Bookmark",
+                  url: new Uri("https://www.bing.com"),
+                  description: String.Empty,
+                  progress: 0.0F,
+                  progressTimestamp: DateTime.Now,
+                  hash: String.Empty,
+                  liked: false
+              ), this.CustomFolder1!.LocalId);
+
+            var unreadFolderBookmark = await this.db!.AddBookmark((
+                id: 2,
+                title: "Sample Bookmark 2",
+                url: new Uri("https://www.duckduckgo.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+
+            var customFolderBookmarks = await this.db!.GetBookmarks(this.CustomFolder1.LocalId);
+            Assert.Equal(1, customFolderBookmarks.Count);
+            Assert.Contains(customFolderBookmarks, (b) => b.Id == 1);
+
+            var customBookmarkFromListing = customFolderBookmarks.First();
+            Assert.Equal(customFolderBookmark.ProgressTimestamp, customBookmarkFromListing.ProgressTimestamp);
+            Assert.Equal(customFolderBookmark.Title, customBookmarkFromListing.Title);
+            Assert.Equal(customFolderBookmark.Url, customBookmarkFromListing.Url);
+            Assert.Equal(customFolderBookmark.Hash, customBookmarkFromListing.Hash);
+
+            var unreadFolderBookmarks = await this.db!.GetBookmarks(this.UnreadFolder!.LocalId);
+            Assert.Equal(1, unreadFolderBookmarks.Count);
+            Assert.Contains(unreadFolderBookmarks, (b) => b.Id == 2);
+
+            var unreadBookmarkFromListing = unreadFolderBookmarks.First();
+            Assert.Equal(unreadFolderBookmark.ProgressTimestamp, unreadBookmarkFromListing.ProgressTimestamp);
+            Assert.Equal(unreadFolderBookmark.Title, unreadBookmarkFromListing.Title);
+            Assert.Equal(unreadFolderBookmark.Url, unreadBookmarkFromListing.Url);
+            Assert.Equal(unreadFolderBookmark.Hash, unreadBookmarkFromListing.Hash);
+        }
     }
 }
