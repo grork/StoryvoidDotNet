@@ -209,5 +209,20 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(999L, updatedFolder.Position);
             Assert.False(updatedFolder.SyncToMobile);
         }
+
+        [Fact]
+        public async Task UpdatingFolderThatDoesntExistFails()
+        {
+            await Assert.ThrowsAsync<FolderNotFoundException>(async () =>
+            {
+                _ = await db!.UpdateFolderAsync(
+                    localId: 9,
+                    serviceId: 9L,
+                    title: "Sample2",
+                    position: 999L,
+                    syncToMobile: false
+                );
+            });
+        }
     }
 }

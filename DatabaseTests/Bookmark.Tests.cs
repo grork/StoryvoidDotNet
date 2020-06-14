@@ -197,5 +197,156 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(unreadFolderBookmark.Url, unreadBookmarkFromListing.Url);
             Assert.Equal(unreadFolderBookmark.Hash, unreadBookmarkFromListing.Hash);
         }
+
+        [Fact]
+        public async Task ListingLikedBookmarksWithNoLikedBookmarksReturnsEmptyList()
+        {
+            var likedBookmarks = await this.db!.GetLikedBookmarks();
+            Assert.Empty(likedBookmarks);
+        }
+
+        [Fact]
+        public async Task CanLikeBookmarkThatIsUnliked()
+        {
+            var unlikedBookmark = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+
+            var likedBookmark = await this.db!.LikeBookmark(unlikedBookmark.Id);
+            Assert.Equal(unlikedBookmark.Id, likedBookmark.Id);
+            Assert.True(likedBookmark.Liked);
+        }
+
+        [Fact]
+        public async Task CanListOnlyLikedBookmarks()
+        {
+            _ = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: true
+            ), this.UnreadFolder!.LocalId);
+
+            var likedBookmarks = await this.db!.GetLikedBookmarks();
+            Assert.Equal(1, likedBookmarks.Count);
+            Assert.Contains(likedBookmarks, (b) => (b.Id == 1) && b.Liked);
+        }
+
+        [Fact]
+        public async Task ListingLikedBookmarksReturnsResultsAcrossFolders()
+        {
+            _ = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: true
+            ), this.UnreadFolder!.LocalId);
+
+            _ = await this.db!.AddBookmark((
+                id: 2,
+                title: "Sample Bookmark 2",
+                url: new Uri("https://www.duckduckgo.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: true
+            ), this.CustomFolder1!.LocalId);
+
+            var likedBookmarks = await this.db!.GetLikedBookmarks();
+            Assert.Equal(2, likedBookmarks.Count);
+            Assert.Contains(likedBookmarks, (b) => (b.Id == 1) && b.Liked);
+            Assert.Contains(likedBookmarks, (b) => (b.Id == 2) && b.Liked);
+        }
+
+        [Fact]
+        public async Task CanUnlikeBookmarkThatIsLiked()
+        {
+            var likedBookmark = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: true
+            ), this.UnreadFolder!.LocalId);
+
+            var unlikedBookmark = await this.db!.UnlikeBookmark(likedBookmark.Id);
+            Assert.Equal(likedBookmark.Id, unlikedBookmark.Id);
+            Assert.False(unlikedBookmark.Liked);
+        }
+
+        [Fact]
+        public async Task LikingMissingBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () =>
+            {
+                _ = await this.db!.LikeBookmark(1);
+            });
+        }
+
+        [Fact]
+        public async Task UnlikingMissingBookmarkThrows()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () =>
+            {
+                _ = await this.db!.UnlikeBookmark(1);
+            });
+        }
+
+        [Fact]
+        public async Task LikingBookmarkThatIsLikedSucceeds()
+        {
+            var likedBookmarkOriginal = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: true
+            ), this.UnreadFolder!.LocalId);
+
+            var likedBookmark = await this.db!.LikeBookmark(likedBookmarkOriginal.Id);
+            Assert.Equal(likedBookmarkOriginal.Id, likedBookmark.Id);
+            Assert.True(likedBookmark.Liked);
+        }
+
+        [Fact]
+        public async Task UnlikingBookmarkThatIsNotLikedSucceeds()
+        {
+            var unlikedBookmarkOriginal = await this.db!.AddBookmark((
+                id: 1,
+                title: "Sample Bookmark",
+                url: new Uri("https://www.bing.com"),
+                description: String.Empty,
+                progress: 0.0F,
+                progressTimestamp: DateTime.Now,
+                hash: String.Empty,
+                liked: false
+            ), this.UnreadFolder!.LocalId);
+
+            var unlikedBookmark = await this.db!.UnlikeBookmark(unlikedBookmarkOriginal.Id);
+            Assert.Equal(unlikedBookmarkOriginal.Id, unlikedBookmark.Id);
+            Assert.False(unlikedBookmark.Liked);
+        }
     }
 }

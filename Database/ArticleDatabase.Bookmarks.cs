@@ -41,6 +41,31 @@ namespace Codevoid.Storyvoid
             return Task.Run(GetBookmarks);
         }
 
+        /// <inheritdoc/>
+        public Task<IList<DatabaseBookmark>> GetLikedBookmarks()
+        {
+            var c = this.connection;
+            IList<DatabaseBookmark> GetBookmarks()
+            {
+                using var query = c!.CreateCommand(@"
+                    SELECT *
+                    FROM bookmarks
+                    WHERE liked = true
+                ");
+
+                var results = new List<DatabaseBookmark>();
+                using var rows = query.ExecuteReader();
+                while(rows.Read())
+                {
+                    results.Add(DatabaseBookmark.FromRow(rows));
+                }
+
+                return results;
+            }
+
+            return Task.Run(GetBookmarks);
+        }
+
         public Task<DatabaseBookmark?> GetBookmarkById(long id)
         {
             var c = this.connection;
@@ -110,6 +135,50 @@ namespace Codevoid.Storyvoid
                 AddBookmark();
                 PairBookmarkToFolder();
                 return GetBookmarkById(c, data.id)!;
+            });
+        }
+
+        private static void UpdateLikeStatusForBookmark(IDbConnection c, long id, bool liked)
+        {
+            var query = c!.CreateCommand(@"
+                    UPDATE bookmarks SET
+                        liked = @liked
+                    WHERE id = @id
+                ");
+
+            query.AddParameter("@id", id);
+            query.AddParameter("@liked", liked);
+
+            var impactedRows = query.ExecuteNonQuery();
+            if(impactedRows < 1)
+            {
+                throw new BookmarkNotFoundException(id);
+            }
+        }
+
+        public Task<DatabaseBookmark> LikeBookmark(long id)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+
+            return Task.Run(() =>
+            {
+                UpdateLikeStatusForBookmark(c, id, true);
+                return GetBookmarkById(c, id)!;
+            });
+        }
+
+        public Task<DatabaseBookmark> UnlikeBookmark(long id)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+
+            return Task.Run(() =>
+            {
+                UpdateLikeStatusForBookmark(c, id, false);
+                return GetBookmarkById(c, id)!;
             });
         }
     }

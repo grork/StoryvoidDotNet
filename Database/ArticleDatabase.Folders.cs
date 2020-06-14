@@ -209,7 +209,11 @@ namespace Codevoid.Storyvoid
                 query.AddParameter("@position", position);
                 query.AddParameter("@sync_to_mobile", Convert.ToInt64(syncToMobile));
 
-                query.ExecuteScalar();
+                var impactedRows = query.ExecuteNonQuery();
+                if(impactedRows < 1)
+                {
+                    throw new FolderNotFoundException(localId);
+                }
             }
 
             return Task.Run(() =>

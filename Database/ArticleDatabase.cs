@@ -66,6 +66,12 @@ namespace Codevoid.Storyvoid
         Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool syncToMobile);
 
         /// <summary>
+        /// List all bookmarks, across all folders, that are Liked
+        /// </summary>
+        /// <returns>All bookmarks that are in a Liked state</returns>
+        Task<IList<DatabaseBookmark>> GetLikedBookmarks();
+
+        /// <summary>
         /// Gets Bookmarks for a specific local folder
         /// </summary>
         /// <param name="localId">Local Folder ID to get bookmarks for</param>
@@ -95,6 +101,20 @@ namespace Codevoid.Storyvoid
         /// <param name="id">ID of the bookmark</param>
         /// <returns>Bookmark if found, null otherwise</returns>
         Task<DatabaseBookmark?> GetBookmarkById(long id);
+
+        /// <summary>
+        /// Like a bookmark. Will complete even if bookmark is already liked
+        /// </summary>
+        /// <param name="id">Bookmark to Like</param>
+        /// <returns>The Bookmark after liking. Represents current database state</returns>
+        Task<DatabaseBookmark> LikeBookmark(long id);
+
+        /// <summary>
+        /// Unlike a bookmark. Will complete even if bookmark is already unliked
+        /// </summary>
+        /// <param name="id">Bookmark to Unlike</param>
+        /// <returns>The Bookmark after unliking. Represents current database state</returns>
+        Task<DatabaseBookmark> UnlikeBookmark(long id);
     }
 
     public sealed partial class ArticleDatabase : IArticleDatabase, IDisposable
