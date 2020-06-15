@@ -226,5 +226,38 @@ namespace Codevoid.Storyvoid
                 return GetBookmarkById(c, id)!;
             });
         }
+
+        public Task MoveBookmarkToFolder(long bookmarkId, long localFolderId)
+        {
+            var c = this.connection;
+            void MoveBookmarkToFolder()
+            {
+                var query = c!.CreateCommand(@"
+                    UPDATE bookmark_to_folder
+                    SET local_folder_id = @local_folder_id
+                    WHERE bookmark_id = @bookmark_id;
+                ");
+
+                query.AddParameter("@bookmark_id", bookmarkId);
+                query.AddParameter("@local_folder_id", localFolderId);
+
+                query.ExecuteNonQuery();
+            }
+
+            return Task.Run(() =>
+            {
+                if (GetFolderByLocalId(c, localFolderId) == null)
+                {
+                    throw new FolderNotFoundException(localFolderId);
+                }
+
+                if (GetBookmarkById(c, bookmarkId) == null)
+                {
+                    throw new BookmarkNotFoundException(bookmarkId);
+                }
+
+                MoveBookmarkToFolder();
+            });
+        }
     }
 }

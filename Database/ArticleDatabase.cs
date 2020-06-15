@@ -10,10 +10,38 @@ using Microsoft.Data.Sqlite;
 namespace Codevoid.Storyvoid
 {
     /// <summary>
+    /// For accessing well known folders from the service that don't have
+    /// explicit service IDs.
+    /// </summary>
+    public static class WellKnownFolderIds
+    {
+        /// <summary>
+        /// Default folder on the service, where new bookmarks are placed by
+        /// default.
+        /// </summary>
+        public const long Unread = -1;
+
+        /// <summary>
+        /// Folder for articles that have been archived by the user.
+        /// </summary>
+        public const long Archive = -2;
+    }
+
+    /// <summary>
     /// Database store for Bookmarks &amp; Folders from the Instapaper Service
     /// </summary>
     public interface IArticleDatabase : IDisposable
     {
+        /// <summary>
+        /// The database ID of the unread folder
+        /// </summary>
+        long UnreadFolderLocalId { get; }
+
+        /// <summary>
+        /// The database ID of the archive folder
+        /// </summary>
+        long ArchiveFolderLocalId { get; }
+
         /// <summary>
         /// Gets all locally known folders, including the default
         /// folders (Unread, Archive)
@@ -64,6 +92,14 @@ namespace Codevoid.Storyvoid
         /// <param name="syncToMobile">Should be synced</param>
         /// <returns>Updated folder</returns>
         Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool syncToMobile);
+
+        /// <summary>
+        /// Delete the specified folder. Any bookmarks in this folder will be
+        /// orphaned until they're reconciled against the server, or othewise
+        /// removed.
+        /// </summary>
+        /// <param name="localFolderId">Folder to delete</param>
+        Task DeleteFolderAsync(long localFolderId);
 
         /// <summary>
         /// List all bookmarks, across all folders, that are Liked
@@ -125,14 +161,24 @@ namespace Codevoid.Storyvoid
         /// <param name="id"></param>
         /// <returns></returns>
         Task<DatabaseBookmark> UpdateProgressForBookmark(float progress, DateTime progressTimestamp, long id);
+
+        /// <summary>
+        /// Moves the specified bookmark to the supplied destination folder
+        /// </summary>
+        /// <param name="bookmarkId">Bookmark to move</param>
+        /// <param name="localFolderId">Folder to move to</param>
+        /// <returns></returns>
+        Task MoveBookmarkToFolder(long bookmarkId, long localFolderId);
     }
 
     public sealed partial class ArticleDatabase : IArticleDatabase, IDisposable
     {
-        private const int CURRENT_DB_VERSION = 1;
-
         // To help diagnose calls that skipped initialization
         private int initialized = 0;
+        private const int CURRENT_DB_VERSION = 1;
+
+        public long UnreadFolderLocalId { get; private set; }
+        public long ArchiveFolderLocalId { get; private set; }
 
         private readonly IDbConnection connection;
         public ArticleDatabase(IDbConnection connection)
@@ -180,6 +226,7 @@ namespace Codevoid.Storyvoid
             {
                 c.Open();
 
+                // Perform any migrations
                 using (var checkIfUpdated = c.CreateCommand("PRAGMA user_version"))
                 {
                     var databaseVersion = Convert.ToInt32(checkIfUpdated.ExecuteScalar());
@@ -195,6 +242,20 @@ namespace Codevoid.Storyvoid
                             throw new InvalidOperationException("Unable to create database");
                         }
                     }
+                }
+
+                // Get default folder database IDs
+                using (var wellKnownFolderLocalId = c.CreateCommand(@"
+                    SELECT local_id
+                    FROM folders
+                    WHERE service_id = @well_known_service_id"))
+                {
+                    wellKnownFolderLocalId.AddParameter("@well_known_service_id", WellKnownFolderIds.Unread);
+                    this.UnreadFolderLocalId = (long)wellKnownFolderLocalId.ExecuteScalar();
+
+                    wellKnownFolderLocalId.Parameters.Clear();
+                    wellKnownFolderLocalId.AddParameter("@well_known_service_id", WellKnownFolderIds.Archive);
+                    this.ArchiveFolderLocalId = (long)wellKnownFolderLocalId.ExecuteScalar();
                 }
 
                 Interlocked.Increment(ref this.initialized);

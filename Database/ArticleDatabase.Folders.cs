@@ -9,24 +9,6 @@ using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid
 {
-    /// <summary>
-    /// For accessing well known folders from the service that don't have
-    /// explicit service IDs.
-    /// </summary>
-    public static class WellKnownFolderIds
-    {
-        /// <summary>
-        /// Default folder on the service, where new bookmarks are placed by
-        /// default.
-        /// </summary>
-        public const long Unread = -1;
-
-        /// <summary>
-        /// Folder for articles that have been archived by the user.
-        /// </summary>
-        public const long Archive = -2;
-    }
-
     public sealed partial class ArticleDatabase
     {
         /// <inheritdoc/>
@@ -220,6 +202,54 @@ namespace Codevoid.Storyvoid
             {
                 UpdateFolder();
                 return GetFolderByLocalId(c, localId)!;
+            });
+        }
+
+        public Task DeleteFolderAsync(long localFolderId)
+        {
+            if(localFolderId == this.UnreadFolderLocalId)
+            {
+                throw new InvalidOperationException("Deleting the Unread folder is not allowed");
+            }
+
+            if(localFolderId == this.ArchiveFolderLocalId)
+            {
+                throw new InvalidOperationException("Deleting the Archive folder is not allowed");
+            }
+
+            var c = this.connection;
+
+            // Remove any bookmark-folder-pairs
+            void DeleteBookmarkFolderPairs()
+            {
+                using var query = c!.CreateCommand(@"
+                    DELETE FROM bookmark_to_folder
+                    WHERE local_folder_id = @local_folder_id
+                ");
+
+                query.AddParameter("@local_folder_id", localFolderId);
+
+                query.ExecuteNonQuery();
+            }
+
+
+            // Delete the folder
+            void DeleteFolder()
+            {
+                using var query = c!.CreateCommand(@"
+                    DELETE FROM folders
+                    WHERE local_id = @local_id
+                ");
+
+                query.AddParameter("@local_id", localFolderId);
+
+                query.ExecuteNonQuery();
+            }
+
+            return Task.Run(() =>
+            {
+                DeleteBookmarkFolderPairs();
+                DeleteFolder();
             });
         }
     }

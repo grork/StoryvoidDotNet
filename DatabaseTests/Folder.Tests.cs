@@ -37,8 +37,12 @@ namespace Codevoid.Test.Storyvoid
             IList<DatabaseFolder> result = await this.db!.GetFoldersAsync();
             Assert.Equal(2, result.Count);
 
-            Assert.Contains(result, (f) => f.ServiceId == WellKnownFolderIds.Unread);
-            Assert.Contains(result, (f) => f.ServiceId == WellKnownFolderIds.Archive);
+            var unreadFolder = result.Where((f) => f.ServiceId == WellKnownFolderIds.Unread).First()!;
+            var archiveFolder = result.Where((f) => f.ServiceId == WellKnownFolderIds.Archive).First()!;
+
+            // Check the convenience IDs are correct
+            Assert.Equal(unreadFolder.LocalId, this.db!.UnreadFolderLocalId);
+            Assert.Equal(archiveFolder.LocalId, this.db!.ArchiveFolderLocalId);
         }
 
         [Fact]
@@ -223,6 +227,42 @@ namespace Codevoid.Test.Storyvoid
                     syncToMobile: false
                 );
             });
+        }
+
+        [Fact]
+        public async Task CanDeleteEmptyFolder()
+        {
+            // Create folder; check results are returned
+            var addedFolder = await this.db!.AddKnownFolderAsync(
+                title: "Sample",
+                serviceId: 10L,
+                position: 9L,
+                syncToMobile: true
+            );
+
+            await this.db!.DeleteFolderAsync(addedFolder.LocalId);
+
+            // Verify folder is missing
+            var folders = await this.db!.GetFoldersAsync();
+            Assert.Equal(2, folders.Count);
+        }
+
+        [Fact]
+        public async Task DeletingMissingFolderNoOps()
+        {
+            await this.db!.DeleteFolderAsync(999);
+        }
+
+        [Fact]
+        public async Task DeletingUnreadFolderThrows()
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => this.db!.DeleteFolderAsync(this.db!.UnreadFolderLocalId));
+        }
+
+        [Fact]
+        public async Task DeletingArchiveFolderThrows()
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => this.db!.DeleteFolderAsync(this.db!.UnreadFolderLocalId));
         }
     }
 }
