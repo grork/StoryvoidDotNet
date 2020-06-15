@@ -259,5 +259,40 @@ namespace Codevoid.Storyvoid
                 MoveBookmarkToFolder();
             });
         }
+
+        public Task DeleteBookmark(long bookmarkId)
+        {
+            var c = this.connection;
+
+            void RemoveFromFolder()
+            {
+                using var query = c!.CreateCommand(@"
+                    DELETE FROM bookmark_to_folder
+                    WHERE bookmark_id = @bookmark_id
+                ");
+
+                query.AddParameter("@bookmark_id", bookmarkId);
+
+                query.ExecuteNonQuery();
+            }
+
+            void DeleteBookmark()
+            {
+                using var query = c!.CreateCommand(@"
+                    DELETE FROM bookmarks
+                    WHERE id = @id
+                ");
+
+                query.AddParameter("@id", bookmarkId);
+
+                query.ExecuteNonQuery();
+            }
+
+            return Task.Run(() =>
+            {
+                RemoveFromFolder();
+                DeleteBookmark();
+            });
+        }
     }
 }

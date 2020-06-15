@@ -169,6 +169,12 @@ namespace Codevoid.Storyvoid
         /// <param name="localFolderId">Folder to move to</param>
         /// <returns></returns>
         Task MoveBookmarkToFolder(long bookmarkId, long localFolderId);
+
+        /// <summary>
+        /// Delete a bookmark with the specified ID
+        /// </summary>
+        /// <param name="bookmarkId">Bookmark to delete</param>
+        Task DeleteBookmark(long bookmarkId);
     }
 
     public sealed partial class ArticleDatabase : IArticleDatabase, IDisposable

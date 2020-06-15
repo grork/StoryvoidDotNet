@@ -563,5 +563,49 @@ namespace Codevoid.Test.Storyvoid
             var folders = await this.db!.GetFoldersAsync();
             Assert.DoesNotContain(folders, (f) => f.LocalId == this.CustomFolder1!.LocalId);
         }
+
+        [Fact]
+        public async Task CanDeleteBookmarkInUnreadFolder()
+        {
+            var bookmark = await this.AddRandomBookmarkToFolder(this.db!.UnreadFolderLocalId);
+            await this.db!.DeleteBookmark(bookmark.Id);
+
+            var unreadBookmarks = await this.db!.GetBookmarks(this.UnreadFolder!.LocalId);
+            Assert.Empty(unreadBookmarks);
+        }
+
+        [Fact]
+        public async Task CanDeleteBookmarkInCustomFolder()
+        {
+            var bookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
+            await this.db!.DeleteBookmark(bookmark.Id);
+
+            var customBookmarks = await this.db!.GetBookmarks(this.CustomFolder1.LocalId);
+            Assert.Empty(customBookmarks);
+        }
+
+        [Fact]
+        public async Task CanDeleteNonExistantBookmark()
+        {
+            await this.db!.DeleteBookmark(999);
+        }
+
+        [Fact]
+        public async Task CanDeleteOrphanedBookmark()
+        {
+            var bookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
+            await this.db!.DeleteFolderAsync(this.CustomFolder1!.LocalId);
+            await this.db!.DeleteBookmark(bookmark.Id);
+        }
+
+        public async Task CanGetOrphanedBookmark()
+        {
+            var bookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
+            await this.db!.DeleteFolderAsync(this.CustomFolder1!.LocalId);
+
+            var orphaned = await this.db!.GetBookmarkById(bookmark.Id);
+            Assert.NotNull(orphaned);
+            Assert.Equal(bookmark.Id, orphaned!.Id);
+        }
     }
 }
