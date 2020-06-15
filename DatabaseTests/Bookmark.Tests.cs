@@ -537,6 +537,17 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public async Task MovingBookmarkToAFolderItIsAlreadyInSucceeds()
+        {
+            var bookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
+            await this.db!.MoveBookmarkToFolder(bookmark.Id, this.CustomFolder1!.LocalId);
+
+            var customBookmarks = await this.db!.GetBookmarks(this.CustomFolder1!.LocalId);
+            Assert.Equal(1, customBookmarks.Count);
+            Assert.Contains(customBookmarks, (f) => f.Id == bookmark.Id);
+        }
+
+        [Fact]
         public async Task MovingNonExistantBookmarkToCustomFolder()
         {
             await Assert.ThrowsAsync<BookmarkNotFoundException>(() => this.db!.MoveBookmarkToFolder(999, this.CustomFolder1!.LocalId));
