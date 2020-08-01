@@ -12,7 +12,7 @@ namespace Codevoid.Utilities.OAuth
     {
         private string productName = "Codevoid+OAuth+Library";
         private string productVersion = "1.0";
-        private ProductInfoHeaderValue? userAgentValue;
+        private Lazy<ProductInfoHeaderValue>? userAgentValue;
 
         public readonly string ConsumerKey;
         public readonly string ConsumerKeySecret;
@@ -48,6 +48,9 @@ namespace Codevoid.Utilities.OAuth
             this.ConsumerKeySecret = consumerKeySecret;
             this.Token = token;
             this.TokenSecret = tokenSecret;
+
+            this.userAgentValue = new Lazy<ProductInfoHeaderValue>(() =>
+                new ProductInfoHeaderValue(this.productName, this.productVersion));
         }
 
         /// <summary>
@@ -79,17 +82,6 @@ namespace Codevoid.Utilities.OAuth
         /// <summary>
         /// User-Agent header instance to be used with HttpClient
         /// </summary>
-        public ProductInfoHeaderValue UserAgent
-        {
-            get
-            {
-                if (this.userAgentValue == null)
-                {
-                    this.userAgentValue = new ProductInfoHeaderValue(this.productName, this.productVersion);
-                }
-
-                return this.userAgentValue;
-            }
-        }
+        public ProductInfoHeaderValue UserAgent => this.userAgentValue!.Value;
     }
 }

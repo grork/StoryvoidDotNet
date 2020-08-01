@@ -320,19 +320,10 @@ namespace Codevoid.Test.Instapaper
         }
 
         #region Folder API & State
-        private IFoldersClient? _foldersClient;
-        public IFoldersClient FoldersClient
-        {
-            get
-            {
-                if (this._foldersClient == null)
-                {
-                    this._foldersClient = new FoldersClient(TestUtilities.GetClientInformation());
-                }
+        private Lazy<IFoldersClient> _foldersClient = new Lazy<IFoldersClient>(
+            () => new FoldersClient(TestUtilities.GetClientInformation()));
 
-                return this._foldersClient;
-            }
-        }
+        public IFoldersClient FoldersClient => this._foldersClient.Value;
 
         public IInstapaperFolder? RecentlyAddedFolder { get; private set; }
         public void UpdateOrSetRecentFolder(IInstapaperFolder? folder)
@@ -345,19 +336,9 @@ namespace Codevoid.Test.Instapaper
         public Uri NonExistantUrl => TestUrls.NonExistantPage;
 
         private IList<Uri> available = new List<Uri>();
-        private IBookmarksClient? _bookmarksClient;
-        public IBookmarksClient BookmarksClient
-        {
-            get
-            {
-                if (this._bookmarksClient == null)
-                {
-                    this._bookmarksClient = new BookmarksClient(TestUtilities.GetClientInformation());
-                }
-
-                return this._bookmarksClient;
-            }
-        }
+        private Lazy<IBookmarksClient> _bookmarksClient =
+            new Lazy<IBookmarksClient>(() => new BookmarksClient(TestUtilities.GetClientInformation()));
+        public IBookmarksClient BookmarksClient => this._bookmarksClient.Value;
 
         public IInstapaperBookmark? RecentlyAddedBookmark { get; private set; }
 
