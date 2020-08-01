@@ -14,7 +14,7 @@ namespace Codevoid.Storyvoid
         private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
         ///<inheritdoc/>
-        public Task<IList<DatabaseBookmark>> GetBookmarks(long localFolderId)
+        public Task<IList<DatabaseBookmark>> GetBookmarksAsync(long localFolderId)
         {
             var c = this.connection;
 
@@ -44,7 +44,7 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<IList<DatabaseBookmark>> GetLikedBookmarks()
+        public Task<IList<DatabaseBookmark>> GetLikedBookmarksAsync()
         {
             var c = this.connection;
             IList<DatabaseBookmark> GetBookmarks()
@@ -68,13 +68,13 @@ namespace Codevoid.Storyvoid
             return Task.Run(GetBookmarks);
         }
 
-        public Task<DatabaseBookmark?> GetBookmarkById(long id)
+        public Task<DatabaseBookmark?> GetBookmarkByIdAsync(long id)
         {
             var c = this.connection;
-            return Task.Run(() => GetBookmarkById(c, id));
+            return Task.Run(() => GetBookmarkByIdAsync(c, id));
         }
 
-        private DatabaseBookmark? GetBookmarkById(IDbConnection connection, long id)
+        private DatabaseBookmark? GetBookmarkByIdAsync(IDbConnection connection, long id)
         {
             using var query = connection.CreateCommand("SELECT * FROM bookmarks WHERE id = @id");
             query.AddParameter("@id", id);
@@ -91,7 +91,7 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseBookmark> AddBookmark(
+        public Task<DatabaseBookmark> AddBookmarkAsync(
             (int id, string title, Uri url, string description, float progress, DateTime progressTimestamp, string hash, bool liked) data,
             long localFolderId
         )
@@ -136,7 +136,7 @@ namespace Codevoid.Storyvoid
             {
                 AddBookmark();
                 PairBookmarkToFolder();
-                return GetBookmarkById(c, data.id)!;
+                return GetBookmarkByIdAsync(c, data.id)!;
             });
         }
 
@@ -159,7 +159,7 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseBookmark> LikeBookmark(long id)
+        public Task<DatabaseBookmark> LikeBookmarkAsync(long id)
         {
             this.ThrowIfNotReady();
 
@@ -168,12 +168,12 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForBookmark(c, id, true);
-                return GetBookmarkById(c, id)!;
+                return GetBookmarkByIdAsync(c, id)!;
             });
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseBookmark> UnlikeBookmark(long id)
+        public Task<DatabaseBookmark> UnlikeBookmarkAsync(long id)
         {
             this.ThrowIfNotReady();
 
@@ -182,11 +182,11 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForBookmark(c, id, false);
-                return GetBookmarkById(c, id)!;
+                return GetBookmarkByIdAsync(c, id)!;
             });
         }
 
-        public Task<DatabaseBookmark> UpdateProgressForBookmark(float progress, DateTime timestamp, long id)
+        public Task<DatabaseBookmark> UpdateProgressForBookmarkAsync(float progress, DateTime timestamp, long id)
         {
             if(progress < 0.0 || progress > 1.0)
             {
@@ -223,11 +223,11 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateProgressForBookmark();
-                return GetBookmarkById(c, id)!;
+                return GetBookmarkByIdAsync(c, id)!;
             });
         }
 
-        public Task MoveBookmarkToFolder(long bookmarkId, long localFolderId)
+        public Task MoveBookmarkToFolderAsync(long bookmarkId, long localFolderId)
         {
             var c = this.connection;
             void MoveBookmarkToFolder()
@@ -246,12 +246,12 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                if (GetFolderByLocalId(c, localFolderId) == null)
+                if (GetFolderByLocalIdAsync(c, localFolderId) == null)
                 {
                     throw new FolderNotFoundException(localFolderId);
                 }
 
-                if (GetBookmarkById(c, bookmarkId) == null)
+                if (GetBookmarkByIdAsync(c, bookmarkId) == null)
                 {
                     throw new BookmarkNotFoundException(bookmarkId);
                 }
@@ -260,7 +260,7 @@ namespace Codevoid.Storyvoid
             });
         }
 
-        public Task DeleteBookmark(long bookmarkId)
+        public Task DeleteBookmarkAsync(long bookmarkId)
         {
             var c = this.connection;
 

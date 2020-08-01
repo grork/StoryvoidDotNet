@@ -68,10 +68,10 @@ namespace Codevoid.Storyvoid
             this.ThrowIfNotReady();
 
             var c = this.connection;
-            return Task.Run(() => GetFolderByLocalId(c, localId));
+            return Task.Run(() => GetFolderByLocalIdAsync(c, localId));
         }
 
-        private static DatabaseFolder? GetFolderByLocalId(IDbConnection connection, long localId)
+        private static DatabaseFolder? GetFolderByLocalIdAsync(IDbConnection connection, long localId)
         {
             using var folderQuery = connection.CreateCommand("SELECT * FROM folders WHERE local_id = @localId");
             folderQuery.AddParameter("@localId", localId);
@@ -117,7 +117,7 @@ namespace Codevoid.Storyvoid
                 }
 
                 var newFolderRowId = CreateFolder();
-                return GetFolderByLocalId(c, newFolderRowId)!;
+                return GetFolderByLocalIdAsync(c, newFolderRowId)!;
             });
         }
 
@@ -165,7 +165,7 @@ namespace Codevoid.Storyvoid
                 }
 
                 var newFolderRowId = CreateFolder();
-                return GetFolderByLocalId(c, newFolderRowId)!;
+                return GetFolderByLocalIdAsync(c, newFolderRowId)!;
             });
         }
 
@@ -201,7 +201,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateFolder();
-                return GetFolderByLocalId(c, localId)!;
+                return GetFolderByLocalIdAsync(c, localId)!;
             });
         }
 

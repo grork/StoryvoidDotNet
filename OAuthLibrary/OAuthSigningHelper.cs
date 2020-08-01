@@ -37,7 +37,7 @@ namespace Codevoid.Utilities.OAuth
 
         protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var signature = await this.signingHelper.GenerateAuthHeaderForHttpRequest(request).ConfigureAwait(false);
+            var signature = await this.signingHelper.GenerateAuthHeaderForHttpRequestAsync(request).ConfigureAwait(false);
             request.Headers.Authorization = new AuthenticationHeaderValue("OAuth", signature);
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
@@ -124,7 +124,7 @@ namespace Codevoid.Utilities.OAuth
             return Convert.ToBase64String(signature);
         }
 
-        internal async Task<string> GenerateAuthHeaderForHttpRequest(HttpRequestMessage message)
+        internal async Task<string> GenerateAuthHeaderForHttpRequestAsync(HttpRequestMessage message)
         {
             var timestamp = (new DateTimeOffset(OAuthSigningHelper.EntropyProvider.GetDateTime()).ToUnixTimeSeconds());
             var oauthHeaders = new Dictionary<string, string>

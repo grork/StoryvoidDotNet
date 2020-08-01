@@ -538,7 +538,7 @@ namespace Codevoid.Instapaper
         /// <param name="endpoint">URI to post the data to</param>
         /// <param name="bookmark_id">The bookmark to operate on</param>
         /// <returns>Single bookmark on success</returns>
-        private async Task<IInstapaperBookmark> SingleBookmarkOperation(Uri endpoint, ulong bookmark_id)
+        private async Task<IInstapaperBookmark> SingleBookmarkOperationAsync(Uri endpoint, ulong bookmark_id)
         {
             if (bookmark_id == 0UL)
             {
@@ -680,10 +680,10 @@ namespace Codevoid.Instapaper
             return result.First();
         }
 
-        public Task<IInstapaperBookmark> LikeAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Star, bookmark_id);
-        public Task<IInstapaperBookmark> UnlikeAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unstar, bookmark_id);
-        public Task<IInstapaperBookmark> ArchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Archive, bookmark_id);
-        public Task<IInstapaperBookmark> UnarchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperation(EndPoints.Bookmarks.Unarchive, bookmark_id);
+        public Task<IInstapaperBookmark> LikeAsync(ulong bookmark_id) => this.SingleBookmarkOperationAsync(EndPoints.Bookmarks.Star, bookmark_id);
+        public Task<IInstapaperBookmark> UnlikeAsync(ulong bookmark_id) => this.SingleBookmarkOperationAsync(EndPoints.Bookmarks.Unstar, bookmark_id);
+        public Task<IInstapaperBookmark> ArchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperationAsync(EndPoints.Bookmarks.Archive, bookmark_id);
+        public Task<IInstapaperBookmark> UnarchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperationAsync(EndPoints.Bookmarks.Unarchive, bookmark_id);
 
         public async Task<IInstapaperBookmark> MoveAsync(ulong bookmark_id, ulong folder_id)
         {

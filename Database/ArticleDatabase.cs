@@ -105,14 +105,14 @@ namespace Codevoid.Storyvoid
         /// List all bookmarks, across all folders, that are Liked
         /// </summary>
         /// <returns>All bookmarks that are in a Liked state</returns>
-        Task<IList<DatabaseBookmark>> GetLikedBookmarks();
+        Task<IList<DatabaseBookmark>> GetLikedBookmarksAsync();
 
         /// <summary>
         /// Gets Bookmarks for a specific local folder
         /// </summary>
         /// <param name="localId">Local Folder ID to get bookmarks for</param>
         /// <returns>Bookmarks in that folder</returns>
-        Task<IList<DatabaseBookmark>> GetBookmarks(long localId);
+        Task<IList<DatabaseBookmark>> GetBookmarksAsync(long localId);
 
         /// <summary>
         /// Add a bookmark to the database
@@ -127,7 +127,7 @@ namespace Codevoid.Storyvoid
         /// <param name="liked">Liked status of the bookmark</param>
         /// <param name="localFolderId">Folder to place this bookmark into</param>
         /// <returns>Bookmark from the database</returns>
-        Task<DatabaseBookmark> AddBookmark(
+        Task<DatabaseBookmark> AddBookmarkAsync(
             (int id, string title, Uri url, string description, float progress, DateTime progressTimestamp, string hash, bool liked) data,
             long localFolderId);
 
@@ -136,21 +136,21 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="id">ID of the bookmark</param>
         /// <returns>Bookmark if found, null otherwise</returns>
-        Task<DatabaseBookmark?> GetBookmarkById(long id);
+        Task<DatabaseBookmark?> GetBookmarkByIdAsync(long id);
 
         /// <summary>
         /// Like a bookmark. Will complete even if bookmark is already liked
         /// </summary>
         /// <param name="id">Bookmark to Like</param>
         /// <returns>The Bookmark after liking. Represents current database state</returns>
-        Task<DatabaseBookmark> LikeBookmark(long id);
+        Task<DatabaseBookmark> LikeBookmarkAsync(long id);
 
         /// <summary>
         /// Unlike a bookmark. Will complete even if bookmark is already unliked
         /// </summary>
         /// <param name="id">Bookmark to Unlike</param>
         /// <returns>The Bookmark after unliking. Represents current database state</returns>
-        Task<DatabaseBookmark> UnlikeBookmark(long id);
+        Task<DatabaseBookmark> UnlikeBookmarkAsync(long id);
 
         /// <summary>
         /// Update the progress of a specific bookmark, with the supplied
@@ -160,7 +160,7 @@ namespace Codevoid.Storyvoid
         /// <param name="progressTimestamp"></param>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<DatabaseBookmark> UpdateProgressForBookmark(float progress, DateTime progressTimestamp, long id);
+        Task<DatabaseBookmark> UpdateProgressForBookmarkAsync(float progress, DateTime progressTimestamp, long id);
 
         /// <summary>
         /// Moves the specified bookmark to the supplied destination folder
@@ -168,13 +168,13 @@ namespace Codevoid.Storyvoid
         /// <param name="bookmarkId">Bookmark to move</param>
         /// <param name="localFolderId">Folder to move to</param>
         /// <returns></returns>
-        Task MoveBookmarkToFolder(long bookmarkId, long localFolderId);
+        Task MoveBookmarkToFolderAsync(long bookmarkId, long localFolderId);
 
         /// <summary>
         /// Delete a bookmark with the specified ID
         /// </summary>
         /// <param name="bookmarkId">Bookmark to delete</param>
-        Task DeleteBookmark(long bookmarkId);
+        Task DeleteBookmarkAsync(long bookmarkId);
     }
 
     public sealed partial class ArticleDatabase : IArticleDatabase, IDisposable

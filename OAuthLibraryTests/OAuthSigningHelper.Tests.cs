@@ -174,7 +174,7 @@ namespace Codevoid.Test.OAuth
                 };
 
                 var signingHelper = new OAuthSigningHelper(GetFakeClientInformation());
-                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetPostRequestForData(data, url));
+                var result = await signingHelper.GenerateAuthHeaderForHttpRequestAsync(GetPostRequestForData(data, url));
                 Assert.Equal("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"tnnArxj06cWHq44gCs1OSKk%2FjLY%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
                              result); // Authentication headers did not match
             }
@@ -202,7 +202,7 @@ namespace Codevoid.Test.OAuth
                 };
 
                 var signingHelper = new OAuthSigningHelper(GetFakeClientInformation());
-                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetGetRequestForData(data, url));
+                var result = await signingHelper.GenerateAuthHeaderForHttpRequestAsync(GetGetRequestForData(data, url));
                 Assert.Equal("oauth_consumer_key=\"xvz1evFS4wEEPTGEFPHBog\", oauth_nonce=\"kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg\", oauth_signature=\"OgeXpQpLHCLpVVnrQjAwHmPrU7c%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1318622958\", oauth_token=\"370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb\", oauth_version=\"1.0\"",
                              result); // Authentication headers did not match
             }
@@ -231,7 +231,7 @@ namespace Codevoid.Test.OAuth
                 };
 
                 var signingHelper = new OAuthSigningHelper(new ClientInformation("JvyS7DO2qd6NNTsXJ4E7zA", "9z6157pUbOBqtbm0A0q4r29Y2EYzIHlUwbF4Cl9c"));
-                var result = await signingHelper.GenerateAuthHeaderForHttpRequest(GetPostRequestForData(data, url));
+                var result = await signingHelper.GenerateAuthHeaderForHttpRequestAsync(GetPostRequestForData(data, url));
                 Assert.Equal("oauth_consumer_key=\"JvyS7DO2qd6NNTsXJ4E7zA\", oauth_nonce=\"6AN2dKRzxyGhmIXUKSmp1JcB4pckM8rD3frKMTmVAo\", oauth_signature=\"1L1oXQmawZAkQ47FHLwcOV%2Bkjwc%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1284565601\", oauth_version=\"1.0\"",
                                 result); // Authentication headers did not match
             }
