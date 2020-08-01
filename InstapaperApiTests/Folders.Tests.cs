@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Xunit;
-using Xunit.Abstractions;
 using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper

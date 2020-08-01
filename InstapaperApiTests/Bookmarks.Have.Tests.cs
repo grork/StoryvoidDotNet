@@ -1,7 +1,6 @@
 ﻿using System;
 using Codevoid.Instapaper;
 using Xunit;
-using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper
 {

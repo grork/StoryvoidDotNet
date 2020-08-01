@@ -4,7 +4,6 @@ using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper
 {
