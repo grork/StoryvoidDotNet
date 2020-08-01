@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Codevoid.Test.Storyvoid
 {
-    public class BookmarkTests : IAsyncLifetime
+    public sealed class BookmarkTests : IAsyncLifetime
     {
         private IArticleDatabase? db;
         private DatabaseFolder? CustomFolder1;

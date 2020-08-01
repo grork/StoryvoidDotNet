@@ -5,7 +5,7 @@ using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper
 {
-    public class BookmarksHaveTests
+    public sealed class BookmarksHaveTests
     {
         [Fact]
         public void HaveWithOnlyIdReturnsJustTheId()

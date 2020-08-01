@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Codevoid.Test.Storyvoid
 {
-    public class ArticleDatabaseTests
+    public sealed class ArticleDatabaseTests
     {
         [Fact]
         public async Task CanOpenDatabase()

@@ -66,7 +66,7 @@ namespace Codevoid.Instapaper
     /// Options that can be set when adding a URL. Only need to set those
     /// that are different from the defaults.
     /// </summary>
-    public class AddBookmarkOptions
+    public sealed class AddBookmarkOptions
     {
         /// <summary>
         /// Title for the article. If not set, the service will resolve this
@@ -284,7 +284,7 @@ namespace Codevoid.Instapaper
         }
     }
 
-    internal class Bookmark : IInstapaperBookmark
+    internal sealed class Bookmark : IInstapaperBookmark
     {
         internal static IInstapaperBookmark FromJsonElement(JsonElement bookmarkElement)
         {
@@ -441,7 +441,7 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// Bookmark operations for Instapaper -- adding removing, changing states
     /// </summary>
-    public class BookmarksClient : IBookmarksClient
+    public sealed class BookmarksClient : IBookmarksClient
     {
         private readonly HttpClient client;
 

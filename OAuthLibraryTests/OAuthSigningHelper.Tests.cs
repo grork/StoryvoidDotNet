@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Codevoid.Test.OAuth
 {
-    public class OAuthSigningHelperTests
+    public sealed class OAuthSigningHelperTests
     {
         private static void ThrowIfValueIsAPIKeyHasntBeenSet(string valueToTest, string valueName)
         {

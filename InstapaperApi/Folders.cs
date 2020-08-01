@@ -40,7 +40,7 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// Concrete implementation of <see cref="IInstapaperFolder"/> for internal usage.
     /// </summary>
-    internal class Folder : IInstapaperFolder
+    internal sealed class Folder : IInstapaperFolder
     {
         /// <inheritdoc/>
         public string Title { get; private set; } = String.Empty;
@@ -122,7 +122,7 @@ namespace Codevoid.Instapaper
     }
 
     /// <inheritdoc cref="IFoldersClient"/>
-    public class FoldersClient : IFoldersClient
+    public sealed class FoldersClient : IFoldersClient
     {
         private readonly HttpClient client;
 

@@ -3,7 +3,7 @@ using System.Data;
 
 namespace Codevoid.Storyvoid
 {
-    public class DatabaseFolder
+    public sealed class DatabaseFolder
     {
         private DatabaseFolder()
         {

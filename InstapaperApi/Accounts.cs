@@ -36,7 +36,7 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// Accounts API for Instapaper -- getting tokens, verifying creds.
     /// </summary>
-    public class Accounts
+    public sealed class Accounts
     {
         private readonly ClientInformation clientInformation;
         private readonly HttpClient client;

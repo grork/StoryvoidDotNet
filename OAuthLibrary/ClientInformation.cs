@@ -8,7 +8,7 @@ namespace Codevoid.Utilities.OAuth
     /// for use with <see cref="OAuthMessageHandler"/> to automatically sign
     /// requests.
     /// </summary>
-    public class ClientInformation
+    public sealed class ClientInformation
     {
         private string productName = "Codevoid+OAuth+Library";
         private string productVersion = "1.0";

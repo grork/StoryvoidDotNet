@@ -25,7 +25,7 @@ namespace Codevoid.Utilities.OAuth
     /// <summary>
     /// Automatically signs requests for OAuth 1.0a
     /// </summary>
-    public class OAuthMessageHandler : DelegatingHandler
+    public sealed class OAuthMessageHandler : DelegatingHandler
     {
         private OAuthSigningHelper signingHelper;
 

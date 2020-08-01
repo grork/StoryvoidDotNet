@@ -3,7 +3,7 @@ using System.Data;
 
 namespace Codevoid.Storyvoid
 {
-    public class DatabaseBookmark
+    public sealed class DatabaseBookmark
     {
         private DatabaseBookmark()
         {

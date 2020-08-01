@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Codevoid.Test.Storyvoid
 {
-    public class FolderTests : IAsyncLifetime
+    public sealed class FolderTests : IAsyncLifetime
     {
         private static void FoldersMatch(DatabaseFolder? folder1, DatabaseFolder? folder2)
         {

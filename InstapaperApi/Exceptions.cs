@@ -59,7 +59,7 @@ namespace Codevoid.Instapaper
     /// The <see cref="ErrorCode"/> field provides more information, and the
     /// service message is in the <see cref="Message"/> property.
     /// </summary>
-    public class UnknownServiceError : InstapaperServiceException
+    public sealed class UnknownServiceError : InstapaperServiceException
     {
         /// <summary>
         /// Instapaper error code returned by the service
@@ -75,7 +75,7 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// A folder with the same name already exists on the service
     /// </summary>
-    public class DuplicateFolderException : InstapaperServiceException
+    public sealed class DuplicateFolderException : InstapaperServiceException
     {
         internal DuplicateFolderException() : base("A folder with this name already exists")
         { }
@@ -84,7 +84,7 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// The contents for the requested bookmark are unavailable
     /// </summary>
-    public class BookmarkContentsUnavailableException : InstapaperServiceException
+    public sealed class BookmarkContentsUnavailableException : InstapaperServiceException
     {
         internal BookmarkContentsUnavailableException() : base("Bookmark contents are unavailable")
         { }
@@ -93,7 +93,7 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// Bookmark being operated on wasn't found on the service
     /// </summary>
-    public class BookmarkNotFoundException : InstapaperServiceException
+    public sealed class BookmarkNotFoundException : InstapaperServiceException
     {
         internal BookmarkNotFoundException() : base("Bookmark not found")
         { }

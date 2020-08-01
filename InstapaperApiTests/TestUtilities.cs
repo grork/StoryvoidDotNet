@@ -26,7 +26,7 @@ namespace Codevoid.Test.Instapaper
     // Definition only class to group API tests together, allowing for correct
     // ordering
     [CollectionDefinition(TestUtilities.TestCollectionName)]
-    public class ApiTestsCollection : ICollectionFixture<CurrentServiceStateFixture>
+    public sealed class ApiTestsCollection : ICollectionFixture<CurrentServiceStateFixture>
     { }
 
     public static class TestUtilities

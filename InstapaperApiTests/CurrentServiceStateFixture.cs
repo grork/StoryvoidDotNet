@@ -23,7 +23,7 @@ namespace Codevoid.Test.Instapaper
     /// - Current Bookmark State
     /// - Added Bookmark count
     /// </summary>
-    public class CurrentServiceStateFixture : IAsyncLifetime
+    public sealed class CurrentServiceStateFixture : IAsyncLifetime
     {
         /// <summary>
         /// A thin, simple, wrapper on the Instapaper Service API to facilitate

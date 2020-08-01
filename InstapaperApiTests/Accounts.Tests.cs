@@ -8,7 +8,7 @@ using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper
 {
-    public class AuthenticationTests
+    public sealed class AuthenticationTests
     {
         private readonly ITestOutputHelper outputHelper;
         public AuthenticationTests(ITestOutputHelper outputHelper)

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Codevoid.Test.Utilities.OAuth
 {
-    public class ParameterEncoderTests
+    public sealed class ParameterEncoderTests
     {
         [Fact]
         public void OneParameterAndValueEncodes()

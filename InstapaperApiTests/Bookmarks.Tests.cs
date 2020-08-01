@@ -19,7 +19,7 @@ namespace Codevoid.Test.Instapaper
     /// tested functionality to place the API in a known state
     /// </summary>
     [Order(2), Collection(TestUtilities.TestCollectionName)]
-    public class BookmarksTests
+    public sealed class BookmarksTests
     {
         private CurrentServiceStateFixture SharedState;
         private IBookmarksClient Client => this.SharedState.BookmarksClient;
