@@ -8,7 +8,7 @@ namespace Codevoid.Storyvoid
     public sealed partial class ArticleDatabase
     {
         /// <inheritdoc/>
-        public Task<IList<DatabaseFolder>> GetFoldersAsync()
+        public Task<IList<DatabaseFolder>> GetAllFoldersAsync()
         {
             this.ThrowIfNotReady();
 

@@ -33,7 +33,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task DefaultFoldersAreCreated()
         {
-            IList<DatabaseFolder> result = await this.db!.GetFoldersAsync();
+            IList<DatabaseFolder> result = await this.db!.GetAllFoldersAsync();
             Assert.Equal(2, result.Count);
 
             var unreadFolder = result.Where((f) => f.ServiceId == WellKnownFolderIds.Unread).First()!;
@@ -96,7 +96,7 @@ namespace Codevoid.Test.Storyvoid
             FoldersMatch(addedFolder, folder);
 
             // Check it comes back when listing all folders
-            var allFolders = await this.db!.GetFoldersAsync();
+            var allFolders = await this.db!.GetAllFoldersAsync();
             Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
             Assert.Equal(3, allFolders.Count);
         }
@@ -116,7 +116,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.NotEqual(0L, addedFolder2.LocalId);
 
             // Check it comes back when listing all folders
-            var allFolders = await this.db!.GetFoldersAsync();
+            var allFolders = await this.db!.GetAllFoldersAsync();
             Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
             Assert.Equal(4, allFolders.Count);
         }
@@ -129,7 +129,7 @@ namespace Codevoid.Test.Storyvoid
             _ = await Assert.ThrowsAsync<DuplicateNameException>(() => this.db!.CreateFolderAsync("Sample"));
 
             // Check a spurious folder wasn't created
-            var allFolders = await this.db!.GetFoldersAsync();
+            var allFolders = await this.db!.GetAllFoldersAsync();
             Assert.Equal(3, allFolders.Count);
         }
 
@@ -155,7 +155,7 @@ namespace Codevoid.Test.Storyvoid
             FoldersMatch(addedFolder, folder);
 
             // Check it comes back when listing all folders
-            var allFolders = await this.db!.GetFoldersAsync();
+            var allFolders = await this.db!.GetAllFoldersAsync();
             var folderFromList = allFolders.Where((f) => f.LocalId == addedFolder.LocalId).FirstOrDefault();
             FoldersMatch(addedFolder, folderFromList);
         }
@@ -179,7 +179,7 @@ namespace Codevoid.Test.Storyvoid
             ));
 
             // Check it comes back when listing all folders
-            var allFolders = await this.db!.GetFoldersAsync();
+            var allFolders = await this.db!.GetAllFoldersAsync();
             Assert.Equal(3, allFolders.Count);
         }
 
@@ -242,7 +242,7 @@ namespace Codevoid.Test.Storyvoid
             await this.db!.DeleteFolderAsync(addedFolder.LocalId);
 
             // Verify folder is missing
-            var folders = await this.db!.GetFoldersAsync();
+            var folders = await this.db!.GetAllFoldersAsync();
             Assert.Equal(2, folders.Count);
         }
 

@@ -45,7 +45,7 @@ namespace Codevoid.Storyvoid
         /// folders (Unread, Archive)
         /// </summary>
         /// <returns>List of folders</returns>
-        Task<IList<DatabaseFolder>> GetFoldersAsync();
+        Task<IList<DatabaseFolder>> GetAllFoldersAsync();
 
         /// <summary>
         /// Gets a specific folder using it's service ID
@@ -110,7 +110,7 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="localId">Local Folder ID to get bookmarks for</param>
         /// <returns>Bookmarks in that folder</returns>
-        Task<IList<DatabaseBookmark>> GetBookmarksAsync(long localId);
+        Task<IList<DatabaseBookmark>> GetBookmarksForLocalFolderAsync(long localId);
 
         /// <summary>
         /// Add a bookmark to the database
