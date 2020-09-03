@@ -1,4 +1,7 @@
-﻿CREATE TABLE bookmarks (
+﻿-- Enable Write Ahead Logging (https://sqlite.org/wal.html)
+PRAGMA journal_mode = 'wal';
+
+CREATE TABLE bookmarks (
     id INTEGER NOT NULL PRIMARY KEY,
     url TEXT NOT NULL,
     title TEXT NOT NULL,
