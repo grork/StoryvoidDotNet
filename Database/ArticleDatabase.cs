@@ -179,6 +179,7 @@ namespace Codevoid.Storyvoid
     {
         // To help diagnose calls that skipped initialization
         private int initialized = 0;
+
         private const int CURRENT_DB_VERSION = 1;
 
         public long UnreadFolderLocalId { get; private set; }

@@ -290,7 +290,7 @@ namespace Codevoid.Test.Storyvoid
             var afterUpdate = await this.db!.GetBookmarksAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, afterUpdate.Count);
             Assert.Contains(afterUpdate, (b) =>
-                (b.Id == bookmark.id) && b.Progress == progress && b.ProgressTimestamp == progressTimestamp);
+                (b.Id == bookmark.Id) && b.Progress == progress && b.ProgressTimestamp == progressTimestamp);
         }
 
         [Fact]

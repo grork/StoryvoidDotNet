@@ -9,7 +9,7 @@ namespace Codevoid.Storyvoid
     {
         private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public Task<IList<DatabaseBookmark>> GetBookmarksAsync(long localFolderId)
         {
             var c = this.connection;
