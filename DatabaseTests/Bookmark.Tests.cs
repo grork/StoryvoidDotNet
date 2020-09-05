@@ -282,6 +282,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(bookmark.Id, updatedBookmark.Id);
             Assert.Equal(progressTimestamp, updatedBookmark.ReadProgressTimestamp);
             Assert.Equal(progress, updatedBookmark.ReadProgress);
+            Assert.NotEqual(bookmark.Hash, updatedBookmark.Hash);
         }
 
         [Fact]

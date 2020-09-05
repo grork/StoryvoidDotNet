@@ -209,15 +209,28 @@ namespace Codevoid.Storyvoid
             var c = this.connection;
             void UpdateProgressForBookmark()
             {
+                // The hash field is driven by the service, and complately opaque
+                // to us. The hash is also how the service determines if progress
+                // needs to be updated in list calls. This means that whenever
+                // we update the progress of a bookmark, if we don't have supplied
+                // hash, we need to stomp that hash since it's different, but we
+                // have no idea how to recompute it.
+                // To simulate a new hash, we will generate a random number, and
+                // use that as the hash.
+                var r = new Random();
+                var fauxHash = r.Next().ToString();
+
+
                 using var query = c!.CreateCommand(@"
                     UPDATE bookmarks
-                    SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp
+                    SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
                     WHERE id = @id
                 ");
 
                 query.AddParameter("@id", bookmarkId);
                 query.AddParameter("@readProgress", readProgress);
                 query.AddParameter("@readProgressTimestamp", readProgressTimestamp);
+                query.AddParameter("@hash", fauxHash);
 
                 var impactedRows = query.ExecuteNonQuery();
                 if(impactedRows < 1)
