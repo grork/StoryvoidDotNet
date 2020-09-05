@@ -49,6 +49,18 @@ namespace Codevoid.Utilities.OAuth
             this.Token = token;
             this.TokenSecret = tokenSecret;
 
+            this.ResetUserAgentValue();
+        }
+
+        private void ResetUserAgentValue()
+        {
+            if(this.userAgentValue != null && !this.userAgentValue.IsValueCreated)
+            {
+                // No need to reset the lazy value if we've not yet evaluated the
+                // the user agent value.
+                return;
+            }
+
             this.userAgentValue = new Lazy<ProductInfoHeaderValue>(() =>
                 new ProductInfoHeaderValue(this.productName, this.productVersion));
         }
@@ -62,7 +74,7 @@ namespace Codevoid.Utilities.OAuth
             set
             {
                 this.productName = value;
-                this.userAgentValue = null;
+                this.ResetUserAgentValue();
             }
         }
 
@@ -75,7 +87,7 @@ namespace Codevoid.Utilities.OAuth
             set
             {
                 this.productVersion = value;
-                this.userAgentValue = null;
+                this.ResetUserAgentValue();
             }
         }
 
