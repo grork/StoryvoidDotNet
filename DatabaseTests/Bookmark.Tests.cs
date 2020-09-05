@@ -90,7 +90,7 @@ namespace Codevoid.Test.Storyvoid
             var b = await this.AddRandomBookmarkToFolder(this.db!.UnreadFolderLocalId);
 
             var retrievedBookmark = (await this.db!.GetBookmarkByIdAsync(b.Id))!;
-            Assert.Equal(b.ProgressTimestamp, retrievedBookmark.ProgressTimestamp);
+            Assert.Equal(b.ReadProgressTimestamp, retrievedBookmark.ReadProgressTimestamp);
             Assert.Equal(b.Title, retrievedBookmark.Title);
             Assert.Equal(b.Url, retrievedBookmark.Url);
             Assert.Equal(b.Hash, retrievedBookmark.Hash);
@@ -113,7 +113,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Contains(bookmarks, (b) => b.Id == bookmark.Id);
 
             var bookmarkFromListing = bookmarks.First();
-            Assert.Equal(bookmark.ProgressTimestamp, bookmarkFromListing.ProgressTimestamp);
+            Assert.Equal(bookmark.ReadProgressTimestamp, bookmarkFromListing.ReadProgressTimestamp);
             Assert.Equal(bookmark.Title, bookmarkFromListing.Title);
             Assert.Equal(bookmark.Url, bookmarkFromListing.Url);
             Assert.Equal(bookmark.Hash, bookmarkFromListing.Hash);
@@ -129,7 +129,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Contains(bookmarks, (b) => b.Id == bookmark.Id);
 
             var bookmarkFromListing = bookmarks.First();
-            Assert.Equal(bookmark.ProgressTimestamp, bookmarkFromListing.ProgressTimestamp);
+            Assert.Equal(bookmark.ReadProgressTimestamp, bookmarkFromListing.ReadProgressTimestamp);
             Assert.Equal(bookmark.Title, bookmarkFromListing.Title);
             Assert.Equal(bookmark.Url, bookmarkFromListing.Url);
             Assert.Equal(bookmark.Hash, bookmarkFromListing.Hash);
@@ -156,7 +156,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Contains(customFolderBookmarks, (b) => b.Id == customFolderBookmark.Id);
 
             var customBookmarkFromListing = customFolderBookmarks.First();
-            Assert.Equal(customFolderBookmark.ProgressTimestamp, customBookmarkFromListing.ProgressTimestamp);
+            Assert.Equal(customFolderBookmark.ReadProgressTimestamp, customBookmarkFromListing.ReadProgressTimestamp);
             Assert.Equal(customFolderBookmark.Title, customBookmarkFromListing.Title);
             Assert.Equal(customFolderBookmark.Url, customBookmarkFromListing.Url);
             Assert.Equal(customFolderBookmark.Hash, customBookmarkFromListing.Hash);
@@ -166,7 +166,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Contains(unreadFolderBookmarks, (b) => b.Id == unreadFolderBookmark.Id);
 
             var unreadBookmarkFromListing = unreadFolderBookmarks.First();
-            Assert.Equal(unreadFolderBookmark.ProgressTimestamp, unreadBookmarkFromListing.ProgressTimestamp);
+            Assert.Equal(unreadFolderBookmark.ReadProgressTimestamp, unreadBookmarkFromListing.ReadProgressTimestamp);
             Assert.Equal(unreadFolderBookmark.Title, unreadBookmarkFromListing.Title);
             Assert.Equal(unreadFolderBookmark.Url, unreadBookmarkFromListing.Url);
             Assert.Equal(unreadFolderBookmark.Hash, unreadBookmarkFromListing.Hash);
@@ -278,10 +278,10 @@ namespace Codevoid.Test.Storyvoid
 
             var progressTimestamp = DateTime.Now.AddMinutes(5);
             var progress = 0.3F;
-            DatabaseBookmark updatedBookmark = await this.db!.UpdateProgressForBookmarkAsync(progress, progressTimestamp, bookmark.Id);
+            DatabaseBookmark updatedBookmark = await this.db!.UpdateReadProgressForBookmarkAsync(progress, progressTimestamp, bookmark.Id);
             Assert.Equal(bookmark.Id, updatedBookmark.Id);
-            Assert.Equal(progressTimestamp, updatedBookmark.ProgressTimestamp);
-            Assert.Equal(progress, updatedBookmark.Progress);
+            Assert.Equal(progressTimestamp, updatedBookmark.ReadProgressTimestamp);
+            Assert.Equal(progress, updatedBookmark.ReadProgress);
         }
 
         [Fact]
@@ -292,15 +292,15 @@ namespace Codevoid.Test.Storyvoid
             var beforeUpdate = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, beforeUpdate.Count);
             Assert.Contains(beforeUpdate, (b) =>
-                (b.Id == bookmark.Id) && b.Progress == bookmark.Progress && b.ProgressTimestamp == bookmark.ProgressTimestamp);
+                (b.Id == bookmark.Id) && b.ReadProgress == bookmark.ReadProgress && b.ReadProgressTimestamp == bookmark.ReadProgressTimestamp);
 
             var progressTimestamp = DateTime.Now.AddMinutes(5);
             var progress = 0.3F;
-            bookmark = await this.db!.UpdateProgressForBookmarkAsync(progress, progressTimestamp, bookmark.Id);
+            bookmark = await this.db!.UpdateReadProgressForBookmarkAsync(progress, progressTimestamp, bookmark.Id);
             var afterUpdate = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, afterUpdate.Count);
             Assert.Contains(afterUpdate, (b) =>
-                (b.Id == bookmark.Id) && b.Progress == progress && b.ProgressTimestamp == progressTimestamp);
+                (b.Id == bookmark.Id) && b.ReadProgress == progress && b.ReadProgressTimestamp == progressTimestamp);
         }
 
         [Fact]
@@ -308,7 +308,7 @@ namespace Codevoid.Test.Storyvoid
         {
             await Assert.ThrowsAsync<BookmarkNotFoundException>(async () =>
             {
-                await this.db!.UpdateProgressForBookmarkAsync(0.4F, DateTime.Now, 1);
+                await this.db!.UpdateReadProgressForBookmarkAsync(0.4F, DateTime.Now, 1);
             });
         }
 
@@ -322,12 +322,12 @@ namespace Codevoid.Test.Storyvoid
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
             {
-                await this.db!.UpdateProgressForBookmarkAsync(-0.01F, DateTime.Now, 1);
+                await this.db!.UpdateReadProgressForBookmarkAsync(-0.01F, DateTime.Now, 1);
             });
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
             {
-                await this.db!.UpdateProgressForBookmarkAsync(1.01F, DateTime.Now, 1);
+                await this.db!.UpdateReadProgressForBookmarkAsync(1.01F, DateTime.Now, 1);
             });
         }
 
@@ -341,7 +341,7 @@ namespace Codevoid.Test.Storyvoid
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
             {
-                await this.db!.UpdateProgressForBookmarkAsync(0.5F, new DateTime(1969, 12, 31, 23, 59, 59), 1);
+                await this.db!.UpdateReadProgressForBookmarkAsync(0.5F, new DateTime(1969, 12, 31, 23, 59, 59), 1);
             });
         }
 

@@ -6,8 +6,8 @@ CREATE TABLE bookmarks (
     url TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
-    progress REAL NOT NULL DEFAULT 0.0,
-    progress_timestamp INTEGER NOT NULL DEFAULT 0,
+    read_progress REAL NOT NULL DEFAULT 0.0,
+    read_progress_timestamp INTEGER NOT NULL DEFAULT 0,
     hash TEXT NOT NULL,
     liked INTEGER NOT NULL DEFAULT 0
 );

@@ -93,7 +93,7 @@ namespace Codevoid.Storyvoid
 
         /// <inheritdoc/>
         public Task<DatabaseBookmark> AddBookmarkAsync(
-            (int id, string title, Uri url, string description, float progress, DateTime progressTimestamp, string hash, bool liked) data,
+            (int id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
             long localFolderId
         )
         {
@@ -102,8 +102,8 @@ namespace Codevoid.Storyvoid
             void AddBookmark()
             {
                 using var query = c!.CreateCommand(@"
-                    INSERT INTO bookmarks(id, title, url, description, progress, progress_timestamp, hash, liked)
-                    VALUES (@id, @title, @url, @description, @progress, @progress_timestamp, @hash, @liked);
+                    INSERT INTO bookmarks(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
+                    VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
 
                     SELECT last_insert_rowid();
                 ");
@@ -112,8 +112,8 @@ namespace Codevoid.Storyvoid
                 query.AddParameter("@title", data.title);
                 query.AddParameter("@url", data.url);
                 query.AddParameter("@description", data.description);
-                query.AddParameter("@progress", data.progress);
-                query.AddParameter("@progress_timestamp", data.progressTimestamp);
+                query.AddParameter("@readProgress", data.readProgress);
+                query.AddParameter("@readProgressTimestamp", data.readProgressTimestamp);
                 query.AddParameter("@hash", data.hash);
                 query.AddParameter("@liked", data.liked);
 
@@ -192,16 +192,16 @@ namespace Codevoid.Storyvoid
             });
         }
 
-        public Task<DatabaseBookmark> UpdateProgressForBookmarkAsync(float progress, DateTime timestamp, long id)
+        public Task<DatabaseBookmark> UpdateReadProgressForBookmarkAsync(float readProgress, DateTime readProgressTimestamp, long bookmarkId)
         {
-            if(progress < 0.0 || progress > 1.0)
+            if(readProgress < 0.0 || readProgress > 1.0)
             {
-                throw new ArgumentOutOfRangeException(nameof(progress), "Progress must be between 0.0 and 1.0");
+                throw new ArgumentOutOfRangeException(nameof(readProgress), "Progress must be between 0.0 and 1.0");
             }
 
-            if(timestamp < UnixEpochStart)
+            if(readProgressTimestamp < UnixEpochStart)
             {
-                throw new ArgumentOutOfRangeException(nameof(timestamp), "Progress Timestamp must be within the Unix Epochs");
+                throw new ArgumentOutOfRangeException(nameof(readProgressTimestamp), "Progress Timestamp must be within the Unix Epochs");
             }
 
             this.ThrowIfNotReady();
@@ -211,25 +211,25 @@ namespace Codevoid.Storyvoid
             {
                 using var query = c!.CreateCommand(@"
                     UPDATE bookmarks
-                    SET progress = @progress, progress_timestamp = @progress_timestamp
+                    SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp
                     WHERE id = @id
                 ");
 
-                query.AddParameter("@id", id);
-                query.AddParameter("@progress", progress);
-                query.AddParameter("@progress_timestamp", timestamp);
+                query.AddParameter("@id", bookmarkId);
+                query.AddParameter("@readProgress", readProgress);
+                query.AddParameter("@readProgressTimestamp", readProgressTimestamp);
 
                 var impactedRows = query.ExecuteNonQuery();
                 if(impactedRows < 1)
                 {
-                    throw new BookmarkNotFoundException(id);
+                    throw new BookmarkNotFoundException(bookmarkId);
                 }
             }
 
             return Task.Run(() =>
             {
                 UpdateProgressForBookmark();
-                return GetBookmarkByIdAsync(c, id)!;
+                return GetBookmarkByIdAsync(c, bookmarkId)!;
             });
         }
 

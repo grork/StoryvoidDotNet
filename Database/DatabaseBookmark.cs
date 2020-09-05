@@ -38,12 +38,12 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// Current read progress of the bookmark -- between 0.0 and 1.0
         /// </summary>
-        public float Progress { get; private set; }
+        public float ReadProgress { get; private set; }
 
         /// <summary>
         /// Time that the progress was last changed
         /// </summary>
-        public DateTime ProgressTimestamp { get; private set; }
+        public DateTime ReadProgressTimestamp { get; private set; }
 
         /// <summary>
         /// Hash provided by the service of the bookmark reading progress &amp;
@@ -66,8 +66,8 @@ namespace Codevoid.Storyvoid
             var id = row.GetInt64("id");
             var url = row.GetUri("url");
             var title = row.GetString("title");
-            var progress = row.GetFloat("progress");
-            var progressTimestamp = row.GetDateTime("progress_timestamp");
+            var progress = row.GetFloat("read_progress");
+            var progressTimestamp = row.GetDateTime("read_progress_timestamp");
             var hash = row.GetString("hash");
             var liked = row.GetBoolean("liked");
 
@@ -76,8 +76,8 @@ namespace Codevoid.Storyvoid
                 Id = id,
                 Url = url,
                 Title = title,
-                Progress = progress,
-                ProgressTimestamp = progressTimestamp,
+                ReadProgress = progress,
+                ReadProgressTimestamp = progressTimestamp,
                 Hash = hash,
                 Liked = liked
             };

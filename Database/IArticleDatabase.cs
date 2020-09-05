@@ -123,39 +123,39 @@ namespace Codevoid.Storyvoid
         /// <param name="localFolderId">Folder to place this bookmark into</param>
         /// <returns>Bookmark from the database</returns>
         Task<DatabaseBookmark> AddBookmarkAsync(
-            (int id, string title, Uri url, string description, float progress, DateTime progressTimestamp, string hash, bool liked) data,
+            (int id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
             long localFolderId);
 
         /// <summary>
         /// Gets a bookmark by it's service ID
         /// </summary>
-        /// <param name="id">ID of the bookmark</param>
+        /// <param name="bookmarkId">ID of the bookmark</param>
         /// <returns>Bookmark if found, null otherwise</returns>
-        Task<DatabaseBookmark?> GetBookmarkByIdAsync(long id);
+        Task<DatabaseBookmark?> GetBookmarkByIdAsync(long bookmarkId);
 
         /// <summary>
         /// Like a bookmark. Will complete even if bookmark is already liked
         /// </summary>
-        /// <param name="id">Bookmark to Like</param>
+        /// <param name="bookmarkId">Bookmark to Like</param>
         /// <returns>The Bookmark after liking. Represents current database state</returns>
-        Task<DatabaseBookmark> LikeBookmarkAsync(long id);
+        Task<DatabaseBookmark> LikeBookmarkAsync(long bookmarkId);
 
         /// <summary>
         /// Unlike a bookmark. Will complete even if bookmark is already unliked
         /// </summary>
-        /// <param name="id">Bookmark to Unlike</param>
+        /// <param name="bookmarkId">Bookmark to Unlike</param>
         /// <returns>The Bookmark after unliking. Represents current database state</returns>
-        Task<DatabaseBookmark> UnlikeBookmarkAsync(long id);
+        Task<DatabaseBookmark> UnlikeBookmarkAsync(long bookmarkId);
 
         /// <summary>
         /// Update the progress of a specific bookmark, with the supplied
         /// timestamp of the progress update.
         /// </summary>
-        /// <param name="progress">Progress </param>
-        /// <param name="progressTimestamp"></param>
-        /// <param name="id"></param>
+        /// <param name="readProgress">Progress </param>
+        /// <param name="readProgressTimestamp"></param>
+        /// <param name="bookmarkId"></param>
         /// <returns></returns>
-        Task<DatabaseBookmark> UpdateProgressForBookmarkAsync(float progress, DateTime progressTimestamp, long id);
+        Task<DatabaseBookmark> UpdateReadProgressForBookmarkAsync(float readProgress, DateTime readProgressTimestamp, long bookmarkId);
 
         /// <summary>
         /// Moves the specified bookmark to the supplied destination folder
