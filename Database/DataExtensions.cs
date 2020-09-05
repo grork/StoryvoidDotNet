@@ -188,5 +188,15 @@ namespace Codevoid.Storyvoid
 
             instance.Parameters.Add(parameter);
         }
+
+        public static void AddNull(this IDbCommand instance, string name, DbType type)
+        {
+            var parameter = instance.CreateParameter();
+            parameter.DbType = type;
+            parameter.ParameterName = name;
+            parameter.Value = DBNull.Value;
+
+            instance.Parameters.Add(parameter);
+        }
     }
 }

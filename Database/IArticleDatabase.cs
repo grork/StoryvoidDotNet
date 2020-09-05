@@ -86,7 +86,7 @@ namespace Codevoid.Storyvoid
         /// <param name="position">Position to set</param>
         /// <param name="shouldSync">Should be synced</param>
         /// <returns>Updated folder</returns>
-        Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool shouldSync);
+        Task<DatabaseFolder> UpdateFolderAsync(long localId, long? serviceId, string title, long position, bool shouldSync);
 
         /// <summary>
         /// Delete the specified folder. Any bookmarks in this folder will be

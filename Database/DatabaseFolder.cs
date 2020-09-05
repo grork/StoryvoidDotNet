@@ -36,6 +36,9 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// The relative position of this folder in the folder list. Folders
         /// that haven't been sync yet will have a position value of zero.
+        ///
+        /// Additionally, "Well Known" folders (Unread, Archive) will have
+        /// negative values.
         /// </summary>
         public long Position { get; private set; }
 

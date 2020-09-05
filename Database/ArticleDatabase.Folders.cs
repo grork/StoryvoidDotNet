@@ -19,6 +19,7 @@ namespace Codevoid.Storyvoid
                 using var query = c.CreateCommand(@"
                     SELECT *
                     FROM folders
+                    ORDER BY position ASC
                 ");
 
                 using var folders = query.ExecuteReader();
@@ -184,7 +185,7 @@ namespace Codevoid.Storyvoid
             });
         }
 
-        public Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool shouldSync)
+        public Task<DatabaseFolder> UpdateFolderAsync(long localId, long? serviceId, string title, long position, bool shouldSync)
         {
             this.ThrowIfNotReady();
 
@@ -201,7 +202,15 @@ namespace Codevoid.Storyvoid
                 ");
 
                 query.AddParameter("@localId", localId);
-                query.AddParameter("@serviceId", serviceId);
+                if (serviceId != null)
+                {
+                    query.AddParameter("@serviceId", (long)(serviceId!));
+                }
+                else
+                {
+                    query.AddNull(@"serviceId", DbType.Int64);
+                }
+
                 query.AddParameter("@title", title);
                 query.AddParameter("@position", position);
                 query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));

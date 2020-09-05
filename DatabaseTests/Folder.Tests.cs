@@ -45,6 +45,20 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public async Task DefaultFoldersAreSortedCorrectly()
+        {
+            IList<DatabaseFolder> result = await this.db!.ListAllFoldersAsync();
+            Assert.Equal(2, result.Count);
+
+            var firstFolder = result[0];
+            var secondFolder = result[1];
+
+            // Check the convenience IDs are correct
+            Assert.Equal(firstFolder.LocalId, this.db!.UnreadFolderLocalId);
+            Assert.Equal(secondFolder.LocalId, this.db!.ArchiveFolderLocalId);
+        }
+
+        [Fact]
         public async Task CanGetSingleDefaultFolderByServiceId()
         {
             var folder = await db!.GetFolderByServiceIdAsync(WellKnownFolderIds.Unread);
@@ -262,6 +276,43 @@ namespace Codevoid.Test.Storyvoid
         public async Task DeletingArchiveFolderThrows()
         {
             await Assert.ThrowsAsync<InvalidOperationException>(() => this.db!.DeleteFolderAsync(this.db!.UnreadFolderLocalId));
+        }
+
+        [Fact]
+        public async Task AddingFolderWithoutPositionReturnsAfterWellKnownFolders()
+        {
+            // Create folder
+            var addedFolder = await this.db!.CreateFolderAsync("Sample");
+
+            // Check that the folder order is correct
+            var allFolders = await this.db!.ListAllFoldersAsync();
+            Assert.Equal(this.db!.UnreadFolderLocalId, allFolders[0].LocalId);
+            Assert.Equal(this.db!.ArchiveFolderLocalId, allFolders[1].LocalId);
+            Assert.Equal(addedFolder.LocalId, allFolders[2].LocalId);
+        }
+
+        [Fact]
+        public async Task FoldersWithPositionAreSortedCorrectly()
+        {
+            // Create two folders, with their position ordering them opposite
+            // to insertion order.
+            var firstAddedFolder = await this.db!.CreateFolderAsync("Sample 1 - Sorted Second");
+            await this.db!.UpdateFolderAsync(firstAddedFolder.LocalId, firstAddedFolder.ServiceId, firstAddedFolder.Title, 99L, firstAddedFolder.ShouldSync);
+
+            var secondAddedFolder = await this.db!.CreateFolderAsync("Sample 2 - Sorted First");
+            await this.db!.UpdateFolderAsync(secondAddedFolder.LocalId, secondAddedFolder.ServiceId, secondAddedFolder.Title, 11L, secondAddedFolder.ShouldSync);
+
+            var thirdAddedFolder = await this.db!.CreateFolderAsync("Sample 3 - No position, sorted between well known and explicit positions");
+
+            // Check it comes back when listing all folders
+            var allFolders = await this.db!.ListAllFoldersAsync();
+
+            // Check that the folder order is correct
+            Assert.Equal(this.db!.UnreadFolderLocalId, allFolders[0].LocalId);
+            Assert.Equal(this.db!.ArchiveFolderLocalId, allFolders[1].LocalId);
+            Assert.Equal(thirdAddedFolder.LocalId, allFolders[2].LocalId);
+            Assert.Equal(secondAddedFolder.LocalId, allFolders[3].LocalId);
+            Assert.Equal(firstAddedFolder.LocalId, allFolders[4].LocalId);
         }
     }
 }

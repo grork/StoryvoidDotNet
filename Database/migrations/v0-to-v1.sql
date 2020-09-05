@@ -23,11 +23,11 @@ CREATE TABLE folders (
 );
 
 -- Insert the system folders
-INSERT INTO folders(service_id, title)
-VALUES (-1, 'Home');
+INSERT INTO folders(service_id, title, position)
+VALUES (-1, 'Home', -100);
 
-INSERT INTO folders(service_id, title)
-VALUES (-2, 'Archive');
+INSERT INTO folders(service_id, title, position)
+VALUES (-2, 'Archive', -99);
 
 CREATE TABLE bookmark_to_folder (
     pair_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
