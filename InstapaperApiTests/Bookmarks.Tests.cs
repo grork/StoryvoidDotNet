@@ -43,7 +43,7 @@ namespace Codevoid.Test.Instapaper
             var result = await this.Client.AddAsync(bookmarkUrl);
 
             Assert.Equal(bookmarkUrl, result.Url);
-            Assert.NotEqual(0UL, result.Id);
+            Assert.True(result.Id > 0L);
             Assert.False(String.IsNullOrWhiteSpace(result.Hash));
 
             this.SharedState.UpdateOrSetRecentBookmark(result);
@@ -63,7 +63,7 @@ namespace Codevoid.Test.Instapaper
             var result = await this.Client.AddAsync(bookmarkUrl, options);
 
             Assert.Equal(bookmarkUrl, result.Url);
-            Assert.NotEqual(0UL, result.Id);
+            Assert.True(result.Id > 0);
             Assert.False(String.IsNullOrWhiteSpace(result.Hash));
             Assert.Equal(options.Title, result.Title);
             Assert.Equal(options.Description, result.Description);
@@ -99,7 +99,7 @@ namespace Codevoid.Test.Instapaper
             // when trying to get the content (separate API), then it will fail
             var result = await this.Client.AddAsync(this.SharedState.NonExistantUrl);
             Assert.Equal(this.SharedState.NonExistantUrl, result.Url);
-            Assert.NotEqual(0UL, result.Id);
+            Assert.True(result.Id > 0L);
 
             // Make sure we keep this bookmark for later use
             this.SharedState.SetNotFoundBookmark(result);
@@ -157,7 +157,7 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task UpdatingProgressForNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UpdateReadProgressAsync(1UL, 0.5F, DateTime.Now));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UpdateReadProgressAsync(1L, 0.5F, DateTime.Now));
         }
 
         [Fact, Order(7)]
@@ -248,13 +248,13 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task LikingNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.LikeAsync(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.LikeAsync(1L));
         }
 
         [Fact]
         public async Task UnlikingNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UnlikeAsync(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UnlikeAsync(1L));
         }
 
         [Fact, Order(12)]
@@ -310,13 +310,13 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task ArchivingNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.ArchiveAsync(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.ArchiveAsync(1L));
         }
 
         [Fact]
         public async Task UnarchiveNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UnarchiveAsync(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UnarchiveAsync(1L));
         }
 
         [Fact, Order(17)]
@@ -341,7 +341,7 @@ namespace Codevoid.Test.Instapaper
         [Fact, Order(18)]
         public async Task MovingNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.MoveAsync(1UL, this.SharedState.RecentlyAddedFolder!.Id));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.MoveAsync(1L, this.SharedState.RecentlyAddedFolder!.Id));
         }
 
         [Fact, Order(19)]
@@ -455,10 +455,10 @@ namespace Codevoid.Test.Instapaper
             }
 
             // Add 2 fake deleted items
-            var fakeHave = new HaveStatus(1UL, "X", 0.5F, DateTime.Now);
+            var fakeHave = new HaveStatus(1L, "X", 0.5F, DateTime.Now);
             haveInformation.Add(fakeHave);
 
-            var fakeHave2 = new HaveStatus(2UL, "X", 0.5F, DateTime.Now);
+            var fakeHave2 = new HaveStatus(2L, "X", 0.5F, DateTime.Now);
             haveInformation.Add(fakeHave2);
 
             var (folderContentWithHave, deletedIds) = await client.ListAsync(folder.Id, haveInformation);
@@ -564,13 +564,13 @@ namespace Codevoid.Test.Instapaper
         [Fact]
         public async Task DeletingWithInvalidBookmarkIdThrows()
         {
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.DeleteAsync(0UL));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await this.Client.DeleteAsync(0L));
         }
 
         [Fact]
         public async Task DeleteNonExistantBookmarkThrows()
         {
-            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.DeleteAsync(1UL));
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.DeleteAsync(1L));
         }
     }
 }
