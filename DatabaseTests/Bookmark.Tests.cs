@@ -73,7 +73,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanListBookmarksWhenEmpty()
         {
-            var bookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var bookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Empty(bookmarks);
         }
 
@@ -108,7 +108,7 @@ namespace Codevoid.Test.Storyvoid
         {
             var bookmark = await this.AddRandomBookmarkToFolder(this.db!.UnreadFolderLocalId);
 
-            var bookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var bookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, bookmarks.Count);
             Assert.Contains(bookmarks, (b) => b.Id == bookmark.Id);
 
@@ -124,7 +124,7 @@ namespace Codevoid.Test.Storyvoid
         {
             var bookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
 
-            var bookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.CustomFolder1.LocalId);
+            var bookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.CustomFolder1.LocalId);
             Assert.Equal(1, bookmarks.Count);
             Assert.Contains(bookmarks, (b) => b.Id == bookmark.Id);
 
@@ -151,7 +151,7 @@ namespace Codevoid.Test.Storyvoid
             var customFolderBookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
             var unreadFolderBookmark = await this.AddRandomBookmarkToFolder(this.db!.UnreadFolderLocalId);
 
-            var customFolderBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.CustomFolder1.LocalId);
+            var customFolderBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.CustomFolder1.LocalId);
             Assert.Equal(1, customFolderBookmarks.Count);
             Assert.Contains(customFolderBookmarks, (b) => b.Id == customFolderBookmark.Id);
 
@@ -161,7 +161,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(customFolderBookmark.Url, customBookmarkFromListing.Url);
             Assert.Equal(customFolderBookmark.Hash, customBookmarkFromListing.Hash);
 
-            var unreadFolderBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadFolderBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, unreadFolderBookmarks.Count);
             Assert.Contains(unreadFolderBookmarks, (b) => b.Id == unreadFolderBookmark.Id);
 
@@ -175,7 +175,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task ListingLikedBookmarksWithNoLikedBookmarksReturnsEmptyList()
         {
-            var likedBookmarks = await this.db!.GetLikedBookmarksAsync();
+            var likedBookmarks = await this.db!.ListLikedBookmarksAsync();
             Assert.Empty(likedBookmarks);
         }
 
@@ -199,7 +199,7 @@ namespace Codevoid.Test.Storyvoid
                 this.db!.UnreadFolderLocalId
             );
 
-            var likedBookmarks = await this.db!.GetLikedBookmarksAsync();
+            var likedBookmarks = await this.db!.ListLikedBookmarksAsync();
             Assert.Equal(1, likedBookmarks.Count);
             Assert.Contains(likedBookmarks, (b) => (b.Id == bookmark.id) && b.Liked);
         }
@@ -215,7 +215,7 @@ namespace Codevoid.Test.Storyvoid
             bookmark2.liked = true;
             _ = await this.db!.AddBookmarkAsync(bookmark2, this.CustomFolder1!.LocalId);
 
-            var likedBookmarks = await this.db!.GetLikedBookmarksAsync();
+            var likedBookmarks = await this.db!.ListLikedBookmarksAsync();
             Assert.Equal(2, likedBookmarks.Count);
             Assert.Contains(likedBookmarks, (b) => (b.Id == bookmark1.id) && b.Liked);
             Assert.Contains(likedBookmarks, (b) => (b.Id == bookmark2.id) && b.Liked);
@@ -289,7 +289,7 @@ namespace Codevoid.Test.Storyvoid
         {
             var bookmark = await this.AddRandomBookmarkToFolder(this.db!.UnreadFolderLocalId);
 
-            var beforeUpdate = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var beforeUpdate = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, beforeUpdate.Count);
             Assert.Contains(beforeUpdate, (b) =>
                 (b.Id == bookmark.Id) && b.ReadProgress == bookmark.ReadProgress && b.ReadProgressTimestamp == bookmark.ReadProgressTimestamp);
@@ -297,7 +297,7 @@ namespace Codevoid.Test.Storyvoid
             var progressTimestamp = DateTime.Now.AddMinutes(5);
             var progress = 0.3F;
             bookmark = await this.db!.UpdateReadProgressForBookmarkAsync(progress, progressTimestamp, bookmark.Id);
-            var afterUpdate = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var afterUpdate = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, afterUpdate.Count);
             Assert.Contains(afterUpdate, (b) =>
                 (b.Id == bookmark.Id) && b.ReadProgress == progress && b.ReadProgressTimestamp == progressTimestamp);
@@ -352,12 +352,12 @@ namespace Codevoid.Test.Storyvoid
             await this.db!.MoveBookmarkToFolderAsync(bookmark.Id, this.CustomFolder1!.LocalId);
 
             // Check it's in the destination
-            var customBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.CustomFolder1.LocalId);
+            var customBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.CustomFolder1.LocalId);
             Assert.Equal(1, customBookmarks.Count);
             Assert.Contains(customBookmarks, (b) => b.Id == bookmark.Id);
 
             // Check it's not present in unread
-            var unreadBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Empty(unreadBookmarks);
         }
 
@@ -368,12 +368,12 @@ namespace Codevoid.Test.Storyvoid
             await this.db!.MoveBookmarkToFolderAsync(bookmark.Id, this.db!.ArchiveFolderLocalId);
 
             // Check it's in the destination
-            var archiveBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.ArchiveFolderLocalId);
+            var archiveBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.ArchiveFolderLocalId);
             Assert.Equal(1, archiveBookmarks.Count);
             Assert.Contains(archiveBookmarks, (b) => b.Id == bookmark.Id);
 
             // Check it's not present in unread
-            var unreadBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Empty(unreadBookmarks);
         }
 
@@ -384,12 +384,12 @@ namespace Codevoid.Test.Storyvoid
             await this.db!.MoveBookmarkToFolderAsync(bookmark.Id, this.db!.UnreadFolderLocalId);
 
             // Check it's in the destination
-            var unreadBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, unreadBookmarks.Count);
             Assert.Contains(unreadBookmarks, (b) => b.Id == bookmark.Id);
 
             // Check it's not present in unread
-            var customBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.CustomFolder1!.LocalId);
+            var customBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.CustomFolder1!.LocalId);
             Assert.Empty(customBookmarks);
         }
 
@@ -400,12 +400,12 @@ namespace Codevoid.Test.Storyvoid
             await this.db!.MoveBookmarkToFolderAsync(bookmark.Id, this.db!.UnreadFolderLocalId);
 
             // Check it's in the destination
-            var unreadBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, unreadBookmarks.Count);
             Assert.Contains(unreadBookmarks, (b) => b.Id == bookmark.Id);
 
             // Check it's not present in unread
-            var archiveBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.ArchiveFolderLocalId);
+            var archiveBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.ArchiveFolderLocalId);
             Assert.Empty(archiveBookmarks);
         }
 
@@ -422,7 +422,7 @@ namespace Codevoid.Test.Storyvoid
             var bookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
             await this.db!.MoveBookmarkToFolderAsync(bookmark.Id, this.CustomFolder1!.LocalId);
 
-            var customBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.CustomFolder1!.LocalId);
+            var customBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.CustomFolder1!.LocalId);
             Assert.Equal(1, customBookmarks.Count);
             Assert.Contains(customBookmarks, (f) => f.Id == bookmark.Id);
         }
@@ -446,7 +446,7 @@ namespace Codevoid.Test.Storyvoid
             _ = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
 
             await this.db!.DeleteFolderAsync(this.CustomFolder1!.LocalId);
-            var folders = await this.db!.GetAllFoldersAsync();
+            var folders = await this.db!.ListAllFoldersAsync();
             Assert.DoesNotContain(folders, (f) => f.LocalId == this.CustomFolder1!.LocalId);
         }
 
@@ -456,7 +456,7 @@ namespace Codevoid.Test.Storyvoid
             var bookmark = await this.AddRandomBookmarkToFolder(this.db!.UnreadFolderLocalId);
             await this.db!.DeleteBookmarkAsync(bookmark.Id);
 
-            var unreadBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Empty(unreadBookmarks);
         }
 
@@ -466,7 +466,7 @@ namespace Codevoid.Test.Storyvoid
             var bookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
             await this.db!.DeleteBookmarkAsync(bookmark.Id);
 
-            var customBookmarks = await this.db!.GetBookmarksForLocalFolderAsync(this.CustomFolder1.LocalId);
+            var customBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.CustomFolder1.LocalId);
             Assert.Empty(customBookmarks);
         }
 

@@ -10,7 +10,7 @@ namespace Codevoid.Storyvoid
         private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
         /// <inheritdoc/>
-        public Task<IList<DatabaseBookmark>> GetBookmarksForLocalFolderAsync(long localFolderId)
+        public Task<IList<DatabaseBookmark>> ListBookmarksForLocalFolderAsync(long localFolderId)
         {
             var c = this.connection;
 
@@ -40,7 +40,7 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<IList<DatabaseBookmark>> GetLikedBookmarksAsync()
+        public Task<IList<DatabaseBookmark>> ListLikedBookmarksAsync()
         {
             var c = this.connection;
             IList<DatabaseBookmark> GetBookmarks()
