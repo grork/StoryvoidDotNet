@@ -17,7 +17,7 @@ CREATE TABLE folders (
     service_id INTEGER, -- Cant have this as a primary key, since temporary folders wont have an ID
     title TEXT NOT NULL,
     position INTEGER NOT NULL DEFAULT 0,
-    sync_to_mobile INTEGER NOT NULL DEFAULT 1,
+    should_sync INTEGER NOT NULL DEFAULT 1,
     UNIQUE(service_id),
     UNIQUE(title)
 );

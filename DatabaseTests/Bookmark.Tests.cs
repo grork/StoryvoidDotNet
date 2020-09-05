@@ -23,7 +23,7 @@ namespace Codevoid.Test.Storyvoid
                 9L,
                 customFolder1.Title,
                 customFolder1.Position,
-                customFolder1.SyncToMobile
+                customFolder1.ShouldSync
             );
             this.CustomFolder1 = customFolder1;
 
@@ -33,7 +33,7 @@ namespace Codevoid.Test.Storyvoid
                 10L,
                 customFolder2.Title,
                 customFolder2.Position,
-                customFolder2.SyncToMobile
+                customFolder2.ShouldSync
             );
 
             this.CustomFolder2 = customFolder2;

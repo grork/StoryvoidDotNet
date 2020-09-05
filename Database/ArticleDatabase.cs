@@ -75,9 +75,9 @@ namespace Codevoid.Storyvoid
         /// <param name="title">Title for this folder</param>
         /// <param name="serviceId">The ID of the folder on the service</param>
         /// <param name="position">The relative order of the folder</param>
-        /// <param name="syncToMobile">Should the folder by synced</param>
+        /// <param name="shouldSync">Should the folder by synced</param>
         /// <returns>The folder after being added to the database</returns>
-        Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool syncToMobile);
+        Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool shouldSync);
 
         /// <summary>
         /// Updates the data of a folder with the supplied Local ID. All fields
@@ -87,9 +87,9 @@ namespace Codevoid.Storyvoid
         /// <param name="serviceId">Service ID to set</param>
         /// <param name="title">Title to set</param>
         /// <param name="position">Position to set</param>
-        /// <param name="syncToMobile">Should be synced</param>
+        /// <param name="shouldSync">Should be synced</param>
         /// <returns>Updated folder</returns>
-        Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool syncToMobile);
+        Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool shouldSync);
 
         /// <summary>
         /// Delete the specified folder. Any bookmarks in this folder will be

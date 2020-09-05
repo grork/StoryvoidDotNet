@@ -19,7 +19,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(folder1!.ServiceId, folder2!.ServiceId);
             Assert.Equal(folder1!.Title, folder2!.Title);
             Assert.Equal(folder1!.Position, folder2!.Position);
-            Assert.Equal(folder1!.SyncToMobile, folder2!.SyncToMobile);
+            Assert.Equal(folder1!.ShouldSync, folder2!.ShouldSync);
         }
 
         private IArticleDatabase? db;
@@ -141,14 +141,14 @@ namespace Codevoid.Test.Storyvoid
                 title: "Sample",
                 serviceId: 10L,
                 position: 9L,
-                syncToMobile: true
+                shouldSync: true
             );
 
             Assert.Equal(10L, addedFolder.ServiceId);
             Assert.Equal("Sample", addedFolder.Title);
             Assert.NotEqual(0L, addedFolder.LocalId);
             Assert.Equal(9L, addedFolder.Position);
-            Assert.True(addedFolder.SyncToMobile);
+            Assert.True(addedFolder.ShouldSync);
 
             // Request the folder explicitily, check it's data
             DatabaseFolder folder = (await this.db!.GetFolderByLocalIdAsync(addedFolder.LocalId))!;
@@ -168,14 +168,14 @@ namespace Codevoid.Test.Storyvoid
                 title: "Sample",
                 serviceId: 10L,
                 position: 9L,
-                syncToMobile: true
+                shouldSync: true
             );
 
             _ = await Assert.ThrowsAsync<DuplicateNameException>(() => this.db!.AddKnownFolderAsync(
                 title: addedFolder.Title,
                 serviceId: addedFolder.ServiceId!.Value,
                 position: addedFolder.Position,
-                syncToMobile: addedFolder.SyncToMobile
+                shouldSync: addedFolder.ShouldSync
             ));
 
             // Check it comes back when listing all folders
@@ -197,7 +197,7 @@ namespace Codevoid.Test.Storyvoid
                 serviceId: 9L,
                 title: "Sample2",
                 position: 999L,
-                syncToMobile: false
+                shouldSync: false
             );
 
             // Should be the same folder
@@ -210,7 +210,7 @@ namespace Codevoid.Test.Storyvoid
 
             Assert.Equal("Sample2", updatedFolder.Title);
             Assert.Equal(999L, updatedFolder.Position);
-            Assert.False(updatedFolder.SyncToMobile);
+            Assert.False(updatedFolder.ShouldSync);
         }
 
         [Fact]
@@ -223,7 +223,7 @@ namespace Codevoid.Test.Storyvoid
                     serviceId: 9L,
                     title: "Sample2",
                     position: 999L,
-                    syncToMobile: false
+                    shouldSync: false
                 );
             });
         }
@@ -236,7 +236,7 @@ namespace Codevoid.Test.Storyvoid
                 title: "Sample",
                 serviceId: 10L,
                 position: 9L,
-                syncToMobile: true
+                shouldSync: true
             );
 
             await this.db!.DeleteFolderAsync(addedFolder.LocalId);

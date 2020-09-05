@@ -128,7 +128,7 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool syncToMobile)
+        public Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool shouldSync)
         {
             this.ThrowIfNotReady();
 
@@ -137,8 +137,8 @@ namespace Codevoid.Storyvoid
             long CreateFolder()
             {
                 var query = c!.CreateCommand(@"
-                    INSERT INTO folders(title, service_id, position, sync_to_mobile)
-                    VALUES (@title, @serviceId, @position, @syncToMobile);
+                    INSERT INTO folders(title, service_id, position, should_sync)
+                    VALUES (@title, @serviceId, @position, @shouldSync);
 
                     SELECT last_insert_rowid();
                 ");
@@ -146,7 +146,7 @@ namespace Codevoid.Storyvoid
                 query.AddParameter("@title", title);
                 query.AddParameter("@serviceId", serviceId);
                 query.AddParameter("@position", position);
-                query.AddParameter("@syncToMobile", Convert.ToInt64(syncToMobile));
+                query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
 
                 var rowId = (long)query.ExecuteScalar();
 
@@ -165,7 +165,7 @@ namespace Codevoid.Storyvoid
             });
         }
 
-        public Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool syncToMobile)
+        public Task<DatabaseFolder> UpdateFolderAsync(long localId, long serviceId, string title, long position, bool shouldSync)
         {
             this.ThrowIfNotReady();
 
@@ -174,18 +174,18 @@ namespace Codevoid.Storyvoid
             {
                 var query = c!.CreateCommand(@"
                     UPDATE folders SET
-                        service_id = @service_id,
+                        service_id = @serviceId,
                         title = @title,
                         position = @position,
-                        sync_to_mobile = @sync_to_mobile
-                    WHERE local_id = @local_id
+                        should_sync = @shouldSync
+                    WHERE local_id = @localId
                 ");
 
-                query.AddParameter("@local_id", localId);
-                query.AddParameter("@service_id", serviceId);
+                query.AddParameter("@localId", localId);
+                query.AddParameter("@serviceId", serviceId);
                 query.AddParameter("@title", title);
                 query.AddParameter("@position", position);
-                query.AddParameter("@sync_to_mobile", Convert.ToInt64(syncToMobile));
+                query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
 
                 var impactedRows = query.ExecuteNonQuery();
                 if(impactedRows < 1)

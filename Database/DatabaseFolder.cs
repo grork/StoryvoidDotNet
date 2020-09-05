@@ -14,7 +14,7 @@ namespace Codevoid.Storyvoid
         public long? ServiceId { get; private set; }
         public string Title { get; private set; }
         public long Position { get; private set; }
-        public bool SyncToMobile { get; private set; }
+        public bool ShouldSync { get; private set; }
         public bool IsOnService => (this.ServiceId != null);
 
         internal static DatabaseFolder FromRow(IDataReader row)
@@ -26,8 +26,8 @@ namespace Codevoid.Storyvoid
                 Position = row.GetInt64("position"),
             };
 
-            var rawSyncToMobile = row.GetInt64("sync_to_mobile");
-            folder.SyncToMobile = (rawSyncToMobile != 0);
+            var rawShouldSync = row.GetInt64("should_sync");
+            folder.ShouldSync = (rawShouldSync != 0);
 
             // Service ID might be null so need to check if it's null before
             // requesting it from the row
