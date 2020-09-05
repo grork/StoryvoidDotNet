@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid
 {
-    public sealed partial class ArticleDatabase
+    sealed partial class ArticleDatabase
     {
         /// <inheritdoc/>
         public Task<IList<DatabaseFolder>> GetAllFoldersAsync()
@@ -16,8 +16,8 @@ namespace Codevoid.Storyvoid
 
             IList<DatabaseFolder> ListFolders()
             {
-                using var listFolders = c.CreateCommand("SELECT * FROM folders");
-                using var folders = listFolders.ExecuteReader();
+                using var query = c.CreateCommand("SELECT * FROM folders");
+                using var folders = query.ExecuteReader();
 
                 var result = new List<DatabaseFolder>();
 
@@ -41,10 +41,10 @@ namespace Codevoid.Storyvoid
             var c = this.connection;
             DatabaseFolder? GetFolder()
             {
-                using var folderQuery = c.CreateCommand("SELECT * FROM folders WHERE service_id = @serviceId");
-                folderQuery.AddParameter("@serviceId", serviceId);
+                using var query = c.CreateCommand("SELECT * FROM folders WHERE service_id = @serviceId");
+                query.AddParameter("@serviceId", serviceId);
 
-                using var folderRow = folderQuery.ExecuteReader();
+                using var folderRow = query.ExecuteReader();
 
                 DatabaseFolder? folder = null;
                 if (folderRow.Read())
@@ -64,15 +64,15 @@ namespace Codevoid.Storyvoid
             this.ThrowIfNotReady();
 
             var c = this.connection;
-            return Task.Run(() => GetFolderByLocalIdAsync(c, localId));
+            return Task.Run(() => GetFolderByLocalId(c, localId));
         }
 
-        private static DatabaseFolder? GetFolderByLocalIdAsync(IDbConnection connection, long localId)
+        private static DatabaseFolder? GetFolderByLocalId(IDbConnection connection, long localId)
         {
-            using var folderQuery = connection.CreateCommand("SELECT * FROM folders WHERE local_id = @localId");
-            folderQuery.AddParameter("@localId", localId);
+            using var query = connection.CreateCommand("SELECT * FROM folders WHERE local_id = @localId");
+            query.AddParameter("@localId", localId);
 
-            using var folderRow = folderQuery.ExecuteReader();
+            using var folderRow = query.ExecuteReader();
 
             DatabaseFolder? folder = null;
             if (folderRow.Read())
@@ -92,7 +92,7 @@ namespace Codevoid.Storyvoid
 
             long CreateFolder()
             {
-                var query = c!.CreateCommand(@"
+                using var query = c!.CreateCommand(@"
                     INSERT INTO folders(title)
                     VALUES (@title);
 
@@ -113,16 +113,16 @@ namespace Codevoid.Storyvoid
                 }
 
                 var newFolderRowId = CreateFolder();
-                return GetFolderByLocalIdAsync(c, newFolderRowId)!;
+                return GetFolderByLocalId(c, newFolderRowId)!;
             });
         }
 
         private static bool FolderWithTitleExists(IDbConnection connection, string title)
         {
-            using var folderWithTitle = connection.CreateCommand("SELECT COUNT(*) FROM folders WHERE title = @title");
-            folderWithTitle.AddParameter("@title", title);
+            using var query = connection.CreateCommand("SELECT COUNT(*) FROM folders WHERE title = @title");
+            query.AddParameter("@title", title);
 
-            var foldersWithTitleCount = (long)folderWithTitle.ExecuteScalar();
+            var foldersWithTitleCount = (long)query.ExecuteScalar();
 
             return (foldersWithTitleCount > 0);
         }
@@ -136,7 +136,7 @@ namespace Codevoid.Storyvoid
 
             long CreateFolder()
             {
-                var query = c!.CreateCommand(@"
+                using var query = c!.CreateCommand(@"
                     INSERT INTO folders(title, service_id, position, should_sync)
                     VALUES (@title, @serviceId, @position, @shouldSync);
 
@@ -161,7 +161,7 @@ namespace Codevoid.Storyvoid
                 }
 
                 var newFolderRowId = CreateFolder();
-                return GetFolderByLocalIdAsync(c, newFolderRowId)!;
+                return GetFolderByLocalId(c, newFolderRowId)!;
             });
         }
 
@@ -172,7 +172,7 @@ namespace Codevoid.Storyvoid
             var c = this.connection;
             void UpdateFolder()
             {
-                var query = c!.CreateCommand(@"
+                using var query = c!.CreateCommand(@"
                     UPDATE folders SET
                         service_id = @serviceId,
                         title = @title,
@@ -197,7 +197,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateFolder();
-                return GetFolderByLocalIdAsync(c, localId)!;
+                return GetFolderByLocalId(c, localId)!;
             });
         }
 

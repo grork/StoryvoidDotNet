@@ -3,6 +3,9 @@ using System.Data;
 
 namespace Codevoid.Storyvoid
 {
+    /// <summary>
+    /// Folder sourced from the Database
+    /// </summary>
     public sealed class DatabaseFolder
     {
         private DatabaseFolder()
@@ -10,13 +13,47 @@ namespace Codevoid.Storyvoid
             this.Title = String.Empty;
         }
 
+        /// <summary>
+        /// The local ID for this folder, distinct from the services ID for the
+        /// same folder.
+        ///
+        /// This is because it's possible to add folders locally, prior to sync
+        /// so it needs a discrete identifier
+        /// </summary>
         public long LocalId { get; private set; }
+
+        /// <summary>
+        /// Services ID for the folder. If the folder is not on the service yet
+        /// (e.g. was created offline), then it will be null.
+        /// </summary>
         public long? ServiceId { get; private set; }
+
+        /// <summary>
+        /// Display title for this folder
+        /// </summary>
         public string Title { get; private set; }
+
+        /// <summary>
+        /// The relative position of this folder in the folder list. Folders
+        /// that haven't been sync yet will have a position value of zero.
+        /// </summary>
         public long Position { get; private set; }
+
+        /// <summary>
+        /// Should this folder be synced, as determined by the service.
+        /// </summary>
         public bool ShouldSync { get; private set; }
+
+        /// <summary>
+        /// Has this folder been sync'd to the service?
+        /// </summary>
         public bool IsOnService => (this.ServiceId != null);
 
+        /// <summary>
+        /// Converts a raw database row in to an instance of a folder
+        /// </summary>
+        /// <param name="row">Row to hydrate into a folder instance</param>
+        /// <returns>Instance of the object representing the folder</returns>
         internal static DatabaseFolder FromRow(IDataReader row)
         {
             var folder = new DatabaseFolder()

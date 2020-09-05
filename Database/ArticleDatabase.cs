@@ -175,7 +175,7 @@ namespace Codevoid.Storyvoid
         Task DeleteBookmarkAsync(long bookmarkId);
     }
 
-    public sealed partial class ArticleDatabase : IArticleDatabase, IDisposable
+    internal sealed partial class ArticleDatabase : IArticleDatabase, IDisposable
     {
         // To help diagnose calls that skipped initialization
         private int initialized = 0;

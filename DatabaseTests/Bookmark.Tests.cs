@@ -136,6 +136,16 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public async Task AddingBookmarkToNonExistantFolderFails()
+        {
+            var bookmark = this.GetRandomBookmark();
+            await Assert.ThrowsAsync<FolderNotFoundException>(async () =>
+            {
+                _ = await this.db!.AddBookmarkAsync(bookmark, 999L);
+            });
+        }
+
+        [Fact]
         public async Task BookmarksAreOnlyReturnedInTheirOwningFolders()
         {
             var customFolderBookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid
 {
-    public sealed partial class ArticleDatabase
+    sealed partial class ArticleDatabase
     {
         private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
@@ -96,7 +96,7 @@ namespace Codevoid.Storyvoid
 
             void AddBookmark()
             {
-                var query = c!.CreateCommand(@"
+                using var query = c!.CreateCommand(@"
                     INSERT INTO bookmarks(id, title, url, description, progress, progress_timestamp, hash, liked)
                     VALUES (@id, @title, @url, @description, @progress, @progress_timestamp, @hash, @liked);
 
@@ -117,7 +117,7 @@ namespace Codevoid.Storyvoid
 
             void PairBookmarkToFolder()
             {
-                var query = c!.CreateCommand(@"
+                using var query = c!.CreateCommand(@"
                     INSERT INTO bookmark_to_folder(local_folder_id, bookmark_id)
                     VALUES (@local_folder_id, @bookmark_id);
                 ");
@@ -130,6 +130,11 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
+                if(GetFolderByLocalId(c, localFolderId) == null)
+                {
+                    throw new FolderNotFoundException(localFolderId);
+                }
+
                 AddBookmark();
                 PairBookmarkToFolder();
                 return GetBookmarkByIdAsync(c, data.id)!;
@@ -138,7 +143,7 @@ namespace Codevoid.Storyvoid
 
         private static void UpdateLikeStatusForBookmark(IDbConnection c, long id, bool liked)
         {
-            var query = c!.CreateCommand(@"
+            using var query = c!.CreateCommand(@"
                 UPDATE bookmarks
                 SET liked = @liked
                 WHERE id = @id
@@ -228,7 +233,7 @@ namespace Codevoid.Storyvoid
             var c = this.connection;
             void MoveBookmarkToFolder()
             {
-                var query = c!.CreateCommand(@"
+                using var query = c!.CreateCommand(@"
                     UPDATE bookmark_to_folder
                     SET local_folder_id = @local_folder_id
                     WHERE bookmark_id = @bookmark_id;
@@ -242,7 +247,7 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                if (GetFolderByLocalIdAsync(c, localFolderId) == null)
+                if (GetFolderByLocalId(c, localFolderId) == null)
                 {
                     throw new FolderNotFoundException(localFolderId);
                 }
