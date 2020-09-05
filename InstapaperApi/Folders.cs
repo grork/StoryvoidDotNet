@@ -29,12 +29,12 @@ namespace Codevoid.Instapaper
         /// Relative position of this folder compared to others. Note, this
         /// value is not guarenteed to be unique in a list of folders.
         /// </summary>
-        ulong Position { get; }
+        long Position { get; }
 
         /// <summary>
         /// ID of this folder on the service
         /// </summary>
-        ulong Id { get; }
+        long Id { get; }
     }
 
     /// <summary>
@@ -49,10 +49,10 @@ namespace Codevoid.Instapaper
         public bool SyncToMobile { get; private set; } = true;
 
         /// <inheritdoc/>
-        public ulong Position { get; private set; } = 0;
+        public long Position { get; private set; } = 0;
 
         /// <inheritdoc/>
-        public ulong Id { get; private set; } = 0;
+        public long Id { get; private set; } = 0;
 
         internal static IInstapaperFolder FromJsonElement(JsonElement folderElement)
         {
@@ -61,17 +61,17 @@ namespace Codevoid.Instapaper
             // For reasons that are unclear, the position number from the service
             // created during an *add* operation is actually a double. (e.g. it
             // has a decimal component). This is utterly baffling, so we're going
-            // to parse as a double, and then convert to a ulong.
+            // to parse as a double, and then convert to a long.
             var positionRaw = folderElement.GetProperty("position").GetDouble();
             positionRaw = Math.Floor(positionRaw);
-            var position = Convert.ToUInt64(positionRaw);
+            var position = Convert.ToInt64(positionRaw);
 
             // Sync to mobile is number in the payload, but we would like to
             // model it as boolean
             int syncToMobileRaw = folderElement.GetProperty("sync_to_mobile").GetInt32();
             var syncToMobile = (syncToMobileRaw == 1);
 
-            var folderId = folderElement.GetProperty("folder_id").GetUInt64();
+            var folderId = folderElement.GetProperty("folder_id").GetInt64();
             return new Folder()
             {
                 Title = folderTitle,
@@ -108,7 +108,7 @@ namespace Codevoid.Instapaper
         /// ID of the folder to delete. Must be greater than zero
         /// </param>
         /// <returns>Task that completes when folder is successfully deleted</returns>
-        Task DeleteAsync(ulong folderId);
+        Task DeleteAsync(long folderId);
     }
 
     /// <summary>
@@ -217,7 +217,7 @@ namespace Codevoid.Instapaper
         }
 
         /// <inheritdoc/>
-        public async Task DeleteAsync(ulong folderId)
+        public async Task DeleteAsync(long folderId)
         {
             if (folderId < 1)
             {

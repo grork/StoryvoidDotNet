@@ -24,8 +24,8 @@ namespace Codevoid.Test.Instapaper
             var createdFolder = await client.AddAsync(folderName);
             Assert.Equal(folderName, createdFolder.Title);
             Assert.True(createdFolder.SyncToMobile);
-            Assert.InRange(createdFolder.Position, 1UL, ulong.MaxValue);
-            Assert.InRange(createdFolder.Id, 1UL, ulong.MaxValue);
+            Assert.InRange(createdFolder.Position, 1L, long.MaxValue);
+            Assert.InRange(createdFolder.Id, 1L, long.MaxValue);
 
             this.SharedState.UpdateOrSetRecentFolder(createdFolder);
         }
@@ -51,8 +51,8 @@ namespace Codevoid.Test.Instapaper
             {
                 Assert.NotEmpty(folder.Title);
                 Assert.True(folder.SyncToMobile);
-                Assert.InRange(folder.Position, 1UL, ulong.MaxValue);
-                Assert.InRange(folder.Id, 1UL, ulong.MaxValue);
+                Assert.InRange(folder.Position, 1L, long.MaxValue);
+                Assert.InRange(folder.Id, 1L, long.MaxValue);
             });
 
             // Check that the folder we'd added recently is in the list

@@ -83,7 +83,7 @@ namespace Codevoid.Instapaper
         /// If the bookmark should be added directly to a folder other than the
         /// unread folder.
         /// </summary>
-        public ulong DestinationFolderId = 0UL;
+        public long DestinationFolderId = 0L;
 
         /// <summary>
         /// When enabled (the default), the destination URL will follow redirects.
@@ -131,7 +131,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(ulong folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
+        Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
 
         /// <summary>
         /// Add a bookmark for the supplied URL.
@@ -188,7 +188,7 @@ namespace Codevoid.Instapaper
         /// <param name="bookmark_id">Bookmark to move</param>
         /// <param name="folder_id">Folder to move the bookmark to</param>
         /// <returns>Bookmark after completing the move</returns>
-        Task<IInstapaperBookmark> MoveAsync(ulong bookmark_id, ulong folder_id);
+        Task<IInstapaperBookmark> MoveAsync(ulong bookmark_id, long folder_id);
 
         /// <summary>
         /// Get the text of the bookmark from the service. This is returned in
@@ -251,7 +251,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, ulong folder_id, uint limit = 0)
+        public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, long folder_id, uint limit = 0)
         {
             return instance.ListAsync(folder_id, null, limit);
         }
@@ -268,7 +268,7 @@ namespace Codevoid.Instapaper
         /// <returns>
         /// List of bookmarks
         /// </returns>
-        public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, ulong folder_id, IEnumerable<HaveStatus> haveInformation)
+        public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<ulong> DeletedIds)> ListAsync(this IBookmarksClient instance, long folder_id, IEnumerable<HaveStatus> haveInformation)
         {
             return instance.ListAsync(folder_id, haveInformation, 0);
         }
@@ -597,9 +597,9 @@ namespace Codevoid.Instapaper
             return (bookmarks, deletedIds);
         }
 
-        public Task<(IList<IInstapaperBookmark>, IList<ulong>)> ListAsync(ulong folder_id, IEnumerable<HaveStatus>? haveInformation, uint limit)
+        public Task<(IList<IInstapaperBookmark>, IList<ulong>)> ListAsync(long folder_id, IEnumerable<HaveStatus>? haveInformation, uint limit)
         {
-            if (folder_id == 0UL)
+            if (folder_id < 1L)
             {
                 throw new ArgumentOutOfRangeException(nameof(folder_id), "Invalid Folder ID");
             }
@@ -632,7 +632,7 @@ namespace Codevoid.Instapaper
                     parameters.Add("description", options.Description);
                 }
 
-                if (options.DestinationFolderId != 0UL)
+                if (options.DestinationFolderId > 0L)
                 {
                     parameters.Add("folder_id", options.DestinationFolderId.ToString());
                 }
@@ -685,14 +685,14 @@ namespace Codevoid.Instapaper
         public Task<IInstapaperBookmark> ArchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperationAsync(EndPoints.Bookmarks.Archive, bookmark_id);
         public Task<IInstapaperBookmark> UnarchiveAsync(ulong bookmark_id) => this.SingleBookmarkOperationAsync(EndPoints.Bookmarks.Unarchive, bookmark_id);
 
-        public async Task<IInstapaperBookmark> MoveAsync(ulong bookmark_id, ulong folder_id)
+        public async Task<IInstapaperBookmark> MoveAsync(ulong bookmark_id, long folder_id)
         {
             if (bookmark_id == 0UL)
             {
                 throw new ArgumentOutOfRangeException(nameof(bookmark_id), "Invalid Bookmark ID");
             }
 
-            if (folder_id == 0UL)
+            if (folder_id < 1L)
             {
                 throw new ArgumentOutOfRangeException(nameof(folder_id), "Invalid Folder ID");
             }
