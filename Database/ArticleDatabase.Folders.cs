@@ -16,7 +16,11 @@ namespace Codevoid.Storyvoid
 
             IList<DatabaseFolder> ListFolders()
             {
-                using var query = c.CreateCommand("SELECT * FROM folders");
+                using var query = c.CreateCommand(@"
+                    SELECT *
+                    FROM folders
+                ");
+
                 using var folders = query.ExecuteReader();
 
                 var result = new List<DatabaseFolder>();
@@ -41,7 +45,12 @@ namespace Codevoid.Storyvoid
             var c = this.connection;
             DatabaseFolder? GetFolder()
             {
-                using var query = c.CreateCommand("SELECT * FROM folders WHERE service_id = @serviceId");
+                using var query = c.CreateCommand(@"
+                    SELECT *
+                    FROM folders
+                    WHERE service_id = @serviceId
+                ");
+
                 query.AddParameter("@serviceId", serviceId);
 
                 using var folderRow = query.ExecuteReader();
@@ -69,7 +78,12 @@ namespace Codevoid.Storyvoid
 
         private static DatabaseFolder? GetFolderByLocalId(IDbConnection connection, long localId)
         {
-            using var query = connection.CreateCommand("SELECT * FROM folders WHERE local_id = @localId");
+            using var query = connection.CreateCommand(@"
+                SELECT *
+                FROM folders
+                WHERE local_id = @localId
+            ");
+
             query.AddParameter("@localId", localId);
 
             using var folderRow = query.ExecuteReader();
@@ -119,7 +133,12 @@ namespace Codevoid.Storyvoid
 
         private static bool FolderWithTitleExists(IDbConnection connection, string title)
         {
-            using var query = connection.CreateCommand("SELECT COUNT(*) FROM folders WHERE title = @title");
+            using var query = connection.CreateCommand(@"
+                SELECT COUNT(*)
+                FROM folders
+                WHERE title = @title
+            ");
+
             query.AddParameter("@title", title);
 
             var foldersWithTitleCount = (long)query.ExecuteScalar();

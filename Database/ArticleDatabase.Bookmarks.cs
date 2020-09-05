@@ -72,7 +72,12 @@ namespace Codevoid.Storyvoid
 
         private DatabaseBookmark? GetBookmarkByIdAsync(IDbConnection connection, long id)
         {
-            using var query = connection.CreateCommand("SELECT * FROM bookmarks WHERE id = @id");
+            using var query = connection.CreateCommand(@"
+                SELECT *
+                FROM bookmarks
+                WHERE id = @id
+            ");
+
             query.AddParameter("@id", id);
 
             using var row = query.ExecuteReader();
