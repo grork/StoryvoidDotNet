@@ -13,6 +13,7 @@ namespace Codevoid.Storyvoid
             this.Title = String.Empty;
             this.Url = new Uri("unset://unset");
             this.Hash = String.Empty;
+            this.Description = String.Empty;
         }
 
         /// <summary>
@@ -33,7 +34,7 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// Optional description of the bookmark
         /// </summary>
-        public string? Description { get; private set; }
+        public string Description { get; private set; }
 
         /// <summary>
         /// Current read progress of the bookmark -- between 0.0 and 1.0

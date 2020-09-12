@@ -123,8 +123,25 @@ namespace Codevoid.Storyvoid
         /// <param name="localFolderId">Folder to place this bookmark into</param>
         /// <returns>Bookmark from the database</returns>
         Task<DatabaseBookmark> AddBookmarkAsync(
-            (int id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
+            (long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
             long localFolderId);
+
+        /// <summary>
+        /// Updates the specified bookmark with new details, overwriting any
+        /// values that are present.
+        /// </summary>
+        /// <param name="id">ID of the bookmark to update</param>
+        /// <param name="title">Title of the bookmark</param>
+        /// <param name="url">URL the bookmark is for</param>
+        /// <param name="description">Description of the bookmark</param>
+        /// <param name="progress">Current read progress</param>
+        /// <param name="progressTimestamp">Last time progress was changed</param>
+        /// <param name="hash">Service-sourced hash of the bookmark state</param>
+        /// <param name="liked">Liked status of the bookmark</param>
+        /// <returns>Bookmark instance with updated values</returns>
+        Task<DatabaseBookmark> UpdateBookmarkAsync(
+            long id,
+            (string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) updatedData);
 
         /// <summary>
         /// Gets a bookmark by it's service ID

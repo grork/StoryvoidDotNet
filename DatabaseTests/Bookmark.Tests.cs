@@ -495,5 +495,48 @@ namespace Codevoid.Test.Storyvoid
             Assert.NotNull(orphaned);
             Assert.Equal(bookmark.Id, orphaned!.Id);
         }
+
+        [Fact]
+        public async Task CanUpdateBookmarkWithFullSetOfInformation()
+        {
+            // Get bookmark
+            var bookmark = await this.AddRandomBookmarkToFolder(this.db!.UnreadFolderLocalId);
+
+            var newTitle = "New Title";
+            // Update bookmark with new title
+            var updatedBookmark = await this.db.UpdateBookmarkAsync(bookmark.Id,
+                (newTitle, bookmark.Url, bookmark.Description, bookmark.ReadProgress, bookmark.ReadProgressTimestamp, bookmark.Hash, bookmark.Liked));
+
+            // Check returned values are correct
+            Assert.Equal(bookmark.Id, updatedBookmark.Id);
+            Assert.Equal(newTitle, updatedBookmark.Title);
+            Assert.Equal(bookmark.Description, updatedBookmark.Description);
+            Assert.Equal(bookmark.ReadProgress, updatedBookmark.ReadProgress);
+            Assert.Equal(bookmark.ReadProgressTimestamp, updatedBookmark.ReadProgressTimestamp);
+            Assert.Equal(bookmark.Hash, updatedBookmark.Hash);
+            Assert.Equal(bookmark.Liked, updatedBookmark.Liked);
+
+            // Get from database again and check them
+            var retreivedBookmark = (await this.db!.GetBookmarkByIdAsync(bookmark.Id))!;
+            Assert.Equal(bookmark.Id, retreivedBookmark.Id);
+            Assert.Equal(newTitle, retreivedBookmark.Title);
+            Assert.Equal(bookmark.Description, retreivedBookmark.Description);
+            Assert.Equal(bookmark.ReadProgress, retreivedBookmark.ReadProgress);
+            Assert.Equal(bookmark.ReadProgressTimestamp, retreivedBookmark.ReadProgressTimestamp);
+            Assert.Equal(bookmark.Hash, retreivedBookmark.Hash);
+            Assert.Equal(bookmark.Liked, retreivedBookmark.Liked);
+        }
+
+        [Fact]
+        public async Task UpdatingBookmarkThatDoesntExistFails()
+        {
+            await Assert.ThrowsAsync<BookmarkNotFoundException>(async () =>
+            {
+                _ = await db!.UpdateBookmarkAsync(
+                    99,
+                    (String.Empty, new Uri("https://www.bing.com"), String.Empty, 0.0F, DateTime.Now, String.Empty, false)
+                );
+            });
+        }
     }
 }

@@ -93,7 +93,7 @@ namespace Codevoid.Storyvoid
 
         /// <inheritdoc/>
         public Task<DatabaseBookmark> AddBookmarkAsync(
-            (int id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
+            (long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
             long localFolderId
         )
         {
@@ -143,6 +143,51 @@ namespace Codevoid.Storyvoid
                 AddBookmark();
                 PairBookmarkToFolder();
                 return GetBookmarkByIdAsync(c, data.id)!;
+            });
+        }
+
+       public Task<DatabaseBookmark> UpdateBookmarkAsync(
+            long id,
+            (string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) updatedData)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+            void UpdateBookmark()
+            {
+                using var query = c!.CreateCommand(@"
+                    UPDATE bookmarks SET
+                        url = @url,
+                        title = @title,
+                        description = @description,
+                        read_progress = @readProgress,
+                        read_progresS_timestamp = @readProgressTimestamp,
+                        hash = @hash,
+                        liked = @liked
+                    WHERE id = @id
+                ");
+
+                query.AddParameter("@id", id);
+                query.AddParameter("@url", updatedData.url);
+                query.AddParameter("@title", updatedData.title);
+                query.AddParameter("@description", updatedData.description);
+                query.AddParameter("@readProgress", updatedData.readProgress);
+                query.AddParameter("@readProgressTimestamp", updatedData.readProgressTimestamp);
+                query.AddParameter("@hash", updatedData.hash);
+                query.AddParameter("@liked", updatedData.liked);
+                
+
+                var impactedRows = query.ExecuteNonQuery();
+                if (impactedRows < 1)
+                {
+                    throw new BookmarkNotFoundException(id);
+                }
+            }
+
+            return Task.Run(() =>
+            {
+                UpdateBookmark();
+                return GetBookmarkByIdAsync(c, id)!;
             });
         }
 
