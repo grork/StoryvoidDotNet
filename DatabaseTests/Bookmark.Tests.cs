@@ -485,6 +485,7 @@ namespace Codevoid.Test.Storyvoid
             await this.db!.DeleteBookmarkAsync(bookmark.Id);
         }
 
+        [Fact]
         public async Task CanGetOrphanedBookmark()
         {
             var bookmark = await this.AddRandomBookmarkToFolder(this.CustomFolder1!.LocalId);
