@@ -17,8 +17,8 @@ namespace Codevoid.Test.Storyvoid
             this.db = await TestUtilities.GetDatabase();
 
             // Add sample folders
-            var customFolder1 = await this.db!.CreateFolderAsync("Sample1");
-            customFolder1 = await this.db!.UpdateFolderAsync(
+            var customFolder1 = await this.db.CreateFolderAsync("Sample1");
+            customFolder1 = await this.db.UpdateFolderAsync(
                 customFolder1.LocalId,
                 9L,
                 customFolder1.Title,
@@ -27,8 +27,8 @@ namespace Codevoid.Test.Storyvoid
             );
             this.CustomFolder1 = customFolder1;
 
-            var customFolder2 = await this.db!.CreateFolderAsync("Sample2");
-            customFolder2 = await this.db!.UpdateFolderAsync(
+            var customFolder2 = await this.db.CreateFolderAsync("Sample2");
+            customFolder2 = await this.db.UpdateFolderAsync(
                 customFolder2.LocalId,
                 10L,
                 customFolder2.Title,

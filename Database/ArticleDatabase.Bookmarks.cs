@@ -21,10 +21,10 @@ namespace Codevoid.Storyvoid
                     FROM bookmark_to_folder
                     INNER JOIN bookmarks b
                         ON bookmark_to_folder.bookmark_id = b.id
-                    WHERE bookmark_to_folder.local_folder_id = @local_folder_id
+                    WHERE bookmark_to_folder.local_folder_id = @localFolderId
                 ");
 
-                query.AddParameter("@local_folder_id", localFolderId);
+                query.AddParameter("@localFolderId", localFolderId);
 
                 var results = new List<DatabaseBookmark>();
                 using var rows = query.ExecuteReader();
@@ -45,7 +45,7 @@ namespace Codevoid.Storyvoid
             var c = this.connection;
             IList<DatabaseBookmark> GetBookmarks()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     SELECT *
                     FROM bookmarks
                     WHERE liked = true
@@ -67,10 +67,10 @@ namespace Codevoid.Storyvoid
         public Task<DatabaseBookmark?> GetBookmarkByIdAsync(long id)
         {
             var c = this.connection;
-            return Task.Run(() => GetBookmarkByIdAsync(c, id));
+            return Task.Run(() => GetBookmarkById(c, id));
         }
 
-        private DatabaseBookmark? GetBookmarkByIdAsync(IDbConnection connection, long id)
+        private DatabaseBookmark? GetBookmarkById(IDbConnection connection, long id)
         {
             using var query = connection.CreateCommand(@"
                 SELECT *
@@ -97,11 +97,11 @@ namespace Codevoid.Storyvoid
             long localFolderId
         )
         {
-            var c = this.connection;
+            IDbConnection c = this.connection;
 
             void AddBookmark()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     INSERT INTO bookmarks(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
                     VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
 
@@ -122,13 +122,13 @@ namespace Codevoid.Storyvoid
 
             void PairBookmarkToFolder()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     INSERT INTO bookmark_to_folder(local_folder_id, bookmark_id)
-                    VALUES (@local_folder_id, @bookmark_id);
+                    VALUES (@localFolderId, @bookmarkId);
                 ");
 
-                query.AddParameter("@bookmark_id", data.id);
-                query.AddParameter("@local_folder_id", localFolderId);
+                query.AddParameter("@bookmarkId", data.id);
+                query.AddParameter("@localFolderId", localFolderId);
 
                 query.ExecuteNonQuery();
             }
@@ -142,7 +142,7 @@ namespace Codevoid.Storyvoid
 
                 AddBookmark();
                 PairBookmarkToFolder();
-                return GetBookmarkByIdAsync(c, data.id)!;
+                return GetBookmarkById(c, data.id)!;
             });
         }
 
@@ -152,10 +152,10 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            var c = this.connection;
+            IDbConnection c = this.connection;
             void UpdateBookmark()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     UPDATE bookmarks SET
                         url = @url,
                         title = @title,
@@ -187,13 +187,13 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateBookmark();
-                return GetBookmarkByIdAsync(c, id)!;
+                return GetBookmarkById(c, id)!;
             });
         }
 
         private static void UpdateLikeStatusForBookmark(IDbConnection c, long id, bool liked)
         {
-            using var query = c!.CreateCommand(@"
+            using var query = c.CreateCommand(@"
                 UPDATE bookmarks
                 SET liked = @liked
                 WHERE id = @id
@@ -219,7 +219,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForBookmark(c, id, true);
-                return GetBookmarkByIdAsync(c, id)!;
+                return GetBookmarkById(c, id)!;
             });
         }
 
@@ -233,7 +233,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForBookmark(c, id, false);
-                return GetBookmarkByIdAsync(c, id)!;
+                return GetBookmarkById(c, id)!;
             });
         }
 
@@ -251,7 +251,7 @@ namespace Codevoid.Storyvoid
 
             this.ThrowIfNotReady();
 
-            var c = this.connection;
+            IDbConnection c = this.connection;
             void UpdateProgressForBookmark()
             {
                 // The hash field is driven by the service, and complately opaque
@@ -266,7 +266,7 @@ namespace Codevoid.Storyvoid
                 var fauxHash = r.Next().ToString();
 
 
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     UPDATE bookmarks
                     SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
                     WHERE id = @id
@@ -287,23 +287,23 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateProgressForBookmark();
-                return GetBookmarkByIdAsync(c, bookmarkId)!;
+                return GetBookmarkById(c, bookmarkId)!;
             });
         }
 
         public Task MoveBookmarkToFolderAsync(long bookmarkId, long localFolderId)
         {
-            var c = this.connection;
+            IDbConnection c = this.connection;
             void MoveBookmarkToFolder()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     UPDATE bookmark_to_folder
-                    SET local_folder_id = @local_folder_id
-                    WHERE bookmark_id = @bookmark_id;
+                    SET local_folder_id = @localFolderId
+                    WHERE bookmark_id = @bookmarkId;
                 ");
 
-                query.AddParameter("@bookmark_id", bookmarkId);
-                query.AddParameter("@local_folder_id", localFolderId);
+                query.AddParameter("@bookmarkId", bookmarkId);
+                query.AddParameter("@localFolderId", localFolderId);
 
                 query.ExecuteNonQuery();
             }
@@ -315,7 +315,7 @@ namespace Codevoid.Storyvoid
                     throw new FolderNotFoundException(localFolderId);
                 }
 
-                if (GetBookmarkByIdAsync(c, bookmarkId) == null)
+                if (GetBookmarkById(c, bookmarkId) == null)
                 {
                     throw new BookmarkNotFoundException(bookmarkId);
                 }
@@ -326,23 +326,23 @@ namespace Codevoid.Storyvoid
 
         public Task DeleteBookmarkAsync(long bookmarkId)
         {
-            var c = this.connection;
+            IDbConnection c = this.connection;
 
             void RemoveFromFolder()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     DELETE FROM bookmark_to_folder
-                    WHERE bookmark_id = @bookmark_id
+                    WHERE bookmark_id = @bookmarkId
                 ");
 
-                query.AddParameter("@bookmark_id", bookmarkId);
+                query.AddParameter("@bookmarkId", bookmarkId);
 
                 query.ExecuteNonQuery();
             }
 
             void DeleteBookmark()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     DELETE FROM bookmarks
                     WHERE id = @id
                 ");

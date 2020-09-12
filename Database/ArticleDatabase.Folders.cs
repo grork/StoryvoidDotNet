@@ -103,11 +103,11 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            var c = this.connection;
+            IDbConnection c = this.connection;
 
             long CreateFolder()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     INSERT INTO folders(title)
                     VALUES (@title);
 
@@ -152,11 +152,11 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            var c = this.connection;
+            IDbConnection c = this.connection;
 
             long CreateFolder()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     INSERT INTO folders(title, service_id, position, should_sync)
                     VALUES (@title, @serviceId, @position, @shouldSync);
 
@@ -189,10 +189,10 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            var c = this.connection;
+            IDbConnection c = this.connection;
             void UpdateFolder()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     UPDATE folders SET
                         service_id = @serviceId,
                         title = @title,
@@ -241,17 +241,17 @@ namespace Codevoid.Storyvoid
                 throw new InvalidOperationException("Deleting the Archive folder is not allowed");
             }
 
-            var c = this.connection;
+            IDbConnection c = this.connection;
 
             // Remove any bookmark-folder-pairs
             void DeleteBookmarkFolderPairs()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     DELETE FROM bookmark_to_folder
-                    WHERE local_folder_id = @local_folder_id
+                    WHERE local_folder_id = @localFolderId
                 ");
 
-                query.AddParameter("@local_folder_id", localFolderId);
+                query.AddParameter("@localFolderId", localFolderId);
 
                 query.ExecuteNonQuery();
             }
@@ -260,12 +260,12 @@ namespace Codevoid.Storyvoid
             // Delete the folder
             void DeleteFolder()
             {
-                using var query = c!.CreateCommand(@"
+                using var query = c.CreateCommand(@"
                     DELETE FROM folders
-                    WHERE local_id = @local_id
+                    WHERE local_id = @localId
                 ");
 
-                query.AddParameter("@local_id", localFolderId);
+                query.AddParameter("@localId", localFolderId);
 
                 query.ExecuteNonQuery();
             }
