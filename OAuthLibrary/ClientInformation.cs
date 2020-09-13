@@ -54,7 +54,7 @@ namespace Codevoid.Utilities.OAuth
 
         private void ResetUserAgentValue()
         {
-            if(this.userAgentValue != null && !this.userAgentValue.IsValueCreated)
+            if (this.userAgentValue != null && !this.userAgentValue.IsValueCreated)
             {
                 // No need to reset the lazy value if we've not yet evaluated the
                 // the user agent value.

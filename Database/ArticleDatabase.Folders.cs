@@ -216,7 +216,7 @@ namespace Codevoid.Storyvoid
                 query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
 
                 var impactedRows = query.ExecuteNonQuery();
-                if(impactedRows < 1)
+                if (impactedRows < 1)
                 {
                     throw new FolderNotFoundException(localId);
                 }
@@ -231,12 +231,12 @@ namespace Codevoid.Storyvoid
 
         public Task DeleteFolderAsync(long localFolderId)
         {
-            if(localFolderId == this.UnreadFolderLocalId)
+            if (localFolderId == this.UnreadFolderLocalId)
             {
                 throw new InvalidOperationException("Deleting the Unread folder is not allowed");
             }
 
-            if(localFolderId == this.ArchiveFolderLocalId)
+            if (localFolderId == this.ArchiveFolderLocalId)
             {
                 throw new InvalidOperationException("Deleting the Archive folder is not allowed");
             }

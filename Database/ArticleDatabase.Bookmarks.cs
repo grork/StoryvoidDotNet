@@ -53,7 +53,7 @@ namespace Codevoid.Storyvoid
 
                 var results = new List<DatabaseBookmark>();
                 using var rows = query.ExecuteReader();
-                while(rows.Read())
+                while (rows.Read())
                 {
                     results.Add(DatabaseBookmark.FromRow(rows));
                 }
@@ -135,7 +135,7 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                if(GetFolderByLocalId(c, localFolderId) == null)
+                if (GetFolderByLocalId(c, localFolderId) == null)
                 {
                     throw new FolderNotFoundException(localFolderId);
                 }
@@ -146,9 +146,9 @@ namespace Codevoid.Storyvoid
             });
         }
 
-       public Task<DatabaseBookmark> UpdateBookmarkAsync(
-            long id,
-            (string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) updatedData)
+        public Task<DatabaseBookmark> UpdateBookmarkAsync(
+             long id,
+             (string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) updatedData)
         {
             this.ThrowIfNotReady();
 
@@ -175,7 +175,7 @@ namespace Codevoid.Storyvoid
                 query.AddParameter("@readProgressTimestamp", updatedData.readProgressTimestamp);
                 query.AddParameter("@hash", updatedData.hash);
                 query.AddParameter("@liked", updatedData.liked);
-                
+
 
                 var impactedRows = query.ExecuteNonQuery();
                 if (impactedRows < 1)
@@ -203,7 +203,7 @@ namespace Codevoid.Storyvoid
             query.AddParameter("@liked", liked);
 
             var impactedRows = query.ExecuteNonQuery();
-            if(impactedRows < 1)
+            if (impactedRows < 1)
             {
                 throw new BookmarkNotFoundException(id);
             }
@@ -239,12 +239,12 @@ namespace Codevoid.Storyvoid
 
         public Task<DatabaseBookmark> UpdateReadProgressForBookmarkAsync(float readProgress, DateTime readProgressTimestamp, long bookmarkId)
         {
-            if(readProgress < 0.0 || readProgress > 1.0)
+            if (readProgress < 0.0 || readProgress > 1.0)
             {
                 throw new ArgumentOutOfRangeException(nameof(readProgress), "Progress must be between 0.0 and 1.0");
             }
 
-            if(readProgressTimestamp < UnixEpochStart)
+            if (readProgressTimestamp < UnixEpochStart)
             {
                 throw new ArgumentOutOfRangeException(nameof(readProgressTimestamp), "Progress Timestamp must be within the Unix Epochs");
             }
@@ -278,7 +278,7 @@ namespace Codevoid.Storyvoid
                 query.AddParameter("@hash", fauxHash);
 
                 var impactedRows = query.ExecuteNonQuery();
-                if(impactedRows < 1)
+                if (impactedRows < 1)
                 {
                     throw new BookmarkNotFoundException(bookmarkId);
                 }

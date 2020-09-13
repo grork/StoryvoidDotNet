@@ -71,7 +71,7 @@ namespace Codevoid.Storyvoid
 
             // Service ID might be null so need to check if it's null before
             // requesting it from the row
-            if(!row.IsDBNull("service_id"))
+            if (!row.IsDBNull("service_id"))
             {
                 folder.ServiceId = row.GetInt64("service_id");
             }

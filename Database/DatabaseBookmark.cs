@@ -83,7 +83,7 @@ namespace Codevoid.Storyvoid
                 Liked = liked
             };
 
-            if(!row.IsDBNull("description"))
+            if (!row.IsDBNull("description"))
             {
                 bookmark.Description = row.GetString("description");
             }
