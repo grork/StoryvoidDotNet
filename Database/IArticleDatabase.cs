@@ -122,7 +122,7 @@ namespace Codevoid.Storyvoid
         /// <param name="liked">Liked status of the bookmark</param>
         /// <param name="localFolderId">Folder to place this bookmark into</param>
         /// <returns>Bookmark from the database</returns>
-        Task<DatabaseBookmark> AddBookmarkAsync(
+        Task<DatabaseBookmark> AddBookmarkToFolderAsync(
             (long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
             long localFolderId);
 

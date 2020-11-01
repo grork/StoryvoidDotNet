@@ -62,7 +62,7 @@ namespace Codevoid.Test.Storyvoid
 
         private async Task<DatabaseBookmark> AddRandomBookmarkToFolder(long localFolderId)
         {
-            var bookmark = await this.db!.AddBookmarkAsync(
+            var bookmark = await this.db!.AddBookmarkToFolderAsync(
                 this.GetRandomBookmark(),
                 localFolderId
             );
@@ -81,7 +81,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanAddBookmark()
         {
             var b = this.GetRandomBookmark();
-            _ = await this.db!.AddBookmarkAsync(b, this.db!.UnreadFolderLocalId);
+            _ = await this.db!.AddBookmarkToFolderAsync(b, this.db!.UnreadFolderLocalId);
         }
 
         [Fact]
@@ -141,7 +141,7 @@ namespace Codevoid.Test.Storyvoid
             var bookmark = this.GetRandomBookmark();
             await Assert.ThrowsAsync<FolderNotFoundException>(async () =>
             {
-                _ = await this.db!.AddBookmarkAsync(bookmark, 999L);
+                _ = await this.db!.AddBookmarkToFolderAsync(bookmark, 999L);
             });
         }
 
@@ -194,7 +194,7 @@ namespace Codevoid.Test.Storyvoid
             var bookmark = this.GetRandomBookmark();
             bookmark.liked = true;
 
-            _ = await this.db!.AddBookmarkAsync(
+            _ = await this.db!.AddBookmarkToFolderAsync(
                 bookmark,
                 this.db!.UnreadFolderLocalId
             );
@@ -209,11 +209,11 @@ namespace Codevoid.Test.Storyvoid
         {
             var bookmark1 = this.GetRandomBookmark();
             bookmark1.liked = true;
-            _ = await this.db!.AddBookmarkAsync(bookmark1, this.db!.UnreadFolderLocalId);
+            _ = await this.db!.AddBookmarkToFolderAsync(bookmark1, this.db!.UnreadFolderLocalId);
 
             var bookmark2 = this.GetRandomBookmark();
             bookmark2.liked = true;
-            _ = await this.db!.AddBookmarkAsync(bookmark2, this.CustomFolder1!.LocalId);
+            _ = await this.db!.AddBookmarkToFolderAsync(bookmark2, this.CustomFolder1!.LocalId);
 
             var likedBookmarks = await this.db!.ListLikedBookmarksAsync();
             Assert.Equal(2, likedBookmarks.Count);
@@ -226,7 +226,7 @@ namespace Codevoid.Test.Storyvoid
         {
             var b = this.GetRandomBookmark();
             b.liked = true;
-            var likedBookmark = await this.db!.AddBookmarkAsync(b, this.db!.UnreadFolderLocalId);
+            var likedBookmark = await this.db!.AddBookmarkToFolderAsync(b, this.db!.UnreadFolderLocalId);
 
             var unlikedBookmark = await this.db!.UnlikeBookmarkAsync(likedBookmark.Id);
             Assert.Equal(likedBookmark.Id, unlikedBookmark.Id);
@@ -316,7 +316,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task UpdatingProgressOutsideSupportedRangeThrows()
         {
-            _ = await this.db!.AddBookmarkAsync(
+            _ = await this.db!.AddBookmarkToFolderAsync(
                 this.GetRandomBookmark(),
                 this.db!.UnreadFolderLocalId
             );
@@ -335,7 +335,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task UpdatingProgressWithTimeStampOutsideUnixEpochThrows()
         {
-            _ = await this.db!.AddBookmarkAsync(
+            _ = await this.db!.AddBookmarkToFolderAsync(
                 this.GetRandomBookmark(),
                 this.db!.UnreadFolderLocalId
             );

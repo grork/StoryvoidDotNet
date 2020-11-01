@@ -92,7 +92,7 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseBookmark> AddBookmarkAsync(
+        public Task<DatabaseBookmark> AddBookmarkToFolderAsync(
             (long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
             long localFolderId
         )
