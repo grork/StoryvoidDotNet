@@ -1,12 +1,13 @@
 ﻿namespace Codevoid.Test.OAuth
 {
     /// <summary>
-    /// Holds the API Key for twitter so that you can run tests that actually
-    /// do real work. Note, you need to get your own key, and place it in the
+    /// Holds the API Key for twitter so that you can run tests that actually do
+    /// real work. Note, you need to get your own key, and place it in the
     /// appropriate constants below.
     ///
-    /// Please remember to `git update-index --skip-worktree TwitterAPIKey.cs`
-    /// before replacing the placeholders with you own keys.
+    /// Twitter Tokens & IDs. Replace with tokens & IDs that are issued to you
+    /// from Twitters developer portal:
+    /// https://developer.twitter.com/en/docs/developer-portal/overview
     /// </summary>
     public static class TwitterAPIKey
     {
