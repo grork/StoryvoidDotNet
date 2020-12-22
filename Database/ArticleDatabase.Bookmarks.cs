@@ -19,7 +19,7 @@ namespace Codevoid.Storyvoid
                 using var query = c.CreateCommand(@"
                     SELECT b.*
                     FROM bookmark_to_folder
-                    INNER JOIN bookmarks b
+                    INNER JOIN bookmarks_with_local_only_state b
                         ON bookmark_to_folder.bookmark_id = b.id
                     WHERE bookmark_to_folder.local_folder_id = @localFolderId
                 ");
@@ -47,7 +47,7 @@ namespace Codevoid.Storyvoid
             {
                 using var query = c.CreateCommand(@"
                     SELECT *
-                    FROM bookmarks
+                    FROM bookmarks_with_local_only_state
                     WHERE liked = true
                 ");
 
@@ -74,7 +74,7 @@ namespace Codevoid.Storyvoid
         {
             using var query = connection.CreateCommand(@"
                 SELECT *
-                FROM bookmarks
+                FROM bookmarks_with_local_only_state
                 WHERE id = @id
             ");
 

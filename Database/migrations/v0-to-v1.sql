@@ -14,7 +14,8 @@ CREATE TABLE bookmarks (
 
 CREATE TABLE folders (
     local_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    service_id INTEGER, -- Cant have this as a primary key, since temporary folders wont have an ID
+    -- Cant have this as a primary key, since temporary folders wont have an ID
+    service_id INTEGER,
     title TEXT NOT NULL,
     position INTEGER NOT NULL DEFAULT 0,
     should_sync INTEGER NOT NULL DEFAULT 1,
@@ -37,7 +38,7 @@ CREATE TABLE bookmark_to_folder (
     FOREIGN KEY(bookmark_id) REFERENCES bookmarks(id)
 );
 
-CREATE TABLE bookmark_download_state (
+CREATE TABLE bookmark_local_only_state (
     bookmark_id INTEGER NOT NULL PRIMARY KEY,
     available_locally INTEGER NOT NULL DEFAULT 0,
     has_images INTEGER NOT NULL DEFAULT 0,
@@ -49,6 +50,12 @@ CREATE TABLE bookmark_download_state (
     include_in_mru INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(bookmark_id) REFERENCES bookmarks(id)
 );
+
+-- View to bundle up the bookmarks w/ their download state to be used as a 
+CREATE VIEW bookmarks_with_local_only_state AS
+    SELECT * FROM bookmarks
+    LEFT JOIN bookmark_local_only_state
+    ON bookmarks.id = bookmark_local_only_state.bookmark_id;
 
 CREATE TABLE bookmark_changes (
     change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,

@@ -81,7 +81,17 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanAddBookmark()
         {
             var b = this.GetRandomBookmark();
-            _ = await this.db!.AddBookmarkToFolderAsync(b, this.db!.UnreadFolderLocalId);
+            var result = await this.db!.AddBookmarkToFolderAsync(b, this.db!.UnreadFolderLocalId);
+
+            // Ensure the bookmark we are handed back on completion is the
+            // same (for supplied fields) as that which is returned
+            Assert.Equal(b.progressTimestamp, result.ReadProgressTimestamp);
+            Assert.Equal(b.title, result.Title);
+            Assert.Equal(b.url, result.Url);
+            Assert.Equal(b.hash, result.Hash);
+
+            // Don't expect local state since we have a fresh set of bookmarks
+            Assert.False(result.HasLocalState);
         }
 
         [Fact]
@@ -94,6 +104,9 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(b.Title, retrievedBookmark.Title);
             Assert.Equal(b.Url, retrievedBookmark.Url);
             Assert.Equal(b.Hash, retrievedBookmark.Hash);
+
+            // Don't expect local state since we have a fresh set of bookmarks
+            Assert.False(retrievedBookmark.HasLocalState);
         }
 
         [Fact]
@@ -117,6 +130,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(bookmark.Title, bookmarkFromListing.Title);
             Assert.Equal(bookmark.Url, bookmarkFromListing.Url);
             Assert.Equal(bookmark.Hash, bookmarkFromListing.Hash);
+            Assert.False(bookmarkFromListing.HasLocalState);
         }
 
         [Fact]
@@ -133,6 +147,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(bookmark.Title, bookmarkFromListing.Title);
             Assert.Equal(bookmark.Url, bookmarkFromListing.Url);
             Assert.Equal(bookmark.Hash, bookmarkFromListing.Hash);
+            Assert.False(bookmarkFromListing.HasLocalState);
         }
 
         [Fact]
@@ -160,6 +175,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(customFolderBookmark.Title, customBookmarkFromListing.Title);
             Assert.Equal(customFolderBookmark.Url, customBookmarkFromListing.Url);
             Assert.Equal(customFolderBookmark.Hash, customBookmarkFromListing.Hash);
+            Assert.False(customBookmarkFromListing.HasLocalState);
 
             var unreadFolderBookmarks = await this.db!.ListBookmarksForLocalFolderAsync(this.db!.UnreadFolderLocalId);
             Assert.Equal(1, unreadFolderBookmarks.Count);
@@ -170,6 +186,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(unreadFolderBookmark.Title, unreadBookmarkFromListing.Title);
             Assert.Equal(unreadFolderBookmark.Url, unreadBookmarkFromListing.Url);
             Assert.Equal(unreadFolderBookmark.Hash, unreadBookmarkFromListing.Hash);
+            Assert.False(unreadBookmarkFromListing.HasLocalState);
         }
 
         [Fact]
@@ -515,6 +532,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(bookmark.ReadProgressTimestamp, updatedBookmark.ReadProgressTimestamp);
             Assert.Equal(bookmark.Hash, updatedBookmark.Hash);
             Assert.Equal(bookmark.Liked, updatedBookmark.Liked);
+            Assert.Equal(bookmark.HasLocalState, updatedBookmark.HasLocalState);
 
             // Get from database again and check them
             var retreivedBookmark = (await this.db!.GetBookmarkByIdAsync(bookmark.Id))!;
@@ -525,6 +543,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(bookmark.ReadProgressTimestamp, retreivedBookmark.ReadProgressTimestamp);
             Assert.Equal(bookmark.Hash, retreivedBookmark.Hash);
             Assert.Equal(bookmark.Liked, retreivedBookmark.Liked);
+            Assert.Equal(bookmark.HasLocalState, retreivedBookmark.HasLocalState);
         }
 
         [Fact]

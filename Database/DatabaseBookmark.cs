@@ -17,7 +17,18 @@ namespace Codevoid.Storyvoid
         }
 
         /// <summary>
-        /// Bookmark ID in the local database, and the service
+        /// Local-only information for this bookmark, if present.
+        /// </summary>
+        public DatabaseLocalOnlyBookmarkState? LocalOnlyState { get; private set; }
+
+        /// <summary>
+        /// Convenience access to check if have local-only state information
+        /// available.
+        /// </summary>
+        public bool HasLocalState => this.LocalOnlyState != null;
+
+        /// <summary>
+        /// Bookmark ID in the local database, and on the service
         /// </summary>
         public long Id { get; private set; }
 
@@ -86,6 +97,13 @@ namespace Codevoid.Storyvoid
             if (!row.IsDBNull("description"))
             {
                 bookmark.Description = row.GetString("description");
+            }
+
+            // If there is an associated bookmark ID, this implies that there is
+            // download / local state.
+            if(!row.IsDBNull("bookmark_id"))
+            {
+                bookmark.LocalOnlyState = DatabaseLocalOnlyBookmarkState.FromRow(row);
             }
 
             return bookmark;
