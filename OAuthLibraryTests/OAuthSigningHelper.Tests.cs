@@ -67,7 +67,7 @@ namespace Codevoid.Test.OAuth
 
         private static HttpRequestMessage GetPostRequestForData(IDictionary<string, string> data, Uri url)
         {
-            var content = new FormUrlEncodedContent(data);
+            var content = new FormUrlEncodedContent((IEnumerable<KeyValuePair<string?, string?>>)data);
             var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = content };
             return request;
         }
@@ -257,8 +257,8 @@ namespace Codevoid.Test.OAuth
         {
             using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
             var url = new Uri("https://api.twitter.com/1.1/statuses/update.json");
-            var data = new Dictionary<string, string> { { "status", $"Test@Status % 78 update: {DateTimeOffset.Now.ToUnixTimeSeconds().ToString()}" } };
-            var response = await client.PostAsync(url, new FormUrlEncodedContent(data));
+            var data = new Dictionary<string, string?> { { "status", $"Test@Status % 78 update: {DateTimeOffset.Now.ToUnixTimeSeconds().ToString()}" } };
+            var response = await client.PostAsync(url, new FormUrlEncodedContent((IEnumerable<KeyValuePair<string?, string?>>)data));
             var rawResponse = await response.Content.ReadAsStringAsync();
             var responsePayload = JsonDocument.Parse(rawResponse);
 

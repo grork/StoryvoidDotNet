@@ -14,6 +14,13 @@ using Xunit.Sdk;
 
 namespace Codevoid.Test.Instapaper
 {
+    // See https://github.com/dotnet/runtime/issues/38494
+    // tl;dr: The nullability of `FormUrlEncodedContent` changed to allow nulls,
+    //        which with improved compilers makes it hard to call. The
+    //        recommended solution is a cast. It's long, so using a type alias
+    //        to make it easy to fix later.
+    using NullableStringEnumerable = IEnumerable<KeyValuePair<string?, string?>>;
+
     /// <summary>
     /// Fixture class to orchestrate initilization of service state. Lives through
     /// the full life of the test collection, and captures things such as (but not
@@ -84,7 +91,7 @@ namespace Codevoid.Test.Instapaper
 
             private async Task DeleteFolder(ulong folderId)
             {
-                var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+                var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
                 {
                     { "folder_id", folderId.ToString() }
                 });
@@ -122,7 +129,7 @@ namespace Codevoid.Test.Instapaper
                 }
 
                 LogMessage($"Listing Bookmarks for {wellKnownFolderId}: Start");
-                var payload = await this.PerformRequestAsync(EndPoints.Bookmarks.List, new FormUrlEncodedContent(contentKeys));
+                var payload = await this.PerformRequestAsync(EndPoints.Bookmarks.List, new FormUrlEncodedContent((NullableStringEnumerable)contentKeys));
                 LogMessage($"Listing Bookmarks for {wellKnownFolderId}: End");
 
                 var bookmarks = new List<(ulong, bool, string, ulong, string)>();
@@ -133,9 +140,9 @@ namespace Codevoid.Test.Instapaper
                         case "bookmark":
                             var id = element.GetProperty("bookmark_id").GetUInt64();
                             var liked = (element.GetProperty("starred").ToString()) == "1" ? true : false;
-                            var hash = element.GetProperty("hash").GetString();
+                            var hash = element.GetProperty("hash").GetString()!;
                             var progress_timestamp = element.GetProperty("progress_timestamp").GetUInt64();
-                            var url = element.GetProperty("url").GetString();
+                            var url = element.GetProperty("url").GetString()!;
                             bookmarks.Add((id, liked, hash, progress_timestamp, url));
                             break;
 
@@ -154,7 +161,7 @@ namespace Codevoid.Test.Instapaper
 
             private async Task Unarchive(ulong bookmarkId)
             {
-                var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+                var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
                 {
                     { "bookmark_id", bookmarkId.ToString() }
                 });
@@ -164,7 +171,7 @@ namespace Codevoid.Test.Instapaper
 
             private async Task Unlike(ulong bookmarkId)
             {
-                var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+                var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
                 {
                     { "bookmark_id", bookmarkId.ToString() }
                 });
@@ -174,7 +181,7 @@ namespace Codevoid.Test.Instapaper
 
             public async Task DeleteBookmark(ulong bookmarkId)
             {
-                var content = new FormUrlEncodedContent(new Dictionary<string, string>()
+                var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
                 {
                     { "bookmark_id", bookmarkId.ToString() }
                 });
