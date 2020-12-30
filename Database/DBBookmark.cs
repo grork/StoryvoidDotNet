@@ -6,7 +6,7 @@ namespace Codevoid.Storyvoid
     /// <summary>
     /// Bookmark sourced from the Database
     /// </summary>
-    public sealed class DatabaseBookmark
+    public sealed record DatabaseBookmark
     {
         private DatabaseBookmark()
         {
@@ -19,7 +19,7 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// Local-only information for this bookmark, if present.
         /// </summary>
-        public DatabaseLocalOnlyBookmarkState? LocalOnlyState { get; private set; }
+        public DatabaseLocalOnlyBookmarkState? LocalOnlyState { get; init; }
 
         /// <summary>
         /// Convenience access to check if have local-only state information
@@ -30,43 +30,43 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// Bookmark ID in the local database, and on the service
         /// </summary>
-        public long Id { get; private set; }
+        public long Id { get; init; }
 
         /// <summary>
         /// URL that this bookmark represents
         /// </summary>
-        public Uri Url { get; private set; }
+        public Uri Url { get; init; }
 
         /// <summary>
         /// Display title for this bookmark
         /// </summary>
-        public string Title { get; private set; }
+        public string Title { get; init; }
 
         /// <summary>
         /// Optional description of the bookmark
         /// </summary>
-        public string Description { get; private set; }
+        public string Description { get; init; }
 
         /// <summary>
         /// Current read progress of the bookmark -- between 0.0 and 1.0
         /// </summary>
-        public float ReadProgress { get; private set; }
+        public float ReadProgress { get; init; }
 
         /// <summary>
         /// Time that the progress was last changed
         /// </summary>
-        public DateTime ReadProgressTimestamp { get; private set; }
+        public DateTime ReadProgressTimestamp { get; init; }
 
         /// <summary>
         /// Hash provided by the service of the bookmark reading progress &amp;
         /// change timestamp.
         /// </summary>
-        public string Hash { get; private set; }
+        public string Hash { get; init; }
 
         /// <summary>
         /// Has this bookmark been liked
         /// </summary>
-        public bool Liked { get; private set; }
+        public bool Liked { get; init; }
 
         /// <summary>
         /// Converts a raw database row into a hydrated bookmark instance
@@ -82,6 +82,20 @@ namespace Codevoid.Storyvoid
             var progressTimestamp = row.GetDateTime("read_progress_timestamp");
             var hash = row.GetString("hash");
             var liked = row.GetBoolean("liked");
+            var description = String.Empty;
+            DatabaseLocalOnlyBookmarkState? localOnlyState = null;
+
+            if (!row.IsDBNull("description"))
+            {
+                description = row.GetString("description");
+            }
+
+            // If there is an associated bookmark ID, this implies that there is
+            // download / local state.
+            if (!row.IsDBNull("bookmark_id"))
+            {
+                localOnlyState = DatabaseLocalOnlyBookmarkState.FromRow(row);
+            }
 
             var bookmark = new DatabaseBookmark()
             {
@@ -91,20 +105,10 @@ namespace Codevoid.Storyvoid
                 ReadProgress = progress,
                 ReadProgressTimestamp = progressTimestamp,
                 Hash = hash,
-                Liked = liked
+                Liked = liked,
+                Description = description,
+                LocalOnlyState = localOnlyState
             };
-
-            if (!row.IsDBNull("description"))
-            {
-                bookmark.Description = row.GetString("description");
-            }
-
-            // If there is an associated bookmark ID, this implies that there is
-            // download / local state.
-            if(!row.IsDBNull("bookmark_id"))
-            {
-                bookmark.LocalOnlyState = DatabaseLocalOnlyBookmarkState.FromRow(row);
-            }
 
             return bookmark;
         }

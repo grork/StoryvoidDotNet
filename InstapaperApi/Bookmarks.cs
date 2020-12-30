@@ -284,7 +284,7 @@ namespace Codevoid.Instapaper
         }
     }
 
-    internal sealed class Bookmark : IInstapaperBookmark
+    internal sealed record Bookmark : IInstapaperBookmark
     {
         internal static IInstapaperBookmark FromJsonElement(JsonElement bookmarkElement)
         {
@@ -324,14 +324,14 @@ namespace Codevoid.Instapaper
             };
         }
 
-        public long Id { get; private set; } = 0L;
-        public Uri Url { get; private set; } = new Uri("unset://unset");
-        public string Title { get; private set; } = String.Empty;
-        public string Description { get; private set; } = String.Empty;
-        public float Progress { get; private set; } = 0.0F;
-        public DateTime ProgressTimestamp { get; private set; } = DateTime.MinValue;
-        public bool Liked { get; private set; } = false;
-        public string Hash { get; private set; } = String.Empty;
+        public long Id { get; init; } = 0L;
+        public Uri Url { get; init; } = new Uri("unset://unset");
+        public string Title { get; init; } = String.Empty;
+        public string Description { get; init; } = String.Empty;
+        public float Progress { get; init; } = 0.0F;
+        public DateTime ProgressTimestamp { get; init; } = DateTime.MinValue;
+        public bool Liked { get; init; } = false;
+        public string Hash { get; init; } = String.Empty;
     }
 
     /// <summary>
@@ -339,7 +339,7 @@ namespace Codevoid.Instapaper
     /// purposes. Encapsulates having the bookmark & it's state, as well as
     /// progress & progress changed information
     /// </summary>
-    public readonly struct HaveStatus
+    public sealed record HaveStatus
     {
         /// <summary>
         /// When you have all peices of the bookmark state, this constructor

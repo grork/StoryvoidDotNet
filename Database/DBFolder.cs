@@ -6,7 +6,7 @@ namespace Codevoid.Storyvoid
     /// <summary>
     /// Folder sourced from the Database
     /// </summary>
-    public sealed class DatabaseFolder
+    public sealed record DatabaseFolder
     {
         private DatabaseFolder()
         {
@@ -20,18 +20,18 @@ namespace Codevoid.Storyvoid
         /// This is because it's possible to add folders locally, prior to sync
         /// so it needs a discrete identifier
         /// </summary>
-        public long LocalId { get; private set; }
+        public long LocalId { get; init; }
 
         /// <summary>
         /// Services ID for the folder. If the folder is not on the service yet
         /// (e.g. was created offline), then it will be null.
         /// </summary>
-        public long? ServiceId { get; private set; }
+        public long? ServiceId { get; init; }
 
         /// <summary>
         /// Display title for this folder
         /// </summary>
-        public string Title { get; private set; }
+        public string Title { get; init; }
 
         /// <summary>
         /// The relative position of this folder in the folder list. Folders
@@ -40,12 +40,12 @@ namespace Codevoid.Storyvoid
         /// Additionally, "Well Known" folders (Unread, Archive) will have
         /// negative values.
         /// </summary>
-        public long Position { get; private set; }
+        public long Position { get; init; }
 
         /// <summary>
         /// Should this folder be synced, as determined by the service.
         /// </summary>
-        public bool ShouldSync { get; private set; }
+        public bool ShouldSync { get; init; }
 
         /// <summary>
         /// Has this folder been sync'd to the service?
@@ -59,22 +59,24 @@ namespace Codevoid.Storyvoid
         /// <returns>Instance of the object representing the folder</returns>
         internal static DatabaseFolder FromRow(IDataReader row)
         {
-            var folder = new DatabaseFolder()
-            {
-                Title = row.GetString("title"),
-                LocalId = row.GetInt64("local_id"),
-                Position = row.GetInt64("position"),
-            };
-
             var rawShouldSync = row.GetInt64("should_sync");
-            folder.ShouldSync = (rawShouldSync != 0);
+            long? serviceId = null;
 
             // Service ID might be null so need to check if it's null before
             // requesting it from the row
             if (!row.IsDBNull("service_id"))
             {
-                folder.ServiceId = row.GetInt64("service_id");
+                serviceId = row.GetInt64("service_id");
             }
+
+            var folder = new DatabaseFolder()
+            {
+                Title = row.GetString("title"),
+                LocalId = row.GetInt64("local_id"),
+                Position = row.GetInt64("position"),
+                ShouldSync = (rawShouldSync != 0),
+                ServiceId = serviceId
+            };
 
             return folder;
         }

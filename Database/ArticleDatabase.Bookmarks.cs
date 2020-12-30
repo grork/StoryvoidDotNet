@@ -93,7 +93,7 @@ namespace Codevoid.Storyvoid
 
         /// <inheritdoc/>
         public Task<DatabaseBookmark> AddBookmarkToFolderAsync(
-            (long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
+            BookmarkRecordInformation data,
             long localFolderId
         )
         {
@@ -146,9 +146,7 @@ namespace Codevoid.Storyvoid
             });
         }
 
-        public Task<DatabaseBookmark> UpdateBookmarkAsync(
-             long id,
-             (string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) updatedData)
+        public Task<DatabaseBookmark> UpdateBookmarkAsync(BookmarkRecordInformation updatedData)
         {
             this.ThrowIfNotReady();
 
@@ -167,7 +165,7 @@ namespace Codevoid.Storyvoid
                     WHERE id = @id
                 ");
 
-                query.AddParameter("@id", id);
+                query.AddParameter("@id", updatedData.id);
                 query.AddParameter("@url", updatedData.url);
                 query.AddParameter("@title", updatedData.title);
                 query.AddParameter("@description", updatedData.description);
@@ -180,14 +178,14 @@ namespace Codevoid.Storyvoid
                 var impactedRows = query.ExecuteNonQuery();
                 if (impactedRows < 1)
                 {
-                    throw new BookmarkNotFoundException(id);
+                    throw new BookmarkNotFoundException(updatedData.id);
                 }
             }
 
             return Task.Run(() =>
             {
                 UpdateBookmark();
-                return GetBookmarkById(c, id)!;
+                return GetBookmarkById(c, updatedData.id)!;
             });
         }
 

@@ -11,10 +11,10 @@ namespace Codevoid.Instapaper
     /// The information, returned from Instapaper, representing the User
     /// Information for the user that made the request.
     /// </summary>
-    public readonly struct UserInformation
+    public sealed record UserInformation
     {
-        public readonly ulong UserId;
-        public readonly string Username;
+        public ulong UserId { get; }
+        public string Username { get; }
 
         /// <summary>
         /// Does the user have an active subscription with Instapaper

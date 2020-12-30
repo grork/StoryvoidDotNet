@@ -40,19 +40,19 @@ namespace Codevoid.Instapaper
     /// <summary>
     /// Concrete implementation of <see cref="IInstapaperFolder"/> for internal usage.
     /// </summary>
-    internal sealed class Folder : IInstapaperFolder
+    internal sealed record Folder : IInstapaperFolder
     {
         /// <inheritdoc/>
-        public string Title { get; private set; } = String.Empty;
+        public string Title { get; init; } = String.Empty;
 
         /// <inheritdoc/>
-        public bool SyncToMobile { get; private set; } = true;
+        public bool SyncToMobile { get; init; } = true;
 
         /// <inheritdoc/>
-        public long Position { get; private set; } = 0;
+        public long Position { get; init; } = 0;
 
         /// <inheritdoc/>
-        public long Id { get; private set; } = 0;
+        public long Id { get; init; } = 0;
 
         internal static IInstapaperFolder FromJsonElement(JsonElement folderElement)
         {

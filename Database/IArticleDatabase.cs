@@ -23,6 +23,11 @@ namespace Codevoid.Storyvoid
     }
 
     /// <summary>
+    /// Record for adding or updating bookmarks to the database
+    /// </summary>
+    public record BookmarkRecordInformation(long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked);
+
+    /// <summary>
     /// Database store for Bookmarks &amp; Folders from the Instapaper Service
     /// </summary>
     public interface IArticleDatabase : IDisposable
@@ -123,7 +128,7 @@ namespace Codevoid.Storyvoid
         /// <param name="localFolderId">Folder to place this bookmark into</param>
         /// <returns>Bookmark from the database</returns>
         Task<DatabaseBookmark> AddBookmarkToFolderAsync(
-            (long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) data,
+            BookmarkRecordInformation data,
             long localFolderId);
 
         /// <summary>
@@ -139,9 +144,7 @@ namespace Codevoid.Storyvoid
         /// <param name="hash">Service-sourced hash of the bookmark state</param>
         /// <param name="liked">Liked status of the bookmark</param>
         /// <returns>Bookmark instance with updated values</returns>
-        Task<DatabaseBookmark> UpdateBookmarkAsync(
-            long id,
-            (string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked) updatedData);
+        Task<DatabaseBookmark> UpdateBookmarkAsync(BookmarkRecordInformation updatedData);
 
         /// <summary>
         /// Gets a bookmark by it's service ID

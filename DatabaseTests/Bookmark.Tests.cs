@@ -46,15 +46,15 @@ namespace Codevoid.Test.Storyvoid
         }
 
         private int nextBookmarkId = 0;
-        private (int id, string title, Uri url, string description, float progress, DateTime progressTimestamp, string hash, bool liked) GetRandomBookmark()
+        private BookmarkRecordInformation GetRandomBookmark()
         {
-            return (
+            return new(
                 id: nextBookmarkId++,
                 title: "Sample Bookmark",
                 url: new Uri("https://www.bing.com"),
                 description: String.Empty,
-                progress: 0.0F,
-                progressTimestamp: DateTime.Now,
+                readProgress: 0.0F,
+                readProgressTimestamp: DateTime.Now,
                 hash: "ABC",
                 liked: false
             );
@@ -85,7 +85,7 @@ namespace Codevoid.Test.Storyvoid
 
             // Ensure the bookmark we are handed back on completion is the
             // same (for supplied fields) as that which is returned
-            Assert.Equal(b.progressTimestamp, result.ReadProgressTimestamp);
+            Assert.Equal(b.readProgressTimestamp, result.ReadProgressTimestamp);
             Assert.Equal(b.title, result.Title);
             Assert.Equal(b.url, result.Url);
             Assert.Equal(b.hash, result.Hash);
@@ -208,8 +208,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanListOnlyLikedBookmarks()
         {
-            var bookmark = this.GetRandomBookmark();
-            bookmark.liked = true;
+            var bookmark = this.GetRandomBookmark() with { liked = true };
 
             _ = await this.db!.AddBookmarkToFolderAsync(
                 bookmark,
@@ -224,12 +223,10 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task ListingLikedBookmarksReturnsResultsAcrossFolders()
         {
-            var bookmark1 = this.GetRandomBookmark();
-            bookmark1.liked = true;
+            var bookmark1 = this.GetRandomBookmark() with { liked = true };
             _ = await this.db!.AddBookmarkToFolderAsync(bookmark1, this.db!.UnreadFolderLocalId);
 
-            var bookmark2 = this.GetRandomBookmark();
-            bookmark2.liked = true;
+            var bookmark2 = this.GetRandomBookmark() with { liked = true };
             _ = await this.db!.AddBookmarkToFolderAsync(bookmark2, this.CustomFolder1!.LocalId);
 
             var likedBookmarks = await this.db!.ListLikedBookmarksAsync();
@@ -241,8 +238,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanUnlikeBookmarkThatIsLiked()
         {
-            var b = this.GetRandomBookmark();
-            b.liked = true;
+            var b = this.GetRandomBookmark() with { liked = true };
             var likedBookmark = await this.db!.AddBookmarkToFolderAsync(b, this.db!.UnreadFolderLocalId);
 
             var unlikedBookmark = await this.db!.UnlikeBookmarkAsync(likedBookmark.Id);
@@ -521,8 +517,7 @@ namespace Codevoid.Test.Storyvoid
 
             var newTitle = "New Title";
             // Update bookmark with new title
-            var updatedBookmark = await this.db.UpdateBookmarkAsync(bookmark.Id,
-                (newTitle, bookmark.Url, bookmark.Description, bookmark.ReadProgress, bookmark.ReadProgressTimestamp, bookmark.Hash, bookmark.Liked));
+            var updatedBookmark = await this.db.UpdateBookmarkAsync(new (bookmark.Id, newTitle, bookmark.Url, bookmark.Description, bookmark.ReadProgress, bookmark.ReadProgressTimestamp, bookmark.Hash, bookmark.Liked));
 
             // Check returned values are correct
             Assert.Equal(bookmark.Id, updatedBookmark.Id);
@@ -552,8 +547,7 @@ namespace Codevoid.Test.Storyvoid
             await Assert.ThrowsAsync<BookmarkNotFoundException>(async () =>
             {
                 _ = await db!.UpdateBookmarkAsync(
-                    99,
-                    (String.Empty, new Uri("https://www.bing.com"), String.Empty, 0.0F, DateTime.Now, String.Empty, false)
+                    new (99, String.Empty, new Uri("https://www.bing.com"), String.Empty, 0.0F, DateTime.Now, String.Empty, false)
                 );
             });
         }
