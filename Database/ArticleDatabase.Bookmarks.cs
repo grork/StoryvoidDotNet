@@ -12,6 +12,8 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public Task<IList<DatabaseBookmark>> ListBookmarksForLocalFolderAsync(long localFolderId)
         {
+            this.ThrowIfNotReady();
+
             var c = this.connection;
 
             IList<DatabaseBookmark> GetBookmarks()
@@ -42,7 +44,10 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public Task<IList<DatabaseBookmark>> ListLikedBookmarksAsync()
         {
+            this.ThrowIfNotReady();
+
             var c = this.connection;
+
             IList<DatabaseBookmark> GetBookmarks()
             {
                 using var query = c.CreateCommand(@"
@@ -66,6 +71,8 @@ namespace Codevoid.Storyvoid
 
         public Task<DatabaseBookmark?> GetBookmarkByIdAsync(long id)
         {
+            this.ThrowIfNotReady();
+
             var c = this.connection;
             return Task.Run(() => GetBookmarkById(c, id));
         }
@@ -97,7 +104,9 @@ namespace Codevoid.Storyvoid
             long localFolderId
         )
         {
-            IDbConnection c = this.connection;
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
 
             void AddBookmark()
             {
@@ -150,7 +159,8 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            IDbConnection c = this.connection;
+            var c = this.connection;
+
             void UpdateBookmark()
             {
                 using var query = c.CreateCommand(@"
@@ -249,7 +259,8 @@ namespace Codevoid.Storyvoid
 
             this.ThrowIfNotReady();
 
-            IDbConnection c = this.connection;
+            var c = this.connection;
+
             void UpdateProgressForBookmark()
             {
                 // The hash field is driven by the service, and complately opaque
@@ -291,7 +302,10 @@ namespace Codevoid.Storyvoid
 
         public Task MoveBookmarkToFolderAsync(long bookmarkId, long localFolderId)
         {
-            IDbConnection c = this.connection;
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+
             void MoveBookmarkToFolder()
             {
                 using var query = c.CreateCommand(@"
@@ -324,7 +338,9 @@ namespace Codevoid.Storyvoid
 
         public Task DeleteBookmarkAsync(long bookmarkId)
         {
-            IDbConnection c = this.connection;
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
 
             void RemoveFromFolder()
             {

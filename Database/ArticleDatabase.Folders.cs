@@ -44,6 +44,7 @@ namespace Codevoid.Storyvoid
             this.ThrowIfNotReady();
 
             var c = this.connection;
+
             DatabaseFolder? GetFolder()
             {
                 using var query = c.CreateCommand(@"
@@ -103,7 +104,7 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            IDbConnection c = this.connection;
+            var c = this.connection;
 
             long CreateFolder()
             {
@@ -152,7 +153,7 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            IDbConnection c = this.connection;
+            var c = this.connection;
 
             long CreateFolder()
             {
@@ -189,7 +190,8 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            IDbConnection c = this.connection;
+            var c = this.connection;
+
             void UpdateFolder()
             {
                 using var query = c.CreateCommand(@"
@@ -241,7 +243,9 @@ namespace Codevoid.Storyvoid
                 throw new InvalidOperationException("Deleting the Archive folder is not allowed");
             }
 
-            IDbConnection c = this.connection;
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
 
             // Remove any bookmark-folder-pairs
             void DeleteBookmarkFolderPairs()

@@ -8,10 +8,7 @@ namespace Codevoid.Storyvoid
     /// </summary>
     public sealed record DatabaseFolder
     {
-        private DatabaseFolder()
-        {
-            this.Title = String.Empty;
-        }
+        private DatabaseFolder() { }
 
         /// <summary>
         /// The local ID for this folder, distinct from the services ID for the
@@ -31,7 +28,7 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// Display title for this folder
         /// </summary>
-        public string Title { get; init; }
+        public string Title { get; init; } = String.Empty;
 
         /// <summary>
         /// The relative position of this folder in the folder list. Folders

@@ -8,13 +8,7 @@ namespace Codevoid.Storyvoid
     /// </summary>
     public sealed record DatabaseBookmark
     {
-        private DatabaseBookmark()
-        {
-            this.Title = String.Empty;
-            this.Url = new Uri("unset://unset");
-            this.Hash = String.Empty;
-            this.Description = String.Empty;
-        }
+        private DatabaseBookmark() { }
 
         /// <summary>
         /// Local-only information for this bookmark, if present.
@@ -35,17 +29,17 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// URL that this bookmark represents
         /// </summary>
-        public Uri Url { get; init; }
+        public Uri Url { get; init; } = new Uri("unset://unset");
 
         /// <summary>
         /// Display title for this bookmark
         /// </summary>
-        public string Title { get; init; }
+        public string Title { get; init; } = String.Empty;
 
         /// <summary>
         /// Optional description of the bookmark
         /// </summary>
-        public string Description { get; init; }
+        public string Description { get; init; } = String.Empty;
 
         /// <summary>
         /// Current read progress of the bookmark -- between 0.0 and 1.0
@@ -61,7 +55,7 @@ namespace Codevoid.Storyvoid
         /// Hash provided by the service of the bookmark reading progress &amp;
         /// change timestamp.
         /// </summary>
-        public string Hash { get; init; }
+        public string Hash { get; init; } = String.Empty;
 
         /// <summary>
         /// Has this bookmark been liked
