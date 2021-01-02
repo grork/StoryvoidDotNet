@@ -1,10 +1,15 @@
 ﻿using System.Data;
 using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid
 {
     sealed partial class ArticleDatabase
     {
+        private static int SQLITE_CONSTRAINT = 19;
+        private static int SQLITE_CONSTRAINT_FOREIGNKEY = 787;
+        private static int SQLITE_CONSTRAINT_PRIMARYKEY = 1555;
+
         private static DatabaseLocalOnlyBookmarkState? GetLocalOnlyByBookmarkId(IDbConnection connection, long bookmarkId)
         {
             using var query = connection.CreateCommand(@"
@@ -69,7 +74,22 @@ namespace Codevoid.Storyvoid
                 query.AddParameter("@articleUnavailable", localOnlyBookmarkState.ArticleUnavailable);
                 query.AddParameter("@includeInMRU", localOnlyBookmarkState.IncludeInMRU);
 
-                query.ExecuteNonQuery();
+                try
+                {
+                    query.ExecuteNonQuery();
+                }
+                // When the bookmark is missing, we get a foreign key constraint
+                // error. We need to turn this into a strongly typed error.
+                catch(SqliteException ex) when (ex.SqliteErrorCode == SQLITE_CONSTRAINT && ex.SqliteExtendedErrorCode == SQLITE_CONSTRAINT_FOREIGNKEY)
+                {
+                    throw new BookmarkNotFoundException(localOnlyBookmarkState.BookmarkId);
+                }
+                // When local only state already exists, we need to convert the
+                // primary key constraint error into something strongly typed
+                catch(SqliteException ex) when (ex.SqliteErrorCode == SQLITE_CONSTRAINT && ex.SqliteExtendedErrorCode == SQLITE_CONSTRAINT_PRIMARYKEY)
+                {
+                    throw new LocalOnlyStateExistsException(localOnlyBookmarkState.BookmarkId);
+                }
             }
 
             return Task.Run(() => {

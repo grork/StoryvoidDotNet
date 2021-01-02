@@ -83,6 +83,31 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public async Task AddingLocalStateForMissingBookmarkThrowNotFoundException()
+        {
+            var data = new DatabaseLocalOnlyBookmarkState()
+            {
+                BookmarkId = 99
+            };
+
+            var ex = await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.db!.AddLocalOnlyStateForBookmarkAsync(data));
+            Assert.Equal(data.BookmarkId, ex.BookmarkId);
+        }
+
+        [Fact]
+        public async Task AddingLocalStateWhenAlreadyPresentThrowsDuplicateException()
+        {
+            var data = new DatabaseLocalOnlyBookmarkState()
+            {
+                BookmarkId = this.sampleBookmarks.First().Id,
+            };
+
+            _ = await this.db!.AddLocalOnlyStateForBookmarkAsync(data);
+            var ex = await Assert.ThrowsAsync<LocalOnlyStateExistsException>(async () => await this.db!.AddLocalOnlyStateForBookmarkAsync(data));
+            Assert.Equal(data.BookmarkId, ex.BookmarkId);
+        }
+
+        [Fact]
         public async Task CanReadLocalStateForBookmark()
         {
             var bookmarkId = this.sampleBookmarks.First().Id;
