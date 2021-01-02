@@ -19,4 +19,14 @@ namespace Codevoid.Storyvoid
             this.LocalFolderId = localFolderId;
         }
     }
+
+    public sealed class LocalOnlyStateExistsException : Exception
+    {
+        public readonly long BookmarkId;
+        public LocalOnlyStateExistsException(long bookmarkId)
+            : base($"Local Only State already present for {bookmarkId}")
+        {
+            this.BookmarkId = bookmarkId;
+        }
+    }
 }

@@ -117,15 +117,7 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// Add a bookmark to the database
         /// </summary>
-        /// <param name="id">ID of the bookmark on the service</param>
-        /// <param name="title">Title of the bookmark</param>
-        /// <param name="url">URL the bookmark is for</param>
-        /// <param name="description">Description of the bookmark</param>
-        /// <param name="progress">Current read progress</param>
-        /// <param name="progressTimestamp">Last time progress was changed</param>
-        /// <param name="hash">Service-sourced hash of the bookmark state</param>
-        /// <param name="liked">Liked status of the bookmark</param>
-        /// <param name="localFolderId">Folder to place this bookmark into</param>
+        /// <param name="data">Bookmark information to add</param>
         /// <returns>Bookmark from the database</returns>
         Task<DatabaseBookmark> AddBookmarkToFolderAsync(
             BookmarkRecordInformation data,
@@ -135,14 +127,7 @@ namespace Codevoid.Storyvoid
         /// Updates the specified bookmark with new details, overwriting any
         /// values that are present.
         /// </summary>
-        /// <param name="id">ID of the bookmark to update</param>
-        /// <param name="title">Title of the bookmark</param>
-        /// <param name="url">URL the bookmark is for</param>
-        /// <param name="description">Description of the bookmark</param>
-        /// <param name="progress">Current read progress</param>
-        /// <param name="progressTimestamp">Last time progress was changed</param>
-        /// <param name="hash">Service-sourced hash of the bookmark state</param>
-        /// <param name="liked">Liked status of the bookmark</param>
+        /// <param name="updatedData">Data to update the bookmark with</param>
         /// <returns>Bookmark instance with updated values</returns>
         Task<DatabaseBookmark> UpdateBookmarkAsync(BookmarkRecordInformation updatedData);
 
@@ -190,5 +175,31 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="bookmarkId">Bookmark to delete</param>
         Task DeleteBookmarkAsync(long bookmarkId);
+
+        /// <summary>
+        /// Loads the local only bookmark state for the supplied bookmark ID.
+        /// Note, that this will only return data if local only state exists for
+        /// the bookmark. Having no data returned does *not* mean that there is
+        /// no bookmark with that bookmark ID. Use <see cref="GetBookmarkByIdAsync(long)"/>
+        /// for that.
+        /// </summary>
+        /// <param name="bookmarkId">ID of the bookmark to load</param>
+        /// <returns>Instance of local only bookmark state, if found</returns>
+        Task<DatabaseLocalOnlyBookmarkState?> GetLocalOnlyStateByBookmarkIdAsync(long bookmarkId);
+
+        /// <summary>
+        /// Add a bookmark with the supplied data. This will succeed only if a
+        /// bookmark with the supplied ID exists, and no other local state
+        /// has been previously added
+        /// </summary>
+        /// <param name="localOnlyBookmarkState">Local only state to add</param>
+        /// <returns>Local only state as return from storage</returns>
+        /// <exception cref="BookmarkNotFoundException">
+        /// If no bookmark exists with the supplied bookmark ID
+        /// </exception>
+        /// <exception cref="LocalOnlyStateExistsException">
+        /// When local only state already exists with the supplied bookmark ID
+        /// </exception>
+        Task<DatabaseLocalOnlyBookmarkState> AddLocalOnlyStateForBookmarkAsync(DatabaseLocalOnlyBookmarkState localOnlyBookmarkState);
     }
 }

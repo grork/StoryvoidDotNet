@@ -41,7 +41,6 @@ CREATE TABLE bookmark_to_folder (
 CREATE TABLE bookmark_local_only_state (
     bookmark_id INTEGER NOT NULL PRIMARY KEY,
     available_locally INTEGER NOT NULL DEFAULT 0,
-    has_images INTEGER NOT NULL DEFAULT 0,
     first_image_local_path TEXT,
     first_image_remote_path TEXT,
     local_path TEXT,

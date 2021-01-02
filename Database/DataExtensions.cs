@@ -55,6 +55,28 @@ namespace Codevoid.Storyvoid
         }
 
         /// <summary>
+        /// Get a Uri from a row, using it's name rather than ordinal, or a null
+        /// if there is no URL value
+        /// </summary>
+        /// <param name="name">Column to return</param>
+        /// <returns>Value from that column</returns>
+        public static Uri? GetNullableUri(this IDataReader instance, string name)
+        {
+            if(instance.IsDBNull(name))
+            {
+                return null;
+            }
+
+            var value = instance.GetString(name);
+            if(string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            return GetUri(instance, name);
+        }
+
+        /// <summary>
         /// Get a Float from a row, using it's name rather than ordinal
         /// </summary>
         /// <param name="name">Column to return</param>
@@ -149,11 +171,17 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="name">Name of the parameter in the query</param>
         /// <param name="value">Value of the parameter</param>
-        public static void AddParameter(this IDbCommand instance, string name, Uri value)
+        public static void AddParameter(this IDbCommand instance, string name, Uri? value)
         {
+            if(value == null)
+            {
+                instance.AddNull(name, DbType.String);
+                return;
+            }
+
             var parameter = instance.CreateParameter();
-            parameter.DbType = DbType.String;
             parameter.ParameterName = name;
+            parameter.DbType = DbType.String;
             parameter.Value = value.ToString();
 
             instance.Parameters.Add(parameter);
