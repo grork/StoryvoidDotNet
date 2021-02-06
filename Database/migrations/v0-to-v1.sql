@@ -1,7 +1,7 @@
 ﻿-- Enable Write Ahead Logging (https://sqlite.org/wal.html)
 PRAGMA journal_mode = 'wal';
 
-CREATE TABLE bookmarks (
+CREATE TABLE articles (
     id INTEGER NOT NULL PRIMARY KEY,
     url TEXT NOT NULL,
     title TEXT NOT NULL,
@@ -30,16 +30,16 @@ VALUES (-1, 'Home', -100);
 INSERT INTO folders(service_id, title, position)
 VALUES (-2, 'Archive', -99);
 
-CREATE TABLE bookmark_to_folder (
+CREATE TABLE article_to_folder (
     pair_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     local_folder_id INTEGER NOT NULL DEFAULT 0,
-    bookmark_id INTEGER NOT NULL DEFAULT 0,
+    article_id INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY(local_folder_id) REFERENCES folders(local_id), 
-    FOREIGN KEY(bookmark_id) REFERENCES bookmarks(id)
+    FOREIGN KEY(article_id) REFERENCES articles(id)
 );
 
-CREATE TABLE bookmark_local_only_state (
-    bookmark_id INTEGER NOT NULL PRIMARY KEY,
+CREATE TABLE article_local_only_state (
+    article_id INTEGER NOT NULL PRIMARY KEY,
     available_locally INTEGER NOT NULL DEFAULT 0,
     first_image_local_path TEXT,
     first_image_remote_path TEXT,
@@ -47,19 +47,19 @@ CREATE TABLE bookmark_local_only_state (
     extracted_description TEXT,
     article_unavailable INTEGER NOT NULL DEFAULT 0,
     include_in_mru INTEGER NOT NULL DEFAULT 1,
-    FOREIGN KEY(bookmark_id) REFERENCES bookmarks(id)
+    FOREIGN KEY(article_id) REFERENCES articles(id)
 );
 
--- View to bundle up the bookmarks w/ their download state to be used as a 
-CREATE VIEW bookmarks_with_local_only_state AS
-    SELECT * FROM bookmarks
-    LEFT JOIN bookmark_local_only_state
-    ON bookmarks.id = bookmark_local_only_state.bookmark_id;
+-- View to bundle up the articles w/ their download state to be used as a 
+CREATE VIEW articles_with_local_only_state AS
+    SELECT * FROM articles
+    LEFT JOIN article_local_only_state
+    ON articles.id = article_local_only_state.article_id;
 
-CREATE TABLE bookmark_changes (
+CREATE TABLE article_changes (
     change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     operation TEXT NOT NULL,
-    bookmark_id INTEGER NOT NULL DEFAULT 0,
+    article_id INTEGER NOT NULL DEFAULT 0,
     payload TEXT
 );
 

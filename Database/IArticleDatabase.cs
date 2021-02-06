@@ -11,7 +11,7 @@ namespace Codevoid.Storyvoid
     public static class WellKnownFolderIds
     {
         /// <summary>
-        /// Default folder on the service, where new bookmarks are placed by
+        /// Default folder on the service, where new articles are placed by
         /// default.
         /// </summary>
         public const long Unread = -1;
@@ -23,12 +23,12 @@ namespace Codevoid.Storyvoid
     }
 
     /// <summary>
-    /// Record for adding or updating bookmarks to the database
+    /// Record for adding or updating articles to the database
     /// </summary>
-    public record BookmarkRecordInformation(long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked);
+    public record ArticleRecordInformation(long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked);
 
     /// <summary>
-    /// Database store for Bookmarks &amp; Folders from the Instapaper Service
+    /// Database store for Articles &amp; Folders from the Instapaper Service
     /// </summary>
     public interface IArticleDatabase : IDisposable
     {
@@ -94,7 +94,7 @@ namespace Codevoid.Storyvoid
         Task<DatabaseFolder> UpdateFolderAsync(long localId, long? serviceId, string title, long position, bool shouldSync);
 
         /// <summary>
-        /// Delete the specified folder. Any bookmarks in this folder will be
+        /// Delete the specified folder. Any articles in this folder will be
         /// orphaned until they're reconciled against the server, or othewise
         /// removed.
         /// </summary>
@@ -102,104 +102,104 @@ namespace Codevoid.Storyvoid
         Task DeleteFolderAsync(long localFolderId);
 
         /// <summary>
-        /// List all bookmarks, across all folders, that are Liked
+        /// List all articles, across all folders, that are Liked
         /// </summary>
-        /// <returns>All bookmarks that are in a Liked state</returns>
-        Task<IList<DatabaseBookmark>> ListLikedBookmarksAsync();
+        /// <returns>All articles that are in a Liked state</returns>
+        Task<IList<DatabaseArticle>> ListLikedArticleAsync();
 
         /// <summary>
-        /// Gets Bookmarks for a specific local folder
+        /// Gets articles for a specific local folder
         /// </summary>
-        /// <param name="localId">Local Folder ID to get bookmarks for</param>
-        /// <returns>Bookmarks in that folder</returns>
-        Task<IList<DatabaseBookmark>> ListBookmarksForLocalFolderAsync(long localId);
+        /// <param name="localId">Local Folder ID to get articles for</param>
+        /// <returns>Articles in that folder</returns>
+        Task<IList<DatabaseArticle>> ListArticlesForLocalFolderAsync(long localId);
 
         /// <summary>
-        /// Add a bookmark to the database
+        /// Add a article to the database
         /// </summary>
-        /// <param name="data">Bookmark information to add</param>
-        /// <returns>Bookmark from the database</returns>
-        Task<DatabaseBookmark> AddBookmarkToFolderAsync(
-            BookmarkRecordInformation data,
+        /// <param name="data">Article information to add</param>
+        /// <returns>Article from the database</returns>
+        Task<DatabaseArticle> AddArticleToFolderAsync(
+            ArticleRecordInformation data,
             long localFolderId);
 
         /// <summary>
-        /// Updates the specified bookmark with new details, overwriting any
+        /// Updates the specified article with new details, overwriting any
         /// values that are present.
         /// </summary>
-        /// <param name="updatedData">Data to update the bookmark with</param>
-        /// <returns>Bookmark instance with updated values</returns>
-        Task<DatabaseBookmark> UpdateBookmarkAsync(BookmarkRecordInformation updatedData);
+        /// <param name="updatedData">Data to update the article with</param>
+        /// <returns>article instance with updated values</returns>
+        Task<DatabaseArticle> UpdateArticleAsync(ArticleRecordInformation updatedData);
 
         /// <summary>
-        /// Gets a bookmark by it's service ID
+        /// Gets a article by it's service ID
         /// </summary>
-        /// <param name="bookmarkId">ID of the bookmark</param>
-        /// <returns>Bookmark if found, null otherwise</returns>
-        Task<DatabaseBookmark?> GetBookmarkByIdAsync(long bookmarkId);
+        /// <param name="articleId">ID of the article</param>
+        /// <returns>Article if found, null otherwise</returns>
+        Task<DatabaseArticle?> GetArticleByIdAsync(long articleId);
 
         /// <summary>
-        /// Like a bookmark. Will complete even if bookmark is already liked
+        /// Like a Article. Will complete even if article is already liked
         /// </summary>
-        /// <param name="bookmarkId">Bookmark to Like</param>
-        /// <returns>The Bookmark after liking. Represents current database state</returns>
-        Task<DatabaseBookmark> LikeBookmarkAsync(long bookmarkId);
+        /// <param name="articleId">Article to Like</param>
+        /// <returns>The article after liking. Represents current database state</returns>
+        Task<DatabaseArticle> LikeArticleAsync(long articleId);
 
         /// <summary>
-        /// Unlike a bookmark. Will complete even if bookmark is already unliked
+        /// Unlike a article. Will complete even if article is already unliked
         /// </summary>
-        /// <param name="bookmarkId">Bookmark to Unlike</param>
-        /// <returns>The Bookmark after unliking. Represents current database state</returns>
-        Task<DatabaseBookmark> UnlikeBookmarkAsync(long bookmarkId);
+        /// <param name="articleId">Article to Unlike</param>
+        /// <returns>The article after unliking. Represents current database state</returns>
+        Task<DatabaseArticle> UnlikeArticleAsync(long articleId);
 
         /// <summary>
-        /// Update the progress of a specific bookmark, with the supplied
+        /// Update the progress of a specific article, with the supplied
         /// timestamp of the progress update.
         /// </summary>
         /// <param name="readProgress">Progress </param>
         /// <param name="readProgressTimestamp"></param>
-        /// <param name="bookmarkId"></param>
+        /// <param name="articleId"></param>
         /// <returns></returns>
-        Task<DatabaseBookmark> UpdateReadProgressForBookmarkAsync(float readProgress, DateTime readProgressTimestamp, long bookmarkId);
+        Task<DatabaseArticle> UpdateReadProgressForArticleAsync(float readProgress, DateTime readProgressTimestamp, long articleId);
 
         /// <summary>
-        /// Moves the specified bookmark to the supplied destination folder
+        /// Moves the specified article to the supplied destination folder
         /// </summary>
-        /// <param name="bookmarkId">Bookmark to move</param>
+        /// <param name="articleId">Article to move</param>
         /// <param name="localFolderId">Folder to move to</param>
         /// <returns></returns>
-        Task MoveBookmarkToFolderAsync(long bookmarkId, long localFolderId);
+        Task MoveArticleToFolderAsync(long articleId, long localFolderId);
 
         /// <summary>
-        /// Delete a bookmark with the specified ID
+        /// Delete a article with the specified ID
         /// </summary>
-        /// <param name="bookmarkId">Bookmark to delete</param>
-        Task DeleteBookmarkAsync(long bookmarkId);
+        /// <param name="articleId">Article to delete</param>
+        Task DeleteArticleAsync(long articleId);
 
         /// <summary>
-        /// Loads the local only bookmark state for the supplied bookmark ID.
+        /// Loads the local only article state for the supplied article ID.
         /// Note, that this will only return data if local only state exists for
-        /// the bookmark. Having no data returned does *not* mean that there is
-        /// no bookmark with that bookmark ID. Use <see cref="GetBookmarkByIdAsync(long)"/>
+        /// the article. Having no data returned does *not* mean that there is
+        /// no article with that article ID. Use <see cref="GetArticleByIdAsync(long)"/>
         /// for that.
         /// </summary>
-        /// <param name="bookmarkId">ID of the bookmark to load</param>
-        /// <returns>Instance of local only bookmark state, if found</returns>
-        Task<DatabaseLocalOnlyBookmarkState?> GetLocalOnlyStateByBookmarkIdAsync(long bookmarkId);
+        /// <param name="articleId">ID of the article to load</param>
+        /// <returns>Instance of local only article state, if found</returns>
+        Task<DatabaseLocalOnlyArticleState?> GetLocalOnlyStateByArticleIdAsync(long articleId);
 
         /// <summary>
-        /// Add a bookmark with the supplied data. This will succeed only if a
-        /// bookmark with the supplied ID exists, and no other local state
+        /// Add a article with the supplied data. This will succeed only if a
+        /// article with the supplied ID exists, and no other local state
         /// has been previously added
         /// </summary>
-        /// <param name="localOnlyBookmarkState">Local only state to add</param>
+        /// <param name="localOnlyArticleState">Local only state to add</param>
         /// <returns>Local only state as return from storage</returns>
-        /// <exception cref="BookmarkNotFoundException">
-        /// If no bookmark exists with the supplied bookmark ID
+        /// <exception cref="ArticleNotFoundException">
+        /// If no article exists with the supplied article ID
         /// </exception>
         /// <exception cref="LocalOnlyStateExistsException">
-        /// When local only state already exists with the supplied bookmark ID
+        /// When local only state already exists with the supplied article ID
         /// </exception>
-        Task<DatabaseLocalOnlyBookmarkState> AddLocalOnlyStateForBookmarkAsync(DatabaseLocalOnlyBookmarkState localOnlyBookmarkState);
+        Task<DatabaseLocalOnlyArticleState> AddLocalOnlyStateForArticleAsync(DatabaseLocalOnlyArticleState localOnlyArticleState);
     }
 }

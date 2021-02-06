@@ -10,78 +10,79 @@ namespace Codevoid.Storyvoid
         private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
         /// <inheritdoc/>
-        public Task<IList<DatabaseBookmark>> ListBookmarksForLocalFolderAsync(long localFolderId)
+        public Task<IList<DatabaseArticle>> ListArticlesForLocalFolderAsync(long localFolderId)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            IList<DatabaseBookmark> GetBookmarks()
+            IList<DatabaseArticle> GetArticles()
             {
                 using var query = c.CreateCommand(@"
-                    SELECT b.*
-                    FROM bookmark_to_folder
-                    INNER JOIN bookmarks_with_local_only_state b
-                        ON bookmark_to_folder.bookmark_id = b.id
-                    WHERE bookmark_to_folder.local_folder_id = @localFolderId
+                    SELECT a.*
+                    FROM article_to_folder
+                    INNER JOIN articles_with_local_only_state a
+                        ON article_to_folder.article_id = a.id
+                    WHERE article_to_folder.local_folder_id = @localFolderId
                 ");
 
                 query.AddParameter("@localFolderId", localFolderId);
 
-                var results = new List<DatabaseBookmark>();
+                var results = new List<DatabaseArticle>();
                 using var rows = query.ExecuteReader();
                 while (rows.Read())
                 {
-                    results.Add(DatabaseBookmark.FromRow(rows));
+                    results.Add(DatabaseArticle.FromRow(rows));
                 }
 
                 return results;
             }
 
-            return Task.Run(GetBookmarks);
+            return Task.Run(GetArticles);
         }
 
         /// <inheritdoc/>
-        public Task<IList<DatabaseBookmark>> ListLikedBookmarksAsync()
+        public Task<IList<DatabaseArticle>> ListLikedArticleAsync()
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            IList<DatabaseBookmark> GetBookmarks()
+            IList<DatabaseArticle> GetArticles()
             {
                 using var query = c.CreateCommand(@"
                     SELECT *
-                    FROM bookmarks_with_local_only_state
+                    FROM articles_with_local_only_state
                     WHERE liked = true
                 ");
 
-                var results = new List<DatabaseBookmark>();
+                var results = new List<DatabaseArticle>();
                 using var rows = query.ExecuteReader();
                 while (rows.Read())
                 {
-                    results.Add(DatabaseBookmark.FromRow(rows));
+                    results.Add(DatabaseArticle.FromRow(rows));
                 }
 
                 return results;
             }
 
-            return Task.Run(GetBookmarks);
+            return Task.Run(GetArticles);
         }
 
-        public Task<DatabaseBookmark?> GetBookmarkByIdAsync(long id)
+        /// <inheritdoc/>
+        public Task<DatabaseArticle?> GetArticleByIdAsync(long id)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
-            return Task.Run(() => GetBookmarkById(c, id));
+            return Task.Run(() => GetArticleById(c, id));
         }
 
-        private DatabaseBookmark? GetBookmarkById(IDbConnection connection, long id)
+        private DatabaseArticle? GetArticleById(IDbConnection connection, long id)
         {
             using var query = connection.CreateCommand(@"
                 SELECT *
-                FROM bookmarks_with_local_only_state
+                FROM articles_with_local_only_state
                 WHERE id = @id
             ");
 
@@ -89,18 +90,18 @@ namespace Codevoid.Storyvoid
 
             using var row = query.ExecuteReader();
 
-            DatabaseBookmark? bookmark = null;
+            DatabaseArticle? article = null;
             if (row.Read())
             {
-                bookmark = DatabaseBookmark.FromRow(row);
+                article = DatabaseArticle.FromRow(row);
             }
 
-            return bookmark;
+            return article;
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseBookmark> AddBookmarkToFolderAsync(
-            BookmarkRecordInformation data,
+        public Task<DatabaseArticle> AddArticleToFolderAsync(
+            ArticleRecordInformation data,
             long localFolderId
         )
         {
@@ -108,10 +109,10 @@ namespace Codevoid.Storyvoid
 
             var c = this.connection;
 
-            void AddBookmark()
+            void AddArticle()
             {
                 using var query = c.CreateCommand(@"
-                    INSERT INTO bookmarks(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
+                    INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
                     VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
 
                     SELECT last_insert_rowid();
@@ -129,14 +130,14 @@ namespace Codevoid.Storyvoid
                 query.ExecuteNonQuery();
             }
 
-            void PairBookmarkToFolder()
+            void PairArticleToFolder()
             {
                 using var query = c.CreateCommand(@"
-                    INSERT INTO bookmark_to_folder(local_folder_id, bookmark_id)
-                    VALUES (@localFolderId, @bookmarkId);
+                    INSERT INTO article_to_folder(local_folder_id, article_id)
+                    VALUES (@localFolderId, @articleId);
                 ");
 
-                query.AddParameter("@bookmarkId", data.id);
+                query.AddParameter("@articleId", data.id);
                 query.AddParameter("@localFolderId", localFolderId);
 
                 query.ExecuteNonQuery();
@@ -149,22 +150,23 @@ namespace Codevoid.Storyvoid
                     throw new FolderNotFoundException(localFolderId);
                 }
 
-                AddBookmark();
-                PairBookmarkToFolder();
-                return GetBookmarkById(c, data.id)!;
+                AddArticle();
+                PairArticleToFolder();
+                return GetArticleById(c, data.id)!;
             });
         }
 
-        public Task<DatabaseBookmark> UpdateBookmarkAsync(BookmarkRecordInformation updatedData)
+        /// <inheritdoc />
+        public Task<DatabaseArticle> UpdateArticleAsync(ArticleRecordInformation updatedData)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            void UpdateBookmark()
+            void UpdateArticle()
             {
                 using var query = c.CreateCommand(@"
-                    UPDATE bookmarks SET
+                    UPDATE articles SET
                         url = @url,
                         title = @title,
                         description = @description,
@@ -188,21 +190,21 @@ namespace Codevoid.Storyvoid
                 var impactedRows = query.ExecuteNonQuery();
                 if (impactedRows < 1)
                 {
-                    throw new BookmarkNotFoundException(updatedData.id);
+                    throw new ArticleNotFoundException(updatedData.id);
                 }
             }
 
             return Task.Run(() =>
             {
-                UpdateBookmark();
-                return GetBookmarkById(c, updatedData.id)!;
+                UpdateArticle();
+                return GetArticleById(c, updatedData.id)!;
             });
         }
 
-        private static void UpdateLikeStatusForBookmark(IDbConnection c, long id, bool liked)
+        private static void UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked)
         {
             using var query = c.CreateCommand(@"
-                UPDATE bookmarks
+                UPDATE articles
                 SET liked = @liked
                 WHERE id = @id
             ");
@@ -213,12 +215,12 @@ namespace Codevoid.Storyvoid
             var impactedRows = query.ExecuteNonQuery();
             if (impactedRows < 1)
             {
-                throw new BookmarkNotFoundException(id);
+                throw new ArticleNotFoundException(id);
             }
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseBookmark> LikeBookmarkAsync(long id)
+        public Task<DatabaseArticle> LikeArticleAsync(long id)
         {
             this.ThrowIfNotReady();
 
@@ -226,13 +228,13 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                UpdateLikeStatusForBookmark(c, id, true);
-                return GetBookmarkById(c, id)!;
+                UpdateLikeStatusForArticle(c, id, true);
+                return GetArticleById(c, id)!;
             });
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseBookmark> UnlikeBookmarkAsync(long id)
+        public Task<DatabaseArticle> UnlikeArticleAsync(long id)
         {
             this.ThrowIfNotReady();
 
@@ -240,12 +242,13 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                UpdateLikeStatusForBookmark(c, id, false);
-                return GetBookmarkById(c, id)!;
+                UpdateLikeStatusForArticle(c, id, false);
+                return GetArticleById(c, id)!;
             });
         }
 
-        public Task<DatabaseBookmark> UpdateReadProgressForBookmarkAsync(float readProgress, DateTime readProgressTimestamp, long bookmarkId)
+        /// <inheritdoc/>
+        public Task<DatabaseArticle> UpdateReadProgressForArticleAsync(float readProgress, DateTime readProgressTimestamp, long articleId)
         {
             if (readProgress < 0.0 || readProgress > 1.0)
             {
@@ -254,19 +257,19 @@ namespace Codevoid.Storyvoid
 
             if (readProgressTimestamp < UnixEpochStart)
             {
-                throw new ArgumentOutOfRangeException(nameof(readProgressTimestamp), "Progress Timestamp must be within the Unix Epochs");
+                throw new ArgumentOutOfRangeException(nameof(readProgressTimestamp), "Progress Timestamp must be within the Unix Epoch");
             }
 
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            void UpdateProgressForBookmark()
+            void UpdateProgressForArticle()
             {
                 // The hash field is driven by the service, and complately opaque
                 // to us. The hash is also how the service determines if progress
                 // needs to be updated in list calls. This means that whenever
-                // we update the progress of a bookmark, if we don't have supplied
+                // we update the progress of a article, if we don't have supplied
                 // hash, we need to stomp that hash since it's different, but we
                 // have no idea how to recompute it.
                 // To simulate a new hash, we will generate a random number, and
@@ -276,12 +279,12 @@ namespace Codevoid.Storyvoid
 
 
                 using var query = c.CreateCommand(@"
-                    UPDATE bookmarks
+                    UPDATE articles
                     SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
                     WHERE id = @id
                 ");
 
-                query.AddParameter("@id", bookmarkId);
+                query.AddParameter("@id", articleId);
                 query.AddParameter("@readProgress", readProgress);
                 query.AddParameter("@readProgressTimestamp", readProgressTimestamp);
                 query.AddParameter("@hash", fauxHash);
@@ -289,32 +292,33 @@ namespace Codevoid.Storyvoid
                 var impactedRows = query.ExecuteNonQuery();
                 if (impactedRows < 1)
                 {
-                    throw new BookmarkNotFoundException(bookmarkId);
+                    throw new ArticleNotFoundException(articleId);
                 }
             }
 
             return Task.Run(() =>
             {
-                UpdateProgressForBookmark();
-                return GetBookmarkById(c, bookmarkId)!;
+                UpdateProgressForArticle();
+                return GetArticleById(c, articleId)!;
             });
         }
 
-        public Task MoveBookmarkToFolderAsync(long bookmarkId, long localFolderId)
+        /// <inheritdoc/>
+        public Task MoveArticleToFolderAsync(long articleId, long localFolderId)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            void MoveBookmarkToFolder()
+            void MoveArticleToFolder()
             {
                 using var query = c.CreateCommand(@"
-                    UPDATE bookmark_to_folder
+                    UPDATE article_to_folder
                     SET local_folder_id = @localFolderId
-                    WHERE bookmark_id = @bookmarkId;
+                    WHERE article_id = @articleId;
                 ");
 
-                query.AddParameter("@bookmarkId", bookmarkId);
+                query.AddParameter("@articleId", articleId);
                 query.AddParameter("@localFolderId", localFolderId);
 
                 query.ExecuteNonQuery();
@@ -327,16 +331,17 @@ namespace Codevoid.Storyvoid
                     throw new FolderNotFoundException(localFolderId);
                 }
 
-                if (GetBookmarkById(c, bookmarkId) == null)
+                if (GetArticleById(c, articleId) == null)
                 {
-                    throw new BookmarkNotFoundException(bookmarkId);
+                    throw new ArticleNotFoundException(articleId);
                 }
 
-                MoveBookmarkToFolder();
+                MoveArticleToFolder();
             });
         }
 
-        public Task DeleteBookmarkAsync(long bookmarkId)
+        /// <inheritdoc/>
+        public Task DeleteArticleAsync(long articleId)
         {
             this.ThrowIfNotReady();
 
@@ -345,23 +350,23 @@ namespace Codevoid.Storyvoid
             void RemoveFromFolder()
             {
                 using var query = c.CreateCommand(@"
-                    DELETE FROM bookmark_to_folder
-                    WHERE bookmark_id = @bookmarkId
+                    DELETE FROM article_to_folder
+                    WHERE article_id = @articleId
                 ");
 
-                query.AddParameter("@bookmarkId", bookmarkId);
+                query.AddParameter("@articleId", articleId);
 
                 query.ExecuteNonQuery();
             }
 
-            void DeleteBookmark()
+            void DeleteArticle()
             {
                 using var query = c.CreateCommand(@"
-                    DELETE FROM bookmarks
+                    DELETE FROM articles
                     WHERE id = @id
                 ");
 
-                query.AddParameter("@id", bookmarkId);
+                query.AddParameter("@id", articleId);
 
                 query.ExecuteNonQuery();
             }
@@ -369,7 +374,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 RemoveFromFolder();
-                DeleteBookmark();
+                DeleteArticle();
             });
         }
     }

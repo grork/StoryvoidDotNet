@@ -10,35 +10,35 @@ namespace Codevoid.Storyvoid
         private static int SQLITE_CONSTRAINT_FOREIGNKEY = 787;
         private static int SQLITE_CONSTRAINT_PRIMARYKEY = 1555;
 
-        private static DatabaseLocalOnlyBookmarkState? GetLocalOnlyByBookmarkId(IDbConnection connection, long bookmarkId)
+        private static DatabaseLocalOnlyArticleState? GetLocalOnlyByArticleId(IDbConnection connection, long articleId)
         {
             using var query = connection.CreateCommand(@"
                 SELECT *
-                FROM bookmark_local_only_state
-                WHERE bookmark_id = @bookmarkId
+                FROM article_local_only_state
+                WHERE article_id = @articleId
             ");
 
-            query.AddParameter("@bookmarkId", bookmarkId);
+            query.AddParameter("@articleId", articleId);
 
             using var row = query.ExecuteReader();
-            DatabaseLocalOnlyBookmarkState? localOnlyState = null;
+            DatabaseLocalOnlyArticleState? localOnlyState = null;
             if(row.Read())
             {
-                localOnlyState = DatabaseLocalOnlyBookmarkState.FromRow(row);
+                localOnlyState = DatabaseLocalOnlyArticleState.FromRow(row);
             }
 
             return localOnlyState;
         }
 
-        public Task<DatabaseLocalOnlyBookmarkState?> GetLocalOnlyStateByBookmarkIdAsync(long bookmarkId)
+        public Task<DatabaseLocalOnlyArticleState?> GetLocalOnlyStateByArticleIdAsync(long articleId)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
-            return Task.Run(() => GetLocalOnlyByBookmarkId(c, bookmarkId));
+            return Task.Run(() => GetLocalOnlyByArticleId(c, articleId));
         }
 
-        public Task<DatabaseLocalOnlyBookmarkState> AddLocalOnlyStateForBookmarkAsync(DatabaseLocalOnlyBookmarkState localOnlyBookmarkState)
+        public Task<DatabaseLocalOnlyArticleState> AddLocalOnlyStateForArticleAsync(DatabaseLocalOnlyArticleState localOnlyArticleState)
         {
             this.ThrowIfNotReady();
 
@@ -47,15 +47,15 @@ namespace Codevoid.Storyvoid
             void AddLocalyOnlyState()
             {
                 using var query = c.CreateCommand(@"
-                INSERT INTO bookmark_local_only_state(bookmark_id,
-                                                      available_locally,
-                                                      first_image_local_path,
-                                                      first_image_remote_path,
-                                                      local_path,
-                                                      extracted_description,
-                                                      article_unavailable,
-                                                      include_in_mru)
-                VALUES (@bookmarkId,
+                INSERT INTO article_local_only_state(article_id,
+                                                     available_locally,
+                                                     first_image_local_path,
+                                                     first_image_remote_path,
+                                                     local_path,
+                                                     extracted_description,
+                                                     article_unavailable,
+                                                     include_in_mru)
+                VALUES (@articleId,
                         @availableLocally,
                         @firstImageLocalPath,
                         @firstImageRemotePath,
@@ -65,37 +65,37 @@ namespace Codevoid.Storyvoid
                         @includeInMRU)
                 ");
 
-                query.AddParameter("@bookmarkId", localOnlyBookmarkState.BookmarkId);
-                query.AddParameter("@availableLocally", localOnlyBookmarkState.AvailableLocally);
-                query.AddParameter("@firstImageLocalPath", localOnlyBookmarkState.FirstImageLocalPath);
-                query.AddParameter("@firstImageRemotePath", localOnlyBookmarkState.FirstImageRemoteUri);
-                query.AddParameter("@localPath", localOnlyBookmarkState.LocalPath);
-                query.AddParameter("@extractedDescription", localOnlyBookmarkState.ExtractedDescription);
-                query.AddParameter("@articleUnavailable", localOnlyBookmarkState.ArticleUnavailable);
-                query.AddParameter("@includeInMRU", localOnlyBookmarkState.IncludeInMRU);
+                query.AddParameter("@articleId", localOnlyArticleState.ArticleId);
+                query.AddParameter("@availableLocally", localOnlyArticleState.AvailableLocally);
+                query.AddParameter("@firstImageLocalPath", localOnlyArticleState.FirstImageLocalPath);
+                query.AddParameter("@firstImageRemotePath", localOnlyArticleState.FirstImageRemoteUri);
+                query.AddParameter("@localPath", localOnlyArticleState.LocalPath);
+                query.AddParameter("@extractedDescription", localOnlyArticleState.ExtractedDescription);
+                query.AddParameter("@articleUnavailable", localOnlyArticleState.ArticleUnavailable);
+                query.AddParameter("@includeInMRU", localOnlyArticleState.IncludeInMRU);
 
                 try
                 {
                     query.ExecuteNonQuery();
                 }
-                // When the bookmark is missing, we get a foreign key constraint
+                // When the article is missing, we get a foreign key constraint
                 // error. We need to turn this into a strongly typed error.
                 catch(SqliteException ex) when (ex.SqliteErrorCode == SQLITE_CONSTRAINT && ex.SqliteExtendedErrorCode == SQLITE_CONSTRAINT_FOREIGNKEY)
                 {
-                    throw new BookmarkNotFoundException(localOnlyBookmarkState.BookmarkId);
+                    throw new ArticleNotFoundException(localOnlyArticleState.ArticleId);
                 }
                 // When local only state already exists, we need to convert the
                 // primary key constraint error into something strongly typed
                 catch(SqliteException ex) when (ex.SqliteErrorCode == SQLITE_CONSTRAINT && ex.SqliteExtendedErrorCode == SQLITE_CONSTRAINT_PRIMARYKEY)
                 {
-                    throw new LocalOnlyStateExistsException(localOnlyBookmarkState.BookmarkId);
+                    throw new LocalOnlyStateExistsException(localOnlyArticleState.ArticleId);
                 }
             }
 
             return Task.Run(() => {
                 AddLocalyOnlyState();
 
-                return GetLocalOnlyByBookmarkId(c, localOnlyBookmarkState.BookmarkId)!;
+                return GetLocalOnlyByArticleId(c, localOnlyArticleState.ArticleId)!;
             });
         }
     }

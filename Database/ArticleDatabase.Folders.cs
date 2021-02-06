@@ -247,11 +247,11 @@ namespace Codevoid.Storyvoid
 
             var c = this.connection;
 
-            // Remove any bookmark-folder-pairs
-            void DeleteBookmarkFolderPairs()
+            // Remove any article-folder-pairs
+            void DeleteArticleFolderPairs()
             {
                 using var query = c.CreateCommand(@"
-                    DELETE FROM bookmark_to_folder
+                    DELETE FROM article_to_folder
                     WHERE local_folder_id = @localFolderId
                 ");
 
@@ -276,7 +276,7 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                DeleteBookmarkFolderPairs();
+                DeleteArticleFolderPairs();
                 DeleteFolder();
             });
         }

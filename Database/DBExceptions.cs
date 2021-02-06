@@ -2,12 +2,12 @@
 
 namespace Codevoid.Storyvoid
 {
-    public sealed class BookmarkNotFoundException : Exception
+    public sealed class ArticleNotFoundException : Exception
     {
-        public readonly long BookmarkId;
-        public BookmarkNotFoundException(long id) : base($"Bookmark {id} not found")
+        public readonly long ArticleId;
+        public ArticleNotFoundException(long id) : base($"Article {id} not found")
         {
-            this.BookmarkId = id;
+            this.ArticleId = id;
         }
     }
 
@@ -22,11 +22,11 @@ namespace Codevoid.Storyvoid
 
     public sealed class LocalOnlyStateExistsException : Exception
     {
-        public readonly long BookmarkId;
-        public LocalOnlyStateExistsException(long bookmarkId)
-            : base($"Local Only State already present for {bookmarkId}")
+        public readonly long ArticleId;
+        public LocalOnlyStateExistsException(long articleId)
+            : base($"Local Only State already present for {articleId}")
         {
-            this.BookmarkId = bookmarkId;
+            this.ArticleId = articleId;
         }
     }
 }

@@ -10,12 +10,12 @@ namespace Codevoid.Test.Storyvoid
     public class LocalOnlyState : IAsyncLifetime
     {
         private IArticleDatabase? db;
-        private IList<DatabaseBookmark> sampleBookmarks = new List<DatabaseBookmark>();
+        private IList<DatabaseArticle> sampleArticles = new List<DatabaseArticle>();
 
         public async Task InitializeAsync()
         {
             this.db = await TestUtilities.GetDatabase();
-            this.sampleBookmarks = await this.PopulateDatabaseWithBookmarks();
+            this.sampleArticles = await this.PopulateDatabaseWithArticles();
         }
 
         public Task DisposeAsync()
@@ -24,12 +24,12 @@ namespace Codevoid.Test.Storyvoid
             return Task.CompletedTask;
         }
 
-        public async Task<IList<DatabaseBookmark>> PopulateDatabaseWithBookmarks()
+        public async Task<IList<DatabaseArticle>> PopulateDatabaseWithArticles()
         {
             var unreadFolder = this.db!.UnreadFolderLocalId;
-            var bookmark1 = await this.db!.AddBookmarkToFolderAsync(new(
+            var article1 = await this.db!.AddArticleToFolderAsync(new(
                 1,
-                "Sample Bookmark 1",
+                "Sample Article 1",
                 new ("https://www.codevoid.net/1"),
                 String.Empty,
                 0.0F,
@@ -38,9 +38,9 @@ namespace Codevoid.Test.Storyvoid
                 false
             ), unreadFolder);
 
-            var bookmark2 = await this.db!.AddBookmarkToFolderAsync(new(
+            var article2 = await this.db!.AddArticleToFolderAsync(new(
                 2,
-                "Sample Bookmark 2",
+                "Sample Article 2",
                 new("https://www.codevoid.net/2"),
                 String.Empty,
                 0.0F,
@@ -49,9 +49,9 @@ namespace Codevoid.Test.Storyvoid
                 false
             ), unreadFolder);
 
-            var bookmark3 = await this.db!.AddBookmarkToFolderAsync(new(
+            var article3 = await this.db!.AddArticleToFolderAsync(new(
                 3,
-                "Sample Bookmark 3",
+                "Sample Article 3",
                 new("https://www.codevoid.net/2"),
                 String.Empty,
                 0.0F,
@@ -60,62 +60,62 @@ namespace Codevoid.Test.Storyvoid
                 false
             ), unreadFolder);
 
-            return new List<DatabaseBookmark> { bookmark1, bookmark2, bookmark3 };
+            return new List<DatabaseArticle> { article1, article2, article3 };
         }
 
         [Fact]
-        public async Task RequestingLocalStateForMissingBookmarkReturnsNothing()
+        public async Task RequestingLocalStateForMissingArticleReturnsNothing()
         {
-            var result = await this.db!.GetLocalOnlyStateByBookmarkIdAsync(this.sampleBookmarks.First().Id);
+            var result = await this.db!.GetLocalOnlyStateByArticleIdAsync(this.sampleArticles.First().Id);
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task CanAddLocalStateForBookmark()
+        public async Task CanAddLocalStateForArticle()
         {
-            var data = new DatabaseLocalOnlyBookmarkState()
+            var data = new DatabaseLocalOnlyArticleState()
             {
-                BookmarkId = this.sampleBookmarks.First().Id,
+                ArticleId = this.sampleArticles.First().Id,
             };
 
-            var result = await this.db!.AddLocalOnlyStateForBookmarkAsync(data);
-            Assert.Equal(data.BookmarkId, result.BookmarkId);
+            var result = await this.db!.AddLocalOnlyStateForArticleAsync(data);
+            Assert.Equal(data.ArticleId, result.ArticleId);
         }
 
         [Fact]
-        public async Task AddingLocalStateForMissingBookmarkThrowNotFoundException()
+        public async Task AddingLocalStateForMissingArticleThrowNotFoundException()
         {
-            var data = new DatabaseLocalOnlyBookmarkState()
+            var data = new DatabaseLocalOnlyArticleState()
             {
-                BookmarkId = 99
+                ArticleId = 99
             };
 
-            var ex = await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.db!.AddLocalOnlyStateForBookmarkAsync(data));
-            Assert.Equal(data.BookmarkId, ex.BookmarkId);
+            var ex = await Assert.ThrowsAsync<ArticleNotFoundException>(async () => await this.db!.AddLocalOnlyStateForArticleAsync(data));
+            Assert.Equal(data.ArticleId, ex.ArticleId);
         }
 
         [Fact]
         public async Task AddingLocalStateWhenAlreadyPresentThrowsDuplicateException()
         {
-            var data = new DatabaseLocalOnlyBookmarkState()
+            var data = new DatabaseLocalOnlyArticleState()
             {
-                BookmarkId = this.sampleBookmarks.First().Id,
+                ArticleId = this.sampleArticles.First().Id,
             };
 
-            _ = await this.db!.AddLocalOnlyStateForBookmarkAsync(data);
-            var ex = await Assert.ThrowsAsync<LocalOnlyStateExistsException>(async () => await this.db!.AddLocalOnlyStateForBookmarkAsync(data));
-            Assert.Equal(data.BookmarkId, ex.BookmarkId);
+            _ = await this.db!.AddLocalOnlyStateForArticleAsync(data);
+            var ex = await Assert.ThrowsAsync<LocalOnlyStateExistsException>(async () => await this.db!.AddLocalOnlyStateForArticleAsync(data));
+            Assert.Equal(data.ArticleId, ex.ArticleId);
         }
 
         [Fact]
-        public async Task CanReadLocalStateForBookmark()
+        public async Task CanReadLocalStateForArticle()
         {
-            var bookmarkId = this.sampleBookmarks.First().Id;
+            var articleId = this.sampleArticles.First().Id;
             var extractedDescription = "SampleExtractedDescription";
 
-            var data = new DatabaseLocalOnlyBookmarkState()
+            var data = new DatabaseLocalOnlyArticleState()
             {
-                BookmarkId = bookmarkId,
+                ArticleId = articleId,
                 AvailableLocally = true,
                 FirstImageLocalPath = new("localimage://local"),
                 FirstImageRemoteUri = new("remoteimage://remote"),
@@ -125,8 +125,8 @@ namespace Codevoid.Test.Storyvoid
                 IncludeInMRU = false
             };
 
-            _ = await this.db!.AddLocalOnlyStateForBookmarkAsync(data);
-            var result = (await this.db!.GetLocalOnlyStateByBookmarkIdAsync(bookmarkId))!;
+            _ = await this.db!.AddLocalOnlyStateForArticleAsync(data);
+            var result = (await this.db!.GetLocalOnlyStateByArticleIdAsync(articleId))!;
             Assert.Equal(data, result);
         }
     }

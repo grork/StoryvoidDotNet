@@ -4,16 +4,16 @@ using System.Data;
 namespace Codevoid.Storyvoid
 {
     /// <summary>
-    /// Bookmark sourced from the Database
+    /// Article sourced from the Database
     /// </summary>
-    public sealed record DatabaseBookmark
+    public sealed record DatabaseArticle
     {
-        private DatabaseBookmark() { }
+        private DatabaseArticle() { }
 
         /// <summary>
-        /// Local-only information for this bookmark, if present.
+        /// Local-only information for this article, if present.
         /// </summary>
-        public DatabaseLocalOnlyBookmarkState? LocalOnlyState { get; init; }
+        public DatabaseLocalOnlyArticleState? LocalOnlyState { get; init; }
 
         /// <summary>
         /// Convenience access to check if have local-only state information
@@ -22,27 +22,27 @@ namespace Codevoid.Storyvoid
         public bool HasLocalState => this.LocalOnlyState != null;
 
         /// <summary>
-        /// Bookmark ID in the local database, and on the service
+        /// Article ID in the local database, and on the service
         /// </summary>
         public long Id { get; init; }
 
         /// <summary>
-        /// URL that this bookmark represents
+        /// URL that this article represents
         /// </summary>
         public Uri Url { get; init; } = new Uri("unset://unset");
 
         /// <summary>
-        /// Display title for this bookmark
+        /// Display title for this article
         /// </summary>
         public string Title { get; init; } = String.Empty;
 
         /// <summary>
-        /// Optional description of the bookmark
+        /// Optional description of the article
         /// </summary>
         public string Description { get; init; } = String.Empty;
 
         /// <summary>
-        /// Current read progress of the bookmark -- between 0.0 and 1.0
+        /// Current read progress of the article -- between 0.0 and 1.0
         /// </summary>
         public float ReadProgress { get; init; }
 
@@ -52,22 +52,22 @@ namespace Codevoid.Storyvoid
         public DateTime ReadProgressTimestamp { get; init; }
 
         /// <summary>
-        /// Hash provided by the service of the bookmark reading progress &amp;
+        /// Hash provided by the service of the article reading progress &amp;
         /// change timestamp.
         /// </summary>
         public string Hash { get; init; } = String.Empty;
 
         /// <summary>
-        /// Has this bookmark been liked
+        /// Has this article been liked
         /// </summary>
         public bool Liked { get; init; }
 
         /// <summary>
-        /// Converts a raw database row into a hydrated bookmark instance
+        /// Converts a raw database row into a hydrated article instance
         /// </summary>
-        /// <param name="row">Row to read bookmark data from</param>
-        /// <returns>Instance of the bookmark object for this row</returns>
-        internal static DatabaseBookmark FromRow(IDataReader row)
+        /// <param name="row">Row to read article data from</param>
+        /// <returns>Instance of the article object for this row</returns>
+        internal static DatabaseArticle FromRow(IDataReader row)
         {
             var id = row.GetInt64("id");
             var url = row.GetUri("url");
@@ -77,21 +77,21 @@ namespace Codevoid.Storyvoid
             var hash = row.GetString("hash");
             var liked = row.GetBoolean("liked");
             var description = String.Empty;
-            DatabaseLocalOnlyBookmarkState? localOnlyState = null;
+            DatabaseLocalOnlyArticleState? localOnlyState = null;
 
             if (!row.IsDBNull("description"))
             {
                 description = row.GetString("description");
             }
 
-            // If there is an associated bookmark ID, this implies that there is
+            // If there is an associated article ID, this implies that there is
             // download / local state.
-            if (!row.IsDBNull("bookmark_id"))
+            if (!row.IsDBNull("article_id"))
             {
-                localOnlyState = DatabaseLocalOnlyBookmarkState.FromRow(row);
+                localOnlyState = DatabaseLocalOnlyArticleState.FromRow(row);
             }
 
-            var bookmark = new DatabaseBookmark()
+            var article = new DatabaseArticle()
             {
                 Id = id,
                 Url = url,
@@ -104,7 +104,7 @@ namespace Codevoid.Storyvoid
                 LocalOnlyState = localOnlyState
             };
 
-            return bookmark;
+            return article;
         }
     }
 }
