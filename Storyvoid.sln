@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 		InstapaperAPIKey.cs = InstapaperAPIKey.cs
 		TwitterAPIKey.cs = TwitterAPIKey.cs
+		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstapaperApi", "InstapaperApi\InstapaperApi.csproj", "{89F277FD-2746-48D3-A7B0-177E78CC3434}"
