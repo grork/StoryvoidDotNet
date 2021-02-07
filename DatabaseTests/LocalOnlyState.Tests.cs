@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Codevoid.Test.Storyvoid
 {
-    public class LocalOnlyState : IAsyncLifetime
+    public class LocalOnlyStateTests : IAsyncLifetime
     {
         private IArticleDatabase? db;
         private IList<DatabaseArticle> sampleArticles = new List<DatabaseArticle>();
@@ -63,6 +63,21 @@ namespace Codevoid.Test.Storyvoid
             return new List<DatabaseArticle> { article1, article2, article3 };
         }
 
+        private static DatabaseLocalOnlyArticleState GetSampleLocalOnlyState(long articleId)
+        {
+            return new DatabaseLocalOnlyArticleState()
+            {
+                ArticleId = articleId,
+                AvailableLocally = true,
+                FirstImageLocalPath = new($"localimage://local/{articleId}"),
+                FirstImageRemoteUri = new($"remoteimage://remote/{articleId}"),
+                LocalPath = new($"localfile://local/{articleId}"),
+                ExtractedDescription = string.Empty,
+                ArticleUnavailable = true,
+                IncludeInMRU = false
+            };
+        }
+
         [Fact]
         public async Task RequestingLocalStateForMissingArticleReturnsNothing()
         {
@@ -112,22 +127,78 @@ namespace Codevoid.Test.Storyvoid
         {
             var articleId = this.sampleArticles.First().Id;
             var extractedDescription = "SampleExtractedDescription";
-
-            var data = new DatabaseLocalOnlyArticleState()
-            {
-                ArticleId = articleId,
-                AvailableLocally = true,
-                FirstImageLocalPath = new("localimage://local"),
-                FirstImageRemoteUri = new("remoteimage://remote"),
-                LocalPath = new("localfile://local"),
-                ExtractedDescription = extractedDescription,
-                ArticleUnavailable = true,
-                IncludeInMRU = false
-            };
+            var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
+                { ExtractedDescription = extractedDescription };
 
             _ = await this.db!.AddLocalOnlyStateForArticleAsync(data);
             var result = (await this.db!.GetLocalOnlyStateByArticleIdAsync(articleId))!;
             Assert.Equal(data, result);
+        }
+
+        [Fact]
+        public async Task ReadingArticleIncludesLocalStateWhenPresent()
+        {
+            var articleId = this.sampleArticles.First().Id;
+            var extractedDescription = "SampleExtractedDescription";
+
+            var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
+                { ExtractedDescription = extractedDescription };
+
+            _ = await this.db!.AddLocalOnlyStateForArticleAsync(data);
+            var article = (await this.db!.GetArticleByIdAsync(articleId))!;
+            Assert.True(article.HasLocalState);
+            Assert.Equal(data, article.LocalOnlyState!);
+        }
+
+        [Fact]
+        public async Task ListingArticlesWithPartialLocalStateReturnsLocalStateCorrectly()
+        {
+            var articleId = this.sampleArticles.First().Id;
+            var articleData = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId);
+
+            _ = await this.db!.AddLocalOnlyStateForArticleAsync(articleData);
+            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+
+            var articleWithLocalState = (from a in articles
+                                         where a.Id == articleId
+                                         select a).Single();
+            Assert.True(articleWithLocalState!.HasLocalState);
+            Assert.Equal(articleData, articleWithLocalState.LocalOnlyState!);
+
+            var articlesWithoutLocalState = (from a in articles
+                                             where (a.Id != articleId) && !a.HasLocalState
+                                             select a).Count();
+            Assert.Equal(articles.Count - 1, articlesWithoutLocalState);
+        }
+
+        [Fact]
+        public async Task ListingArticlesWhichAllHaveLocalStateCorrectlyReturnsLocalState()
+        {
+            var addedLocalState = new List<DatabaseLocalOnlyArticleState>();
+
+            foreach (var a in this.sampleArticles)
+            {
+                var data = LocalOnlyStateTests.GetSampleLocalOnlyState(a.Id);
+                _ = await this.db!.AddLocalOnlyStateForArticleAsync(data);
+
+                addedLocalState.Add(data);
+            }
+
+            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var articlesWithLocalState = (from a in articles
+                                          where a.HasLocalState
+                                          select a);
+            Assert.Equal(addedLocalState.Count, articlesWithLocalState.Count());
+
+            foreach(var localState in addedLocalState)
+            {
+                var matchingArticle = (from ma in articlesWithLocalState
+                                       where ma.Id == localState.ArticleId
+                                       select ma).Single();
+                Assert.NotNull(matchingArticle);
+                Assert.True(matchingArticle.HasLocalState);
+                Assert.Equal(localState, matchingArticle.LocalOnlyState);
+            }
         }
     }
 }
