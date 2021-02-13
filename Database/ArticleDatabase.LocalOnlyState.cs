@@ -98,5 +98,25 @@ namespace Codevoid.Storyvoid
                 return GetLocalOnlyByArticleId(c, localOnlyArticleState.ArticleId)!;
             });
         }
+
+        public Task DeleteLocalOnlyArticleStateAsync(long articleId)
+        {
+            this.ThrowIfNotReady();
+
+            var c = this.connection;
+            void DeleteLocalyOnlyState()
+            {
+                using var query = c.CreateCommand(@"
+                    DELETE FROM article_local_only_state
+                    WHERE article_id = @articleId
+                ");
+
+                query.AddParameter("@articleId", articleId);
+
+                query.ExecuteNonQuery();
+            }
+
+            return Task.Run(DeleteLocalyOnlyState);
+        }
     }
 }

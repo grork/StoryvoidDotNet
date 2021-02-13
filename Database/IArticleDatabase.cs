@@ -201,5 +201,17 @@ namespace Codevoid.Storyvoid
         /// When local only state already exists with the supplied article ID
         /// </exception>
         Task<DatabaseLocalOnlyArticleState> AddLocalOnlyStateForArticleAsync(DatabaseLocalOnlyArticleState localOnlyArticleState);
+
+        /// <summary>
+        /// Deletes the localy only state for the supplied article ID.
+        ///
+        /// If the ID is not associated with any state, or there is no article
+        /// for that ID, no error is raised, and the task completes successfully.
+        /// </summary>
+        /// <param name="articleId">
+        /// ID of the Article for which to delete local only state
+        /// </param>
+        /// <returns>Task that completes when the data is removed</returns>
+        Task DeleteLocalOnlyArticleStateAsync(long articleId);
     }
 }

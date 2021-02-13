@@ -200,5 +200,29 @@ namespace Codevoid.Test.Storyvoid
                 Assert.Equal(localState, matchingArticle.LocalOnlyState);
             }
         }
+
+        [Fact]
+        public async Task CanRemoveLocalOnlyStateForArticleWhenPresent()
+        {
+            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+            _ = await this.db!.AddLocalOnlyStateForArticleAsync(state);
+
+            await this.db!.DeleteLocalOnlyArticleStateAsync(state.ArticleId);
+
+            var result = await this.db!.GetLocalOnlyStateByArticleIdAsync(state.ArticleId);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task CanRemoveLocalOnlyStateWhenArticleIsPresentButStateIsnt()
+        {
+            await this.db!.DeleteLocalOnlyArticleStateAsync(this.sampleArticles.First()!.Id);
+        }
+
+        [Fact]
+        public async Task WhenRemovingStateForArticleThatIsntPresentNoErrorReturned()
+        {
+            await this.db!.DeleteLocalOnlyArticleStateAsync(999L);
+        }
     }
 }
