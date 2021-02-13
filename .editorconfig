@@ -2,3 +2,6 @@
 
 # IDE0002: Simplify Member Access
 dotnet_diagnostic.IDE0002.severity = none
+
+# IDE0003: Remove qualification
+dotnet_diagnostic.IDE0003.severity = none
