@@ -30,6 +30,7 @@ namespace Codevoid.Storyvoid
             return localOnlyState;
         }
 
+        /// <inheritdoc/>
         public Task<DatabaseLocalOnlyArticleState?> GetLocalOnlyStateByArticleIdAsync(long articleId)
         {
             this.ThrowIfNotReady();
@@ -38,6 +39,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() => GetLocalOnlyByArticleId(c, articleId));
         }
 
+        /// <inheritdoc/>
         public Task<DatabaseLocalOnlyArticleState> AddLocalOnlyStateForArticleAsync(DatabaseLocalOnlyArticleState localOnlyArticleState)
         {
             this.ThrowIfNotReady();
@@ -99,6 +101,7 @@ namespace Codevoid.Storyvoid
             });
         }
 
+        /// <inheritdoc/>
         public Task DeleteLocalOnlyArticleStateAsync(long articleId)
         {
             this.ThrowIfNotReady();
