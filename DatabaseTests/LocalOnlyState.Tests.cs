@@ -265,7 +265,7 @@ namespace Codevoid.Test.Storyvoid
             var updated = await this.db!.UpdateLocalOnlyArticleStateAsync(newState);
             var readFromDatabase = await this.db!.GetLocalOnlyStateByArticleIdAsync(newState.ArticleId);
 
-            Assert.Equal(state, updated);
+            Assert.NotEqual(state, updated);
             Assert.Equal(newState, updated);
             Assert.Equal(newState, readFromDatabase);
         }

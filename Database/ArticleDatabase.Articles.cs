@@ -75,10 +75,10 @@ namespace Codevoid.Storyvoid
             this.ThrowIfNotReady();
 
             var c = this.connection;
-            return Task.Run(() => GetArticleById(c, id));
+            return Task.Run(() => ArticleDatabase.GetArticleById(c, id));
         }
 
-        private DatabaseArticle? GetArticleById(IDbConnection connection, long id)
+        private static DatabaseArticle? GetArticleById(IDbConnection connection, long id)
         {
             using var query = connection.CreateCommand(@"
                 SELECT *
@@ -152,7 +152,7 @@ namespace Codevoid.Storyvoid
 
                 AddArticle();
                 PairArticleToFolder();
-                return GetArticleById(c, data.id)!;
+                return ArticleDatabase.GetArticleById(c, data.id)!;
             });
         }
 
@@ -197,7 +197,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateArticle();
-                return GetArticleById(c, updatedData.id)!;
+                return ArticleDatabase.GetArticleById(c, updatedData.id)!;
             });
         }
 
@@ -229,7 +229,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForArticle(c, id, true);
-                return GetArticleById(c, id)!;
+                return ArticleDatabase.GetArticleById(c, id)!;
             });
         }
 
@@ -243,7 +243,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForArticle(c, id, false);
-                return GetArticleById(c, id)!;
+                return ArticleDatabase.GetArticleById(c, id)!;
             });
         }
 
@@ -299,7 +299,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateProgressForArticle();
-                return GetArticleById(c, articleId)!;
+                return ArticleDatabase.GetArticleById(c, articleId)!;
             });
         }
 
@@ -331,7 +331,7 @@ namespace Codevoid.Storyvoid
                     throw new FolderNotFoundException(localFolderId);
                 }
 
-                if (GetArticleById(c, articleId) == null)
+                if (ArticleDatabase.GetArticleById(c, articleId) == null)
                 {
                     throw new ArticleNotFoundException(articleId);
                 }
