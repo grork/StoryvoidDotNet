@@ -282,5 +282,17 @@ namespace Codevoid.Test.Storyvoid
         {
             Assert.ThrowsAsync<ArgumentException>(() => this.db!.UpdateLocalOnlyArticleStateAsync(new DatabaseLocalOnlyArticleState()));
         }
+
+        [Fact]
+        public async Task DeletingArticleAlsoDeletesLocalOnlyState()
+        {
+            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+            _ = await this.db!.AddLocalOnlyStateForArticleAsync(state);
+
+            await this.db!.DeleteArticleAsync(state.ArticleId);
+
+            var result = await this.db!.GetLocalOnlyStateByArticleIdAsync(state.ArticleId);
+            Assert.Null(result);
+        }
     }
 }

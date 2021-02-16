@@ -361,6 +361,14 @@ namespace Codevoid.Storyvoid
 
             void DeleteArticle()
             {
+                // Delete the local only state first, since that has a foreign
+                // key relationship to the articles table. This is expected
+                // to not throw an error if there is no local state associated
+                // with the article being deleted.
+                ArticleDatabase.DeleteLocalOnlyArticleState(c, articleId);
+
+                // Now that we've deleted the local state, we can delete the
+                // article itself.
                 using var query = c.CreateCommand(@"
                     DELETE FROM articles
                     WHERE id = @id
