@@ -29,4 +29,14 @@ namespace Codevoid.Storyvoid
             this.ArticleId = articleId;
         }
     }
+
+    public sealed class LocalOnlyStateNotFoundException : Exception
+    {
+        public readonly long ArticleId;
+        public LocalOnlyStateNotFoundException(long articleId)
+            : base($"Local Only State was not present for {articleId}")
+        {
+            this.ArticleId = articleId;
+        }
+    }
 }

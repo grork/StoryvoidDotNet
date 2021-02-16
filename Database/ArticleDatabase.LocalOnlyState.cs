@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 
@@ -120,6 +121,62 @@ namespace Codevoid.Storyvoid
             }
 
             return Task.Run(DeleteLocalyOnlyState);
+        }
+
+        public Task<DatabaseLocalOnlyArticleState> UpdateLocalOnlyArticleStateAsync(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)
+        {
+            this.ThrowIfNotReady();
+
+            if(updatedLocalOnlyArticleState.ArticleId < 1)
+            {
+                throw new ArgumentException("Article ID must be greater than 0");
+            }
+
+            var c = this.connection;
+            var articleId = updatedLocalOnlyArticleState.ArticleId;
+
+            DatabaseLocalOnlyArticleState UpdateLocalOnlyState()
+            {
+                using var query = c.CreateCommand(@"
+                    UPDATE article_local_only_state SET
+                        available_locally = @availableLocally,
+                        first_image_local_path = @firstImageLocalPath,
+                        first_image_remote_path = @firstImageRemotePath,
+                        local_path = @localPath,
+                        extracted_description = @extractedDescription,
+                        article_unavailable = @articleUnavailable,
+                        include_in_mru = @includeInMru
+                    WHERE article_id = @articleId
+                ");
+
+                query.AddParameter("@articleId", articleId);
+                query.AddParameter("@availableLocally", updatedLocalOnlyArticleState.AvailableLocally);
+                query.AddParameter("@firstImageLocalPath", updatedLocalOnlyArticleState.FirstImageLocalPath);
+                query.AddParameter("@firstImageRemotePath", updatedLocalOnlyArticleState.FirstImageRemoteUri);
+                query.AddParameter("@localPath", updatedLocalOnlyArticleState.LocalPath);
+                query.AddParameter("@extractedDescription", updatedLocalOnlyArticleState.ExtractedDescription);
+                query.AddParameter("@articleUnavailable", updatedLocalOnlyArticleState.ArticleUnavailable);
+                query.AddParameter("@includeInMru", updatedLocalOnlyArticleState.IncludeInMRU);
+
+                var updatedRows = query.ExecuteNonQuery();
+                if(updatedRows < 1)
+                {
+                    // Nothing was updated; check if it was just that there was
+                    // no existing state to update
+                    var state = ArticleDatabase.GetLocalOnlyByArticleId(c, articleId);
+                    if(state == null)
+                    {
+                        throw new LocalOnlyStateNotFoundException(articleId);
+                    }
+
+                    throw new InvalidOperationException("Unknown error while updating local only state");
+                }
+
+                var local = ArticleDatabase.GetLocalOnlyByArticleId(c, articleId);
+                return local!;
+            }
+
+            return Task.Run(UpdateLocalOnlyState);
         }
     }
 }

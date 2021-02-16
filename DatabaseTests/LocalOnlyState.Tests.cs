@@ -95,6 +95,7 @@ namespace Codevoid.Test.Storyvoid
 
             var result = await this.db!.AddLocalOnlyStateForArticleAsync(data);
             Assert.Equal(data.ArticleId, result.ArticleId);
+            Assert.Equal(data, result);
         }
 
         [Fact]
@@ -223,6 +224,63 @@ namespace Codevoid.Test.Storyvoid
         public async Task WhenRemovingStateForArticleThatIsntPresentNoErrorReturned()
         {
             await this.db!.DeleteLocalOnlyArticleStateAsync(999L);
+        }
+
+        [Fact]
+        public async Task CanUpdateSingleFieldLocalOnlyStateWithExistingState()
+        {
+            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+            _ = await this.db!.AddLocalOnlyStateForArticleAsync(state);
+
+            var newState = state with
+            {
+                ExtractedDescription = "I have been updated"
+            };
+
+            var updated = await this.db!.UpdateLocalOnlyArticleStateAsync(newState);
+            var readFromDatabase = await this.db!.GetLocalOnlyStateByArticleIdAsync(newState.ArticleId);
+
+            Assert.NotEqual(state, updated);
+            Assert.Equal(newState, updated);
+            Assert.Equal(newState, readFromDatabase);
+        }
+
+        [Fact]
+        public async Task CanUpdateAllFieldsFieldLocalOnlyStateWithExistingState()
+        {
+            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+            _ = await this.db!.AddLocalOnlyStateForArticleAsync(state);
+
+            var newState = state with
+            {
+                AvailableLocally = state.AvailableLocally!,
+                FirstImageLocalPath = new Uri("imageLocalPathNew://localPathNew"),
+                FirstImageRemoteUri = new Uri("imageRemotePathNew://remotePathNew"),
+                LocalPath = new Uri("articleLocalPathNew://localPathNew"),
+                ExtractedDescription = "Extracted with care",
+                ArticleUnavailable = !state.ArticleUnavailable,
+                IncludeInMRU = !state.IncludeInMRU
+            };
+
+            var updated = await this.db!.UpdateLocalOnlyArticleStateAsync(newState);
+            var readFromDatabase = await this.db!.GetLocalOnlyStateByArticleIdAsync(newState.ArticleId);
+
+            Assert.Equal(state, updated);
+            Assert.Equal(newState, updated);
+            Assert.Equal(newState, readFromDatabase);
+        }
+
+        [Fact]
+        public async Task UpdatingLocalOnlyStateWhenNoLocalStatePresentThrowsException()
+        {
+            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+            await Assert.ThrowsAsync<LocalOnlyStateNotFoundException>(async () => await this.db!.UpdateLocalOnlyArticleStateAsync(state));
+        }
+
+        [Fact]
+        public void UpdatingLocalOnlyStateWithInvalidArticleIdThrowException()
+        {
+            Assert.ThrowsAsync<ArgumentException>(() => this.db!.UpdateLocalOnlyArticleStateAsync(new DatabaseLocalOnlyArticleState()));
         }
     }
 }

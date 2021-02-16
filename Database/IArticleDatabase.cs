@@ -213,5 +213,18 @@ namespace Codevoid.Storyvoid
         /// </param>
         /// <returns>Task that completes when the data is removed</returns>
         Task DeleteLocalOnlyArticleStateAsync(long articleId);
+
+        /// <summary>
+        /// Updates the information associated with an existing Local Only
+        /// Artical State, replacing all information.
+        ///
+        /// If there is no existing information, an <see cref="LocalOnlyStateNotFoundException"/>
+        /// exception will be thrown.
+        /// </summary>
+        /// <param name="updatedLocalOnlyArticleState">
+        /// The desired data to be updated for this article
+        /// </param>
+        /// <returns>The updated details</returns>
+        Task<DatabaseLocalOnlyArticleState> UpdateLocalOnlyArticleStateAsync(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState);
     }
 }
