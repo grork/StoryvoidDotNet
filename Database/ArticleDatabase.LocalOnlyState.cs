@@ -102,25 +102,25 @@ namespace Codevoid.Storyvoid
             });
         }
 
+        private static void DeleteLocalOnlyArticleState(IDbConnection connection, long articleId)
+        {
+            using var query = connection.CreateCommand(@"
+                DELETE FROM article_local_only_state
+                WHERE article_id = @articleId
+            ");
+
+            query.AddParameter("@articleId", articleId);
+            query.ExecuteNonQuery();
+        }
+
         /// <inheritdoc/>
         public Task DeleteLocalOnlyArticleStateAsync(long articleId)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
-            void DeleteLocalyOnlyState()
-            {
-                using var query = c.CreateCommand(@"
-                    DELETE FROM article_local_only_state
-                    WHERE article_id = @articleId
-                ");
 
-                query.AddParameter("@articleId", articleId);
-
-                query.ExecuteNonQuery();
-            }
-
-            return Task.Run(DeleteLocalyOnlyState);
+            return Task.Run(() => ArticleDatabase.DeleteLocalOnlyArticleState(c, articleId));
         }
 
         public Task<DatabaseLocalOnlyArticleState> UpdateLocalOnlyArticleStateAsync(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)
