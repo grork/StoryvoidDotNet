@@ -84,6 +84,10 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// Updates the data of a folder with the supplied Local ID. All fields
         /// must be supplied.
+        ///
+        /// NB: This API is only intended to be used to update local information
+        /// directly sourced from the server. Changed properties of this field
+        /// will not be round-tripped to the service.
         /// </summary>
         /// <param name="localId">Item to update</param>
         /// <param name="serviceId">Service ID to set</param>
