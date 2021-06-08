@@ -50,7 +50,8 @@ CREATE TABLE article_local_only_state (
     FOREIGN KEY(article_id) REFERENCES articles(id)
 );
 
--- View to bundle up the articles w/ their download state to be used as a 
+-- View to bundle up the articles w/ their download state to be abstract away
+-- some of the source information from the wrapper library
 CREATE VIEW articles_with_local_only_state AS
     SELECT * FROM articles
     LEFT JOIN article_local_only_state
