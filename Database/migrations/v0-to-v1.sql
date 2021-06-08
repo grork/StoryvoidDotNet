@@ -57,19 +57,21 @@ CREATE VIEW articles_with_local_only_state AS
     LEFT JOIN article_local_only_state
     ON articles.id = article_local_only_state.article_id;
 
-CREATE TABLE article_changes (
+
+-- Change Tracking tables
+CREATE TABLE folder_adds (
     change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    operation TEXT NOT NULL,
-    article_id INTEGER NOT NULL DEFAULT 0,
-    payload TEXT
+    local_id INTEGER NOT NULL,
+    UNIQUE(local_id),
+    FOREIGN KEY(local_id) REFERENCES folders
 );
 
-CREATE TABLE folder_changes (
+CREATE TABLE folder_deletes (
     change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    operation TEXT NOT NULL,
-    local_id INTEGER NOT NULL DEFAULT 0,
-    service_id INTEGER NOT NULL DEFAULT 0,
-    payload TEXT
+    service_id INTEGER NOT NULL,
+    title TEXT NOT NULL
+    UNIQUE(service_id),
+    UNIQUE(title) -- Titles can't be duplicated on the service; enforce here
 );
 
 -- Set version to indicate default state created
