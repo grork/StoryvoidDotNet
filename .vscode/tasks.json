@@ -76,7 +76,7 @@
             "type": "process",
             "args": [
                 "test",
-                "${workspaceFolder}/Database/Database.csproj",
+                "${workspaceFolder}/DatabaseTests/DatabaseTests.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
