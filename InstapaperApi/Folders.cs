@@ -56,7 +56,7 @@ namespace Codevoid.Instapaper
 
         internal static IInstapaperFolder FromJsonElement(JsonElement folderElement)
         {
-            var folderTitle = folderElement.GetProperty("title").GetString();
+            var folderTitle = folderElement.GetProperty("title").GetString()!;
 
             // For reasons that are unclear, the position number from the service
             // created during an *add* operation is actually a double. (e.g. it

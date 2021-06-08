@@ -295,8 +295,8 @@ namespace Codevoid.Instapaper
             var url = new Uri(urlString);
 
             // Title & Description
-            var title = bookmarkElement.GetProperty("title").GetString();
-            var description = bookmarkElement.GetProperty("description").GetString();
+            var title = bookmarkElement.GetProperty("title").GetString()!;
+            var description = bookmarkElement.GetProperty("description").GetString()!;
 
             // Progress
             var progress = bookmarkElement.GetProperty("progress").GetSingle();
@@ -305,10 +305,10 @@ namespace Codevoid.Instapaper
             var progressTimestamp = progressTimestampUnixEpoch.LocalDateTime;
 
             // Hash
-            var hash = bookmarkElement.GetProperty("hash").GetString();
+            var hash = bookmarkElement.GetProperty("hash").GetString()!;
 
             // Liked status
-            var likedRaw = bookmarkElement.GetProperty("starred").GetString();
+            var likedRaw = bookmarkElement.GetProperty("starred").GetString()!;
             var liked = (likedRaw == "1");
 
             return new Bookmark()
@@ -586,7 +586,7 @@ namespace Codevoid.Instapaper
             if (meta != null && meta.Value.TryGetProperty("delete_ids", out var deletedIdsElement))
             {
                 // Deleted IDs comes in as a comma separated string
-                var rawDeletedIds = deletedIdsElement.GetString();
+                var rawDeletedIds = deletedIdsElement.GetString()!;
                 var deletedIdsAsStrings = rawDeletedIds.Split(',');
                 foreach (var stringId in deletedIdsAsStrings)
                 {

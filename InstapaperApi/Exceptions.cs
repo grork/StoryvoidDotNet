@@ -42,7 +42,7 @@ namespace Codevoid.Instapaper
 
                 case UNKNOWN_ERROR:
                 default:
-                    var message = errorElement.GetProperty("message").GetString();
+                    var message = errorElement.GetProperty("message").GetString()!;
                     return new UnknownServiceError(code, message);
             }
         }

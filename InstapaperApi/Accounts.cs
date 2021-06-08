@@ -103,7 +103,7 @@ namespace Codevoid.Instapaper
             var userInfoElement = document.RootElement[0];
 
             var userId = userInfoElement.GetProperty("user_id").GetUInt64();
-            var username = userInfoElement.GetProperty("username").ToString();
+            var username = userInfoElement.GetProperty("username").ToString()!;
             var hasSubscription = userInfoElement.GetProperty("subscription_is_active").ToString();
 
             return new UserInformation(userId, username, (hasSubscription == "1" ? true : false));
