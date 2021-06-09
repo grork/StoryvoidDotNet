@@ -17,6 +17,8 @@ namespace Codevoid.Storyvoid
         public long ArchiveFolderLocalId { get; private set; }
 
         private readonly IDbConnection connection;
+        private IChangesDatabase? changesDatabase;
+
         public ArticleDatabase(IDbConnection connection)
         {
             this.connection = connection;
@@ -32,6 +34,7 @@ namespace Codevoid.Storyvoid
 
             this.alreadyDisposed = true;
             this.initialized = 0;
+            this.changesDatabase = null;
 
             this.connection.Close();
             this.connection.Dispose();
@@ -98,6 +101,21 @@ namespace Codevoid.Storyvoid
             }
 
             return Task.Run(OpenAndCreateDatabase);
+        }
+
+        /// <inheritdoc/>
+        public IChangesDatabase PendingChangesDatabase
+        {
+            get
+            {
+                if (this.changesDatabase == null)
+                {
+                    this.ThrowIfNotReady();
+                    this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection);
+                }
+
+                return this.changesDatabase;
+            }
         }
     }
 }

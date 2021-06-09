@@ -230,5 +230,11 @@ namespace Codevoid.Storyvoid
         /// </param>
         /// <returns>The updated details</returns>
         Task<DatabaseLocalOnlyArticleState> UpdateLocalOnlyArticleStateAsync(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState);
+
+        /// <summary>
+        /// Get pending change database for creating, reading, and removing
+        /// pending changes
+        /// </summary>
+        IChangesDatabase PendingChangesDatabase { get; }
     }
 }

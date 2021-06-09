@@ -1,4 +1,4 @@
-﻿-- Enable Write Ahead Logging (https://sqlite.org/wal.html)
+-- Enable Write Ahead Logging (https://sqlite.org/wal.html)
 PRAGMA journal_mode = 'wal';
 
 CREATE TABLE articles (
@@ -57,19 +57,23 @@ CREATE VIEW articles_with_local_only_state AS
     LEFT JOIN article_local_only_state
     ON articles.id = article_local_only_state.article_id;
 
-
 -- Change Tracking tables
 CREATE TABLE folder_adds (
     change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     local_id INTEGER NOT NULL,
     UNIQUE(local_id),
-    FOREIGN KEY(local_id) REFERENCES folders
+    FOREIGN KEY(local_id) REFERENCES folders(local_id)
 );
+
+CREATE VIEW folder_adds_with_folder_information AS
+    SELECT f.title, a.* FROM folder_adds a
+    LEFT JOIN folders f
+    ON a.local_id = f.local_id;
 
 CREATE TABLE folder_deletes (
     change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     service_id INTEGER NOT NULL,
-    title TEXT NOT NULL
+    title TEXT NOT NULL,
     UNIQUE(service_id),
     UNIQUE(title) -- Titles can't be duplicated on the service; enforce here
 );
