@@ -2,22 +2,36 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid
 {
     /// <inheritdoc />
     public class PendingChanges : IChangesDatabase
     {
+        public record WellKnownFolderLocalIds(long Unread, long Archive);
+
         private IDbConnection connection;
-        private PendingChanges(IDbConnection connection)
+        private readonly long unreadFolderLocalId;
+        private readonly long archiveFolderLocalId;
+
+        private PendingChanges(IDbConnection connection, WellKnownFolderLocalIds folderLocalIds)
         {
             this.connection = connection;
+            this.unreadFolderLocalId = folderLocalIds.Unread;
+            this.archiveFolderLocalId = folderLocalIds.Archive;
         }
 
 #region Pending Folder Adds
         /// <inheritdoc/>
         public PendingFolderAdd CreatePendingFolderAdd(long localFolderId)
         {
+            if ((localFolderId == this.unreadFolderLocalId)
+            || (localFolderId == this.archiveFolderLocalId))
+            {
+                throw new InvalidOperationException("Can't create a folder add for wellknown folders");
+            }
+
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -28,9 +42,16 @@ namespace Codevoid.Storyvoid
             ");
 
             query.AddParameter("@localId", localFolderId);
-            var changeId = (long)query.ExecuteScalar();
 
-            return GetPendingFolderAddById(c, changeId)!;
+            try
+            {
+                var changeId = (long)query.ExecuteScalar();
+                return GetPendingFolderAddById(c, changeId)!;
+            } catch(SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                           && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
+            {
+                throw new FolderNotFoundException(localFolderId);
+            }
         }
 
         private static PendingFolderAdd? GetPendingFolderAddById(IDbConnection connection, long changeId)
@@ -92,6 +113,11 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public PendingFolderDelete CreatePendingFolderDelete(long serviceId, string title)
         {
+            if((serviceId == WellKnownFolderIds.Unread)
+            || (serviceId == WellKnownFolderIds.Archive))
+            {
+                throw new InvalidOperationException("Can't create pending delete for well known folders");
+            }
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -172,14 +198,14 @@ namespace Codevoid.Storyvoid
         /// The opened DB Connection to use to access the database.
         /// </param>
         /// <returns>Instance of the the API</returns>
-        public static IChangesDatabase GetPendingChangeDatabase(IDbConnection connection)
+        public static IChangesDatabase GetPendingChangeDatabase(IDbConnection connection, WellKnownFolderLocalIds folderLocalIds)
         {
             if(connection.State != ConnectionState.Open)
             {
                 throw new InvalidOperationException("Database must be opened");
             }
 
-            return new PendingChanges(connection);
+            return new PendingChanges(connection, folderLocalIds);
         }
     }
 }

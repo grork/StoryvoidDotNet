@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Codevoid.Storyvoid;
 using Xunit;
 
@@ -42,11 +43,29 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public void CreatingPendingFolderAddForNonExistentFolderThrows()
+        {
+            void Work()
+            {
+                var change = this.db!.PendingChangesDatabase.CreatePendingFolderAdd(99L);
+            }
+
+            Assert.Throws<FolderNotFoundException>(Work);
+        }
+
+        [Fact]
         public async Task CanGetPendingFolderAddByChangeId()
         {
             var originalChange = this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
             var readChange = await this.db!.PendingChangesDatabase.GetPendingFolderAddAsync(originalChange.ChangeId);
             Assert.Equal(originalChange, readChange);
+        }
+
+        [Fact]
+        public async Task GettingNonExistentPendingFolderAddReturnsNull()
+        {
+            var change = await this.db!.PendingChangesDatabase.GetPendingFolderAddAsync(99L);
+            Assert.Null(change);
         }
 
         [Fact]
@@ -63,10 +82,32 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
-        public async Task ListingWithNoAddsCompletesWithZeroResults()
+        public async Task ListingPendingFolderAddsWithNoAddsCompletesWithZeroResults()
         {
             var results = await this.db!.PendingChangesDatabase.ListPendingFolderAddsAsync();
             Assert.Empty(results);
+        }
+
+        [Fact]
+        public void AddingPendingFolderAddForUnreadFolderShouldFail()
+        {
+            void Work()
+            {
+                this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.db!.UnreadFolderLocalId);
+            }
+
+            Assert.Throws<InvalidOperationException>(Work);
+        }
+
+        [Fact]
+        public void AddingPendingFolderAddForArchiveFolderShouldFail()
+        {
+            void Work()
+            {
+                this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.db!.ArchiveFolderLocalId);
+            }
+
+            Assert.Throws<InvalidOperationException>(Work);
         }
 #endregion
 
@@ -93,6 +134,13 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public async Task GettingNonExistentPendingFolderDeleteReturnsNull()
+        {
+            var change = await this.db!.PendingChangesDatabase.GetPendingFolderDeleteAsync(99L);
+            Assert.Null(change);
+        }
+
+        [Fact]
         public async Task CanListAllPendingFolderDeletes()
         {
             var changes = this.db!.PendingChangesDatabase;
@@ -105,10 +153,32 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
-        public async Task ListingWithNoDeletesCompletesWithZeroResults()
+        public async Task ListingPendingFolderDeletesWithNoDeletesCompletesWithZeroResults()
         {
             var results = await this.db!.PendingChangesDatabase.ListPendingFolderDeletesAsync();
             Assert.Empty(results);
+        }
+
+        [Fact]
+        public void AddingPendingFolderDeleteForUnreadFolderShouldFail()
+        {
+            void Work()
+            {
+                this.db!.PendingChangesDatabase.CreatePendingFolderDelete(WellKnownFolderIds.Unread, "Unread");
+            }
+
+            Assert.Throws<InvalidOperationException>(Work);
+        }
+
+        [Fact]
+        public void AddingPendingFolderDeleteForArchiveFolderShouldFail()
+        {
+            void Work()
+            {
+                this.db!.PendingChangesDatabase.CreatePendingFolderDelete(WellKnownFolderIds.Archive, "Archive");
+            }
+
+            Assert.Throws<InvalidOperationException>(Work);
         }
 #endregion
     }

@@ -4,6 +4,17 @@ using System.Data;
 namespace Codevoid.Storyvoid
 {
     /// <summary>
+    /// Sqlite error codes aren't in the Microsoft.Data.Sqlite namespace, so we
+    /// need our own for semantic usages rather than random magic values
+    /// </summary>
+    internal static class SqliteErrorCodes
+    {
+        internal const int SQLITE_CONSTRAINT = 19;
+        internal const int SQLITE_CONSTRAINT_FOREIGNKEY = 787;
+        internal const int SQLITE_CONSTRAINT_PRIMARYKEY = 1555;
+    }
+
+    /// <summary>
     /// Simple extensions that make working with the ADO.NET data objects simpler
     /// </summary>
     internal static class DataExtensions

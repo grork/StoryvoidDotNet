@@ -133,7 +133,7 @@ namespace Codevoid.Storyvoid
                 if (this.changesDatabase == null)
                 {
                     this.ThrowIfNotReady();
-                    this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection);
+                    this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection, new (Unread: this.UnreadFolderLocalId, Archive: this.ArchiveFolderLocalId));
                 }
 
                 return this.changesDatabase;
