@@ -19,7 +19,7 @@ namespace Codevoid.Storyvoid
 
             using var row = query.ExecuteReader();
             DatabaseLocalOnlyArticleState? localOnlyState = null;
-            if(row.Read())
+            if (row.Read())
             {
                 localOnlyState = DatabaseLocalOnlyArticleState.FromRow(row);
             }
@@ -79,21 +79,22 @@ namespace Codevoid.Storyvoid
                 }
                 // When the article is missing, we get a foreign key constraint
                 // error. We need to turn this into a strongly typed error.
-                catch(SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                              && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
                 {
                     throw new ArticleNotFoundException(localOnlyArticleState.ArticleId);
                 }
                 // When local only state already exists, we need to convert the
                 // primary key constraint error into something strongly typed
-                catch(SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                              && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
                 {
                     throw new LocalOnlyStateExistsException(localOnlyArticleState.ArticleId);
                 }
             }
 
-            return Task.Run(() => {
+            return Task.Run(() =>
+            {
                 AddLocalyOnlyState();
 
                 return ArticleDatabase.GetLocalOnlyStateByArticleId(c, localOnlyArticleState.ArticleId)!;
@@ -125,7 +126,7 @@ namespace Codevoid.Storyvoid
         {
             this.ThrowIfNotReady();
 
-            if(updatedLocalOnlyArticleState.ArticleId < 1)
+            if (updatedLocalOnlyArticleState.ArticleId < 1)
             {
                 throw new ArgumentException("Article ID must be greater than 0");
             }
@@ -157,12 +158,12 @@ namespace Codevoid.Storyvoid
                 query.AddParameter("@includeInMru", updatedLocalOnlyArticleState.IncludeInMRU);
 
                 var updatedRows = query.ExecuteNonQuery();
-                if(updatedRows < 1)
+                if (updatedRows < 1)
                 {
                     // Nothing was updated; check if it was just that there was
                     // no existing state to update
                     var state = ArticleDatabase.GetLocalOnlyStateByArticleId(c, articleId);
-                    if(state == null)
+                    if (state == null)
                     {
                         throw new LocalOnlyStateNotFoundException(articleId);
                     }

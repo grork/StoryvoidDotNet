@@ -22,7 +22,7 @@ namespace Codevoid.Storyvoid
             this.archiveFolderLocalId = folderLocalIds.Archive;
         }
 
-#region Pending Folder Adds
+        #region Pending Folder Adds
         /// <inheritdoc/>
         public PendingFolderAdd CreatePendingFolderAdd(long localFolderId)
         {
@@ -47,8 +47,9 @@ namespace Codevoid.Storyvoid
             {
                 var changeId = (long)query.ExecuteScalar();
                 return GetPendingFolderAddById(c, changeId)!;
-            } catch(SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
-                                           && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
+            }
+            catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                         && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
             {
                 throw new FolderNotFoundException(localFolderId);
             }
@@ -66,7 +67,7 @@ namespace Codevoid.Storyvoid
 
             PendingFolderAdd? result = null;
             using var row = query.ExecuteReader();
-            if(row.Read())
+            if (row.Read())
             {
                 result = PendingFolderAdd.FromRow(row);
             }
@@ -85,7 +86,7 @@ namespace Codevoid.Storyvoid
         public Task<IList<PendingFolderAdd>> ListPendingFolderAddsAsync()
         {
             var c = this.connection;
-            
+
             IList<PendingFolderAdd> ListPendingFolderAdds()
             {
                 using var query = c.CreateCommand(@"
@@ -96,24 +97,24 @@ namespace Codevoid.Storyvoid
                 using var pendingFolderAdds = query.ExecuteReader();
 
                 var result = new List<PendingFolderAdd>();
-                while(pendingFolderAdds.Read())
+                while (pendingFolderAdds.Read())
                 {
                     var folderAdd = PendingFolderAdd.FromRow(pendingFolderAdds);
                     result.Add(folderAdd);
                 }
-                
+
                 return result;
             }
 
             return Task.Run(ListPendingFolderAdds);
         }
-#endregion
+        #endregion
 
-#region Pending Folder Deletes
+        #region Pending Folder Deletes
         /// <inheritdoc/>
         public PendingFolderDelete CreatePendingFolderDelete(long serviceId, string title)
         {
-            if((serviceId == WellKnownFolderIds.Unread)
+            if ((serviceId == WellKnownFolderIds.Unread)
             || (serviceId == WellKnownFolderIds.Archive))
             {
                 throw new InvalidOperationException("Can't create pending delete for well known folders");
@@ -147,7 +148,7 @@ namespace Codevoid.Storyvoid
 
             PendingFolderDelete? result = null;
             using var row = query.ExecuteReader();
-            if(row.Read())
+            if (row.Read())
             {
                 result = PendingFolderDelete.FromRow(row);
             }
@@ -166,7 +167,7 @@ namespace Codevoid.Storyvoid
         public Task<IList<PendingFolderDelete>> ListPendingFolderDeletesAsync()
         {
             var c = this.connection;
-            
+
             IList<PendingFolderDelete> ListPendingFolderDeletes()
             {
                 using var query = c.CreateCommand(@"
@@ -177,18 +178,18 @@ namespace Codevoid.Storyvoid
                 using var pendingFolderDeletes = query.ExecuteReader();
 
                 var result = new List<PendingFolderDelete>();
-                while(pendingFolderDeletes.Read())
+                while (pendingFolderDeletes.Read())
                 {
                     var folderDelete = PendingFolderDelete.FromRow(pendingFolderDeletes);
                     result.Add(folderDelete);
                 }
-                
+
                 return result;
             }
 
             return Task.Run(ListPendingFolderDeletes);
         }
-#endregion
+        #endregion
 
         /// <summary>
         /// For the supplied DB connection, get an instance of the Pending
@@ -200,7 +201,7 @@ namespace Codevoid.Storyvoid
         /// <returns>Instance of the the API</returns>
         public static IChangesDatabase GetPendingChangeDatabase(IDbConnection connection, WellKnownFolderLocalIds folderLocalIds)
         {
-            if(connection.State != ConnectionState.Open)
+            if (connection.State != ConnectionState.Open)
             {
                 throw new InvalidOperationException("Database must be opened");
             }

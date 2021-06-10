@@ -30,7 +30,7 @@ namespace Codevoid.Test.Storyvoid
             var article1 = await this.db!.AddArticleToFolderAsync(new(
                 1,
                 "Sample Article 1",
-                new ("https://www.codevoid.net/1"),
+                new("https://www.codevoid.net/1"),
                 String.Empty,
                 0.0F,
                 DateTime.Now,
@@ -129,7 +129,7 @@ namespace Codevoid.Test.Storyvoid
             var articleId = this.sampleArticles.First().Id;
             var extractedDescription = "SampleExtractedDescription";
             var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
-                { ExtractedDescription = extractedDescription };
+            { ExtractedDescription = extractedDescription };
 
             _ = await this.db!.AddLocalOnlyStateForArticleAsync(data);
             var result = (await this.db!.GetLocalOnlyStateByArticleIdAsync(articleId))!;
@@ -143,7 +143,7 @@ namespace Codevoid.Test.Storyvoid
             var extractedDescription = "SampleExtractedDescription";
 
             var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
-                { ExtractedDescription = extractedDescription };
+            { ExtractedDescription = extractedDescription };
 
             _ = await this.db!.AddLocalOnlyStateForArticleAsync(data);
             var article = (await this.db!.GetArticleByIdAsync(articleId))!;
@@ -191,7 +191,7 @@ namespace Codevoid.Test.Storyvoid
                                           select a);
             Assert.Equal(addedLocalState.Count, articlesWithLocalState.Count());
 
-            foreach(var localState in addedLocalState)
+            foreach (var localState in addedLocalState)
             {
                 var matchingArticle = (from ma in articlesWithLocalState
                                        where ma.Id == localState.ArticleId

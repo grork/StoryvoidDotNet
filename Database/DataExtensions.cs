@@ -73,13 +73,13 @@ namespace Codevoid.Storyvoid
         /// <returns>Value from that column</returns>
         public static Uri? GetNullableUri(this IDataReader instance, string name)
         {
-            if(instance.IsDBNull(name))
+            if (instance.IsDBNull(name))
             {
                 return null;
             }
 
             var value = instance.GetString(name);
-            if(string.IsNullOrWhiteSpace(value))
+            if (string.IsNullOrWhiteSpace(value))
             {
                 return null;
             }
@@ -184,7 +184,7 @@ namespace Codevoid.Storyvoid
         /// <param name="value">Value of the parameter</param>
         public static void AddParameter(this IDbCommand instance, string name, Uri? value)
         {
-            if(value == null)
+            if (value == null)
             {
                 instance.AddNull(name, DbType.String);
                 return;

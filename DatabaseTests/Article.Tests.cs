@@ -506,7 +506,7 @@ namespace Codevoid.Test.Storyvoid
 
             // Update article with new title
             var newTitle = "New Title";
-            var updatedArticle = await this.db.UpdateArticleAsync(new (article.Id, newTitle, article.Url, article.Description, article.ReadProgress, article.ReadProgressTimestamp, article.Hash, article.Liked));
+            var updatedArticle = await this.db.UpdateArticleAsync(new(article.Id, newTitle, article.Url, article.Description, article.ReadProgress, article.ReadProgressTimestamp, article.Hash, article.Liked));
 
             // Check returned values are correct
             Assert.Equal(article.Id, updatedArticle.Id);
@@ -536,7 +536,7 @@ namespace Codevoid.Test.Storyvoid
             await Assert.ThrowsAsync<ArticleNotFoundException>(async () =>
             {
                 _ = await db!.UpdateArticleAsync(
-                    new (99, String.Empty, new Uri("https://www.bing.com"), String.Empty, 0.0F, DateTime.Now, String.Empty, false)
+                    new(99, String.Empty, new Uri("https://www.bing.com"), String.Empty, 0.0F, DateTime.Now, String.Empty, false)
                 );
             });
         }

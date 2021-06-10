@@ -98,7 +98,7 @@ namespace Codevoid.Storyvoid
                         // bump of the DB is at the end of the script. If the
                         // version doesn't match, we'll fail.
                         databaseVersion = Convert.ToInt32(checkIfUpdated.ExecuteScalar());
-                        if(!IsCurrentDBVersion(databaseVersion))
+                        if (!IsCurrentDBVersion(databaseVersion))
                         {
                             throw new InvalidOperationException("Unable to create database");
                         }
@@ -133,7 +133,7 @@ namespace Codevoid.Storyvoid
                 if (this.changesDatabase == null)
                 {
                     this.ThrowIfNotReady();
-                    this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection, new (Unread: this.UnreadFolderLocalId, Archive: this.ArchiveFolderLocalId));
+                    this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection, new(Unread: this.UnreadFolderLocalId, Archive: this.ArchiveFolderLocalId));
                 }
 
                 return this.changesDatabase;

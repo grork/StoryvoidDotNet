@@ -32,7 +32,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.NotNull(changesDb);
         }
 
-#region Pending Folder Adds
+        #region Pending Folder Adds
         [Fact]
         public void CanCreatePendingFolderAdd()
         {
@@ -109,9 +109,9 @@ namespace Codevoid.Test.Storyvoid
 
             Assert.Throws<InvalidOperationException>(Work);
         }
-#endregion
+        #endregion
 
-#region Pending Folder Deletes
+        #region Pending Folder Deletes
         [Fact]
         public void CanCreatePendingFolderDelete()
         {
@@ -180,6 +180,6 @@ namespace Codevoid.Test.Storyvoid
 
             Assert.Throws<InvalidOperationException>(Work);
         }
-#endregion
+        #endregion
     }
 }
