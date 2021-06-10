@@ -61,6 +61,13 @@ namespace Codevoid.Test.Storyvoid
             Assert.Contains(change1, allChanges);
             Assert.Contains(change2, allChanges);
         }
+
+        [Fact]
+        public async Task ListingWithNoAddsCompletesWithZeroResults()
+        {
+            var results = await this.db!.PendingChangesDatabase.ListPendingFolderAddsAsync();
+            Assert.Empty(results);
+        }
 #endregion
 
 #region Pending Folder Deletes
@@ -95,6 +102,13 @@ namespace Codevoid.Test.Storyvoid
             var allChanges = await changes.ListPendingFolderDeletesAsync();
             Assert.Contains(change1, allChanges);
             Assert.Contains(change2, allChanges);
+        }
+
+        [Fact]
+        public async Task ListingWithNoDeletesCompletesWithZeroResults()
+        {
+            var results = await this.db!.PendingChangesDatabase.ListPendingFolderDeletesAsync();
+            Assert.Empty(results);
         }
 #endregion
     }
