@@ -28,7 +28,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public void CanGetChangesDatabase()
         {
-            var changesDb = this.db!.PendingChangesDatabase;
+            var changesDb = this.db!.ChangesDatabase;
             Assert.NotNull(changesDb);
         }
 
@@ -36,7 +36,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public void CanCreatePendingFolderAdd()
         {
-            var change = this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
+            var change = this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
             Assert.NotEqual(0L, change.ChangeId);
             Assert.Equal(this.CustomLocalFolder1!.LocalId, change.FolderLocalId);
             Assert.Equal(this.CustomLocalFolder1!.Title, change.Title);
@@ -47,7 +47,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                var change = this.db!.PendingChangesDatabase.CreatePendingFolderAdd(99L);
+                var change = this.db!.ChangesDatabase.CreatePendingFolderAdd(99L);
             }
 
             Assert.Throws<FolderNotFoundException>(Work);
@@ -56,22 +56,22 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanGetPendingFolderAddByChangeId()
         {
-            var originalChange = this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-            var readChange = await this.db!.PendingChangesDatabase.GetPendingFolderAddAsync(originalChange.ChangeId);
+            var originalChange = this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
+            var readChange = await this.db!.ChangesDatabase.GetPendingFolderAddAsync(originalChange.ChangeId);
             Assert.Equal(originalChange, readChange);
         }
 
         [Fact]
         public async Task GettingNonExistentPendingFolderAddReturnsNull()
         {
-            var change = await this.db!.PendingChangesDatabase.GetPendingFolderAddAsync(99L);
+            var change = await this.db!.ChangesDatabase.GetPendingFolderAddAsync(99L);
             Assert.Null(change);
         }
 
         [Fact]
         public async Task CanListAllPendingFolderAdds()
         {
-            var changes = this.db!.PendingChangesDatabase;
+            var changes = this.db!.ChangesDatabase;
             var change1 = changes.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
             var change2 = changes.CreatePendingFolderAdd(this.CustomLocalFolder2!.LocalId);
 
@@ -84,7 +84,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task ListingPendingFolderAddsWithNoAddsCompletesWithZeroResults()
         {
-            var results = await this.db!.PendingChangesDatabase.ListPendingFolderAddsAsync();
+            var results = await this.db!.ChangesDatabase.ListPendingFolderAddsAsync();
             Assert.Empty(results);
         }
 
@@ -93,7 +93,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.db!.UnreadFolderLocalId);
+                this.db!.ChangesDatabase.CreatePendingFolderAdd(this.db!.UnreadFolderLocalId);
             }
 
             Assert.Throws<InvalidOperationException>(Work);
@@ -104,7 +104,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.db!.ArchiveFolderLocalId);
+                this.db!.ChangesDatabase.CreatePendingFolderAdd(this.db!.ArchiveFolderLocalId);
             }
 
             Assert.Throws<InvalidOperationException>(Work);
@@ -116,7 +116,7 @@ namespace Codevoid.Test.Storyvoid
         public void CanCreatePendingFolderDelete()
         {
             var f = (ServiceId: 1, Title: "Title");
-            var change = this.db!.PendingChangesDatabase.CreatePendingFolderDelete(f.ServiceId,
+            var change = this.db!.ChangesDatabase.CreatePendingFolderDelete(f.ServiceId,
                                                                                    f.Title);
             Assert.NotEqual(0L, change.ChangeId);
             Assert.Equal(f.ServiceId, change.ServiceId);
@@ -127,8 +127,8 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanGetPendingFolderDeleteByChangeId()
         {
             var f = (ServiceId: 1, Title: "Title");
-            var originalChange = this.db!.PendingChangesDatabase.CreatePendingFolderDelete(f.ServiceId, f.Title);
-            var readChange = await this.db!.PendingChangesDatabase.GetPendingFolderDeleteAsync(originalChange.ChangeId);
+            var originalChange = this.db!.ChangesDatabase.CreatePendingFolderDelete(f.ServiceId, f.Title);
+            var readChange = await this.db!.ChangesDatabase.GetPendingFolderDeleteAsync(originalChange.ChangeId);
 
             Assert.Equal(originalChange, readChange);
         }
@@ -136,14 +136,14 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task GettingNonExistentPendingFolderDeleteReturnsNull()
         {
-            var change = await this.db!.PendingChangesDatabase.GetPendingFolderDeleteAsync(99L);
+            var change = await this.db!.ChangesDatabase.GetPendingFolderDeleteAsync(99L);
             Assert.Null(change);
         }
 
         [Fact]
         public async Task CanListAllPendingFolderDeletes()
         {
-            var changes = this.db!.PendingChangesDatabase;
+            var changes = this.db!.ChangesDatabase;
             var change1 = changes.CreatePendingFolderDelete(1, "Title");
             var change2 = changes.CreatePendingFolderDelete(2, "Title2");
 
@@ -155,7 +155,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task ListingPendingFolderDeletesWithNoDeletesCompletesWithZeroResults()
         {
-            var results = await this.db!.PendingChangesDatabase.ListPendingFolderDeletesAsync();
+            var results = await this.db!.ChangesDatabase.ListPendingFolderDeletesAsync();
             Assert.Empty(results);
         }
 
@@ -164,7 +164,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.PendingChangesDatabase.CreatePendingFolderDelete(WellKnownFolderIds.Unread, "Unread");
+                this.db!.ChangesDatabase.CreatePendingFolderDelete(WellKnownFolderIds.Unread, "Unread");
             }
 
             Assert.Throws<InvalidOperationException>(Work);
@@ -175,7 +175,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.PendingChangesDatabase.CreatePendingFolderDelete(WellKnownFolderIds.Archive, "Archive");
+                this.db!.ChangesDatabase.CreatePendingFolderDelete(WellKnownFolderIds.Archive, "Archive");
             }
 
             Assert.Throws<InvalidOperationException>(Work);

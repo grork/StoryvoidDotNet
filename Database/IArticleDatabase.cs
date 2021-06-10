@@ -235,6 +235,6 @@ namespace Codevoid.Storyvoid
         /// Get pending change database for creating, reading, and removing
         /// pending changes
         /// </summary>
-        IChangesDatabase PendingChangesDatabase { get; }
+        IChangesDatabase ChangesDatabase { get; }
     }
 }

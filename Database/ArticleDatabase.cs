@@ -126,7 +126,7 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public IChangesDatabase PendingChangesDatabase
+        public IChangesDatabase ChangesDatabase
         {
             get
             {
