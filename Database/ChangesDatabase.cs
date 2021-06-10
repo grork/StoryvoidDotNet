@@ -14,6 +14,7 @@ namespace Codevoid.Storyvoid
             this.connection = connection;
         }
 
+#region Pending Folder Adds
         /// <inheritdoc/>
         public PendingFolderAdd CreatePendingFolderAdd(long localFolderId)
         {
@@ -85,6 +86,83 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(ListPendingFolderAdds);
         }
+#endregion
+
+#region Pending Folder Deletes
+        /// <inheritdoc/>
+        public PendingFolderDelete CreatePendingFolderDelete(long serviceId, string title)
+        {
+            var c = this.connection;
+
+            using var query = c.CreateCommand(@"
+                INSERT INTO folder_deletes(service_id, title)
+                VALUES (@serviceId, @title);
+
+                SELECT last_insert_rowid();
+            ");
+
+            query.AddParameter("@serviceId", serviceId);
+            query.AddParameter("@title", title);
+
+            var changeId = (long)query.ExecuteScalar();
+
+            return GetPendingFolderDeleteById(c, changeId)!;
+        }
+
+        private static PendingFolderDelete? GetPendingFolderDeleteById(IDbConnection connection, long changeId)
+        {
+            using var query = connection.CreateCommand(@"
+                SELECT change_id, service_id, title
+                FROM folder_deletes
+                WHERE change_id = @changeId
+            ");
+
+            query.AddParameter("@changeId", changeId);
+
+            PendingFolderDelete? result = null;
+            using var row = query.ExecuteReader();
+            if(row.Read())
+            {
+                result = PendingFolderDelete.FromRow(row);
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public Task<PendingFolderDelete?> GetPendingFolderDeleteAsync(long changeId)
+        {
+            var c = this.connection;
+            return Task.Run(() => GetPendingFolderDeleteById(c, changeId));
+        }
+
+        /// <inheritdoc/>
+        public Task<IList<PendingFolderDelete>> ListPendingFolderDeletesAsync()
+        {
+            var c = this.connection;
+            
+            IList<PendingFolderDelete> ListPendingFolderDeletes()
+            {
+                using var query = c.CreateCommand(@"
+                    SELECT *
+                    FROM folder_deletes
+                ");
+
+                using var pendingFolderDeletes = query.ExecuteReader();
+
+                var result = new List<PendingFolderDelete>();
+                while(pendingFolderDeletes.Read())
+                {
+                    var folderDelete = PendingFolderDelete.FromRow(pendingFolderDeletes);
+                    result.Add(folderDelete);
+                }
+                
+                return result;
+            }
+
+            return Task.Run(ListPendingFolderDeletes);
+        }
+#endregion
 
         /// <summary>
         /// For the supplied DB connection, get an instance of the Pending
