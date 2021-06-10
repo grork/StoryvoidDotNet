@@ -17,26 +17,15 @@ namespace Codevoid.Test.Storyvoid
             this.db = await TestUtilities.GetDatabase();
 
             // Add sample folders
-            var customFolder1 = await this.db.CreateFolderAsync("Sample1");
-            customFolder1 = await this.db.UpdateFolderAsync(
-                customFolder1.LocalId,
-                9L,
-                customFolder1.Title,
-                customFolder1.Position,
-                customFolder1.ShouldSync
-            );
-            this.CustomFolder1 = customFolder1;
+            this.CustomFolder1 = await this.db.AddKnownFolderAsync(title: "Sample1",
+                                                                  serviceId: 9L,
+                                                                  position: 1,
+                                                                  shouldSync: true);
 
-            var customFolder2 = await this.db.CreateFolderAsync("Sample2");
-            customFolder2 = await this.db.UpdateFolderAsync(
-                customFolder2.LocalId,
-                10L,
-                customFolder2.Title,
-                customFolder2.Position,
-                customFolder2.ShouldSync
-            );
-
-            this.CustomFolder2 = customFolder2;
+            this.CustomFolder2 = await this.db.AddKnownFolderAsync(title: "Sample2",
+                                                                   serviceId: 10L,
+                                                                   position: 1,
+                                                                   shouldSync: true);
         }
 
         public Task DisposeAsync()
