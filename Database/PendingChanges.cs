@@ -13,7 +13,7 @@ namespace Codevoid.Storyvoid
         /// <summary>
         /// ID for the pending change itself, so that it can be deleted later.
         /// </summary>
-        public long Id { get; init; }
+        public long ChangeId { get; init; }
 
         /// <summary>
         /// ID of the folder that has been added, so additional information may
@@ -40,7 +40,7 @@ namespace Codevoid.Storyvoid
 
             var change = new PendingFolderAdd()
             {
-                Id = changeId,
+                ChangeId = changeId,
                 FolderLocalId = folderLocalId,
                 Title = title
             };

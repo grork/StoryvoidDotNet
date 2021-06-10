@@ -36,7 +36,7 @@ namespace Codevoid.Test.Storyvoid
         public void CanCreatePendingFolderAdd()
         {
             var change = this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-            Assert.NotEqual(0L, change.Id);
+            Assert.NotEqual(0L, change.ChangeId);
             Assert.Equal(this.CustomLocalFolder1!.LocalId, change.FolderLocalId);
             Assert.Equal(this.CustomLocalFolder1!.Title, change.Title);
         }
@@ -45,7 +45,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanGetPendingFolderAddByChangeId()
         {
             var originalChange = this.db!.PendingChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-            var readChange = await this.db!.PendingChangesDatabase.GetPendingFolderAddAsync(originalChange.Id);
+            var readChange = await this.db!.PendingChangesDatabase.GetPendingFolderAddAsync(originalChange.ChangeId);
             Assert.Equal(originalChange, readChange);
         }
 
