@@ -62,6 +62,14 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
+        public void CanGetPendingFolderAddByLocalFolderId()
+        {
+            var change = this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
+            var changeViaFolderId = this.db!.ChangesDatabase.GetPendingFolderAddByLocalFolderId(this.CustomLocalFolder1!.LocalId);
+            Assert.Equal(change, changeViaFolderId);
+        }
+
+        [Fact]
         public void GettingNonExistentPendingFolderAddReturnsNull()
         {
             var change = this.db!.ChangesDatabase.GetPendingFolderAdd(99L);
@@ -141,6 +149,13 @@ namespace Codevoid.Test.Storyvoid
         {
             _ = this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
             Assert.Throws<DuplicatePendingFolderAdd>(() => this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId));
+        }
+
+        [Fact]
+        public async Task DeletingLocalFolderWithPendingAddShouldFail()
+        {
+            _ = this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => this.db!.DeleteFolderAsync(this.CustomLocalFolder1!.LocalId));
         }
         #endregion
 

@@ -246,6 +246,12 @@ namespace Codevoid.Storyvoid
             this.ThrowIfNotReady();
 
             var c = this.connection;
+            var changesDB = this.ChangesDatabase;
+
+            bool HasPendingFolderAdds()
+            {
+                return (changesDB.GetPendingFolderAddByLocalFolderId(localFolderId) != null);
+            }
 
             // Remove any article-folder-pairs
             void DeleteArticleFolderPairs()
@@ -276,6 +282,10 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
+                if(HasPendingFolderAdds())
+                {
+                    throw new InvalidOperationException($"Folder {localFolderId} had a pending folder add");
+                }
                 DeleteArticleFolderPairs();
                 DeleteFolder();
             });

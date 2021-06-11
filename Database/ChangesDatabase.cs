@@ -87,6 +87,27 @@ namespace Codevoid.Storyvoid
             return GetPendingFolderAddById(c, changeId);
         }
 
+        public PendingFolderAdd? GetPendingFolderAddByLocalFolderId(long localFolderId)
+        {
+            var c = connection;
+            using var query = c.CreateCommand(@"
+                SELECT change_id, local_id, title
+                FROM folder_adds_with_folder_information
+                WHERE local_id = @localFolderId
+            ");
+
+            query.AddParameter("@localFolderId", localFolderId);
+
+            PendingFolderAdd? result = null;
+            using var row = query.ExecuteReader();
+            if (row.Read())
+            {
+                result = PendingFolderAdd.FromRow(row);
+            }
+
+            return result;
+        }
+
         /// <inheritdoc/>
         public void RemovePendingFolderAdd(long changeId)
         {

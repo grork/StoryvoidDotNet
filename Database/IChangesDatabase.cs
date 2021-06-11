@@ -34,6 +34,13 @@ namespace Codevoid.Storyvoid
         PendingFolderAdd? GetPendingFolderAdd(long changeId);
 
         /// <summary>
+        /// Gets a pending folder add by the local folder ID if it exists.
+        /// </summary>
+        /// <param name="localFolderId">Local folder ID to search for</param>
+        /// <returns>Pending folder add if found</returns>
+        PendingFolderAdd? GetPendingFolderAddByLocalFolderId(long localFolderId);
+
+        /// <summary>
         /// Returns all pending folder additions
         /// </summary>
         /// <returns>Unordered list of folders that have been added</returns>
