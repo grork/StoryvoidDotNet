@@ -81,10 +81,10 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<PendingFolderAdd?> GetPendingFolderAddAsync(long changeId)
+        public PendingFolderAdd? GetPendingFolderAdd(long changeId)
         {
             var c = this.connection;
-            return Task.Run(() => GetPendingFolderAddById(c, changeId));
+            return GetPendingFolderAddById(c, changeId);
         }
 
         /// <inheritdoc/>
@@ -103,30 +103,25 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<IList<PendingFolderAdd>> ListPendingFolderAddsAsync()
+        public IList<PendingFolderAdd> ListPendingFolderAdds()
         {
             var c = this.connection;
 
-            IList<PendingFolderAdd> ListPendingFolderAdds()
+            using var query = c.CreateCommand(@"
+                SELECT *
+                FROM folder_adds_with_folder_information
+            ");
+
+            using var pendingFolderAdds = query.ExecuteReader();
+
+            var result = new List<PendingFolderAdd>();
+            while (pendingFolderAdds.Read())
             {
-                using var query = c.CreateCommand(@"
-                    SELECT *
-                    FROM folder_adds_with_folder_information
-                ");
-
-                using var pendingFolderAdds = query.ExecuteReader();
-
-                var result = new List<PendingFolderAdd>();
-                while (pendingFolderAdds.Read())
-                {
-                    var folderAdd = PendingFolderAdd.FromRow(pendingFolderAdds);
-                    result.Add(folderAdd);
-                }
-
-                return result;
+                var folderAdd = PendingFolderAdd.FromRow(pendingFolderAdds);
+                result.Add(folderAdd);
             }
 
-            return Task.Run(ListPendingFolderAdds);
+            return result;
         }
         #endregion
 
@@ -199,37 +194,32 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<PendingFolderDelete?> GetPendingFolderDeleteAsync(long changeId)
+        public PendingFolderDelete? GetPendingFolderDelete(long changeId)
         {
             var c = this.connection;
-            return Task.Run(() => GetPendingFolderDeleteByChangeId(c, changeId));
+            return GetPendingFolderDeleteByChangeId(c, changeId);
         }
 
         /// <inheritdoc/>
-        public Task<IList<PendingFolderDelete>> ListPendingFolderDeletesAsync()
+        public IList<PendingFolderDelete> ListPendingFolderDeletes()
         {
             var c = this.connection;
 
-            IList<PendingFolderDelete> ListPendingFolderDeletes()
+            using var query = c.CreateCommand(@"
+                SELECT *
+                FROM folder_deletes
+            ");
+
+            using var pendingFolderDeletes = query.ExecuteReader();
+
+            var result = new List<PendingFolderDelete>();
+            while (pendingFolderDeletes.Read())
             {
-                using var query = c.CreateCommand(@"
-                    SELECT *
-                    FROM folder_deletes
-                ");
-
-                using var pendingFolderDeletes = query.ExecuteReader();
-
-                var result = new List<PendingFolderDelete>();
-                while (pendingFolderDeletes.Read())
-                {
-                    var folderDelete = PendingFolderDelete.FromRow(pendingFolderDeletes);
-                    result.Add(folderDelete);
-                }
-
-                return result;
+                var folderDelete = PendingFolderDelete.FromRow(pendingFolderDeletes);
+                result.Add(folderDelete);
             }
 
-            return Task.Run(ListPendingFolderDeletes);
+            return result;
         }
         #endregion
 

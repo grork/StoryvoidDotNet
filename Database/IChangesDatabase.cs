@@ -31,13 +31,13 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="changeId">Change ID for that folder add</param>
         /// <returns>Change for the supplied ID</returns>
-        Task<PendingFolderAdd?> GetPendingFolderAddAsync(long changeId);
+        PendingFolderAdd? GetPendingFolderAdd(long changeId);
 
         /// <summary>
         /// Returns all pending folder additions
         /// </summary>
         /// <returns>Unordered list of folders that have been added</returns>
-        Task<IList<PendingFolderAdd>> ListPendingFolderAddsAsync();
+        IList<PendingFolderAdd> ListPendingFolderAdds();
 
         /// <summary>
         /// Create a pending folder delete in the changes database
@@ -60,12 +60,12 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="changeId">Change ID for that folder delete</param>
         /// <returns>A pending folder delete instance if foudn</returns>
-        Task<PendingFolderDelete?> GetPendingFolderDeleteAsync(long changeId);
+        PendingFolderDelete? GetPendingFolderDelete(long changeId);
 
         /// <summary>
         /// Returns all pending folder deletes
         /// </summary>
         /// <returns>Unordered list of folders that have been deleted</returns>
-        Task<IList<PendingFolderDelete>> ListPendingFolderDeletesAsync();
+        IList<PendingFolderDelete> ListPendingFolderDeletes();
     }
 }
