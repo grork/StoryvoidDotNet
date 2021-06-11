@@ -83,6 +83,21 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
+        public void RemovePendingFolderAdd(long changeId)
+        {
+            var c = this.connection;
+
+            using var query = c.CreateCommand(@"
+                DELETE FROM folder_adds
+                WHERE change_id = @changeId
+            ");
+
+            query.AddParameter("@changeId", changeId);
+
+            query.ExecuteNonQuery();
+        }
+
+        /// <inheritdoc/>
         public Task<IList<PendingFolderAdd>> ListPendingFolderAddsAsync()
         {
             var c = this.connection;
@@ -134,6 +149,21 @@ namespace Codevoid.Storyvoid
             var changeId = (long)query.ExecuteScalar();
 
             return GetPendingFolderDeleteById(c, changeId)!;
+        }
+
+        /// <inheritdoc/>
+        public void RemovePendingFolderDelete(long changeId)
+        {
+            var c = this.connection;
+
+            using var query = c.CreateCommand(@"
+                DELETE FROM folder_deletes
+                WHERE change_id = @changeId
+            ");
+
+            query.AddParameter("@changeId", changeId);
+
+            query.ExecuteNonQuery();
         }
 
         private static PendingFolderDelete? GetPendingFolderDeleteById(IDbConnection connection, long changeId)

@@ -19,6 +19,13 @@ namespace Codevoid.Storyvoid
         PendingFolderAdd CreatePendingFolderAdd(long localFolderId);
 
         /// <summary>
+        /// Removes a pending folder add from the changes database. If no change
+        /// with that ID is present, it completes silently.
+        /// </summary>
+        /// <param name="changeId">Pending folder add to remove</param>
+        void RemovePendingFolderAdd(long changeId);
+
+        /// <summary>
         /// Gets a specific pending folder addition by the change ID for that
         /// change, if present in the database.
         /// </summary>
@@ -39,6 +46,13 @@ namespace Codevoid.Storyvoid
         /// <param name="title">Title at the time of deleition</param>
         /// <returns>Instance representing the pending folder delete</returns>
         PendingFolderDelete CreatePendingFolderDelete(long serviceId, string title);
+
+        /// <summary>
+        /// Removes a pending folder delete from the changes database. If no
+        /// change with that is present, it completes silently
+        /// </summary>
+        /// <param name="changeId">Pending folder delete to remove </param>
+        void RemovePendingFolderDelete(long changeId);
 
         /// <summary>
         /// Get a specific pending folder delete by the change ID for that
