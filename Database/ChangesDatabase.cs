@@ -53,6 +53,11 @@ namespace Codevoid.Storyvoid
             {
                 throw new FolderNotFoundException(localFolderId);
             }
+            catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                         && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
+            {
+                throw new DuplicatePendingFolderAdd(localFolderId);
+            }
         }
 
         private static PendingFolderAdd? GetPendingFolderAddById(IDbConnection connection, long changeId)
@@ -146,9 +151,16 @@ namespace Codevoid.Storyvoid
             query.AddParameter("@serviceId", serviceId);
             query.AddParameter("@title", title);
 
-            var changeId = (long)query.ExecuteScalar();
-
-            return GetPendingFolderDeleteById(c, changeId)!;
+            try
+            {
+                var changeId = (long)query.ExecuteScalar();
+                return GetPendingFolderDeleteByChangeId(c, changeId)!;
+            }
+            catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                         && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
+            {
+                throw new DuplicatePendingFolderDelete(serviceId);
+            }
         }
 
         /// <inheritdoc/>
@@ -166,7 +178,7 @@ namespace Codevoid.Storyvoid
             query.ExecuteNonQuery();
         }
 
-        private static PendingFolderDelete? GetPendingFolderDeleteById(IDbConnection connection, long changeId)
+        private static PendingFolderDelete? GetPendingFolderDeleteByChangeId(IDbConnection connection, long changeId)
         {
             using var query = connection.CreateCommand(@"
                 SELECT change_id, service_id, title
@@ -190,7 +202,7 @@ namespace Codevoid.Storyvoid
         public Task<PendingFolderDelete?> GetPendingFolderDeleteAsync(long changeId)
         {
             var c = this.connection;
-            return Task.Run(() => GetPendingFolderDeleteById(c, changeId));
+            return Task.Run(() => GetPendingFolderDeleteByChangeId(c, changeId));
         }
 
         /// <inheritdoc/>

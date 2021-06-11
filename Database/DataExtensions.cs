@@ -12,6 +12,7 @@ namespace Codevoid.Storyvoid
         internal const int SQLITE_CONSTRAINT = 19;
         internal const int SQLITE_CONSTRAINT_FOREIGNKEY = 787;
         internal const int SQLITE_CONSTRAINT_PRIMARYKEY = 1555;
+        internal const int SQLITE_CONSTRAINT_UNIQUE = 2067;
     }
 
     /// <summary>

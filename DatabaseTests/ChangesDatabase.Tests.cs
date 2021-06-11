@@ -135,6 +135,13 @@ namespace Codevoid.Test.Storyvoid
 
             Assert.Throws<InvalidOperationException>(Work);
         }
+
+        [Fact]
+        public void AddingDuplicatePendingFolderAddShouldFail()
+        {
+            _ = this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
+            Assert.Throws<DuplicatePendingFolderAdd>(() => this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId));
+        }
         #endregion
 
         #region Pending Folder Deletes
@@ -231,6 +238,27 @@ namespace Codevoid.Test.Storyvoid
             }
 
             Assert.Throws<InvalidOperationException>(Work);
+        }
+
+        [Fact]
+        public void AddingDuplicatePendingFolderDeleteShouldForServiceId()
+        {
+            _ = this.db!.ChangesDatabase.CreatePendingFolderDelete(99L, "Title");
+            Assert.Throws<DuplicatePendingFolderDelete>(() => this.db!.ChangesDatabase.CreatePendingFolderDelete(99L, "Title2"));
+        }
+
+        [Fact]
+        public void AddingDuplicatePendingFolderDeleteShouldForTitle()
+        {
+            _ = this.db!.ChangesDatabase.CreatePendingFolderDelete(99L, "Title");
+            Assert.Throws<DuplicatePendingFolderDelete>(() => this.db!.ChangesDatabase.CreatePendingFolderDelete(98L, "Title"));
+        }
+
+        [Fact]
+        public void AddingDuplicatePendingFolderDeleteShouldForServiceIdAndTitle()
+        {
+            _ = this.db!.ChangesDatabase.CreatePendingFolderDelete(99L, "Title");
+            Assert.Throws<DuplicatePendingFolderDelete>(() => this.db!.ChangesDatabase.CreatePendingFolderDelete(99L, "Title"));
         }
         #endregion
     }

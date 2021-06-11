@@ -39,4 +39,24 @@ namespace Codevoid.Storyvoid
             this.ArticleId = articleId;
         }
     }
+
+    public sealed class DuplicatePendingFolderDelete : Exception
+    {
+        public readonly long ServiceId;
+        public DuplicatePendingFolderDelete(long serviceId)
+            : base($"A pending folder delete was already present for {serviceId}")
+        {
+            this.ServiceId = serviceId;
+        }
+    }
+
+    public sealed class DuplicatePendingFolderAdd : Exception
+    {
+        public readonly long LocalFolderId;
+        public DuplicatePendingFolderAdd(long localFolderId)
+            : base($"A pending folder add was already present for {localFolderId}")
+        {
+            this.LocalFolderId = localFolderId;
+        }
+    }
 }
