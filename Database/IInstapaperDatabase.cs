@@ -30,7 +30,7 @@ namespace Codevoid.Storyvoid
     /// <summary>
     /// Database store for Articles &amp; Folders from the Instapaper Service
     /// </summary>
-    public interface IArticleDatabase : IDisposable
+    public interface IInstapaperDatabase : IDisposable
     {
         /// <summary>
         /// The database ID of the unread folder

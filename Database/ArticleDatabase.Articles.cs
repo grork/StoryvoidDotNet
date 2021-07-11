@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid
 {
-    sealed partial class ArticleDatabase
+    sealed partial class InstapaperDatabase
     {
         private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
@@ -75,7 +75,7 @@ namespace Codevoid.Storyvoid
             this.ThrowIfNotReady();
 
             var c = this.connection;
-            return Task.Run(() => ArticleDatabase.GetArticleById(c, id));
+            return Task.Run(() => InstapaperDatabase.GetArticleById(c, id));
         }
 
         private static DatabaseArticle? GetArticleById(IDbConnection connection, long id)
@@ -152,7 +152,7 @@ namespace Codevoid.Storyvoid
 
                 AddArticle();
                 PairArticleToFolder();
-                return ArticleDatabase.GetArticleById(c, data.id)!;
+                return InstapaperDatabase.GetArticleById(c, data.id)!;
             });
         }
 
@@ -197,7 +197,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateArticle();
-                return ArticleDatabase.GetArticleById(c, updatedData.id)!;
+                return InstapaperDatabase.GetArticleById(c, updatedData.id)!;
             });
         }
 
@@ -229,7 +229,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForArticle(c, id, true);
-                return ArticleDatabase.GetArticleById(c, id)!;
+                return InstapaperDatabase.GetArticleById(c, id)!;
             });
         }
 
@@ -243,7 +243,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateLikeStatusForArticle(c, id, false);
-                return ArticleDatabase.GetArticleById(c, id)!;
+                return InstapaperDatabase.GetArticleById(c, id)!;
             });
         }
 
@@ -299,7 +299,7 @@ namespace Codevoid.Storyvoid
             return Task.Run(() =>
             {
                 UpdateProgressForArticle();
-                return ArticleDatabase.GetArticleById(c, articleId)!;
+                return InstapaperDatabase.GetArticleById(c, articleId)!;
             });
         }
 
@@ -331,7 +331,7 @@ namespace Codevoid.Storyvoid
                     throw new FolderNotFoundException(localFolderId);
                 }
 
-                if (ArticleDatabase.GetArticleById(c, articleId) == null)
+                if (InstapaperDatabase.GetArticleById(c, articleId) == null)
                 {
                     throw new ArticleNotFoundException(articleId);
                 }
@@ -365,7 +365,7 @@ namespace Codevoid.Storyvoid
                 // key relationship to the articles table. This is expected
                 // to not throw an error if there is no local state associated
                 // with the article being deleted.
-                ArticleDatabase.DeleteLocalOnlyArticleState(c, articleId);
+                InstapaperDatabase.DeleteLocalOnlyArticleState(c, articleId);
 
                 // Now that we've deleted the local state, we can delete the
                 // article itself.

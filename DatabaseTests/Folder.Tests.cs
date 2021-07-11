@@ -22,7 +22,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(folder1!.ShouldSync, folder2!.ShouldSync);
         }
 
-        private IArticleDatabase? db;
+        private IInstapaperDatabase? db;
         public async Task InitializeAsync() => this.db = await TestUtilities.GetDatabase();
         public Task DisposeAsync()
         {

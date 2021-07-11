@@ -7,7 +7,7 @@ namespace Codevoid.Test.Storyvoid
 {
     public sealed class ChangesDatabaseTests : IAsyncLifetime
     {
-        private IArticleDatabase? db;
+        private IInstapaperDatabase? db;
         private DatabaseFolder? CustomLocalFolder1;
         private DatabaseFolder? CustomLocalFolder2;
 

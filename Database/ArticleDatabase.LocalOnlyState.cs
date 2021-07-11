@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid
 {
-    sealed partial class ArticleDatabase
+    sealed partial class InstapaperDatabase
     {
         private static DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(IDbConnection connection, long articleId)
         {
@@ -33,7 +33,7 @@ namespace Codevoid.Storyvoid
             this.ThrowIfNotReady();
 
             var c = this.connection;
-            return Task.Run(() => ArticleDatabase.GetLocalOnlyStateByArticleId(c, articleId));
+            return Task.Run(() => InstapaperDatabase.GetLocalOnlyStateByArticleId(c, articleId));
         }
 
         /// <inheritdoc/>
@@ -97,7 +97,7 @@ namespace Codevoid.Storyvoid
             {
                 AddLocalyOnlyState();
 
-                return ArticleDatabase.GetLocalOnlyStateByArticleId(c, localOnlyArticleState.ArticleId)!;
+                return InstapaperDatabase.GetLocalOnlyStateByArticleId(c, localOnlyArticleState.ArticleId)!;
             });
         }
 
@@ -119,7 +119,7 @@ namespace Codevoid.Storyvoid
 
             var c = this.connection;
 
-            return Task.Run(() => ArticleDatabase.DeleteLocalOnlyArticleState(c, articleId));
+            return Task.Run(() => InstapaperDatabase.DeleteLocalOnlyArticleState(c, articleId));
         }
 
         public Task<DatabaseLocalOnlyArticleState> UpdateLocalOnlyArticleStateAsync(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)
@@ -162,7 +162,7 @@ namespace Codevoid.Storyvoid
                 {
                     // Nothing was updated; check if it was just that there was
                     // no existing state to update
-                    var state = ArticleDatabase.GetLocalOnlyStateByArticleId(c, articleId);
+                    var state = InstapaperDatabase.GetLocalOnlyStateByArticleId(c, articleId);
                     if (state == null)
                     {
                         throw new LocalOnlyStateNotFoundException(articleId);
@@ -171,7 +171,7 @@ namespace Codevoid.Storyvoid
                     throw new InvalidOperationException("Unknown error while updating local only state");
                 }
 
-                var local = ArticleDatabase.GetLocalOnlyStateByArticleId(c, articleId);
+                var local = InstapaperDatabase.GetLocalOnlyStateByArticleId(c, articleId);
                 return local!;
             }
 

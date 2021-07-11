@@ -9,7 +9,7 @@ namespace Codevoid.Test.Storyvoid
 {
     public class LocalOnlyStateTests : IAsyncLifetime
     {
-        private IArticleDatabase? db;
+        private IInstapaperDatabase? db;
         private IList<DatabaseArticle> sampleArticles = new List<DatabaseArticle>();
 
         public async Task InitializeAsync()

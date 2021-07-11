@@ -6,10 +6,10 @@ namespace Codevoid.Test.Storyvoid
 {
     public static class TestUtilities
     {
-        internal static async Task<IArticleDatabase> GetDatabase()
+        internal static async Task<IInstapaperDatabase> GetDatabase()
         {
             var connection = new SqliteConnection("Data Source=:memory:");
-            var db = new ArticleDatabase(connection);
+            var db = new InstapaperDatabase(connection);
             await db.OpenOrCreateDatabaseAsync();
 
             return db;

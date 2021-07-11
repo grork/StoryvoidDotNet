@@ -8,7 +8,7 @@ namespace Codevoid.Test.Storyvoid
 {
     public sealed class ArticleTests : IAsyncLifetime
     {
-        private IArticleDatabase? db;
+        private IInstapaperDatabase? db;
         private DatabaseFolder? CustomFolder1;
         private DatabaseFolder? CustomFolder2;
 

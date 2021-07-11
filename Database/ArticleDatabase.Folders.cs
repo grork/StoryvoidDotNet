@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid
 {
-    sealed partial class ArticleDatabase
+    sealed partial class InstapaperDatabase
     {
         /// <inheritdoc/>
         public Task<IList<DatabaseFolder>> ListAllFoldersAsync()

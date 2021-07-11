@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid
 {
-    internal sealed partial class ArticleDatabase : IArticleDatabase, IDisposable
+    internal sealed partial class InstapaperDatabase : IInstapaperDatabase, IDisposable
     {
         // To help diagnose calls that skipped initialization
         private int initialized = 0;
@@ -19,7 +19,7 @@ namespace Codevoid.Storyvoid
         private readonly IDbConnection connection;
         private IChangesDatabase? changesDatabase;
 
-        public ArticleDatabase(IDbConnection connection)
+        public InstapaperDatabase(IDbConnection connection)
         {
             this.connection = connection;
         }

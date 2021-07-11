@@ -18,10 +18,10 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanReopenDatabase()
         {
             using var connection = new SqliteConnection("Data Source=:memory:");
-            var first = new ArticleDatabase(connection);
+            var first = new InstapaperDatabase(connection);
             await first.OpenOrCreateDatabaseAsync();
 
-            var second = new ArticleDatabase(connection);
+            var second = new InstapaperDatabase(connection);
             await first.OpenOrCreateDatabaseAsync();
         }
     }
