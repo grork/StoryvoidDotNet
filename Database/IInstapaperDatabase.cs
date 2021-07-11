@@ -33,6 +33,12 @@ namespace Codevoid.Storyvoid
     public interface IInstapaperDatabase : IDisposable
     {
         /// <summary>
+        /// Get pending change database for creating, reading, and removing
+        /// pending changes
+        /// </summary>
+        IChangesDatabase ChangesDatabase { get; }
+
+        /// <summary>
         /// The database ID of the unread folder
         /// </summary>
         long UnreadFolderLocalId { get; }
@@ -230,11 +236,5 @@ namespace Codevoid.Storyvoid
         /// </param>
         /// <returns>The updated details</returns>
         Task<DatabaseLocalOnlyArticleState> UpdateLocalOnlyArticleStateAsync(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState);
-
-        /// <summary>
-        /// Get pending change database for creating, reading, and removing
-        /// pending changes
-        /// </summary>
-        IChangesDatabase ChangesDatabase { get; }
     }
 }
