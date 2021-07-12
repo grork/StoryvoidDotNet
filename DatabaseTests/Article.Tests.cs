@@ -8,29 +8,34 @@ namespace Codevoid.Test.Storyvoid
 {
     public sealed class ArticleTests : IAsyncLifetime
     {
-        private IInstapaperDatabase? db;
+        private IArticleDatabase? db;
+        private IInstapaperDatabase? instapaperDb;
         private DatabaseFolder? CustomFolder1;
         private DatabaseFolder? CustomFolder2;
+        private long unreadFolderLocalId = 0;
 
         public async Task InitializeAsync()
         {
-            this.db = await TestUtilities.GetDatabase();
+            this.instapaperDb = await TestUtilities.GetDatabase();
+            this.db = this.instapaperDb.ArticleDatabase;
 
             // Add sample folders
-            this.CustomFolder1 = await this.db.AddKnownFolderAsync(title: "Sample1",
+            this.CustomFolder1 = await this.instapaperDb.FolderDatabase.AddKnownFolderAsync(title: "Sample1",
                                                                   serviceId: 9L,
                                                                   position: 1,
                                                                   shouldSync: true);
 
-            this.CustomFolder2 = await this.db.AddKnownFolderAsync(title: "Sample2",
+            this.CustomFolder2 = await this.instapaperDb.FolderDatabase.AddKnownFolderAsync(title: "Sample2",
                                                                    serviceId: 10L,
                                                                    position: 1,
                                                                    shouldSync: true);
+
+            this.unreadFolderLocalId = this.instapaperDb.FolderDatabase.UnreadFolderLocalId;
         }
 
         public Task DisposeAsync()
         {
-            this.db?.Dispose();
+            this.instapaperDb?.Dispose();
             return Task.CompletedTask;
         }
 
@@ -62,7 +67,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanListArticlesWhenEmpty()
         {
-            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Empty(articles);
         }
 
@@ -70,7 +75,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanAddArticles()
         {
             var a = this.GetRandomArticle();
-            var result = await this.db!.AddArticleToFolderAsync(a, this.db!.UnreadFolderLocalId);
+            var result = await this.db!.AddArticleToFolderAsync(a, this.unreadFolderLocalId);
 
             // Ensure the article we are handed back on completion is the
             // same (for supplied fields) as that which is returned
@@ -86,7 +91,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanGetSingleArticle()
         {
-            var a = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var a = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
 
             var retrievedArticle = (await this.db!.GetArticleByIdAsync(a.Id))!;
             Assert.Equal(a.ReadProgressTimestamp, retrievedArticle.ReadProgressTimestamp);
@@ -108,9 +113,9 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanListArticlesInUnreadFolder()
         {
-            var article = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
 
-            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Equal(1, articles.Count);
             Assert.Contains(articles, (b) => b.Id == article.Id);
 
@@ -153,7 +158,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task ArticlesAreOnlyReturnedInTheirOwningFolders()
         {
             var customFolderArticle = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
-            var unreadFolderArticle = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var unreadFolderArticle = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
 
             var customFolderArticles = await this.db!.ListArticlesForLocalFolderAsync(this.CustomFolder1.LocalId);
             Assert.Equal(1, customFolderArticles.Count);
@@ -166,7 +171,7 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(customFolderArticle.Hash, customArticleFromListing.Hash);
             Assert.False(customArticleFromListing.HasLocalState);
 
-            var unreadFolderArticles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadFolderArticles = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Equal(1, unreadFolderArticles.Count);
             Assert.Contains(unreadFolderArticles, (b) => b.Id == unreadFolderArticle.Id);
 
@@ -188,7 +193,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanLikeArticleThatIsUnliked()
         {
-            var unlikedArticle = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var unlikedArticle = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
             var likedArticle = await this.db!.LikeArticleAsync(unlikedArticle.Id);
             Assert.Equal(unlikedArticle.Id, likedArticle.Id);
             Assert.True(likedArticle.Liked);
@@ -201,7 +206,7 @@ namespace Codevoid.Test.Storyvoid
 
             _ = await this.db!.AddArticleToFolderAsync(
                 article,
-                this.db!.UnreadFolderLocalId
+                this.unreadFolderLocalId
             );
 
             var likedArticles = await this.db!.ListLikedArticleAsync();
@@ -213,7 +218,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task ListingLikedArticlesReturnsResultsAcrossFolders()
         {
             var article1 = this.GetRandomArticle() with { liked = true };
-            _ = await this.db!.AddArticleToFolderAsync(article1, this.db!.UnreadFolderLocalId);
+            _ = await this.db!.AddArticleToFolderAsync(article1, this.unreadFolderLocalId);
 
             var article2 = this.GetRandomArticle() with { liked = true };
             _ = await this.db!.AddArticleToFolderAsync(article2, this.CustomFolder1!.LocalId);
@@ -228,7 +233,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanUnlikeArticleThatIsLiked()
         {
             var a = this.GetRandomArticle() with { liked = true };
-            var likedArticle = await this.db!.AddArticleToFolderAsync(a, this.db!.UnreadFolderLocalId);
+            var likedArticle = await this.db!.AddArticleToFolderAsync(a, this.unreadFolderLocalId);
 
             var unlikedArticle = await this.db!.UnlikeArticleAsync(likedArticle.Id);
             Assert.Equal(likedArticle.Id, unlikedArticle.Id);
@@ -256,7 +261,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task LikingArticleThatIsLikedSucceeds()
         {
-            var likedArticleOriginal = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var likedArticleOriginal = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
             var likedArticle = await this.db!.LikeArticleAsync(likedArticleOriginal.Id);
 
             Assert.Equal(likedArticleOriginal.Id, likedArticle.Id);
@@ -266,7 +271,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task UnlikingArticleThatIsNotLikedSucceeds()
         {
-            var unlikedArticleOriginal = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var unlikedArticleOriginal = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
             var unlikedArticle = await this.db!.UnlikeArticleAsync(unlikedArticleOriginal.Id);
 
             Assert.Equal(unlikedArticleOriginal.Id, unlikedArticle.Id);
@@ -276,7 +281,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanUpdateArticleProgressWithTimeStamp()
         {
-            var article = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
 
             var progressTimestamp = DateTime.Now.AddMinutes(5);
             var progress = 0.3F;
@@ -290,9 +295,9 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task ProgressUpdateChangesReflectedInListCall()
         {
-            var article = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
 
-            var beforeUpdate = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var beforeUpdate = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Equal(1, beforeUpdate.Count);
             Assert.Contains(beforeUpdate, (a) =>
                 (a.Id == article.Id) && a.ReadProgress == article.ReadProgress && a.ReadProgressTimestamp == article.ReadProgressTimestamp);
@@ -300,7 +305,7 @@ namespace Codevoid.Test.Storyvoid
             var progressTimestamp = DateTime.Now.AddMinutes(5);
             var progress = 0.3F;
             article = await this.db!.UpdateReadProgressForArticleAsync(progress, progressTimestamp, article.Id);
-            var afterUpdate = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var afterUpdate = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Equal(1, afterUpdate.Count);
             Assert.Contains(afterUpdate, (a) =>
                 (a.Id == article.Id) && a.ReadProgress == progress && a.ReadProgressTimestamp == progressTimestamp);
@@ -320,7 +325,7 @@ namespace Codevoid.Test.Storyvoid
         {
             _ = await this.db!.AddArticleToFolderAsync(
                 this.GetRandomArticle(),
-                this.db!.UnreadFolderLocalId
+                this.unreadFolderLocalId
             );
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
@@ -339,7 +344,7 @@ namespace Codevoid.Test.Storyvoid
         {
             _ = await this.db!.AddArticleToFolderAsync(
                 this.GetRandomArticle(),
-                this.db!.UnreadFolderLocalId
+                this.unreadFolderLocalId
             );
 
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
@@ -351,7 +356,7 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanMoveArticleFromUnreadToCustomFolder()
         {
-            var article = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
             await this.db!.MoveArticleToFolderAsync(article.Id, this.CustomFolder1!.LocalId);
 
             // Check it's in the destination
@@ -360,23 +365,23 @@ namespace Codevoid.Test.Storyvoid
             Assert.Contains(customArticles, (a) => a.Id == article.Id);
 
             // Check it's not present in unread
-            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Empty(unreadArticles);
         }
 
         [Fact]
         public async Task CanMoveArticlesFromUnreadToArchiveFolder()
         {
-            var article = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
-            await this.db!.MoveArticleToFolderAsync(article.Id, this.db!.ArchiveFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
+            await this.db!.MoveArticleToFolderAsync(article.Id, this.instapaperDb!.FolderDatabase.ArchiveFolderLocalId);
 
             // Check it's in the destination
-            var archivedArticles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.ArchiveFolderLocalId);
+            var archivedArticles = await this.db!.ListArticlesForLocalFolderAsync(this.instapaperDb!.FolderDatabase.ArchiveFolderLocalId);
             Assert.Equal(1, archivedArticles.Count);
             Assert.Contains(archivedArticles, (b) => b.Id == article.Id);
 
             // Check it's not present in unread
-            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Empty(unreadArticles);
         }
 
@@ -384,10 +389,10 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanMoveArticleFromCustomFolderToUnread()
         {
             var article = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
-            await this.db!.MoveArticleToFolderAsync(article.Id, this.db!.UnreadFolderLocalId);
+            await this.db!.MoveArticleToFolderAsync(article.Id, this.unreadFolderLocalId);
 
             // Check it's in the destination
-            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Equal(1, unreadArticles.Count);
             Assert.Contains(unreadArticles, (b) => b.Id == article.Id);
 
@@ -399,23 +404,23 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public async Task CanMoveArticleFromArchiveToUnread()
         {
-            var article = await this.AddRandomArticleToFolder(this.db!.ArchiveFolderLocalId);
-            await this.db!.MoveArticleToFolderAsync(article.Id, this.db!.UnreadFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.instapaperDb!.FolderDatabase.ArchiveFolderLocalId);
+            await this.db!.MoveArticleToFolderAsync(article.Id, this.unreadFolderLocalId);
 
             // Check it's in the destination
-            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Equal(1, unreadArticles.Count);
             Assert.Contains(unreadArticles, (b) => b.Id == article.Id);
 
             // Check it's not present in unread
-            var archiveArticles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.ArchiveFolderLocalId);
+            var archiveArticles = await this.db!.ListArticlesForLocalFolderAsync(this.instapaperDb!.FolderDatabase.ArchiveFolderLocalId);
             Assert.Empty(archiveArticles);
         }
 
         [Fact]
         public async Task MovingArticleFromUnreadToNonExistantFolderThrows()
         {
-            var article = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
             await Assert.ThrowsAsync<FolderNotFoundException>(() => this.db!.MoveArticleToFolderAsync(article.Id, 999));
         }
 
@@ -448,18 +453,18 @@ namespace Codevoid.Test.Storyvoid
             _ = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
             _ = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
 
-            await this.db!.DeleteFolderAsync(this.CustomFolder1!.LocalId);
-            var folders = await this.db!.ListAllFoldersAsync();
+            await this.instapaperDb!.FolderDatabase.DeleteFolderAsync(this.CustomFolder1!.LocalId);
+            var folders = await this.instapaperDb!.FolderDatabase.ListAllFoldersAsync();
             Assert.DoesNotContain(folders, (f) => f.LocalId == this.CustomFolder1!.LocalId);
         }
 
         [Fact]
         public async Task CanDeleteArticleInUnreadFolder()
         {
-            var article = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
             await this.db!.DeleteArticleAsync(article.Id);
 
-            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var unreadArticles = await this.db!.ListArticlesForLocalFolderAsync(this.unreadFolderLocalId);
             Assert.Empty(unreadArticles);
         }
 
@@ -483,7 +488,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanDeleteOrphanedArticle()
         {
             var article = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
-            await this.db!.DeleteFolderAsync(this.CustomFolder1!.LocalId);
+            await this.instapaperDb!.FolderDatabase.DeleteFolderAsync(this.CustomFolder1!.LocalId);
             await this.db!.DeleteArticleAsync(article.Id);
         }
 
@@ -491,7 +496,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanGetArticle()
         {
             var article = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
-            await this.db!.DeleteFolderAsync(this.CustomFolder1!.LocalId);
+            await this.instapaperDb!.FolderDatabase.DeleteFolderAsync(this.CustomFolder1!.LocalId);
 
             var orphaned = await this.db!.GetArticleByIdAsync(article.Id);
             Assert.NotNull(orphaned);
@@ -502,11 +507,11 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanUpdateArticlekWithFullSetOfInformation()
         {
             // Get article
-            var article = await this.AddRandomArticleToFolder(this.db!.UnreadFolderLocalId);
+            var article = await this.AddRandomArticleToFolder(this.unreadFolderLocalId);
 
             // Update article with new title
             var newTitle = "New Title";
-            var updatedArticle = await this.db.UpdateArticleAsync(new(article.Id, newTitle, article.Url, article.Description, article.ReadProgress, article.ReadProgressTimestamp, article.Hash, article.Liked));
+            var updatedArticle = await this.db!.UpdateArticleAsync(new(article.Id, newTitle, article.Url, article.Description, article.ReadProgress, article.ReadProgressTimestamp, article.Hash, article.Liked));
 
             // Check returned values are correct
             Assert.Equal(article.Id, updatedArticle.Id);

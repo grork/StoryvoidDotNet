@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid
 {
-    internal sealed partial class InstapaperDatabase : IInstapaperDatabase, IDisposable
+    internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
+                                                       IFolderDatabase,
+                                                       IArticleDatabase,
+                                                       IDisposable
     {
         // To help diagnose calls that skipped initialization
         private int initialized = 0;
@@ -138,6 +141,18 @@ namespace Codevoid.Storyvoid
 
                 return this.changesDatabase;
             }
+        }
+
+        /// <inheritdoc />
+        public IFolderDatabase FolderDatabase
+        {
+            get { return this; }
+        }
+
+        /// <inheritdoc />
+        public IArticleDatabase ArticleDatabase
+        {
+            get { return this; }
         }
     }
 }

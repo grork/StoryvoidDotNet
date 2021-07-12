@@ -15,8 +15,8 @@ namespace Codevoid.Test.Storyvoid
         {
             this.db = await TestUtilities.GetDatabase();
 
-            this.CustomLocalFolder1 = await this.db.CreateFolderAsync("LocalSample1");
-            this.CustomLocalFolder2 = await this.db.CreateFolderAsync("LocalSample2");
+            this.CustomLocalFolder1 = await this.db.FolderDatabase.CreateFolderAsync("LocalSample1");
+            this.CustomLocalFolder2 = await this.db.FolderDatabase.CreateFolderAsync("LocalSample2");
         }
 
         public Task DisposeAsync()
@@ -127,7 +127,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.ChangesDatabase.CreatePendingFolderAdd(this.db!.UnreadFolderLocalId);
+                this.db!.ChangesDatabase.CreatePendingFolderAdd(this.db!.FolderDatabase.UnreadFolderLocalId);
             }
 
             Assert.Throws<InvalidOperationException>(Work);
@@ -138,7 +138,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.ChangesDatabase.CreatePendingFolderAdd(this.db!.ArchiveFolderLocalId);
+                this.db!.ChangesDatabase.CreatePendingFolderAdd(this.db!.FolderDatabase.ArchiveFolderLocalId);
             }
 
             Assert.Throws<InvalidOperationException>(Work);
@@ -155,7 +155,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task DeletingLocalFolderWithPendingAddShouldFail()
         {
             _ = this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-            await Assert.ThrowsAsync<InvalidOperationException>(() => this.db!.DeleteFolderAsync(this.CustomLocalFolder1!.LocalId));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => this.db!.FolderDatabase.DeleteFolderAsync(this.CustomLocalFolder1!.LocalId));
         }
         #endregion
 

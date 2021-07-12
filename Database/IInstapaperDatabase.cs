@@ -33,11 +33,28 @@ namespace Codevoid.Storyvoid
     public interface IInstapaperDatabase : IDisposable
     {
         /// <summary>
+        /// Get the folder database for creating, listing, and removing folders
+        /// </summary>
+        IFolderDatabase FolderDatabase { get; }
+
+        /// <summary>
+        /// Get the article database for creating, listing, manipulating, and
+        /// removing articles
+        /// </summary>
+        IArticleDatabase ArticleDatabase { get; }
+        
+        /// <summary>
         /// Get pending change database for creating, reading, and removing
         /// pending changes
         /// </summary>
         IChangesDatabase ChangesDatabase { get; }
+    }
 
+    /// <summary>
+    /// Manage folders in the local Instapaper Database
+    /// </summary>
+    public interface IFolderDatabase
+    {
         /// <summary>
         /// The database ID of the unread folder
         /// </summary>
@@ -110,7 +127,13 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="localFolderId">Folder to delete</param>
         Task DeleteFolderAsync(long localFolderId);
+    }
 
+    /// <summary>
+    /// Manage articles in the local Instapaper Database
+    /// </summary>
+    public interface IArticleDatabase
+    {
         /// <summary>
         /// List all articles, across all folders, that are Liked
         /// </summary>

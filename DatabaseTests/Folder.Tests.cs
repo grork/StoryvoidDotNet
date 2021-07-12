@@ -22,11 +22,18 @@ namespace Codevoid.Test.Storyvoid
             Assert.Equal(folder1!.ShouldSync, folder2!.ShouldSync);
         }
 
-        private IInstapaperDatabase? db;
-        public async Task InitializeAsync() => this.db = await TestUtilities.GetDatabase();
+        private IInstapaperDatabase? instapaperDb;
+        private IFolderDatabase? db;
+
+        public async Task InitializeAsync()
+        {
+            this.instapaperDb = await TestUtilities.GetDatabase();
+            this.db = this.instapaperDb.FolderDatabase;
+        }
+
         public Task DisposeAsync()
         {
-            this.db?.Dispose();
+            this.instapaperDb?.Dispose();
             return Task.CompletedTask;
         }
 

@@ -9,24 +9,26 @@ namespace Codevoid.Test.Storyvoid
 {
     public class LocalOnlyStateTests : IAsyncLifetime
     {
-        private IInstapaperDatabase? db;
+        private IInstapaperDatabase? instapaperDb;
+        private IArticleDatabase? db;
         private IList<DatabaseArticle> sampleArticles = new List<DatabaseArticle>();
 
         public async Task InitializeAsync()
         {
-            this.db = await TestUtilities.GetDatabase();
+            this.instapaperDb = await TestUtilities.GetDatabase();
+            this.db = this.instapaperDb.ArticleDatabase;
             this.sampleArticles = await this.PopulateDatabaseWithArticles();
         }
 
         public Task DisposeAsync()
         {
-            this.db?.Dispose();
+            this.instapaperDb?.Dispose();
             return Task.CompletedTask;
         }
 
         public async Task<IList<DatabaseArticle>> PopulateDatabaseWithArticles()
         {
-            var unreadFolder = this.db!.UnreadFolderLocalId;
+            var unreadFolder = this.instapaperDb!.FolderDatabase.UnreadFolderLocalId;
             var article1 = await this.db!.AddArticleToFolderAsync(new(
                 1,
                 "Sample Article 1",
@@ -158,7 +160,7 @@ namespace Codevoid.Test.Storyvoid
             var articleData = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId);
 
             _ = await this.db!.AddLocalOnlyStateForArticleAsync(articleData);
-            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.instapaperDb!.FolderDatabase.UnreadFolderLocalId);
 
             var articleWithLocalState = (from a in articles
                                          where a.Id == articleId
@@ -185,7 +187,7 @@ namespace Codevoid.Test.Storyvoid
                 addedLocalState.Add(data);
             }
 
-            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.db!.UnreadFolderLocalId);
+            var articles = await this.db!.ListArticlesForLocalFolderAsync(this.instapaperDb!.FolderDatabase.UnreadFolderLocalId);
             var articlesWithLocalState = (from a in articles
                                           where a.HasLocalState
                                           select a);
