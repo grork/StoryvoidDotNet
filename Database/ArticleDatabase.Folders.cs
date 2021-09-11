@@ -8,79 +8,62 @@ namespace Codevoid.Storyvoid
     sealed partial class InstapaperDatabase
     {
         /// <inheritdoc/>
-        public Task<IList<DatabaseFolder>> ListAllFoldersAsync()
+        public IList<DatabaseFolder> ListAllFolders()
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            IList<DatabaseFolder> ListFolders()
+            using var query = c.CreateCommand(@"
+                SELECT *
+                FROM folders
+                ORDER BY position ASC
+            ");
+
+            using var folders = query.ExecuteReader();
+
+            var result = new List<DatabaseFolder>();
+
+            while (folders.Read())
             {
-                using var query = c.CreateCommand(@"
-                    SELECT *
-                    FROM folders
-                    ORDER BY position ASC
-                ");
-
-                using var folders = query.ExecuteReader();
-
-                var result = new List<DatabaseFolder>();
-
-                while (folders.Read())
-                {
-                    var f = DatabaseFolder.FromRow(folders);
-                    result.Add(f);
-                }
-
-                return result;
+                var f = DatabaseFolder.FromRow(folders);
+                result.Add(f);
             }
 
-            return Task.Run(ListFolders);
+            return result;
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseFolder?> GetFolderByServiceIdAsync(long serviceId)
+        public DatabaseFolder? GetFolderByServiceId(long serviceId)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            DatabaseFolder? GetFolder()
+            using var query = c.CreateCommand(@"
+                SELECT *
+                FROM folders
+                WHERE service_id = @serviceId
+            ");
+
+            query.AddParameter("@serviceId", serviceId);
+
+            using var folderRow = query.ExecuteReader();
+
+            DatabaseFolder? folder = null;
+            if (folderRow.Read())
             {
-                using var query = c.CreateCommand(@"
-                    SELECT *
-                    FROM folders
-                    WHERE service_id = @serviceId
-                ");
-
-                query.AddParameter("@serviceId", serviceId);
-
-                using var folderRow = query.ExecuteReader();
-
-                DatabaseFolder? folder = null;
-                if (folderRow.Read())
-                {
-                    folder = DatabaseFolder.FromRow(folderRow);
-                }
-
-                return folder;
+                folder = DatabaseFolder.FromRow(folderRow);
             }
 
-            return Task.Run(GetFolder);
+            return folder;
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseFolder?> GetFolderByLocalIdAsync(long localId)
+        public DatabaseFolder? GetFolderByLocalId(long localId)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
-            return Task.Run(() => GetFolderByLocalId(c, localId));
-        }
-
-        private static DatabaseFolder? GetFolderByLocalId(IDbConnection connection, long localId)
-        {
-            using var query = connection.CreateCommand(@"
+            using var query = c.CreateCommand(@"
                 SELECT *
                 FROM folders
                 WHERE local_id = @localId
@@ -100,37 +83,28 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseFolder> CreateFolderAsync(string title)
+        public DatabaseFolder CreateFolder(string title)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            long CreateFolder()
+            if (FolderWithTitleExists(c, title))
             {
-                using var query = c.CreateCommand(@"
-                    INSERT INTO folders(title)
-                    VALUES (@title);
-
-                    SELECT last_insert_rowid();
-                ");
-
-                query.AddParameter("@title", title);
-                var rowId = (long)query.ExecuteScalar();
-
-                return rowId;
+                throw new DuplicateNameException($"Folder with name '{title}' already exists");
             }
 
-            return Task.Run(() =>
-            {
-                if (FolderWithTitleExists(c, title))
-                {
-                    throw new DuplicateNameException($"Folder with name '{title}' already exists");
-                }
+            using var query = c.CreateCommand(@"
+                INSERT INTO folders(title)
+                VALUES (@title);
 
-                var newFolderRowId = CreateFolder();
-                return GetFolderByLocalId(c, newFolderRowId)!;
-            });
+                SELECT last_insert_rowid();
+            ");
+
+            query.AddParameter("@title", title);
+            var rowId = (long)query.ExecuteScalar();
+
+            return GetFolderByLocalId(rowId)!;
         }
 
         private static bool FolderWithTitleExists(IDbConnection connection, string title)
@@ -149,89 +123,75 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool shouldSync)
+        public DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            long CreateFolder()
+            if (FolderWithTitleExists(c, title))
             {
-                using var query = c.CreateCommand(@"
-                    INSERT INTO folders(title, service_id, position, should_sync)
-                    VALUES (@title, @serviceId, @position, @shouldSync);
-
-                    SELECT last_insert_rowid();
-                ");
-
-                query.AddParameter("@title", title);
-                query.AddParameter("@serviceId", serviceId);
-                query.AddParameter("@position", position);
-                query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
-
-                var rowId = (long)query.ExecuteScalar();
-
-                return rowId;
+                throw new DuplicateNameException($"Folder with name '{title}' already exists");
             }
 
-            return Task.Run(() =>
-            {
-                if (FolderWithTitleExists(c, title))
-                {
-                    throw new DuplicateNameException($"Folder with name '{title}' already exists");
-                }
+            using var query = c.CreateCommand(@"
+                INSERT INTO folders(title, service_id, position, should_sync)
+                VALUES (@title, @serviceId, @position, @shouldSync);
 
-                var newFolderRowId = CreateFolder();
-                return GetFolderByLocalId(c, newFolderRowId)!;
-            });
+                SELECT last_insert_rowid();
+            ");
+
+            query.AddParameter("@title", title);
+            query.AddParameter("@serviceId", serviceId);
+            query.AddParameter("@position", position);
+            query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
+
+            var rowId = (long)query.ExecuteScalar();
+
+            return GetFolderByLocalId(rowId)!;
         }
 
-        public Task<DatabaseFolder> UpdateFolderAsync(long localId, long? serviceId, string title, long position, bool shouldSync)
+        /// <inheritdoc/>
+        public DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            void UpdateFolder()
+            using var query = c.CreateCommand(@"
+                UPDATE folders SET
+                    service_id = @serviceId,
+                    title = @title,
+                    position = @position,
+                    should_sync = @shouldSync
+                WHERE local_id = @localId
+            ");
+
+            query.AddParameter("@localId", localId);
+            if (serviceId != null)
             {
-                using var query = c.CreateCommand(@"
-                    UPDATE folders SET
-                        service_id = @serviceId,
-                        title = @title,
-                        position = @position,
-                        should_sync = @shouldSync
-                    WHERE local_id = @localId
-                ");
-
-                query.AddParameter("@localId", localId);
-                if (serviceId != null)
-                {
-                    query.AddParameter("@serviceId", (long)(serviceId!));
-                }
-                else
-                {
-                    query.AddNull(@"serviceId", DbType.Int64);
-                }
-
-                query.AddParameter("@title", title);
-                query.AddParameter("@position", position);
-                query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
-
-                var impactedRows = query.ExecuteNonQuery();
-                if (impactedRows < 1)
-                {
-                    throw new FolderNotFoundException(localId);
-                }
+                query.AddParameter("@serviceId", (long)(serviceId!));
+            }
+            else
+            {
+                query.AddNull(@"serviceId", DbType.Int64);
             }
 
-            return Task.Run(() =>
+            query.AddParameter("@title", title);
+            query.AddParameter("@position", position);
+            query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
+
+            var impactedRows = query.ExecuteNonQuery();
+            if (impactedRows < 1)
             {
-                UpdateFolder();
-                return GetFolderByLocalId(c, localId)!;
-            });
+                throw new FolderNotFoundException(localId);
+            }
+
+            return GetFolderByLocalId(localId)!;
         }
 
-        public Task DeleteFolderAsync(long localFolderId)
+        /// <inheritdoc />
+        public void DeleteFolder(long localFolderId)
         {
             if (localFolderId == this.UnreadFolderLocalId)
             {
@@ -248,47 +208,30 @@ namespace Codevoid.Storyvoid
             var c = this.connection;
             var changesDB = this.ChangesDatabase;
 
-            bool HasPendingFolderAdds()
+            if (changesDB.GetPendingFolderAddByLocalFolderId(localFolderId) != null)
             {
-                return (changesDB.GetPendingFolderAddByLocalFolderId(localFolderId) != null);
+                throw new InvalidOperationException($"Folder {localFolderId} had a pending folder add");
             }
 
             // Remove any article-folder-pairs
-            void DeleteArticleFolderPairs()
-            {
-                using var query = c.CreateCommand(@"
-                    DELETE FROM article_to_folder
-                    WHERE local_folder_id = @localFolderId
-                ");
+            using var removeArticleFolderPairsQuery = c.CreateCommand(@"
+                DELETE FROM article_to_folder
+                WHERE local_folder_id = @localFolderId
+            ");
 
-                query.AddParameter("@localFolderId", localFolderId);
+            removeArticleFolderPairsQuery.AddParameter("@localFolderId", localFolderId);
 
-                query.ExecuteNonQuery();
-            }
-
+            removeArticleFolderPairsQuery.ExecuteNonQuery();
 
             // Delete the folder
-            void DeleteFolder()
-            {
-                using var query = c.CreateCommand(@"
-                    DELETE FROM folders
-                    WHERE local_id = @localId
-                ");
+            using var deleteFolderQuery = c.CreateCommand(@"
+                DELETE FROM folders
+                WHERE local_id = @localId
+            ");
 
-                query.AddParameter("@localId", localFolderId);
+            deleteFolderQuery.AddParameter("@localId", localFolderId);
 
-                query.ExecuteNonQuery();
-            }
-
-            return Task.Run(() =>
-            {
-                if(HasPendingFolderAdds())
-                {
-                    throw new InvalidOperationException($"Folder {localFolderId} had a pending folder add");
-                }
-                DeleteArticleFolderPairs();
-                DeleteFolder();
-            });
+            deleteFolderQuery.ExecuteNonQuery();
         }
     }
 }

@@ -145,7 +145,7 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                if (GetFolderByLocalId(c, localFolderId) == null)
+                if (this.GetFolderByLocalId(localFolderId) == null)
                 {
                     throw new FolderNotFoundException(localFolderId);
                 }
@@ -326,7 +326,7 @@ namespace Codevoid.Storyvoid
 
             return Task.Run(() =>
             {
-                if (GetFolderByLocalId(c, localFolderId) == null)
+                if (this.GetFolderByLocalId(localFolderId) == null)
                 {
                     throw new FolderNotFoundException(localFolderId);
                 }

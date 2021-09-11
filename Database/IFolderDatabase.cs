@@ -42,28 +42,28 @@ namespace Codevoid.Storyvoid
         /// folders (Unread, Archive)
         /// </summary>
         /// <returns>List of folders</returns>
-        Task<IList<DatabaseFolder>> ListAllFoldersAsync();
+        IList<DatabaseFolder> ListAllFolders();
 
         /// <summary>
         /// Gets a specific folder using it's service ID
         /// </summary>
         /// <param name="serviceId">Service ID of the folder</param>
         /// <returns>Folder if found, null otherwise</returns>
-        Task<DatabaseFolder?> GetFolderByServiceIdAsync(long serviceId);
+        DatabaseFolder? GetFolderByServiceId(long serviceId);
 
         /// <summary>
         /// Gets a specific folder using it's local ID
         /// </summary>
         /// <param name="serviceId">Local ID of the folder</param>
         /// <returns>Folder if found, null otherwise</returns>
-        Task<DatabaseFolder?> GetFolderByLocalIdAsync(long localId);
+        DatabaseFolder? GetFolderByLocalId(long localId);
 
         /// <summary>
         /// Creates a new, local folder
         /// </summary>
         /// <param name="title">Title of the folder</param>
         /// <returns>A new folder instance</returns>
-        Task<DatabaseFolder> CreateFolderAsync(string title);
+        DatabaseFolder CreateFolder(string title);
 
         /// <summary>
         /// Adds a known folder to the database. This intended to be used when
@@ -74,7 +74,7 @@ namespace Codevoid.Storyvoid
         /// <param name="position">The relative order of the folder</param>
         /// <param name="shouldSync">Should the folder by synced</param>
         /// <returns>The folder after being added to the database</returns>
-        Task<DatabaseFolder> AddKnownFolderAsync(string title, long serviceId, long position, bool shouldSync);
+        DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync);
 
         /// <summary>
         /// Updates the data of a folder with the supplied Local ID. All fields
@@ -90,7 +90,7 @@ namespace Codevoid.Storyvoid
         /// <param name="position">Position to set</param>
         /// <param name="shouldSync">Should be synced</param>
         /// <returns>Updated folder</returns>
-        Task<DatabaseFolder> UpdateFolderAsync(long localId, long? serviceId, string title, long position, bool shouldSync);
+        DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync);
 
         /// <summary>
         /// Delete the specified folder. Any articles in this folder will be
@@ -98,6 +98,6 @@ namespace Codevoid.Storyvoid
         /// removed.
         /// </summary>
         /// <param name="localFolderId">Folder to delete</param>
-        Task DeleteFolderAsync(long localFolderId);
+        void DeleteFolder(long localFolderId);
     }
 }

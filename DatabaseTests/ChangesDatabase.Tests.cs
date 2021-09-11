@@ -15,8 +15,8 @@ namespace Codevoid.Test.Storyvoid
         {
             this.db = await TestUtilities.GetDatabase();
 
-            this.CustomLocalFolder1 = await this.db.FolderDatabase.CreateFolderAsync("LocalSample1");
-            this.CustomLocalFolder2 = await this.db.FolderDatabase.CreateFolderAsync("LocalSample2");
+            this.CustomLocalFolder1 = this.db.FolderDatabase.CreateFolder("LocalSample1");
+            this.CustomLocalFolder2 = this.db.FolderDatabase.CreateFolder("LocalSample2");
         }
 
         public Task DisposeAsync()
@@ -152,10 +152,10 @@ namespace Codevoid.Test.Storyvoid
         }
 
         [Fact]
-        public async Task DeletingLocalFolderWithPendingAddShouldFail()
+        public void DeletingLocalFolderWithPendingAddShouldFail()
         {
             _ = this.db!.ChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-            await Assert.ThrowsAsync<InvalidOperationException>(() => this.db!.FolderDatabase.DeleteFolderAsync(this.CustomLocalFolder1!.LocalId));
+            Assert.Throws<InvalidOperationException>(() => this.db!.FolderDatabase.DeleteFolder(this.CustomLocalFolder1!.LocalId));
         }
         #endregion
 

@@ -20,12 +20,12 @@ namespace Codevoid.Test.Storyvoid
             this.db = this.instapaperDb.ArticleDatabase;
 
             // Add sample folders
-            this.CustomFolder1 = await this.instapaperDb.FolderDatabase.AddKnownFolderAsync(title: "Sample1",
+            this.CustomFolder1 = this.instapaperDb.FolderDatabase.AddKnownFolder(title: "Sample1",
                                                                   serviceId: 9L,
                                                                   position: 1,
                                                                   shouldSync: true);
 
-            this.CustomFolder2 = await this.instapaperDb.FolderDatabase.AddKnownFolderAsync(title: "Sample2",
+            this.CustomFolder2 = this.instapaperDb.FolderDatabase.AddKnownFolder(title: "Sample2",
                                                                    serviceId: 10L,
                                                                    position: 1,
                                                                    shouldSync: true);
@@ -453,8 +453,8 @@ namespace Codevoid.Test.Storyvoid
             _ = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
             _ = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
 
-            await this.instapaperDb!.FolderDatabase.DeleteFolderAsync(this.CustomFolder1!.LocalId);
-            var folders = await this.instapaperDb!.FolderDatabase.ListAllFoldersAsync();
+            this.instapaperDb!.FolderDatabase.DeleteFolder(this.CustomFolder1!.LocalId);
+            var folders = this.instapaperDb!.FolderDatabase.ListAllFolders();
             Assert.DoesNotContain(folders, (f) => f.LocalId == this.CustomFolder1!.LocalId);
         }
 
@@ -488,7 +488,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanDeleteOrphanedArticle()
         {
             var article = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
-            await this.instapaperDb!.FolderDatabase.DeleteFolderAsync(this.CustomFolder1!.LocalId);
+            this.instapaperDb!.FolderDatabase.DeleteFolder(this.CustomFolder1!.LocalId);
             await this.db!.DeleteArticleAsync(article.Id);
         }
 
@@ -496,7 +496,7 @@ namespace Codevoid.Test.Storyvoid
         public async Task CanGetArticle()
         {
             var article = await this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
-            await this.instapaperDb!.FolderDatabase.DeleteFolderAsync(this.CustomFolder1!.LocalId);
+            this.instapaperDb!.FolderDatabase.DeleteFolder(this.CustomFolder1!.LocalId);
 
             var orphaned = await this.db!.GetArticleByIdAsync(article.Id);
             Assert.NotNull(orphaned);
