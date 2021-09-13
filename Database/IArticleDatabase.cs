@@ -18,21 +18,21 @@ namespace Codevoid.Storyvoid
         /// List all articles, across all folders, that are Liked
         /// </summary>
         /// <returns>All articles that are in a Liked state</returns>
-        Task<IList<DatabaseArticle>> ListLikedArticleAsync();
+        IList<DatabaseArticle> ListLikedArticle();
 
         /// <summary>
         /// Gets articles for a specific local folder
         /// </summary>
         /// <param name="localId">Local Folder ID to get articles for</param>
         /// <returns>Articles in that folder</returns>
-        Task<IList<DatabaseArticle>> ListArticlesForLocalFolderAsync(long localId);
+        IList<DatabaseArticle> ListArticlesForLocalFolder(long localId);
 
         /// <summary>
         /// Add a article to the database
         /// </summary>
         /// <param name="data">Article information to add</param>
         /// <returns>Article from the database</returns>
-        Task<DatabaseArticle> AddArticleToFolderAsync(
+        DatabaseArticle AddArticleToFolder(
             ArticleRecordInformation data,
             long localFolderId);
 
@@ -42,28 +42,28 @@ namespace Codevoid.Storyvoid
         /// </summary>
         /// <param name="updatedData">Data to update the article with</param>
         /// <returns>article instance with updated values</returns>
-        Task<DatabaseArticle> UpdateArticleAsync(ArticleRecordInformation updatedData);
+        DatabaseArticle UpdateArticle(ArticleRecordInformation updatedData);
 
         /// <summary>
         /// Gets a article by it's service ID
         /// </summary>
         /// <param name="articleId">ID of the article</param>
         /// <returns>Article if found, null otherwise</returns>
-        Task<DatabaseArticle?> GetArticleByIdAsync(long articleId);
+        DatabaseArticle? GetArticleById(long articleId);
 
         /// <summary>
         /// Like a Article. Will complete even if article is already liked
         /// </summary>
         /// <param name="articleId">Article to Like</param>
         /// <returns>The article after liking. Represents current database state</returns>
-        Task<DatabaseArticle> LikeArticleAsync(long articleId);
+        DatabaseArticle LikeArticle(long articleId);
 
         /// <summary>
         /// Unlike a article. Will complete even if article is already unliked
         /// </summary>
         /// <param name="articleId">Article to Unlike</param>
         /// <returns>The article after unliking. Represents current database state</returns>
-        Task<DatabaseArticle> UnlikeArticleAsync(long articleId);
+        DatabaseArticle UnlikeArticle(long articleId);
 
         /// <summary>
         /// Update the progress of a specific article, with the supplied
@@ -73,7 +73,7 @@ namespace Codevoid.Storyvoid
         /// <param name="readProgressTimestamp"></param>
         /// <param name="articleId"></param>
         /// <returns></returns>
-        Task<DatabaseArticle> UpdateReadProgressForArticleAsync(float readProgress, DateTime readProgressTimestamp, long articleId);
+        DatabaseArticle UpdateReadProgressForArticle(float readProgress, DateTime readProgressTimestamp, long articleId);
 
         /// <summary>
         /// Moves the specified article to the supplied destination folder
@@ -81,24 +81,24 @@ namespace Codevoid.Storyvoid
         /// <param name="articleId">Article to move</param>
         /// <param name="localFolderId">Folder to move to</param>
         /// <returns></returns>
-        Task MoveArticleToFolderAsync(long articleId, long localFolderId);
+        void MoveArticleToFolder(long articleId, long localFolderId);
 
         /// <summary>
         /// Delete a article with the specified ID
         /// </summary>
         /// <param name="articleId">Article to delete</param>
-        Task DeleteArticleAsync(long articleId);
+        void DeleteArticle(long articleId);
 
         /// <summary>
         /// Loads the local only article state for the supplied article ID.
         /// Note, that this will only return data if local only state exists for
         /// the article. Having no data returned does *not* mean that there is
-        /// no article with that article ID. Use <see cref="GetArticleByIdAsync(long)"/>
+        /// no article with that article ID. Use <see cref="GetArticleById(long)"/>
         /// for that.
         /// </summary>
         /// <param name="articleId">ID of the article to load</param>
         /// <returns>Instance of local only article state, if found</returns>
-        Task<DatabaseLocalOnlyArticleState?> GetLocalOnlyStateByArticleIdAsync(long articleId);
+        DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(long articleId);
 
         /// <summary>
         /// Add a article with the supplied data. This will succeed only if a
@@ -113,7 +113,7 @@ namespace Codevoid.Storyvoid
         /// <exception cref="LocalOnlyStateExistsException">
         /// When local only state already exists with the supplied article ID
         /// </exception>
-        Task<DatabaseLocalOnlyArticleState> AddLocalOnlyStateForArticleAsync(DatabaseLocalOnlyArticleState localOnlyArticleState);
+        DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(DatabaseLocalOnlyArticleState localOnlyArticleState);
 
         /// <summary>
         /// Deletes the localy only state for the supplied article ID.
@@ -125,7 +125,7 @@ namespace Codevoid.Storyvoid
         /// ID of the Article for which to delete local only state
         /// </param>
         /// <returns>Task that completes when the data is removed</returns>
-        Task DeleteLocalOnlyArticleStateAsync(long articleId);
+        void DeleteLocalOnlyArticleState(long articleId);
 
         /// <summary>
         /// Updates the information associated with an existing Local Only
@@ -138,6 +138,6 @@ namespace Codevoid.Storyvoid
         /// The desired data to be updated for this article
         /// </param>
         /// <returns>The updated details</returns>
-        Task<DatabaseLocalOnlyArticleState> UpdateLocalOnlyArticleStateAsync(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState);
+        DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState);
     }
 }

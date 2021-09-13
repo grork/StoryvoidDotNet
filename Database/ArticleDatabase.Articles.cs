@@ -10,77 +10,60 @@ namespace Codevoid.Storyvoid
         private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
         /// <inheritdoc/>
-        public Task<IList<DatabaseArticle>> ListArticlesForLocalFolderAsync(long localFolderId)
+        public IList<DatabaseArticle> ListArticlesForLocalFolder(long localFolderId)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            IList<DatabaseArticle> GetArticles()
+            using var query = c.CreateCommand(@"
+                SELECT a.*
+                FROM article_to_folder
+                INNER JOIN articles_with_local_only_state a
+                    ON article_to_folder.article_id = a.id
+                WHERE article_to_folder.local_folder_id = @localFolderId
+            ");
+
+            query.AddParameter("@localFolderId", localFolderId);
+
+            var results = new List<DatabaseArticle>();
+            using var rows = query.ExecuteReader();
+            while (rows.Read())
             {
-                using var query = c.CreateCommand(@"
-                    SELECT a.*
-                    FROM article_to_folder
-                    INNER JOIN articles_with_local_only_state a
-                        ON article_to_folder.article_id = a.id
-                    WHERE article_to_folder.local_folder_id = @localFolderId
-                ");
-
-                query.AddParameter("@localFolderId", localFolderId);
-
-                var results = new List<DatabaseArticle>();
-                using var rows = query.ExecuteReader();
-                while (rows.Read())
-                {
-                    results.Add(DatabaseArticle.FromRow(rows));
-                }
-
-                return results;
+                results.Add(DatabaseArticle.FromRow(rows));
             }
 
-            return Task.Run(GetArticles);
+            return results;
         }
 
         /// <inheritdoc/>
-        public Task<IList<DatabaseArticle>> ListLikedArticleAsync()
+        public IList<DatabaseArticle> ListLikedArticle()
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            IList<DatabaseArticle> GetArticles()
+            using var query = c.CreateCommand(@"
+                SELECT *
+                FROM articles_with_local_only_state
+                WHERE liked = true
+            ");
+
+            var results = new List<DatabaseArticle>();
+            using var rows = query.ExecuteReader();
+            while (rows.Read())
             {
-                using var query = c.CreateCommand(@"
-                    SELECT *
-                    FROM articles_with_local_only_state
-                    WHERE liked = true
-                ");
-
-                var results = new List<DatabaseArticle>();
-                using var rows = query.ExecuteReader();
-                while (rows.Read())
-                {
-                    results.Add(DatabaseArticle.FromRow(rows));
-                }
-
-                return results;
+                results.Add(DatabaseArticle.FromRow(rows));
             }
 
-            return Task.Run(GetArticles);
+            return results;
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseArticle?> GetArticleByIdAsync(long id)
+        public DatabaseArticle? GetArticleById(long id)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
-            return Task.Run(() => InstapaperDatabase.GetArticleById(c, id));
-        }
-
-        private static DatabaseArticle? GetArticleById(IDbConnection connection, long id)
-        {
-            using var query = connection.CreateCommand(@"
+            using var query = c.CreateCommand(@"
                 SELECT *
                 FROM articles_with_local_only_state
                 WHERE id = @id
@@ -100,7 +83,7 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseArticle> AddArticleToFolderAsync(
+        public DatabaseArticle AddArticleToFolder(
             ArticleRecordInformation data,
             long localFolderId
         )
@@ -109,96 +92,78 @@ namespace Codevoid.Storyvoid
 
             var c = this.connection;
 
-            void AddArticle()
+            if (this.GetFolderByLocalId(localFolderId) == null)
             {
-                using var query = c.CreateCommand(@"
-                    INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
-                    VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
-
-                    SELECT last_insert_rowid();
-                ");
-
-                query.AddParameter("@id", data.id);
-                query.AddParameter("@title", data.title);
-                query.AddParameter("@url", data.url);
-                query.AddParameter("@description", data.description);
-                query.AddParameter("@readProgress", data.readProgress);
-                query.AddParameter("@readProgressTimestamp", data.readProgressTimestamp);
-                query.AddParameter("@hash", data.hash);
-                query.AddParameter("@liked", data.liked);
-
-                query.ExecuteNonQuery();
+                throw new FolderNotFoundException(localFolderId);
             }
 
-            void PairArticleToFolder()
-            {
-                using var query = c.CreateCommand(@"
-                    INSERT INTO article_to_folder(local_folder_id, article_id)
-                    VALUES (@localFolderId, @articleId);
-                ");
+            using var query = c.CreateCommand(@"
+                INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
+                VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
 
-                query.AddParameter("@articleId", data.id);
-                query.AddParameter("@localFolderId", localFolderId);
+                SELECT last_insert_rowid();
+            ");
 
-                query.ExecuteNonQuery();
-            }
+            query.AddParameter("@id", data.id);
+            query.AddParameter("@title", data.title);
+            query.AddParameter("@url", data.url);
+            query.AddParameter("@description", data.description);
+            query.AddParameter("@readProgress", data.readProgress);
+            query.AddParameter("@readProgressTimestamp", data.readProgressTimestamp);
+            query.AddParameter("@hash", data.hash);
+            query.AddParameter("@liked", data.liked);
 
-            return Task.Run(() =>
-            {
-                if (this.GetFolderByLocalId(localFolderId) == null)
-                {
-                    throw new FolderNotFoundException(localFolderId);
-                }
+            query.ExecuteNonQuery();
 
-                AddArticle();
-                PairArticleToFolder();
-                return InstapaperDatabase.GetArticleById(c, data.id)!;
-            });
+            using var pairWithFolderQuery = c.CreateCommand(@"
+                INSERT INTO article_to_folder(local_folder_id, article_id)
+                VALUES (@localFolderId, @articleId);
+            ");
+
+            pairWithFolderQuery.AddParameter("@articleId", data.id);
+            pairWithFolderQuery.AddParameter("@localFolderId", localFolderId);
+
+            pairWithFolderQuery.ExecuteNonQuery();
+
+            return this.GetArticleById(data.id)!;
         }
 
         /// <inheritdoc />
-        public Task<DatabaseArticle> UpdateArticleAsync(ArticleRecordInformation updatedData)
+        public DatabaseArticle UpdateArticle(ArticleRecordInformation updatedData)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            void UpdateArticle()
+            using var query = c.CreateCommand(@"
+                UPDATE articles SET
+                    url = @url,
+                    title = @title,
+                    description = @description,
+                    read_progress = @readProgress,
+                    read_progresS_timestamp = @readProgressTimestamp,
+                    hash = @hash,
+                    liked = @liked
+                WHERE id = @id
+            ");
+
+            query.AddParameter("@id", updatedData.id);
+            query.AddParameter("@url", updatedData.url);
+            query.AddParameter("@title", updatedData.title);
+            query.AddParameter("@description", updatedData.description);
+            query.AddParameter("@readProgress", updatedData.readProgress);
+            query.AddParameter("@readProgressTimestamp", updatedData.readProgressTimestamp);
+            query.AddParameter("@hash", updatedData.hash);
+            query.AddParameter("@liked", updatedData.liked);
+
+
+            var impactedRows = query.ExecuteNonQuery();
+            if (impactedRows < 1)
             {
-                using var query = c.CreateCommand(@"
-                    UPDATE articles SET
-                        url = @url,
-                        title = @title,
-                        description = @description,
-                        read_progress = @readProgress,
-                        read_progresS_timestamp = @readProgressTimestamp,
-                        hash = @hash,
-                        liked = @liked
-                    WHERE id = @id
-                ");
-
-                query.AddParameter("@id", updatedData.id);
-                query.AddParameter("@url", updatedData.url);
-                query.AddParameter("@title", updatedData.title);
-                query.AddParameter("@description", updatedData.description);
-                query.AddParameter("@readProgress", updatedData.readProgress);
-                query.AddParameter("@readProgressTimestamp", updatedData.readProgressTimestamp);
-                query.AddParameter("@hash", updatedData.hash);
-                query.AddParameter("@liked", updatedData.liked);
-
-
-                var impactedRows = query.ExecuteNonQuery();
-                if (impactedRows < 1)
-                {
-                    throw new ArticleNotFoundException(updatedData.id);
-                }
+                throw new ArticleNotFoundException(updatedData.id);
             }
 
-            return Task.Run(() =>
-            {
-                UpdateArticle();
-                return InstapaperDatabase.GetArticleById(c, updatedData.id)!;
-            });
+            return this.GetArticleById(updatedData.id)!;
         }
 
         private static void UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked)
@@ -220,35 +185,29 @@ namespace Codevoid.Storyvoid
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseArticle> LikeArticleAsync(long id)
+        public DatabaseArticle LikeArticle(long id)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            return Task.Run(() =>
-            {
-                UpdateLikeStatusForArticle(c, id, true);
-                return InstapaperDatabase.GetArticleById(c, id)!;
-            });
+            UpdateLikeStatusForArticle(c, id, true);
+            return this.GetArticleById(id)!;
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseArticle> UnlikeArticleAsync(long id)
+        public DatabaseArticle UnlikeArticle(long id)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            return Task.Run(() =>
-            {
-                UpdateLikeStatusForArticle(c, id, false);
-                return InstapaperDatabase.GetArticleById(c, id)!;
-            });
+            UpdateLikeStatusForArticle(c, id, false);
+            return this.GetArticleById(id)!;
         }
 
         /// <inheritdoc/>
-        public Task<DatabaseArticle> UpdateReadProgressForArticleAsync(float readProgress, DateTime readProgressTimestamp, long articleId)
+        public DatabaseArticle UpdateReadProgressForArticle(float readProgress, DateTime readProgressTimestamp, long articleId)
         {
             if (readProgress < 0.0 || readProgress > 1.0)
             {
@@ -264,84 +223,71 @@ namespace Codevoid.Storyvoid
 
             var c = this.connection;
 
-            void UpdateProgressForArticle()
+            // The hash field is driven by the service, and complately opaque
+            // to us. The hash is also how the service determines if progress
+            // needs to be updated in list calls. This means that whenever
+            // we update the progress of a article, if we don't have supplied
+            // hash, we need to stomp that hash since it's different, but we
+            // have no idea how to recompute it.
+            // To simulate a new hash, we will generate a random number, and
+            // use that as the hash.
+            var r = new Random();
+            var fauxHash = r.Next().ToString();
+
+
+            using var query = c.CreateCommand(@"
+                UPDATE articles
+                SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
+                WHERE id = @id
+            ");
+
+            query.AddParameter("@id", articleId);
+            query.AddParameter("@readProgress", readProgress);
+            query.AddParameter("@readProgressTimestamp", readProgressTimestamp);
+            query.AddParameter("@hash", fauxHash);
+
+            var impactedRows = query.ExecuteNonQuery();
+            if (impactedRows < 1)
             {
-                // The hash field is driven by the service, and complately opaque
-                // to us. The hash is also how the service determines if progress
-                // needs to be updated in list calls. This means that whenever
-                // we update the progress of a article, if we don't have supplied
-                // hash, we need to stomp that hash since it's different, but we
-                // have no idea how to recompute it.
-                // To simulate a new hash, we will generate a random number, and
-                // use that as the hash.
-                var r = new Random();
-                var fauxHash = r.Next().ToString();
-
-
-                using var query = c.CreateCommand(@"
-                    UPDATE articles
-                    SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
-                    WHERE id = @id
-                ");
-
-                query.AddParameter("@id", articleId);
-                query.AddParameter("@readProgress", readProgress);
-                query.AddParameter("@readProgressTimestamp", readProgressTimestamp);
-                query.AddParameter("@hash", fauxHash);
-
-                var impactedRows = query.ExecuteNonQuery();
-                if (impactedRows < 1)
-                {
-                    throw new ArticleNotFoundException(articleId);
-                }
+                throw new ArticleNotFoundException(articleId);
             }
 
-            return Task.Run(() =>
-            {
-                UpdateProgressForArticle();
-                return InstapaperDatabase.GetArticleById(c, articleId)!;
-            });
+
+            return this.GetArticleById(articleId)!;
         }
 
         /// <inheritdoc/>
-        public Task MoveArticleToFolderAsync(long articleId, long localFolderId)
+        public void MoveArticleToFolder(long articleId, long localFolderId)
         {
             this.ThrowIfNotReady();
 
             var c = this.connection;
 
-            void MoveArticleToFolder()
+            if (this.GetFolderByLocalId(localFolderId) == null)
             {
-                using var query = c.CreateCommand(@"
-                    UPDATE article_to_folder
-                    SET local_folder_id = @localFolderId
-                    WHERE article_id = @articleId;
-                ");
-
-                query.AddParameter("@articleId", articleId);
-                query.AddParameter("@localFolderId", localFolderId);
-
-                query.ExecuteNonQuery();
+                throw new FolderNotFoundException(localFolderId);
             }
 
-            return Task.Run(() =>
+            if (this.GetArticleById(articleId) == null)
             {
-                if (this.GetFolderByLocalId(localFolderId) == null)
-                {
-                    throw new FolderNotFoundException(localFolderId);
-                }
+                throw new ArticleNotFoundException(articleId);
+            }
 
-                if (InstapaperDatabase.GetArticleById(c, articleId) == null)
-                {
-                    throw new ArticleNotFoundException(articleId);
-                }
 
-                MoveArticleToFolder();
-            });
+            using var query = c.CreateCommand(@"
+                UPDATE article_to_folder
+                SET local_folder_id = @localFolderId
+                WHERE article_id = @articleId;
+            ");
+
+            query.AddParameter("@articleId", articleId);
+            query.AddParameter("@localFolderId", localFolderId);
+
+            query.ExecuteNonQuery();
         }
 
         /// <inheritdoc/>
-        public Task DeleteArticleAsync(long articleId)
+        public void DeleteArticle(long articleId)
         {
             this.ThrowIfNotReady();
 
@@ -365,7 +311,7 @@ namespace Codevoid.Storyvoid
                 // key relationship to the articles table. This is expected
                 // to not throw an error if there is no local state associated
                 // with the article being deleted.
-                InstapaperDatabase.DeleteLocalOnlyArticleState(c, articleId);
+                this.DeleteLocalOnlyArticleState(articleId);
 
                 // Now that we've deleted the local state, we can delete the
                 // article itself.
@@ -379,11 +325,8 @@ namespace Codevoid.Storyvoid
                 query.ExecuteNonQuery();
             }
 
-            return Task.Run(() =>
-            {
-                RemoveFromFolder();
-                DeleteArticle();
-            });
+            RemoveFromFolder();
+            DeleteArticle();
         }
     }
 }
