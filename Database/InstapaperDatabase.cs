@@ -69,10 +69,10 @@ namespace Codevoid.Storyvoid
         /// Opens, creates, or migrates the database
         /// </summary>
         /// <returns>Task that completes when the database is ready</returns>
-        public Task OpenOrCreateDatabaseAsync()
+        public Task<IInstapaperDatabase> OpenOrCreateDatabaseAsync()
         {
             var c = this.connection;
-            void OpenAndCreateDatabase()
+            IInstapaperDatabase OpenAndCreateDatabase()
             {
                 c.Open();
 
@@ -106,6 +106,8 @@ namespace Codevoid.Storyvoid
                 }
 
                 Interlocked.Increment(ref this.initialized);
+
+                return this;
             }
 
             return Task.Run(OpenAndCreateDatabase);

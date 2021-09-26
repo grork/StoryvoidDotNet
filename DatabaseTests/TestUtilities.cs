@@ -10,9 +10,7 @@ namespace Codevoid.Test.Storyvoid
         {
             var connection = new SqliteConnection("Data Source=:memory:");
             var db = new InstapaperDatabase(connection);
-            await db.OpenOrCreateDatabaseAsync();
-
-            return db;
+            return await db.OpenOrCreateDatabaseAsync();
         }
     }
 }
