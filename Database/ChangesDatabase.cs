@@ -9,25 +9,21 @@ namespace Codevoid.Storyvoid
     /// <inheritdoc />
     public class PendingChanges : IChangesDatabase
     {
-        public record WellKnownFolderLocalIds(long Unread, long Archive);
-
         private IDbConnection connection;
-        private readonly long unreadFolderLocalId;
-        private readonly long archiveFolderLocalId;
+        private IInstapaperDatabase database;
 
-        private PendingChanges(IDbConnection connection, WellKnownFolderLocalIds folderLocalIds)
+        private PendingChanges(IDbConnection connection, IInstapaperDatabase database)
         {
             this.connection = connection;
-            this.unreadFolderLocalId = folderLocalIds.Unread;
-            this.archiveFolderLocalId = folderLocalIds.Archive;
+            this.database = database;
         }
 
         #region Pending Folder Adds
         /// <inheritdoc/>
         public PendingFolderAdd CreatePendingFolderAdd(long localFolderId)
         {
-            if ((localFolderId == this.unreadFolderLocalId)
-            || (localFolderId == this.archiveFolderLocalId))
+            if ((localFolderId == WellKnownLocalFolderIds.Unread)
+            || (localFolderId == WellKnownLocalFolderIds.Archive))
             {
                 throw new InvalidOperationException("Can't create a folder add for wellknown folders");
             }
@@ -150,8 +146,8 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public PendingFolderDelete CreatePendingFolderDelete(long serviceId, string title)
         {
-            if ((serviceId == WellKnownFolderIds.Unread)
-            || (serviceId == WellKnownFolderIds.Archive))
+            if ((serviceId == WellKnownServiceFolderIds.Unread)
+            || (serviceId == WellKnownServiceFolderIds.Archive))
             {
                 throw new InvalidOperationException("Can't create pending delete for well known folders");
             }
@@ -252,14 +248,14 @@ namespace Codevoid.Storyvoid
         /// The opened DB Connection to use to access the database.
         /// </param>
         /// <returns>Instance of the the API</returns>
-        public static IChangesDatabase GetPendingChangeDatabase(IDbConnection connection, WellKnownFolderLocalIds folderLocalIds)
+        public static IChangesDatabase GetPendingChangeDatabase(IDbConnection connection, IInstapaperDatabase database)
         {
             if (connection.State != ConnectionState.Open)
             {
                 throw new InvalidOperationException("Database must be opened");
             }
 
-            return new PendingChanges(connection, folderLocalIds);
+            return new PendingChanges(connection, database);
         }
     }
 }

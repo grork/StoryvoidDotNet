@@ -127,7 +127,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.ChangesDatabase.CreatePendingFolderAdd(this.db!.FolderDatabase.UnreadFolderLocalId);
+                this.db!.ChangesDatabase.CreatePendingFolderAdd(WellKnownLocalFolderIds.Unread);
             }
 
             Assert.Throws<InvalidOperationException>(Work);
@@ -138,7 +138,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.ChangesDatabase.CreatePendingFolderAdd(this.db!.FolderDatabase.ArchiveFolderLocalId);
+                this.db!.ChangesDatabase.CreatePendingFolderAdd(WellKnownLocalFolderIds.Archive);
             }
 
             Assert.Throws<InvalidOperationException>(Work);
@@ -238,7 +238,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.ChangesDatabase.CreatePendingFolderDelete(WellKnownFolderIds.Unread, "Unread");
+                this.db!.ChangesDatabase.CreatePendingFolderDelete(WellKnownServiceFolderIds.Unread, "Unread");
             }
 
             Assert.Throws<InvalidOperationException>(Work);
@@ -249,7 +249,7 @@ namespace Codevoid.Test.Storyvoid
         {
             void Work()
             {
-                this.db!.ChangesDatabase.CreatePendingFolderDelete(WellKnownFolderIds.Archive, "Archive");
+                this.db!.ChangesDatabase.CreatePendingFolderDelete(WellKnownServiceFolderIds.Archive, "Archive");
             }
 
             Assert.Throws<InvalidOperationException>(Work);

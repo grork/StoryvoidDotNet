@@ -8,7 +8,7 @@ namespace Codevoid.Storyvoid
     /// For accessing well known folders from the service that don't have
     /// explicit service IDs.
     /// </summary>
-    public static class WellKnownFolderIds
+    public static class WellKnownServiceFolderIds
     {
         /// <summary>
         /// Default folder on the service, where new articles are placed by
@@ -23,20 +23,27 @@ namespace Codevoid.Storyvoid
     }
 
     /// <summary>
+    /// For accessing well known folders in the local database that are always
+    /// guarenteed to exist.
+    /// </summary>
+    public static class WellKnownLocalFolderIds
+    {
+        /// <summary>
+        /// Default folder, where new articles are placed default.
+        /// </summary>
+        public const long Unread = 1;
+
+        /// <summary>
+        /// Folder for articles that have been archived by the user.
+        /// </summary>
+        public const long Archive = 2;
+    }
+
+    /// <summary>
     /// Manage folders in the local Instapaper Database
     /// </summary>
     public interface IFolderDatabase
     {
-        /// <summary>
-        /// The database ID of the unread folder
-        /// </summary>
-        long UnreadFolderLocalId { get; }
-
-        /// <summary>
-        /// The database ID of the archive folder
-        /// </summary>
-        long ArchiveFolderLocalId { get; }
-
         /// <summary>
         /// Gets all locally known folders, including the default
         /// folders (Unread, Archive)

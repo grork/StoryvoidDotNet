@@ -5,15 +5,22 @@ using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid
 {
-    sealed partial class InstapaperDatabase
+    internal sealed partial class ArticleDatabase : IArticleDatabase
     {
         private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
+
+        private IDbConnection connection;
+        private IInstapaperDatabase database;
+
+        internal ArticleDatabase(IDbConnection connection, IInstapaperDatabase database)
+        {
+            this.connection = connection;
+            this.database = database;
+        }
 
         /// <inheritdoc/>
         public IList<DatabaseArticle> ListArticlesForLocalFolder(long localFolderId)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -39,8 +46,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public IList<DatabaseArticle> ListLikedArticle()
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -88,11 +93,9 @@ namespace Codevoid.Storyvoid
             long localFolderId
         )
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
-            if (this.GetFolderByLocalId(localFolderId) == null)
+            if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) == null)
             {
                 throw new FolderNotFoundException(localFolderId);
             }
@@ -131,8 +134,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc />
         public DatabaseArticle UpdateArticle(ArticleRecordInformation updatedData)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -187,8 +188,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public DatabaseArticle LikeArticle(long id)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             UpdateLikeStatusForArticle(c, id, true);
@@ -198,8 +197,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public DatabaseArticle UnlikeArticle(long id)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             UpdateLikeStatusForArticle(c, id, false);
@@ -218,8 +215,6 @@ namespace Codevoid.Storyvoid
             {
                 throw new ArgumentOutOfRangeException(nameof(readProgressTimestamp), "Progress Timestamp must be within the Unix Epoch");
             }
-
-            this.ThrowIfNotReady();
 
             var c = this.connection;
 
@@ -259,11 +254,9 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public void MoveArticleToFolder(long articleId, long localFolderId)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
-            if (this.GetFolderByLocalId(localFolderId) == null)
+            if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) == null)
             {
                 throw new FolderNotFoundException(localFolderId);
             }
@@ -289,8 +282,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public void DeleteArticle(long articleId)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             void RemoveFromFolder()

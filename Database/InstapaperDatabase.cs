@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 namespace Codevoid.Storyvoid
 {
     internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
-                                                       IFolderDatabase,
-                                                       IArticleDatabase,
                                                        IDisposable
     {
         // To help diagnose calls that skipped initialization
@@ -16,11 +14,10 @@ namespace Codevoid.Storyvoid
 
         private const int CURRENT_DB_VERSION = 1;
 
-        public long UnreadFolderLocalId { get; private set; }
-        public long ArchiveFolderLocalId { get; private set; }
-
         private readonly IDbConnection connection;
         private IChangesDatabase? changesDatabase;
+        private IFolderDatabase? folderDatabase;
+        private IArticleDatabase? articleDatabase;
 
         public InstapaperDatabase(IDbConnection connection)
         {
@@ -108,20 +105,6 @@ namespace Codevoid.Storyvoid
                     }
                 }
 
-                // Get default folder database IDs
-                using (var wellKnownFolderLocalId = c.CreateCommand(@"
-                    SELECT local_id
-                    FROM folders
-                    WHERE service_id = @well_known_service_id"))
-                {
-                    wellKnownFolderLocalId.AddParameter("@well_known_service_id", WellKnownFolderIds.Unread);
-                    this.UnreadFolderLocalId = (long)wellKnownFolderLocalId.ExecuteScalar();
-
-                    wellKnownFolderLocalId.Parameters.Clear();
-                    wellKnownFolderLocalId.AddParameter("@well_known_service_id", WellKnownFolderIds.Archive);
-                    this.ArchiveFolderLocalId = (long)wellKnownFolderLocalId.ExecuteScalar();
-                }
-
                 Interlocked.Increment(ref this.initialized);
             }
 
@@ -136,7 +119,7 @@ namespace Codevoid.Storyvoid
                 if (this.changesDatabase == null)
                 {
                     this.ThrowIfNotReady();
-                    this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection, new(Unread: this.UnreadFolderLocalId, Archive: this.ArchiveFolderLocalId));
+                    this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection, this);
                 }
 
                 return this.changesDatabase;
@@ -146,13 +129,31 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc />
         public IFolderDatabase FolderDatabase
         {
-            get { return this; }
+            get
+            {
+                if(folderDatabase == null)
+                {
+                    this.ThrowIfNotReady();
+                    folderDatabase = new FolderDatabase(this.connection, this);
+                }
+
+                return folderDatabase!;
+            }
         }
 
         /// <inheritdoc />
         public IArticleDatabase ArticleDatabase
         {
-            get { return this; }
+            get
+            {
+                if(this.articleDatabase == null)
+                {
+                    this.ThrowIfNotReady();
+                    this.articleDatabase = new ArticleDatabase(this.connection, this);
+                }
+
+                return this.articleDatabase;
+            }
         }
     }
 }

@@ -5,13 +5,20 @@ using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid
 {
-    sealed partial class InstapaperDatabase
+    internal sealed class FolderDatabase : IFolderDatabase
     {
+        private IDbConnection connection;
+        private IInstapaperDatabase database;
+
+        public FolderDatabase(IDbConnection connection, IInstapaperDatabase database)
+        {
+            this.connection = connection;
+            this.database = database;
+        }
+
         /// <inheritdoc/>
         public IList<DatabaseFolder> ListAllFolders()
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -36,8 +43,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public DatabaseFolder? GetFolderByServiceId(long serviceId)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -85,8 +90,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public DatabaseFolder CreateFolder(string title)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             if (FolderWithTitleExists(c, title))
@@ -125,8 +128,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             if (FolderWithTitleExists(c, title))
@@ -154,8 +155,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -193,20 +192,18 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc />
         public void DeleteFolder(long localFolderId)
         {
-            if (localFolderId == this.UnreadFolderLocalId)
+            if (localFolderId == WellKnownLocalFolderIds.Unread)
             {
                 throw new InvalidOperationException("Deleting the Unread folder is not allowed");
             }
 
-            if (localFolderId == this.ArchiveFolderLocalId)
+            if (localFolderId == WellKnownLocalFolderIds.Archive)
             {
                 throw new InvalidOperationException("Deleting the Archive folder is not allowed");
             }
 
-            this.ThrowIfNotReady();
-
             var c = this.connection;
-            var changesDB = this.ChangesDatabase;
+            var changesDB = this.database.ChangesDatabase;
 
             if (changesDB.GetPendingFolderAddByLocalFolderId(localFolderId) != null)
             {

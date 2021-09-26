@@ -24,11 +24,11 @@ CREATE TABLE folders (
 );
 
 -- Insert the system folders
-INSERT INTO folders(service_id, title, position)
-VALUES (-1, 'Home', -100);
+INSERT INTO folders(local_id, service_id, title, position)
+VALUES (1, -1, 'Home', -100);
 
-INSERT INTO folders(service_id, title, position)
-VALUES (-2, 'Archive', -99);
+INSERT INTO folders(local_id, service_id, title, position)
+VALUES (2, -2, 'Archive', -99);
 
 CREATE TABLE article_to_folder (
     pair_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,

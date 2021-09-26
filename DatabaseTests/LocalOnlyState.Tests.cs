@@ -28,7 +28,7 @@ namespace Codevoid.Test.Storyvoid
 
         public IList<DatabaseArticle> PopulateDatabaseWithArticles()
         {
-            var unreadFolder = this.instapaperDb!.FolderDatabase.UnreadFolderLocalId;
+            var unreadFolder = WellKnownLocalFolderIds.Unread;
             var article1 = this.db!.AddArticleToFolder(new(
                 1,
                 "Sample Article 1",
@@ -160,7 +160,7 @@ namespace Codevoid.Test.Storyvoid
             var articleData = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId);
 
             _ = this.db!.AddLocalOnlyStateForArticle(articleData);
-            var articles = this.db!.ListArticlesForLocalFolder(this.instapaperDb!.FolderDatabase.UnreadFolderLocalId);
+            var articles = this.db!.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
 
             var articleWithLocalState = (from a in articles
                                          where a.Id == articleId
@@ -187,7 +187,7 @@ namespace Codevoid.Test.Storyvoid
                 addedLocalState.Add(data);
             }
 
-            var articles = this.db!.ListArticlesForLocalFolder(this.instapaperDb!.FolderDatabase.UnreadFolderLocalId);
+            var articles = this.db!.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
             var articlesWithLocalState = (from a in articles
                                           where a.HasLocalState
                                           select a);

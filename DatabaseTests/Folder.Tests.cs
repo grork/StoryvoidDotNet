@@ -43,12 +43,12 @@ namespace Codevoid.Test.Storyvoid
             IList<DatabaseFolder> result = this.db!.ListAllFolders();
             Assert.Equal(2, result.Count);
 
-            var unreadFolder = result.Where((f) => f.ServiceId == WellKnownFolderIds.Unread).First()!;
-            var archiveFolder = result.Where((f) => f.ServiceId == WellKnownFolderIds.Archive).First()!;
+            var unreadFolder = result.Where((f) => f.ServiceId == WellKnownServiceFolderIds.Unread).First()!;
+            var archiveFolder = result.Where((f) => f.ServiceId == WellKnownServiceFolderIds.Archive).First()!;
 
             // Check the convenience IDs are correct
-            Assert.Equal(unreadFolder.LocalId, this.db!.UnreadFolderLocalId);
-            Assert.Equal(archiveFolder.LocalId, this.db!.ArchiveFolderLocalId);
+            Assert.Equal(unreadFolder.LocalId, WellKnownLocalFolderIds.Unread);
+            Assert.Equal(archiveFolder.LocalId, WellKnownLocalFolderIds.Archive);
         }
 
         [Fact]
@@ -61,30 +61,30 @@ namespace Codevoid.Test.Storyvoid
             var secondFolder = result[1];
 
             // Check the convenience IDs are correct
-            Assert.Equal(firstFolder.LocalId, this.db!.UnreadFolderLocalId);
-            Assert.Equal(secondFolder.LocalId, this.db!.ArchiveFolderLocalId);
+            Assert.Equal(firstFolder.LocalId, WellKnownLocalFolderIds.Unread);
+            Assert.Equal(secondFolder.LocalId, WellKnownLocalFolderIds.Archive);
         }
 
         [Fact]
         public void CanGetSingleDefaultFolderByServiceId()
         {
-            var folder = db!.GetFolderByServiceId(WellKnownFolderIds.Unread);
+            var folder = db!.GetFolderByServiceId(WellKnownServiceFolderIds.Unread);
 
             Assert.NotNull(folder);
             Assert.Equal("Home", folder!.Title);
-            Assert.Equal(WellKnownFolderIds.Unread, folder!.ServiceId);
+            Assert.Equal(WellKnownServiceFolderIds.Unread, folder!.ServiceId);
             Assert.NotEqual(0L, folder!.LocalId);
         }
 
         [Fact]
         public void CanGetSingleDefaultFolderByLocalId()
         {
-            var folder = this.db!.GetFolderByServiceId(WellKnownFolderIds.Unread);
+            var folder = this.db!.GetFolderByServiceId(WellKnownServiceFolderIds.Unread);
             folder = this.db!.GetFolderByLocalId(folder!.LocalId);
 
             Assert.NotNull(folder);
             Assert.Equal("Home", folder!.Title);
-            Assert.Equal(WellKnownFolderIds.Unread, folder!.ServiceId);
+            Assert.Equal(WellKnownServiceFolderIds.Unread, folder!.ServiceId);
         }
 
         [Fact]
@@ -276,13 +276,13 @@ namespace Codevoid.Test.Storyvoid
         [Fact]
         public void DeletingUnreadFolderThrows()
         {
-            Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(this.db!.UnreadFolderLocalId));
+            Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Unread));
         }
 
         [Fact]
         public void DeletingArchiveFolderThrows()
         {
-            Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(this.db!.UnreadFolderLocalId));
+            Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Archive));
         }
 
         [Fact]
@@ -293,8 +293,8 @@ namespace Codevoid.Test.Storyvoid
 
             // Check that the folder order is correct
             var allFolders = this.db!.ListAllFolders();
-            Assert.Equal(this.db!.UnreadFolderLocalId, allFolders[0].LocalId);
-            Assert.Equal(this.db!.ArchiveFolderLocalId, allFolders[1].LocalId);
+            Assert.Equal(WellKnownLocalFolderIds.Unread, allFolders[0].LocalId);
+            Assert.Equal(WellKnownLocalFolderIds.Archive, allFolders[1].LocalId);
             Assert.Equal(addedFolder.LocalId, allFolders[2].LocalId);
         }
 
@@ -315,8 +315,8 @@ namespace Codevoid.Test.Storyvoid
             var allFolders = this.db!.ListAllFolders();
 
             // Check that the folder order is correct
-            Assert.Equal(this.db!.UnreadFolderLocalId, allFolders[0].LocalId);
-            Assert.Equal(this.db!.ArchiveFolderLocalId, allFolders[1].LocalId);
+            Assert.Equal(WellKnownLocalFolderIds.Unread, allFolders[0].LocalId);
+            Assert.Equal(WellKnownLocalFolderIds.Archive, allFolders[1].LocalId);
             Assert.Equal(thirdAddedFolder.LocalId, allFolders[2].LocalId);
             Assert.Equal(secondAddedFolder.LocalId, allFolders[3].LocalId);
             Assert.Equal(firstAddedFolder.LocalId, allFolders[4].LocalId);

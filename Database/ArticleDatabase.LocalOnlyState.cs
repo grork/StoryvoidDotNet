@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid
 {
-    sealed partial class InstapaperDatabase
+    internal sealed partial class ArticleDatabase
     {
         /// <inheritdoc/>
         public DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(long articleId)
@@ -32,8 +32,6 @@ namespace Codevoid.Storyvoid
         /// <inheritdoc/>
         public DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(DatabaseLocalOnlyArticleState localOnlyArticleState)
         {
-            this.ThrowIfNotReady();
-
             var c = this.connection;
 
             using var query = c.CreateCommand(@"
@@ -101,8 +99,6 @@ namespace Codevoid.Storyvoid
 
         public DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)
         {
-            this.ThrowIfNotReady();
-
             if (updatedLocalOnlyArticleState.ArticleId < 1)
             {
                 throw new ArgumentException("Article ID must be greater than 0");
