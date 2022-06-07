@@ -3,38 +3,38 @@ using System.Data;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 
-namespace Codevoid.Storyvoid
+namespace Codevoid.Storyvoid;
+
+internal sealed partial class ArticleDatabase
 {
-    internal sealed partial class ArticleDatabase
+    /// <inheritdoc/>
+    public DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(long articleId)
     {
-        /// <inheritdoc/>
-        public DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(long articleId)
-        {
-            var c = this.connection;
-            using var query = c.CreateCommand(@"
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
                 SELECT *
                 FROM article_local_only_state
                 WHERE article_id = @articleId
             ");
 
-            query.AddParameter("@articleId", articleId);
+        query.AddParameter("@articleId", articleId);
 
-            using var row = query.ExecuteReader();
-            DatabaseLocalOnlyArticleState? localOnlyState = null;
-            if (row.Read())
-            {
-                localOnlyState = DatabaseLocalOnlyArticleState.FromRow(row);
-            }
-
-            return localOnlyState;
+        using var row = query.ExecuteReader();
+        DatabaseLocalOnlyArticleState? localOnlyState = null;
+        if (row.Read())
+        {
+            localOnlyState = DatabaseLocalOnlyArticleState.FromRow(row);
         }
 
-        /// <inheritdoc/>
-        public DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(DatabaseLocalOnlyArticleState localOnlyArticleState)
-        {
-            var c = this.connection;
+        return localOnlyState;
+    }
 
-            using var query = c.CreateCommand(@"
+    /// <inheritdoc/>
+    public DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(DatabaseLocalOnlyArticleState localOnlyArticleState)
+    {
+        var c = this.connection;
+
+        using var query = c.CreateCommand(@"
                 INSERT INTO article_local_only_state(article_id,
                                                         available_locally,
                                                         first_image_local_path,
@@ -53,61 +53,61 @@ namespace Codevoid.Storyvoid
                         @includeInMRU)
             ");
 
-            query.AddParameter("@articleId", localOnlyArticleState.ArticleId);
-            query.AddParameter("@availableLocally", localOnlyArticleState.AvailableLocally);
-            query.AddParameter("@firstImageLocalPath", localOnlyArticleState.FirstImageLocalPath);
-            query.AddParameter("@firstImageRemotePath", localOnlyArticleState.FirstImageRemoteUri);
-            query.AddParameter("@localPath", localOnlyArticleState.LocalPath);
-            query.AddParameter("@extractedDescription", localOnlyArticleState.ExtractedDescription);
-            query.AddParameter("@articleUnavailable", localOnlyArticleState.ArticleUnavailable);
-            query.AddParameter("@includeInMRU", localOnlyArticleState.IncludeInMRU);
+        query.AddParameter("@articleId", localOnlyArticleState.ArticleId);
+        query.AddParameter("@availableLocally", localOnlyArticleState.AvailableLocally);
+        query.AddParameter("@firstImageLocalPath", localOnlyArticleState.FirstImageLocalPath);
+        query.AddParameter("@firstImageRemotePath", localOnlyArticleState.FirstImageRemoteUri);
+        query.AddParameter("@localPath", localOnlyArticleState.LocalPath);
+        query.AddParameter("@extractedDescription", localOnlyArticleState.ExtractedDescription);
+        query.AddParameter("@articleUnavailable", localOnlyArticleState.ArticleUnavailable);
+        query.AddParameter("@includeInMRU", localOnlyArticleState.IncludeInMRU);
 
-            try
-            {
-                query.ExecuteNonQuery();
-            }
-            // When the article is missing, we get a foreign key constraint
-            // error. We need to turn this into a strongly typed error.
-            catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
-                                         && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
-            {
-                throw new ArticleNotFoundException(localOnlyArticleState.ArticleId);
-            }
-            // When local only state already exists, we need to convert the
-            // primary key constraint error into something strongly typed
-            catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
-                                         && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
-            {
-                throw new LocalOnlyStateExistsException(localOnlyArticleState.ArticleId);
-            }
-
-            return this.GetLocalOnlyStateByArticleId(localOnlyArticleState.ArticleId)!;
+        try
+        {
+            query.ExecuteNonQuery();
+        }
+        // When the article is missing, we get a foreign key constraint
+        // error. We need to turn this into a strongly typed error.
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
+        {
+            throw new ArticleNotFoundException(localOnlyArticleState.ArticleId);
+        }
+        // When local only state already exists, we need to convert the
+        // primary key constraint error into something strongly typed
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
+        {
+            throw new LocalOnlyStateExistsException(localOnlyArticleState.ArticleId);
         }
 
-        /// <inheritdoc/>
-        public void DeleteLocalOnlyArticleState(long articleId)
-        {
-            var c = this.connection;
-            using var query = c.CreateCommand(@"
+        return this.GetLocalOnlyStateByArticleId(localOnlyArticleState.ArticleId)!;
+    }
+
+    /// <inheritdoc/>
+    public void DeleteLocalOnlyArticleState(long articleId)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
                 DELETE FROM article_local_only_state
                 WHERE article_id = @articleId
             ");
 
-            query.AddParameter("@articleId", articleId);
-            query.ExecuteNonQuery();
+        query.AddParameter("@articleId", articleId);
+        query.ExecuteNonQuery();
+    }
+
+    public DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)
+    {
+        if (updatedLocalOnlyArticleState.ArticleId < 1)
+        {
+            throw new ArgumentException("Article ID must be greater than 0");
         }
 
-        public DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)
-        {
-            if (updatedLocalOnlyArticleState.ArticleId < 1)
-            {
-                throw new ArgumentException("Article ID must be greater than 0");
-            }
+        var c = this.connection;
+        var articleId = updatedLocalOnlyArticleState.ArticleId;
 
-            var c = this.connection;
-            var articleId = updatedLocalOnlyArticleState.ArticleId;
-
-            using var query = c.CreateCommand(@"
+        using var query = c.CreateCommand(@"
                     UPDATE article_local_only_state SET
                         available_locally = @availableLocally,
                         first_image_local_path = @firstImageLocalPath,
@@ -119,31 +119,30 @@ namespace Codevoid.Storyvoid
                     WHERE article_id = @articleId
                 ");
 
-            query.AddParameter("@articleId", articleId);
-            query.AddParameter("@availableLocally", updatedLocalOnlyArticleState.AvailableLocally);
-            query.AddParameter("@firstImageLocalPath", updatedLocalOnlyArticleState.FirstImageLocalPath);
-            query.AddParameter("@firstImageRemotePath", updatedLocalOnlyArticleState.FirstImageRemoteUri);
-            query.AddParameter("@localPath", updatedLocalOnlyArticleState.LocalPath);
-            query.AddParameter("@extractedDescription", updatedLocalOnlyArticleState.ExtractedDescription);
-            query.AddParameter("@articleUnavailable", updatedLocalOnlyArticleState.ArticleUnavailable);
-            query.AddParameter("@includeInMru", updatedLocalOnlyArticleState.IncludeInMRU);
+        query.AddParameter("@articleId", articleId);
+        query.AddParameter("@availableLocally", updatedLocalOnlyArticleState.AvailableLocally);
+        query.AddParameter("@firstImageLocalPath", updatedLocalOnlyArticleState.FirstImageLocalPath);
+        query.AddParameter("@firstImageRemotePath", updatedLocalOnlyArticleState.FirstImageRemoteUri);
+        query.AddParameter("@localPath", updatedLocalOnlyArticleState.LocalPath);
+        query.AddParameter("@extractedDescription", updatedLocalOnlyArticleState.ExtractedDescription);
+        query.AddParameter("@articleUnavailable", updatedLocalOnlyArticleState.ArticleUnavailable);
+        query.AddParameter("@includeInMru", updatedLocalOnlyArticleState.IncludeInMRU);
 
-            var updatedRows = query.ExecuteNonQuery();
-            if (updatedRows < 1)
+        var updatedRows = query.ExecuteNonQuery();
+        if (updatedRows < 1)
+        {
+            // Nothing was updated; check if it was just that there was
+            // no existing state to update
+            var state = this.GetLocalOnlyStateByArticleId(articleId);
+            if (state is null)
             {
-                // Nothing was updated; check if it was just that there was
-                // no existing state to update
-                var state = this.GetLocalOnlyStateByArticleId(articleId);
-                if (state is null)
-                {
-                    throw new LocalOnlyStateNotFoundException(articleId);
-                }
-
-                throw new InvalidOperationException("Unknown error while updating local only state");
+                throw new LocalOnlyStateNotFoundException(articleId);
             }
 
-            var local = this.GetLocalOnlyStateByArticleId(articleId);
-            return local!;
+            throw new InvalidOperationException("Unknown error while updating local only state");
         }
+
+        var local = this.GetLocalOnlyStateByArticleId(articleId);
+        return local!;
     }
 }

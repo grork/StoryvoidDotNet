@@ -21,46 +21,45 @@ using Xunit.Sdk;
 // Enables the actual ordering of collections
 [assembly: TestFramework("Xunit.Extensions.Ordering.TestFramework", "Xunit.Extensions.Ordering")]
 
-namespace Codevoid.Test.Instapaper
+namespace Codevoid.Test.Instapaper;
+
+// Definition only class to group API tests together, allowing for correct
+// ordering
+[CollectionDefinition(TestUtilities.TestCollectionName)]
+public sealed class ApiTestsCollection : ICollectionFixture<CurrentServiceStateFixture>
+{ }
+
+public static class TestUtilities
 {
-    // Definition only class to group API tests together, allowing for correct
-    // ordering
-    [CollectionDefinition(TestUtilities.TestCollectionName)]
-    public sealed class ApiTestsCollection : ICollectionFixture<CurrentServiceStateFixture>
-    { }
-
-    public static class TestUtilities
+    public static void ThrowIfValueIsAPIKeyHasntBeenSet(string valueToTest, string valueName)
     {
-        public static void ThrowIfValueIsAPIKeyHasntBeenSet(string valueToTest, string valueName)
+        if (!String.IsNullOrWhiteSpace(valueToTest) && (valueToTest != "PLACEHOLDER"))
         {
-            if (!String.IsNullOrWhiteSpace(valueToTest) && (valueToTest != "PLACEHOLDER"))
-            {
-                return;
-            }
-
-            throw new ArgumentOutOfRangeException(valueName, "You must replace the placeholder value. See README.md");
+            return;
         }
 
-        public static ClientInformation GetClientInformation()
-        {
-            ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY, nameof(InstapaperAPIKey.CONSUMER_KEY));
-            ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY_SECRET, nameof(InstapaperAPIKey.CONSUMER_KEY_SECRET));
-            ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.ACCESS_TOKEN, nameof(InstapaperAPIKey.ACCESS_TOKEN));
-            ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.TOKEN_SECRET, nameof(InstapaperAPIKey.TOKEN_SECRET));
-
-            var clientInfo = new ClientInformation(
-                InstapaperAPIKey.CONSUMER_KEY,
-                InstapaperAPIKey.CONSUMER_KEY_SECRET,
-                InstapaperAPIKey.ACCESS_TOKEN,
-                InstapaperAPIKey.TOKEN_SECRET
-            );
-
-            clientInfo.ProductName = "Codevoid+Instapaper+API+Tests";
-            clientInfo.ProductVersion = "0.1";
-
-            return clientInfo;
-        }
-
-        public const string TestCollectionName = "Instapaper API Tests";
+        throw new ArgumentOutOfRangeException(valueName, "You must replace the placeholder value. See README.md");
     }
+
+    public static ClientInformation GetClientInformation()
+    {
+        ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY, nameof(InstapaperAPIKey.CONSUMER_KEY));
+        ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY_SECRET, nameof(InstapaperAPIKey.CONSUMER_KEY_SECRET));
+        ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.ACCESS_TOKEN, nameof(InstapaperAPIKey.ACCESS_TOKEN));
+        ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.TOKEN_SECRET, nameof(InstapaperAPIKey.TOKEN_SECRET));
+
+        var clientInfo = new ClientInformation(
+            InstapaperAPIKey.CONSUMER_KEY,
+            InstapaperAPIKey.CONSUMER_KEY_SECRET,
+            InstapaperAPIKey.ACCESS_TOKEN,
+            InstapaperAPIKey.TOKEN_SECRET
+        );
+
+        clientInfo.ProductName = "Codevoid+Instapaper+API+Tests";
+        clientInfo.ProductVersion = "0.1";
+
+        return clientInfo;
+    }
+
+    public const string TestCollectionName = "Instapaper API Tests";
 }

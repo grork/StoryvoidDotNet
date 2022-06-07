@@ -1,62 +1,61 @@
 ﻿using System;
 
-namespace Codevoid.Storyvoid
+namespace Codevoid.Storyvoid;
+
+public sealed class ArticleNotFoundException : Exception
 {
-    public sealed class ArticleNotFoundException : Exception
+    public readonly long ArticleId;
+    public ArticleNotFoundException(long id) : base($"Article {id} not found")
     {
-        public readonly long ArticleId;
-        public ArticleNotFoundException(long id) : base($"Article {id} not found")
-        {
-            this.ArticleId = id;
-        }
+        this.ArticleId = id;
     }
+}
 
-    public sealed class FolderNotFoundException : Exception
+public sealed class FolderNotFoundException : Exception
+{
+    public readonly long LocalFolderId;
+    public FolderNotFoundException(long localFolderId) : base($"Folder {localFolderId} not found")
     {
-        public readonly long LocalFolderId;
-        public FolderNotFoundException(long localFolderId) : base($"Folder {localFolderId} not found")
-        {
-            this.LocalFolderId = localFolderId;
-        }
+        this.LocalFolderId = localFolderId;
     }
+}
 
-    public sealed class LocalOnlyStateExistsException : Exception
+public sealed class LocalOnlyStateExistsException : Exception
+{
+    public readonly long ArticleId;
+    public LocalOnlyStateExistsException(long articleId)
+        : base($"Local Only State already present for {articleId}")
     {
-        public readonly long ArticleId;
-        public LocalOnlyStateExistsException(long articleId)
-            : base($"Local Only State already present for {articleId}")
-        {
-            this.ArticleId = articleId;
-        }
+        this.ArticleId = articleId;
     }
+}
 
-    public sealed class LocalOnlyStateNotFoundException : Exception
+public sealed class LocalOnlyStateNotFoundException : Exception
+{
+    public readonly long ArticleId;
+    public LocalOnlyStateNotFoundException(long articleId)
+        : base($"Local Only State was not present for {articleId}")
     {
-        public readonly long ArticleId;
-        public LocalOnlyStateNotFoundException(long articleId)
-            : base($"Local Only State was not present for {articleId}")
-        {
-            this.ArticleId = articleId;
-        }
+        this.ArticleId = articleId;
     }
+}
 
-    public sealed class DuplicatePendingFolderDelete : Exception
+public sealed class DuplicatePendingFolderDelete : Exception
+{
+    public readonly long ServiceId;
+    public DuplicatePendingFolderDelete(long serviceId)
+        : base($"A pending folder delete was already present for {serviceId}")
     {
-        public readonly long ServiceId;
-        public DuplicatePendingFolderDelete(long serviceId)
-            : base($"A pending folder delete was already present for {serviceId}")
-        {
-            this.ServiceId = serviceId;
-        }
+        this.ServiceId = serviceId;
     }
+}
 
-    public sealed class DuplicatePendingFolderAdd : Exception
+public sealed class DuplicatePendingFolderAdd : Exception
+{
+    public readonly long LocalFolderId;
+    public DuplicatePendingFolderAdd(long localFolderId)
+        : base($"A pending folder add was already present for {localFolderId}")
     {
-        public readonly long LocalFolderId;
-        public DuplicatePendingFolderAdd(long localFolderId)
-            : base($"A pending folder add was already present for {localFolderId}")
-        {
-            this.LocalFolderId = localFolderId;
-        }
+        this.LocalFolderId = localFolderId;
     }
 }

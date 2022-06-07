@@ -5,296 +5,295 @@ using System.Threading.Tasks;
 using Codevoid.Storyvoid;
 using Xunit;
 
-namespace Codevoid.Test.Storyvoid
+namespace Codevoid.Test.Storyvoid;
+
+public class LocalOnlyStateTests : IAsyncLifetime
 {
-    public class LocalOnlyStateTests : IAsyncLifetime
+    private IInstapaperDatabase? instapaperDb;
+    private IArticleDatabase? db;
+    private IList<DatabaseArticle> sampleArticles = new List<DatabaseArticle>();
+
+    public async Task InitializeAsync()
     {
-        private IInstapaperDatabase? instapaperDb;
-        private IArticleDatabase? db;
-        private IList<DatabaseArticle> sampleArticles = new List<DatabaseArticle>();
+        this.instapaperDb = await TestUtilities.GetDatabase();
+        this.db = this.instapaperDb.ArticleDatabase;
+        this.sampleArticles = this.PopulateDatabaseWithArticles();
+    }
 
-        public async Task InitializeAsync()
+    public Task DisposeAsync()
+    {
+        this.instapaperDb?.Dispose();
+        return Task.CompletedTask;
+    }
+
+    public IList<DatabaseArticle> PopulateDatabaseWithArticles()
+    {
+        var unreadFolder = WellKnownLocalFolderIds.Unread;
+        var article1 = this.db!.AddArticleToFolder(new(
+            1,
+            "Sample Article 1",
+            new("https://www.codevoid.net/1"),
+            String.Empty,
+            0.0F,
+            DateTime.Now,
+            String.Empty,
+            false
+        ), unreadFolder);
+
+        var article2 = this.db!.AddArticleToFolder(new(
+            2,
+            "Sample Article 2",
+            new("https://www.codevoid.net/2"),
+            String.Empty,
+            0.0F,
+            DateTime.Now,
+            String.Empty,
+            false
+        ), unreadFolder);
+
+        var article3 = this.db!.AddArticleToFolder(new(
+            3,
+            "Sample Article 3",
+            new("https://www.codevoid.net/2"),
+            String.Empty,
+            0.0F,
+            DateTime.Now,
+            String.Empty,
+            false
+        ), unreadFolder);
+
+        return new List<DatabaseArticle> { article1, article2, article3 };
+    }
+
+    private static DatabaseLocalOnlyArticleState GetSampleLocalOnlyState(long articleId)
+    {
+        return new DatabaseLocalOnlyArticleState()
         {
-            this.instapaperDb = await TestUtilities.GetDatabase();
-            this.db = this.instapaperDb.ArticleDatabase;
-            this.sampleArticles = this.PopulateDatabaseWithArticles();
-        }
+            ArticleId = articleId,
+            AvailableLocally = true,
+            FirstImageLocalPath = new($"localimage://local/{articleId}"),
+            FirstImageRemoteUri = new($"remoteimage://remote/{articleId}"),
+            LocalPath = new($"localfile://local/{articleId}"),
+            ExtractedDescription = string.Empty,
+            ArticleUnavailable = true,
+            IncludeInMRU = false
+        };
+    }
 
-        public Task DisposeAsync()
+    [Fact]
+    public void RequestingLocalStateForMissingArticleReturnsNothing()
+    {
+        var result = this.db!.GetLocalOnlyStateByArticleId(this.sampleArticles.First().Id);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void CanAddLocalStateForArticle()
+    {
+        var data = new DatabaseLocalOnlyArticleState()
         {
-            this.instapaperDb?.Dispose();
-            return Task.CompletedTask;
-        }
+            ArticleId = this.sampleArticles.First().Id,
+        };
 
-        public IList<DatabaseArticle> PopulateDatabaseWithArticles()
+        var result = this.db!.AddLocalOnlyStateForArticle(data);
+        Assert.Equal(data.ArticleId, result.ArticleId);
+        Assert.Equal(data, result);
+    }
+
+    [Fact]
+    public void AddingLocalStateForMissingArticleThrowNotFoundException()
+    {
+        var data = new DatabaseLocalOnlyArticleState()
         {
-            var unreadFolder = WellKnownLocalFolderIds.Unread;
-            var article1 = this.db!.AddArticleToFolder(new(
-                1,
-                "Sample Article 1",
-                new("https://www.codevoid.net/1"),
-                String.Empty,
-                0.0F,
-                DateTime.Now,
-                String.Empty,
-                false
-            ), unreadFolder);
+            ArticleId = 99
+        };
 
-            var article2 = this.db!.AddArticleToFolder(new(
-                2,
-                "Sample Article 2",
-                new("https://www.codevoid.net/2"),
-                String.Empty,
-                0.0F,
-                DateTime.Now,
-                String.Empty,
-                false
-            ), unreadFolder);
+        var ex = Assert.Throws<ArticleNotFoundException>(() => this.db!.AddLocalOnlyStateForArticle(data));
+        Assert.Equal(data.ArticleId, ex.ArticleId);
+    }
 
-            var article3 = this.db!.AddArticleToFolder(new(
-                3,
-                "Sample Article 3",
-                new("https://www.codevoid.net/2"),
-                String.Empty,
-                0.0F,
-                DateTime.Now,
-                String.Empty,
-                false
-            ), unreadFolder);
-
-            return new List<DatabaseArticle> { article1, article2, article3 };
-        }
-
-        private static DatabaseLocalOnlyArticleState GetSampleLocalOnlyState(long articleId)
+    [Fact]
+    public void AddingLocalStateWhenAlreadyPresentThrowsDuplicateException()
+    {
+        var data = new DatabaseLocalOnlyArticleState()
         {
-            return new DatabaseLocalOnlyArticleState()
-            {
-                ArticleId = articleId,
-                AvailableLocally = true,
-                FirstImageLocalPath = new($"localimage://local/{articleId}"),
-                FirstImageRemoteUri = new($"remoteimage://remote/{articleId}"),
-                LocalPath = new($"localfile://local/{articleId}"),
-                ExtractedDescription = string.Empty,
-                ArticleUnavailable = true,
-                IncludeInMRU = false
-            };
-        }
+            ArticleId = this.sampleArticles.First().Id,
+        };
 
-        [Fact]
-        public void RequestingLocalStateForMissingArticleReturnsNothing()
+        _ = this.db!.AddLocalOnlyStateForArticle(data);
+        var ex = Assert.Throws<LocalOnlyStateExistsException>(() => this.db!.AddLocalOnlyStateForArticle(data));
+        Assert.Equal(data.ArticleId, ex.ArticleId);
+    }
+
+    [Fact]
+    public void CanReadLocalStateForArticle()
+    {
+        var articleId = this.sampleArticles.First().Id;
+        var extractedDescription = "SampleExtractedDescription";
+        var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
+        { ExtractedDescription = extractedDescription };
+
+        _ = this.db!.AddLocalOnlyStateForArticle(data);
+        var result = (this.db!.GetLocalOnlyStateByArticleId(articleId))!;
+        Assert.Equal(data, result);
+    }
+
+    [Fact]
+    public void ReadingArticleIncludesLocalStateWhenPresent()
+    {
+        var articleId = this.sampleArticles.First().Id;
+        var extractedDescription = "SampleExtractedDescription";
+
+        var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
+        { ExtractedDescription = extractedDescription };
+
+        _ = this.db!.AddLocalOnlyStateForArticle(data);
+        var article = (this.db!.GetArticleById(articleId))!;
+        Assert.True(article.HasLocalState);
+        Assert.Equal(data, article.LocalOnlyState!);
+    }
+
+    [Fact]
+    public void ListingArticlesWithPartialLocalStateReturnsLocalStateCorrectly()
+    {
+        var articleId = this.sampleArticles.First().Id;
+        var articleData = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId);
+
+        _ = this.db!.AddLocalOnlyStateForArticle(articleData);
+        var articles = this.db!.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+
+        var articleWithLocalState = (from a in articles
+                                     where a.Id == articleId
+                                     select a).Single();
+        Assert.True(articleWithLocalState!.HasLocalState);
+        Assert.Equal(articleData, articleWithLocalState.LocalOnlyState!);
+
+        var articlesWithoutLocalState = (from a in articles
+                                         where (a.Id != articleId) && !a.HasLocalState
+                                         select a).Count();
+        Assert.Equal(articles.Count - 1, articlesWithoutLocalState);
+    }
+
+    [Fact]
+    public void ListingArticlesWhichAllHaveLocalStateCorrectlyReturnsLocalState()
+    {
+        var addedLocalState = new List<DatabaseLocalOnlyArticleState>();
+
+        foreach (var a in this.sampleArticles)
         {
-            var result = this.db!.GetLocalOnlyStateByArticleId(this.sampleArticles.First().Id);
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public void CanAddLocalStateForArticle()
-        {
-            var data = new DatabaseLocalOnlyArticleState()
-            {
-                ArticleId = this.sampleArticles.First().Id,
-            };
-
-            var result = this.db!.AddLocalOnlyStateForArticle(data);
-            Assert.Equal(data.ArticleId, result.ArticleId);
-            Assert.Equal(data, result);
-        }
-
-        [Fact]
-        public void AddingLocalStateForMissingArticleThrowNotFoundException()
-        {
-            var data = new DatabaseLocalOnlyArticleState()
-            {
-                ArticleId = 99
-            };
-
-            var ex = Assert.Throws<ArticleNotFoundException>(() => this.db!.AddLocalOnlyStateForArticle(data));
-            Assert.Equal(data.ArticleId, ex.ArticleId);
-        }
-
-        [Fact]
-        public void AddingLocalStateWhenAlreadyPresentThrowsDuplicateException()
-        {
-            var data = new DatabaseLocalOnlyArticleState()
-            {
-                ArticleId = this.sampleArticles.First().Id,
-            };
-
+            var data = LocalOnlyStateTests.GetSampleLocalOnlyState(a.Id);
             _ = this.db!.AddLocalOnlyStateForArticle(data);
-            var ex = Assert.Throws<LocalOnlyStateExistsException>(() => this.db!.AddLocalOnlyStateForArticle(data));
-            Assert.Equal(data.ArticleId, ex.ArticleId);
+
+            addedLocalState.Add(data);
         }
 
-        [Fact]
-        public void CanReadLocalStateForArticle()
+        var articles = this.db!.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        var articlesWithLocalState = (from a in articles
+                                      where a.HasLocalState
+                                      select a);
+        Assert.Equal(addedLocalState.Count, articlesWithLocalState.Count());
+
+        foreach (var localState in addedLocalState)
         {
-            var articleId = this.sampleArticles.First().Id;
-            var extractedDescription = "SampleExtractedDescription";
-            var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
-            { ExtractedDescription = extractedDescription };
-
-            _ = this.db!.AddLocalOnlyStateForArticle(data);
-            var result = (this.db!.GetLocalOnlyStateByArticleId(articleId))!;
-            Assert.Equal(data, result);
+            var matchingArticle = (from ma in articlesWithLocalState
+                                   where ma.Id == localState.ArticleId
+                                   select ma).Single();
+            Assert.NotNull(matchingArticle);
+            Assert.True(matchingArticle.HasLocalState);
+            Assert.Equal(localState, matchingArticle.LocalOnlyState);
         }
+    }
 
-        [Fact]
-        public void ReadingArticleIncludesLocalStateWhenPresent()
+    [Fact]
+    public void CanRemoveLocalOnlyStateForArticleWhenPresent()
+    {
+        var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+        _ = this.db!.AddLocalOnlyStateForArticle(state);
+
+        this.db!.DeleteLocalOnlyArticleState(state.ArticleId);
+
+        var result = this.db!.GetLocalOnlyStateByArticleId(state.ArticleId);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void CanRemoveLocalOnlyStateWhenArticleIsPresentButStateIsnt()
+    {
+        this.db!.DeleteLocalOnlyArticleState(this.sampleArticles.First()!.Id);
+    }
+
+    [Fact]
+    public void WhenRemovingStateForArticleThatIsntPresentNoErrorReturned()
+    {
+        this.db!.DeleteLocalOnlyArticleState(999L);
+    }
+
+    [Fact]
+    public void CanUpdateSingleFieldLocalOnlyStateWithExistingState()
+    {
+        var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+        _ = this.db!.AddLocalOnlyStateForArticle(state);
+
+        var newState = state with
         {
-            var articleId = this.sampleArticles.First().Id;
-            var extractedDescription = "SampleExtractedDescription";
+            ExtractedDescription = "I have been updated"
+        };
 
-            var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
-            { ExtractedDescription = extractedDescription };
+        var updated = this.db!.UpdateLocalOnlyArticleState(newState);
+        var readFromDatabase = this.db!.GetLocalOnlyStateByArticleId(newState.ArticleId);
 
-            _ = this.db!.AddLocalOnlyStateForArticle(data);
-            var article = (this.db!.GetArticleById(articleId))!;
-            Assert.True(article.HasLocalState);
-            Assert.Equal(data, article.LocalOnlyState!);
-        }
+        Assert.NotEqual(state, updated);
+        Assert.Equal(newState, updated);
+        Assert.Equal(newState, readFromDatabase);
+    }
 
-        [Fact]
-        public void ListingArticlesWithPartialLocalStateReturnsLocalStateCorrectly()
+    [Fact]
+    public void CanUpdateAllFieldsFieldLocalOnlyStateWithExistingState()
+    {
+        var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+        _ = this.db!.AddLocalOnlyStateForArticle(state);
+
+        var newState = state with
         {
-            var articleId = this.sampleArticles.First().Id;
-            var articleData = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId);
+            AvailableLocally = state.AvailableLocally!,
+            FirstImageLocalPath = new Uri("imageLocalPathNew://localPathNew"),
+            FirstImageRemoteUri = new Uri("imageRemotePathNew://remotePathNew"),
+            LocalPath = new Uri("articleLocalPathNew://localPathNew"),
+            ExtractedDescription = "Extracted with care",
+            ArticleUnavailable = !state.ArticleUnavailable,
+            IncludeInMRU = !state.IncludeInMRU
+        };
 
-            _ = this.db!.AddLocalOnlyStateForArticle(articleData);
-            var articles = this.db!.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        var updated = this.db!.UpdateLocalOnlyArticleState(newState);
+        var readFromDatabase = this.db!.GetLocalOnlyStateByArticleId(newState.ArticleId);
 
-            var articleWithLocalState = (from a in articles
-                                         where a.Id == articleId
-                                         select a).Single();
-            Assert.True(articleWithLocalState!.HasLocalState);
-            Assert.Equal(articleData, articleWithLocalState.LocalOnlyState!);
+        Assert.NotEqual(state, updated);
+        Assert.Equal(newState, updated);
+        Assert.Equal(newState, readFromDatabase);
+    }
 
-            var articlesWithoutLocalState = (from a in articles
-                                             where (a.Id != articleId) && !a.HasLocalState
-                                             select a).Count();
-            Assert.Equal(articles.Count - 1, articlesWithoutLocalState);
-        }
+    [Fact]
+    public void UpdatingLocalOnlyStateWhenNoLocalStatePresentThrowsException()
+    {
+        var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+        Assert.Throws<LocalOnlyStateNotFoundException>(() => this.db!.UpdateLocalOnlyArticleState(state));
+    }
 
-        [Fact]
-        public void ListingArticlesWhichAllHaveLocalStateCorrectlyReturnsLocalState()
-        {
-            var addedLocalState = new List<DatabaseLocalOnlyArticleState>();
+    [Fact]
+    public void UpdatingLocalOnlyStateWithInvalidArticleIdThrowException()
+    {
+        Assert.Throws<ArgumentException>(() => this.db!.UpdateLocalOnlyArticleState(new DatabaseLocalOnlyArticleState()));
+    }
 
-            foreach (var a in this.sampleArticles)
-            {
-                var data = LocalOnlyStateTests.GetSampleLocalOnlyState(a.Id);
-                _ = this.db!.AddLocalOnlyStateForArticle(data);
+    [Fact]
+    public void DeletingArticleAlsoDeletesLocalOnlyState()
+    {
+        var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
+        _ = this.db!.AddLocalOnlyStateForArticle(state);
 
-                addedLocalState.Add(data);
-            }
+        this.db!.DeleteArticle(state.ArticleId);
 
-            var articles = this.db!.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-            var articlesWithLocalState = (from a in articles
-                                          where a.HasLocalState
-                                          select a);
-            Assert.Equal(addedLocalState.Count, articlesWithLocalState.Count());
-
-            foreach (var localState in addedLocalState)
-            {
-                var matchingArticle = (from ma in articlesWithLocalState
-                                       where ma.Id == localState.ArticleId
-                                       select ma).Single();
-                Assert.NotNull(matchingArticle);
-                Assert.True(matchingArticle.HasLocalState);
-                Assert.Equal(localState, matchingArticle.LocalOnlyState);
-            }
-        }
-
-        [Fact]
-        public void CanRemoveLocalOnlyStateForArticleWhenPresent()
-        {
-            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-            _ = this.db!.AddLocalOnlyStateForArticle(state);
-
-            this.db!.DeleteLocalOnlyArticleState(state.ArticleId);
-
-            var result = this.db!.GetLocalOnlyStateByArticleId(state.ArticleId);
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public void CanRemoveLocalOnlyStateWhenArticleIsPresentButStateIsnt()
-        {
-            this.db!.DeleteLocalOnlyArticleState(this.sampleArticles.First()!.Id);
-        }
-
-        [Fact]
-        public void WhenRemovingStateForArticleThatIsntPresentNoErrorReturned()
-        {
-            this.db!.DeleteLocalOnlyArticleState(999L);
-        }
-
-        [Fact]
-        public void CanUpdateSingleFieldLocalOnlyStateWithExistingState()
-        {
-            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-            _ = this.db!.AddLocalOnlyStateForArticle(state);
-
-            var newState = state with
-            {
-                ExtractedDescription = "I have been updated"
-            };
-
-            var updated = this.db!.UpdateLocalOnlyArticleState(newState);
-            var readFromDatabase = this.db!.GetLocalOnlyStateByArticleId(newState.ArticleId);
-
-            Assert.NotEqual(state, updated);
-            Assert.Equal(newState, updated);
-            Assert.Equal(newState, readFromDatabase);
-        }
-
-        [Fact]
-        public void CanUpdateAllFieldsFieldLocalOnlyStateWithExistingState()
-        {
-            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-            _ = this.db!.AddLocalOnlyStateForArticle(state);
-
-            var newState = state with
-            {
-                AvailableLocally = state.AvailableLocally!,
-                FirstImageLocalPath = new Uri("imageLocalPathNew://localPathNew"),
-                FirstImageRemoteUri = new Uri("imageRemotePathNew://remotePathNew"),
-                LocalPath = new Uri("articleLocalPathNew://localPathNew"),
-                ExtractedDescription = "Extracted with care",
-                ArticleUnavailable = !state.ArticleUnavailable,
-                IncludeInMRU = !state.IncludeInMRU
-            };
-
-            var updated = this.db!.UpdateLocalOnlyArticleState(newState);
-            var readFromDatabase = this.db!.GetLocalOnlyStateByArticleId(newState.ArticleId);
-
-            Assert.NotEqual(state, updated);
-            Assert.Equal(newState, updated);
-            Assert.Equal(newState, readFromDatabase);
-        }
-
-        [Fact]
-        public void UpdatingLocalOnlyStateWhenNoLocalStatePresentThrowsException()
-        {
-            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-            Assert.Throws<LocalOnlyStateNotFoundException>(() => this.db!.UpdateLocalOnlyArticleState(state));
-        }
-
-        [Fact]
-        public void UpdatingLocalOnlyStateWithInvalidArticleIdThrowException()
-        {
-            Assert.Throws<ArgumentException>(() => this.db!.UpdateLocalOnlyArticleState(new DatabaseLocalOnlyArticleState()));
-        }
-
-        [Fact]
-        public void DeletingArticleAlsoDeletesLocalOnlyState()
-        {
-            var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-            _ = this.db!.AddLocalOnlyStateForArticle(state);
-
-            this.db!.DeleteArticle(state.ArticleId);
-
-            var result = this.db!.GetLocalOnlyStateByArticleId(state.ArticleId);
-            Assert.Null(result);
-        }
+        var result = this.db!.GetLocalOnlyStateByArticleId(state.ArticleId);
+        Assert.Null(result);
     }
 }

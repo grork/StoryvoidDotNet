@@ -3,26 +3,25 @@ using Codevoid.Storyvoid;
 using Microsoft.Data.Sqlite;
 using Xunit;
 
-namespace Codevoid.Test.Storyvoid
+namespace Codevoid.Test.Storyvoid;
+
+public sealed class ArticleDatabaseTests
 {
-    public sealed class ArticleDatabaseTests
+    [Fact]
+    public async Task CanOpenDatabase()
     {
-        [Fact]
-        public async Task CanOpenDatabase()
-        {
-            using var db = await TestUtilities.GetDatabase();
-            Assert.NotNull(db);
-        }
+        using var db = await TestUtilities.GetDatabase();
+        Assert.NotNull(db);
+    }
 
-        [Fact]
-        public async Task CanReopenDatabase()
-        {
-            using var connection = new SqliteConnection("Data Source=:memory:");
-            var first = new InstapaperDatabase(connection);
-            await first.OpenOrCreateDatabaseAsync();
+    [Fact]
+    public async Task CanReopenDatabase()
+    {
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        var first = new InstapaperDatabase(connection);
+        await first.OpenOrCreateDatabaseAsync();
 
-            var second = new InstapaperDatabase(connection);
-            await first.OpenOrCreateDatabaseAsync();
-        }
+        var second = new InstapaperDatabase(connection);
+        await first.OpenOrCreateDatabaseAsync();
     }
 }
