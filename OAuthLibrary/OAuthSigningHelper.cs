@@ -102,7 +102,7 @@ namespace Codevoid.Utilities.OAuth
 
         public OAuthSigningHelper(ClientInformation clientInformation)
         {
-            if (clientInformation == null)
+            if (clientInformation is null)
             {
                 throw new ArgumentNullException(nameof(clientInformation), "Client Information is required");
             }

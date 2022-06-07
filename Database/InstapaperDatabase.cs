@@ -118,7 +118,7 @@ namespace Codevoid.Storyvoid
         {
             get
             {
-                if (this.changesDatabase == null)
+                if (this.changesDatabase is null)
                 {
                     this.ThrowIfNotReady();
                     this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection, this);
@@ -133,7 +133,7 @@ namespace Codevoid.Storyvoid
         {
             get
             {
-                if(folderDatabase == null)
+                if (folderDatabase is null)
                 {
                     this.ThrowIfNotReady();
                     folderDatabase = new FolderDatabase(this.connection, this);
@@ -148,7 +148,7 @@ namespace Codevoid.Storyvoid
         {
             get
             {
-                if(this.articleDatabase == null)
+                if (this.articleDatabase is null)
                 {
                     this.ThrowIfNotReady();
                     this.articleDatabase = new ArticleDatabase(this.connection, this);

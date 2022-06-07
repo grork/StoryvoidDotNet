@@ -134,7 +134,7 @@ namespace Codevoid.Storyvoid
                 // Nothing was updated; check if it was just that there was
                 // no existing state to update
                 var state = this.GetLocalOnlyStateByArticleId(articleId);
-                if (state == null)
+                if (state is null)
                 {
                     throw new LocalOnlyStateNotFoundException(articleId);
                 }

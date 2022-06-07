@@ -27,24 +27,21 @@ namespace Codevoid.Instapaper
         {
             Debug.Assert(errorElement.ValueKind == JsonValueKind.Object, "Expected extracted error object");
 
+            InstapaperServiceException UnknownError(int unknownCode, JsonElement errorDetails)
+            {
+                var message = errorDetails.GetProperty("message").GetString()!;
+                return new UnknownServiceError(unknownCode, message);
+            }
+
             // Get the error code
             int code = errorElement.GetProperty("error_code").GetInt32();
-            switch (code)
+            return code switch
             {
-                case DUPLICATE_FOLDER:
-                    return new DuplicateFolderException();
-
-                case BOOKMARK_CONTENTS_UNAVAILABLE:
-                    return new BookmarkContentsUnavailableException();
-
-                case INVALID_OR_MISSING_BOOKMARK_ID:
-                    return new BookmarkNotFoundException();
-
-                case UNKNOWN_ERROR:
-                default:
-                    var message = errorElement.GetProperty("message").GetString()!;
-                    return new UnknownServiceError(code, message);
-            }
+                DUPLICATE_FOLDER => new DuplicateFolderException(),
+                BOOKMARK_CONTENTS_UNAVAILABLE => new BookmarkContentsUnavailableException(),
+                INVALID_OR_MISSING_BOOKMARK_ID => new BookmarkNotFoundException(),
+                _ => UnknownError(code, errorElement),
+            };
         }
     }
 

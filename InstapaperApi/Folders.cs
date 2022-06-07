@@ -131,32 +131,11 @@ namespace Codevoid.Instapaper
             this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
         }
 
-        /// <summary>
-        /// Instapaper service returns structured errors in 400 (bad request)
-        /// status codes, but not others. This hides those details from consumers
-        /// of the raw http requests
-        /// </summary>
-        /// <param name="statusCode">Status to inspect</param>
-        /// <returns>
-        /// True, if this code is fatal (e.g. don't parse the body)
-        /// </returns>
-        private static bool IsFatalStatusCode(HttpStatusCode statusCode)
-        {
-            switch (statusCode)
-            {
-                case HttpStatusCode.BadRequest:
-                    return false;
-
-                default:
-                    return true;
-            }
-        }
-
         private async Task<IList<IInstapaperFolder>> PerformRequestAsync(Uri endpoint, HttpContent content)
         {
             // Request data convert to JSON
             var result = await this.client.PostAsync(endpoint, content);
-            if (!result.IsSuccessStatusCode && IsFatalStatusCode(result.StatusCode))
+            if (!result.IsSuccessStatusCode && Helpers.IsFatalStatusCode(result.StatusCode))
             {
                 result.EnsureSuccessStatusCode();
             }

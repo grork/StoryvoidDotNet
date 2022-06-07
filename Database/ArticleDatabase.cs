@@ -95,7 +95,7 @@ namespace Codevoid.Storyvoid
         {
             var c = this.connection;
 
-            if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) == null)
+            if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) is null)
             {
                 throw new FolderNotFoundException(localFolderId);
             }
@@ -256,12 +256,12 @@ namespace Codevoid.Storyvoid
         {
             var c = this.connection;
 
-            if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) == null)
+            if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) is null)
             {
                 throw new FolderNotFoundException(localFolderId);
             }
 
-            if (this.GetArticleById(articleId) == null)
+            if (this.GetArticleById(articleId) is null)
             {
                 throw new ArticleNotFoundException(articleId);
             }

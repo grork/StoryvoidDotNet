@@ -185,7 +185,7 @@ namespace Codevoid.Storyvoid
         /// <param name="value">Value of the parameter</param>
         public static void AddParameter(this IDbCommand instance, string name, Uri? value)
         {
-            if (value == null)
+            if (value is null)
             {
                 instance.AddNull(name, DbType.String);
                 return;
