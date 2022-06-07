@@ -70,7 +70,7 @@ public sealed class Accounts
         result.EnsureSuccessStatusCode();
 
         var body = await result.Content.ReadAsStringAsync();
-        var payload = Microsoft.AspNetCore.WebUtilities.FormReader.ReadForm(body);
+        var payload = (new Microsoft.AspNetCore.WebUtilities.FormReader(body)).ReadForm();
 
         if (!payload.TryGetValue("oauth_token_secret", out var secret))
         {

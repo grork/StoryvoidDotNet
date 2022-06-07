@@ -149,7 +149,7 @@ internal class OAuthSigningHelper
          && message.Content.Headers.ContentType.MediaType == "application/x-www-form-urlencoded")
         {
             var requestContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var requestPayload = FormReader.ReadForm(requestContent);
+            var requestPayload = (new FormReader(requestContent)).ReadForm();
             foreach (var kvp in requestPayload)
             {
                 Debug.Assert(kvp.Value.Count == 1, "Unexpected number of values in the payload");
