@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Test.Storyvoid;
 
-public sealed class ArticleDatabaseTests
+public sealed class InstapaperDatabaseTests
 {
     [Fact]
     public async Task CanOpenDatabase()
