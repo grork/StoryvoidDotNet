@@ -179,6 +179,16 @@ public sealed class FolderChangesTests : IAsyncLifetime
     }
 
     [Fact]
+    public void CanGetPendingFolderDeleteByFolderTitle()
+    {
+        var f = (ServiceId: 1, Title: "Title");
+        var originalChange = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(f.ServiceId, f.Title);
+        var readChange = this.db!.FolderChangesDatabase.GetPendingFolderDeleteByTitle(originalChange.Title);
+
+        Assert.Equal(originalChange, readChange);
+    }
+
+    [Fact]
     public void GettingNonExistentPendingFolderDeleteReturnsNull()
     {
         var change = this.db!.FolderChangesDatabase.GetPendingFolderDelete(99L);

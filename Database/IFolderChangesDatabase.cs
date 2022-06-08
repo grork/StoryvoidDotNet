@@ -63,8 +63,20 @@ public interface IFolderChangesDatabase
     /// change, if present in the database
     /// </summary>
     /// <param name="changeId">Change ID for that folder delete</param>
-    /// <returns>A pending folder delete instance if foudn</returns>
+    /// <returns>A pending folder delete instance if found</returns>
     PendingFolderDelete? GetPendingFolderDelete(long changeId);
+
+    /// <summary>
+    /// Get a specific pending folder delete by the title of the deleted folded
+    /// that change represents.
+    /// 
+    /// This is intended to help address stacked delete/add scenarios that occur
+    /// between syncs, and allows us to resurrect the deleted folder with the
+    /// original service ID.
+    /// </summary>
+    /// <param name="title">Title of the folder that was deleted</param>
+    /// <returns>A pending folder delete instance if found</returns>
+    PendingFolderDelete? GetPendingFolderDeleteByTitle(string title);
 
     /// <summary>
     /// Returns all pending folder deletes

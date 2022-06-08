@@ -215,6 +215,28 @@ public class FolderChanges : IFolderChangesDatabase
     }
 
     /// <inheritdoc/>
+    public PendingFolderDelete? GetPendingFolderDeleteByTitle(string title)
+    {
+        var c = this.connection;
+        using var query = connection.CreateCommand(@"
+            SELECT change_id, service_id, title
+            FROM folder_deletes
+            WHERE title = @title
+        ");
+
+        query.AddParameter("@title", title);
+
+        PendingFolderDelete? result = null;
+        using var row = query.ExecuteReader();
+        if (row.Read())
+        {
+            result = PendingFolderDelete.FromRow(row);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc/>
     public IList<PendingFolderDelete> ListPendingFolderDeletes()
     {
         var c = this.connection;
