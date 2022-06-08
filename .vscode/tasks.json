@@ -29,6 +29,12 @@
             "group": "none"
         },
         {
+            "label": "Rebuild Solution",
+            "dependsOn": [ "Clean Solution", "Build Solution" ],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+        },
+        {
             "label": "OAuth Library Tests",
             "command": "dotnet",
             "type": "process",
