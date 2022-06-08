@@ -57,3 +57,13 @@ public sealed class DuplicatePendingFolderAdd : Exception
         this.LocalFolderId = localFolderId;
     }
 }
+
+public sealed class DuplicatePendingArticleAdd : Exception
+{
+    public readonly Uri ArticleUrl;
+    public DuplicatePendingArticleAdd(Uri articleUrl)
+        : base($"A pending article add was already present for {articleUrl}")
+    {
+        this.ArticleUrl = articleUrl;
+    }
+}

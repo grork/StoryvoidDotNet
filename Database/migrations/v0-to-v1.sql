@@ -78,5 +78,14 @@ CREATE TABLE folder_deletes (
     UNIQUE(title) -- Titles can't be duplicated on the service; enforce here
 );
 
+-- Used when adding a URL, not when adding a bookmark directly; we always need
+-- a round trip to the service + sync to get the article visible somewhere
+CREATE TABLE article_adds (
+    change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    url TEXT NOT NULL,
+    title TEXT,
+    UNIQUE(url)
+);
+
 -- Set version to indicate default state created
 PRAGMA user_version = 1;
