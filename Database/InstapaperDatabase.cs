@@ -11,7 +11,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
     private const int CURRENT_DB_VERSION = 1;
 
     private readonly IDbConnection connection;
-    private IFolderChangesDatabase? changesDatabase;
+    private IFolderChangesDatabase? folderChangesDatabase;
     private IArticleChangesDatabase? articleChangesDatabase;
     private IFolderDatabase? folderDatabase;
     private IArticleDatabase? articleDatabase;
@@ -31,7 +31,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
 
         this.alreadyDisposed = true;
         this.initialized = 0;
-        this.changesDatabase = null;
+        this.folderChangesDatabase = null;
 
         this.connection.Close();
         this.connection.Dispose();
@@ -130,13 +130,13 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
     {
         get
         {
-            if (this.changesDatabase is null)
+            if (this.folderChangesDatabase is null)
             {
                 this.ThrowIfNotReady();
-                this.changesDatabase = FolderChanges.GetPendingFolderChangeDatabase(this.connection, this);
+                this.folderChangesDatabase = FolderChanges.GetPendingFolderChangeDatabase(this.connection, this);
             }
 
-            return this.changesDatabase;
+            return this.folderChangesDatabase;
         }
     }
 
