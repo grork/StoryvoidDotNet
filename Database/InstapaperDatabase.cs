@@ -12,6 +12,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
 
     private readonly IDbConnection connection;
     private IFolderChangesDatabase? changesDatabase;
+    private IArticleChangesDatabase? articleChangesDatabase;
     private IFolderDatabase? folderDatabase;
     private IArticleDatabase? articleDatabase;
 
@@ -109,6 +110,21 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
         return Task.Run(OpenAndCreateDatabase);
     }
 
+    /// <inheritdoc />
+    public IFolderDatabase FolderDatabase
+    {
+        get
+        {
+            if (folderDatabase is null)
+            {
+                this.ThrowIfNotReady();
+                folderDatabase = new FolderDatabase(this.connection, this);
+            }
+
+            return folderDatabase!;
+        }
+    }
+
     /// <inheritdoc/>
     public IFolderChangesDatabase FolderChangesDatabase
     {
@@ -125,21 +141,6 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
     }
 
     /// <inheritdoc />
-    public IFolderDatabase FolderDatabase
-    {
-        get
-        {
-            if (folderDatabase is null)
-            {
-                this.ThrowIfNotReady();
-                folderDatabase = new FolderDatabase(this.connection, this);
-            }
-
-            return folderDatabase!;
-        }
-    }
-
-    /// <inheritdoc />
     public IArticleDatabase ArticleDatabase
     {
         get
@@ -151,6 +152,21 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
             }
 
             return this.articleDatabase;
+        }
+    }
+
+    /// <inheritdoc/>
+    public IArticleChangesDatabase ArticleChangesDatabase
+    {
+        get
+        {
+            if (this.articleChangesDatabase is null)
+            {
+                this.ThrowIfNotReady();
+                this.articleChangesDatabase = ArticleChanges.GetPendingArticleChangeDatabase(this.connection);
+            }
+
+            return this.articleChangesDatabase;
         }
     }
 }
