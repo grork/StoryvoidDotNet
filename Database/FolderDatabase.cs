@@ -200,7 +200,7 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
 
         var c = this.connection;
-        var changesDB = this.database.ChangesDatabase;
+        var changesDB = this.database.FolderChangesDatabase;
 
         if (changesDB.GetPendingFolderAddByLocalFolderId(localFolderId) != null)
         {

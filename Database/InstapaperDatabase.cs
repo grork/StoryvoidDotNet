@@ -11,7 +11,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
     private const int CURRENT_DB_VERSION = 1;
 
     private readonly IDbConnection connection;
-    private IChangesDatabase? changesDatabase;
+    private IFolderChangesDatabase? changesDatabase;
     private IFolderDatabase? folderDatabase;
     private IArticleDatabase? articleDatabase;
 
@@ -110,14 +110,14 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
     }
 
     /// <inheritdoc/>
-    public IChangesDatabase ChangesDatabase
+    public IFolderChangesDatabase FolderChangesDatabase
     {
         get
         {
             if (this.changesDatabase is null)
             {
                 this.ThrowIfNotReady();
-                this.changesDatabase = PendingChanges.GetPendingChangeDatabase(this.connection, this);
+                this.changesDatabase = FolderChanges.GetPendingFolderChangeDatabase(this.connection, this);
             }
 
             return this.changesDatabase;

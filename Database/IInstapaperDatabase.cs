@@ -18,7 +18,7 @@ public interface IInstapaperDatabase : IDisposable
 
     /// <summary>
     /// Get pending change database for creating, reading, and removing
-    /// pending changes
+    /// pending folder changes
     /// </summary>
-    IChangesDatabase ChangesDatabase { get; }
+    IFolderChangesDatabase FolderChangesDatabase { get; }
 }

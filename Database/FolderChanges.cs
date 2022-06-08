@@ -4,12 +4,12 @@ using Microsoft.Data.Sqlite;
 namespace Codevoid.Storyvoid;
 
 /// <inheritdoc />
-public class PendingChanges : IChangesDatabase
+public class FolderChanges : IFolderChangesDatabase
 {
     private IDbConnection connection;
     private IInstapaperDatabase database;
 
-    private PendingChanges(IDbConnection connection, IInstapaperDatabase database)
+    private FolderChanges(IDbConnection connection, IInstapaperDatabase database)
     {
         this.connection = connection;
         this.database = database;
@@ -238,20 +238,20 @@ public class PendingChanges : IChangesDatabase
     #endregion
 
     /// <summary>
-    /// For the supplied DB connection, get an instance of the Pending
+    /// For the supplied DB connection, get an instance of the Pending Folder
     /// Changes API.
     /// </summary>
     /// <param name="connection">
     /// The opened DB Connection to use to access the database.
     /// </param>
     /// <returns>Instance of the the API</returns>
-    public static IChangesDatabase GetPendingChangeDatabase(IDbConnection connection, IInstapaperDatabase database)
+    public static IFolderChangesDatabase GetPendingFolderChangeDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
         if (connection.State != ConnectionState.Open)
         {
             throw new InvalidOperationException("Database must be opened");
         }
 
-        return new PendingChanges(connection, database);
+        return new FolderChanges(connection, database);
     }
 }
