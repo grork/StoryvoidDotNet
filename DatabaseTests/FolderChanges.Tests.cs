@@ -2,7 +2,7 @@
 
 namespace Codevoid.Test.Storyvoid;
 
-public sealed class ChangesDatabaseTests : IAsyncLifetime
+public sealed class FolderChangesTests : IAsyncLifetime
 {
     private IInstapaperDatabase? db;
     private DatabaseFolder? CustomLocalFolder1;
@@ -23,7 +23,7 @@ public sealed class ChangesDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void CanGetChangesDatabase()
+    public void CanGetFolderChangesDatabase()
     {
         var changesDb = this.db!.FolderChangesDatabase;
         Assert.NotNull(changesDb);
