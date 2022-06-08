@@ -1,6 +1,4 @@
-﻿using System;
-using Codevoid.Utilities.OAuth;
-using Xunit;
+﻿using Codevoid.Utilities.OAuth;
 using Xunit.Extensions.Ordering;
 using Xunit.Sdk;
 

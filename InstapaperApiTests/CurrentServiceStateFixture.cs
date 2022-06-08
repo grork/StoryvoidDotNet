@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
-using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 

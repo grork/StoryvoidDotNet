@@ -1,8 +1,5 @@
-using System;
-using System.Threading.Tasks;
 using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Codevoid.Test.Instapaper;

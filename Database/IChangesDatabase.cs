@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Codevoid.Storyvoid;
+﻿namespace Codevoid.Storyvoid;
 
 /// <summary>
 /// Manipulate changes that have been (or should be) performed on the

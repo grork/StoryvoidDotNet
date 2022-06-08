@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Codevoid.Utilities.OAuth;
-using Xunit;
 
 namespace Codevoid.Test.Utilities.OAuth;
 

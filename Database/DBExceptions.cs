@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Codevoid.Storyvoid;
+﻿namespace Codevoid.Storyvoid;
 
 public sealed class ArticleNotFoundException : Exception
 {

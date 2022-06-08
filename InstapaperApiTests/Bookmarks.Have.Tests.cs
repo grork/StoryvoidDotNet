@@ -1,6 +1,4 @@
-﻿using System;
-using Codevoid.Instapaper;
-using Xunit;
+﻿using Codevoid.Instapaper;
 
 namespace Codevoid.Test.Instapaper;
 

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Codevoid.Instapaper;
+﻿namespace Codevoid.Instapaper;
 
 internal static class EndPoints
 {

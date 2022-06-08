@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using System.Web;
 using Codevoid.Utilities.OAuth;
-using Xunit;
 
 namespace Codevoid.Test.OAuth;
 
