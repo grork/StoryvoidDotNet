@@ -31,14 +31,18 @@ public sealed class ArticleChangesTests : IAsyncLifetime
     public void CanAddPendingUrlWithTitle()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        Assert.True(changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE) > 0);
+        var result = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
+        Assert.Equal(SAMPLE_URL, result.Url);
+        Assert.Equal(SAMPLE_TITLE, result.Title);
     }
 
     [Fact]
     public void CanAddPendingUrlWithoutTitle()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        Assert.True(changesDb.CreatePendingArticleAdd(SAMPLE_URL, null) > 0);
+        var result = changesDb.CreatePendingArticleAdd(SAMPLE_URL, null);
+        Assert.Equal(SAMPLE_URL, result.Url);
+        Assert.Null(result.Title);
     }
 
     [Fact]
@@ -63,5 +67,37 @@ public sealed class ArticleChangesTests : IAsyncLifetime
         var changesDb = this.db!.ArticleChangesDatabase;
         _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
         Assert.Throws<DuplicatePendingArticleAdd>(() => changesDb.CreatePendingArticleAdd(SAMPLE_URL, null));
+    }
+
+    [Fact]
+    public void CanRetrieveArticleByUrlWithTitle()
+    {
+        var changesDb = this.db!.ArticleChangesDatabase;
+        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
+        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        Assert.NotNull(result);
+        Assert.Equal(SAMPLE_URL, result!.Url);
+        Assert.Equal(SAMPLE_TITLE, result!.Title);
+    }
+
+
+    [Fact]
+    public void CanRetrieveArticleByUrlWithoutTitle()
+    {
+        var changesDb = this.db!.ArticleChangesDatabase;
+        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, null);
+        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        Assert.NotNull(result);
+        Assert.Equal(SAMPLE_URL, result!.Url);
+        Assert.Null(result!.Title);
+    }
+
+
+    [Fact]
+    public void TryingToRetrieveNonExistantUrlReturnsNull()
+    {
+        var changesDb = this.db!.ArticleChangesDatabase;
+        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        Assert.Null(result);
     }
 }

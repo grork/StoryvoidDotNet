@@ -92,3 +92,45 @@ public sealed record PendingFolderDelete
         return change;
     }
 }
+
+/// <summary>
+/// Pending Article Add sourced from the database
+/// </summary>
+public sealed record PendingArticleAdd
+{
+    private PendingArticleAdd() { }
+
+    /// <summary>
+    /// URL that this article for. Must be unique within the database.
+    /// </summary>
+    public Uri Url { get; init; } = new Uri("unset://unset");
+
+    /// <summary>
+    /// Optional title that will override any service-derived title when synced
+    /// </summary>
+    public string? Title { get; init; }
+
+    /// <summary>
+    /// For a database row, conver it to a complete instance of a pending
+    /// article add
+    /// </summary>
+    /// <param name="row">Row to convert</param>
+    /// <returns>Instance of a pending article add</returns>
+    internal static PendingArticleAdd FromRow(IDataReader row)
+    {
+        var urlString = row.GetString("url");
+        var url = new Uri(urlString);
+        String? title = null;
+
+        if(!row.IsDBNull("title"))
+        {
+            title = row.GetString("title");
+        }
+
+        return new ()
+        {
+            Url = url,
+            Title = title
+        };
+    }
+}

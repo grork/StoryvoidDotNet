@@ -12,11 +12,18 @@ public interface IArticleChangesDatabase
     /// actual article contents need to be round tripped via the instapaper
     /// service.
     /// </summary>
-    /// <param name="uri">Url of the bookmark to add</param>
+    /// <param name="uri">Url of the article to add</param>
     /// <param name="title">
     /// Optional; overrides (or sets) the title of the article compared to what
     /// the service would retrieve from the URL.
     /// </param>
-    /// <returns>ID of the pending article addition</returns>
-    long CreatePendingArticleAdd(Uri uri, string? title);
+    /// <returns>Pending Article Add information</returns>
+    PendingArticleAdd CreatePendingArticleAdd(Uri uri, string? title);
+
+    /// <summary>
+    /// Given a URL retrieves the rest of the pending add (E.g. title)
+    /// </summary>
+    /// <param name="uri">Url to look up</param>
+    /// <returns>Instance if found, null otherwise</returns>
+    PendingArticleAdd? GetPendingArticleAddByUrl(Uri uri);
 }

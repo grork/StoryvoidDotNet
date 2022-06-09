@@ -81,10 +81,8 @@ CREATE TABLE folder_deletes (
 -- Used when adding a URL, not when adding a bookmark directly; we always need
 -- a round trip to the service + sync to get the article visible somewhere
 CREATE TABLE article_adds (
-    change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    url TEXT NOT NULL,
-    title TEXT,
-    UNIQUE(url)
+    url TEXT NOT NULL PRIMARY KEY,
+    title TEXT
 );
 
 -- Set version to indicate default state created

@@ -14,15 +14,13 @@ public class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public long CreatePendingArticleAdd(Uri url, string? title)
+    public PendingArticleAdd CreatePendingArticleAdd(Uri url, string? title)
     {
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
             INSERT INTO article_adds(url, title)
             VALUES (@url, @title);
-
-            SELECT last_insert_rowid();
         ");
 
         query.AddParameter("@url", url);
@@ -37,13 +35,41 @@ public class ArticleChanges : IArticleChangesDatabase
 
         try
         {
-            return (long)query.ExecuteScalar();
+            query.ExecuteScalar();
+            return GetPendingArticleAddByUrl(c, url)!;
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
-                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
         {
             throw new DuplicatePendingArticleAdd(url);
         }
+    }
+
+    /// <inheritdoc />
+    public PendingArticleAdd? GetPendingArticleAddByUrl(Uri url)
+    {
+        var c = this.connection;
+        return GetPendingArticleAddByUrl(c, url);
+    }
+
+    private static PendingArticleAdd? GetPendingArticleAddByUrl(IDbConnection connection, Uri url)
+    {
+        using var query = connection.CreateCommand(@"
+            SELECT url, title
+            FROM article_adds
+            WHERE url = @url
+        ");
+
+        query.AddParameter("@url", url.ToString());
+
+        PendingArticleAdd? result = null;
+        using var row = query.ExecuteReader();
+        if(row.Read())
+        {
+            result = PendingArticleAdd.FromRow(row);
+        }
+
+        return result;
     }
 
     /// <summary>
