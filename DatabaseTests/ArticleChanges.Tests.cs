@@ -4,7 +4,7 @@ namespace Codevoid.Test.Storyvoid;
 
 public sealed class ArticleChangesTests : IAsyncLifetime
 {
-    private static readonly Uri SAMPLE_URL = new Uri("https://www.codevoid.net");
+    private static readonly Uri SAMPLE_URL = new("https://www.codevoid.net");
     private const string SAMPLE_TITLE = "Codevoid";
 
     private IInstapaperDatabase? db;
@@ -80,7 +80,6 @@ public sealed class ArticleChangesTests : IAsyncLifetime
         Assert.Equal(SAMPLE_TITLE, result!.Title);
     }
 
-
     [Fact]
     public void CanRetrieveArticleByUrlWithoutTitle()
     {
@@ -99,5 +98,27 @@ public sealed class ArticleChangesTests : IAsyncLifetime
         var changesDb = this.db!.ArticleChangesDatabase;
         var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void CanDeletePendingArticleAdd()
+    {
+        var changesDb = this.db!.ArticleChangesDatabase;
+        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
+        changesDb.RemovePendingArticleAdd(SAMPLE_URL);
+
+        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void DeletingNonExistantArticleAddSucceeds()
+    {
+        var changesDb = this.db!.ArticleChangesDatabase;
+        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
+        changesDb.RemovePendingArticleAdd(new("https://www.codevoid.net/something"));
+
+        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        Assert.NotNull(result);
     }
 }

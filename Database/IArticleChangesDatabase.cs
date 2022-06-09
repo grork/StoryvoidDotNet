@@ -26,4 +26,11 @@ public interface IArticleChangesDatabase
     /// <param name="uri">Url to look up</param>
     /// <returns>Instance if found, null otherwise</returns>
     PendingArticleAdd? GetPendingArticleAddByUrl(Uri uri);
+
+    /// <summary>
+    /// Removes a pending article add that matches the supplied URL. If no url
+    /// matches, no error is raised.
+    /// </summary>
+    /// <param name="url">Url for the pending add to remove</param>
+    void RemovePendingArticleAdd(Uri url);
 }

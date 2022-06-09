@@ -52,6 +52,20 @@ public class ArticleChanges : IArticleChangesDatabase
         return GetPendingArticleAddByUrl(c, url);
     }
 
+    /// <inheritdoc />
+    public void RemovePendingArticleAdd(Uri url)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            DELETE FROM article_adds
+            WHERE url = @url
+        ");
+
+        query.AddParameter("@url", url);
+
+        query.ExecuteNonQuery();
+    }
+
     private static PendingArticleAdd? GetPendingArticleAddByUrl(IDbConnection connection, Uri url)
     {
         using var query = connection.CreateCommand(@"
@@ -60,7 +74,7 @@ public class ArticleChanges : IArticleChangesDatabase
             WHERE url = @url
         ");
 
-        query.AddParameter("@url", url.ToString());
+        query.AddParameter("@url", url);
 
         PendingArticleAdd? result = null;
         using var row = query.ExecuteReader();
