@@ -101,6 +101,19 @@ public sealed class ArticleChangesTests : IAsyncLifetime
     }
 
     [Fact]
+    public void CanListPendingArticleAdds()
+    {
+        var changesDb = this.db!.ArticleChangesDatabase;
+        var articleOne = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
+        var articleTwo = changesDb.CreatePendingArticleAdd(new (SAMPLE_URL, "/somethingelse"), SAMPLE_TITLE);
+
+        var result = changesDb.ListPendingArticleAdds();
+        Assert.Equal(2, result.Count);
+        Assert.Contains(articleOne, result);
+        Assert.Contains(articleTwo, result);
+    }
+
+    [Fact]
     public void CanDeletePendingArticleAdd()
     {
         var changesDb = this.db!.ArticleChangesDatabase;

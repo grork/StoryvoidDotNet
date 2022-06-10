@@ -53,6 +53,26 @@ public class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
+    public IList<PendingArticleAdd> ListPendingArticleAdds()
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            SELECT * FROM article_adds;
+        ");
+
+        using var pendingArticleAdds = query.ExecuteReader();
+
+        var result = new List<PendingArticleAdd>();
+        while(pendingArticleAdds.Read())
+        {
+            var pendingArticleAdd = PendingArticleAdd.FromRow(pendingArticleAdds);
+            result.Add(pendingArticleAdd);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
     public void RemovePendingArticleAdd(Uri url)
     {
         var c = this.connection;

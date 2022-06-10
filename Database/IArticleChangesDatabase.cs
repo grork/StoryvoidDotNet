@@ -28,6 +28,12 @@ public interface IArticleChangesDatabase
     PendingArticleAdd? GetPendingArticleAddByUrl(Uri uri);
 
     /// <summary>
+    /// Lists any pending article additions
+    /// </summary>
+    /// <returns>Unordered article additions currently present</returns>
+    IList<PendingArticleAdd> ListPendingArticleAdds();
+
+    /// <summary>
     /// Removes a pending article add that matches the supplied URL. If no url
     /// matches, no error is raised.
     /// </summary>
