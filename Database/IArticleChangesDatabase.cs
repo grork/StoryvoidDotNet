@@ -93,4 +93,33 @@ public interface IArticleChangesDatabase
     /// </summary>
     /// <param name="articleId">ID of the pending state change to remove</param>
     void RemovePendingArticleStateChange(long articleId);
+
+    /// <summary>
+    /// Creates a pending article move to a specified destination folder
+    /// </summary>
+    PendingArticleMove CreatePendingArticleMove(long articleId, long destinationLocalFolderId);
+
+    /// <summary>
+    /// Given an article id, retrieves the pending article move
+    /// </summary>
+    PendingArticleMove? GetPendingArticleMove(long articleId);
+
+    /// <summary>
+    /// Lists any pending article moves
+    /// </summary>
+    IList<PendingArticleMove> ListPendingArticleMoves();
+
+    /// <summary>
+    /// Lists any pending article moves into the supplied folder
+    /// 
+    /// Throws FolderNotFoundException if the folder does not exist
+    /// </summary>
+    /// <throws cref="FolderNotFoundException">
+    IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId);
+
+    /// <summary>
+    /// Removes a pending article move that matches the supplied ID. If no id
+    /// matches, no error is raised.
+    /// </summary>
+    void RemovePendingArticleMove(long articleId);
 }

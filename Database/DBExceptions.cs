@@ -88,12 +88,22 @@ public sealed class DuplicatePendingArticleStateChangeException : Exception
     }
 }
 
-public sealed class PendingChangeExistsForArticleException: Exception
+public sealed class DuplicatePendingArticleMoveException : Exception
 {
     public readonly long ArticleId;
-    public PendingChangeExistsForArticleException(long articleId)
-        : base($"Pending changes exist for article {articleId}")
+    public DuplicatePendingArticleMoveException(long articleId)
+        : base($"A pending article move was already present for {articleId}")
     {
         this.ArticleId = articleId;
+    }
+}
+
+public sealed class FolderHasPendingArticleMoveException : Exception
+{
+    public readonly long LocalFolderId;
+    public FolderHasPendingArticleMoveException(long localFolderId)
+        : base($"Folder {localFolderId} has a pending article move")
+    {
+        this.LocalFolderId = localFolderId;
     }
 }

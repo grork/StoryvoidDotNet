@@ -7,10 +7,12 @@ namespace Codevoid.Storyvoid;
 public class ArticleChanges : IArticleChangesDatabase
 {
     private IDbConnection connection;
+    private IInstapaperDatabase database;
 
-    private ArticleChanges(IDbConnection connection)
+    private ArticleChanges(IDbConnection connection, IInstapaperDatabase database)
     {
         this.connection = connection;
+        this.database = database;
     }
 
     /// <inheritdoc />
@@ -270,6 +272,136 @@ public class ArticleChanges : IArticleChangesDatabase
         return result;
     }
 
+    /// <inheritdoc />
+    public PendingArticleMove CreatePendingArticleMove(long articleId, long destinationFolderLocalId)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            INSERT INTO article_folder_changes(article_id, destination_local_id)
+            VALUES (@articleId, @destinationFolderLocalId)
+        ");
+
+        query.AddParameter("@articleId", articleId);
+        query.AddParameter("@destinationFolderLocalId", destinationFolderLocalId);
+
+        try
+        {
+            query.ExecuteNonQuery();
+            return GetPendingArticleMoveByArticleId(c, articleId)!;
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
+        {
+            throw new DuplicatePendingArticleMoveException(articleId);
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
+        {
+            // We need to determine if it's a missing article or a missing
+            // folder. The assumption is that if there *is* an article, then it
+            // must be the folder thats awol.
+            var article = this.database.ArticleDatabase.GetArticleById(articleId);
+            if(article == null)
+            {
+                throw new ArticleNotFoundException(articleId);
+            }
+            else
+            {
+                throw new FolderNotFoundException(destinationFolderLocalId);
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public PendingArticleMove? GetPendingArticleMove(long articleId)
+    {
+        var c = this.connection;
+        return GetPendingArticleMoveByArticleId(c, articleId);
+    }
+
+    /// <inheritdoc />
+    public IList<PendingArticleMove> ListPendingArticleMoves()
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            SELECT *
+            FROM article_folder_changes
+        ");
+
+        using var row = query.ExecuteReader();
+        var result = new List<PendingArticleMove>();
+        while(row.Read())
+        {
+            var pendingArticleMove = PendingArticleMove.FromRow(row);
+            result.Add(pendingArticleMove);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId)
+    {
+        var c = this.connection;
+
+        if(this.database.FolderDatabase.GetFolderByLocalId(localFolderId) is null)
+        {
+            throw new FolderNotFoundException(localFolderId);
+        }
+
+        using var query = c.CreateCommand(@"
+            SELECT *
+            FROM article_folder_changes
+            WHERE destination_local_id = @localFolderId
+        ");
+
+        query.AddParameter("@localFolderId", localFolderId);
+
+        using var row = query.ExecuteReader();
+        var result = new List<PendingArticleMove>();
+        while(row.Read())
+        {
+            var pendingArticleMove = PendingArticleMove.FromRow(row);
+            result.Add(pendingArticleMove);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public void RemovePendingArticleMove(long articleId)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            DELETE FROM article_folder_changes
+            WHERE article_id = @articleId
+        ");
+
+        query.AddParameter("@articleId", articleId);
+
+        query.ExecuteNonQuery();
+    }
+
+    private PendingArticleMove? GetPendingArticleMoveByArticleId(IDbConnection connection, long articleId)
+    {
+        using var query = connection.CreateCommand(@"
+            SELECT article_id, destination_local_id
+            FROM article_folder_changes
+            WHERE article_id = @articleId
+        ");
+
+        query.AddParameter("@articleId", articleId);
+
+        PendingArticleMove? result = null;
+        using var row = query.ExecuteReader();
+        if(row.Read())
+        {
+            result = PendingArticleMove.FromRow(row);
+        }
+
+        return result;
+    }
+
     /// <summary>
     /// For the supplied DB connection, get an instance of the Pending Article
     /// Changes API.
@@ -278,13 +410,13 @@ public class ArticleChanges : IArticleChangesDatabase
     /// The opened DB Connection to use to access the database.
     /// </param>
     /// <returns>Instance of the the API</returns>
-    public static IArticleChangesDatabase GetPendingArticleChangeDatabase(IDbConnection connection)
+    public static IArticleChangesDatabase GetPendingArticleChangeDatabase(IDbConnection connection, IInstapaperDatabase instapaperDatabase)
     {
         if (connection.State != ConnectionState.Open)
         {
             throw new InvalidOperationException("Database must be opened");
         }
 
-        return new ArticleChanges(connection);
+        return new ArticleChanges(connection, instapaperDatabase);
     }
 }

@@ -199,13 +199,24 @@ internal sealed class FolderDatabase : IFolderDatabase
             throw new InvalidOperationException("Deleting the Archive folder is not allowed");
         }
 
-        var c = this.connection;
-        var changesDB = this.database.FolderChangesDatabase;
+        if(this.GetFolderByLocalId(localFolderId) is null)
+        {
+            return;
+        }
 
-        if (changesDB.GetPendingFolderAddByLocalFolderId(localFolderId) != null)
+        var folderChangesDB = this.database.FolderChangesDatabase;
+        if (folderChangesDB.GetPendingFolderAddByLocalFolderId(localFolderId) != null)
         {
             throw new InvalidOperationException($"Folder {localFolderId} had a pending folder add");
         }
+
+        var articleChangesDb = this.database.ArticleChangesDatabase;
+        if(articleChangesDb.ListPendingArticleMovesForLocalFolderId(localFolderId).Any())
+        {
+            throw new FolderHasPendingArticleMoveException(localFolderId);
+        }
+
+        var c = this.connection;
 
         // Remove any article-folder-pairs
         using var removeArticleFolderPairsQuery = c.CreateCommand(@"

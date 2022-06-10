@@ -170,3 +170,39 @@ public sealed class PendingArticleStateChange
         };
     }
 }
+
+/// <summary>
+/// Pending Article Move sourced from the database
+/// </summary>
+public sealed class PendingArticleMove
+{
+    private PendingArticleMove() { }
+
+    /// <summary>
+    /// Article ID that this move is for
+    /// </summary>
+    public long ArticleId { get; init; }
+
+    /// <summary>
+    /// Desintation local ID for the article
+    /// </summary>
+    public long DestinationFolderLocalId { get; init; }
+
+    /// <summary>
+    /// For a database row, convert it to a complete instance of a pending
+    /// article move
+    /// </summary>
+    /// <param name="row">Row to convert</param>
+    /// <returns>Instance of a pending article move</returns>
+    internal static PendingArticleMove FromRow(IDataReader row)
+    {
+        var articleId = row.GetInt64("article_id");
+        var destinationFolderLocalId = row.GetInt64("destination_local_id");
+
+        return new PendingArticleMove()
+        {
+            ArticleId = articleId,
+            DestinationFolderLocalId = destinationFolderLocalId
+        };
+    }
+}

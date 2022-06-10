@@ -14,7 +14,7 @@ CREATE TABLE articles (
 
 CREATE TABLE folders (
     local_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    -- Cant have this as a primary key, since temporary folders wont have an ID
+    -- Cant have this as the primary key, since unsynced folders wont have an ID
     service_id INTEGER,
     title TEXT NOT NULL,
     position INTEGER NOT NULL DEFAULT 0,
@@ -105,8 +105,19 @@ CREATE TABLE article_deletes (
 -- unliking, this isn't significant. However, since the instapaper service pushes
 -- out tweets etc for liked articles, you might like to share, and then purge.
 CREATE TABLE article_liked_changes (
-    article_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    article_id INTEGER NOT NULL PRIMARY KEY,
     liked BOOLEAN
+);
+
+-- Track article moves between folders. There is only expected to be one folder
+-- change per article, even if the article is moved multiple times; only one
+-- change is needed on the service.
+CREATE TABLE article_folder_changes (
+    article_id INTEGER NOT NULL PRIMARY KEY,
+    destination_local_id INTEGER NOT NULL,
+
+    FOREIGN KEY(article_id) REFERENCES articles(id),
+    FOREIGN KEY(destination_local_id) REFERENCES folders(local_id)
 );
 
 -- Set version to indicate default state created

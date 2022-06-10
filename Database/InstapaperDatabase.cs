@@ -163,7 +163,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
             if (this.articleChangesDatabase is null)
             {
                 this.ThrowIfNotReady();
-                this.articleChangesDatabase = ArticleChanges.GetPendingArticleChangeDatabase(this.connection);
+                this.articleChangesDatabase = ArticleChanges.GetPendingArticleChangeDatabase(this.connection, this);
             }
 
             return this.articleChangesDatabase;
