@@ -85,5 +85,12 @@ CREATE TABLE article_adds (
     title TEXT
 );
 
+-- Store article deletes. These only need the actual article ID for a deletion
+-- since they can't be resurrected (adding has to go via the service), and don't
+-- need any reference to the folder they're in
+CREATE TABLE article_deletes (
+    id INTEGER NOT NULL PRIMARY KEY
+);
+
 -- Set version to indicate default state created
 PRAGMA user_version = 1;

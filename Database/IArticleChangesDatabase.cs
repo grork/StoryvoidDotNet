@@ -39,4 +39,29 @@ public interface IArticleChangesDatabase
     /// </summary>
     /// <param name="url">Url for the pending add to remove</param>
     void RemovePendingArticleAdd(Uri url);
+
+    /// <summary>
+    /// Creates a pending article delete for the supplied ID
+    /// </summary>
+    /// <param name="articleId">Service ID of the article to be deleted</param>
+    /// <returns>ID of the pending delete</returns>
+    long CreatePendingArticleDelete(long articleId);
+
+    /// <summary>
+    /// Checks to see if there is a pending article delete for this ID
+    /// </summary>
+    /// <param name="articleId">Service ID of the article to check</param>
+    bool HasPendingArticleDelete(long articleId);
+
+    /// <summary>
+    /// Lists any pending article deletes
+    /// </summary>
+    /// <returns>Unordered article deletes</returns>
+    IList<long> ListPendingArticleDeletes();
+
+    /// <summary>
+    /// Removes a pending article delete that matches the supplied ID. If no id
+    /// matches, no error is raised.
+    /// </summary>
+    void RemovePendingArticleDelete(long articleId);
 }

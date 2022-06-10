@@ -134,4 +134,81 @@ public sealed class ArticleChangesTests : IAsyncLifetime
         var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
         Assert.NotNull(result);
     }
+
+    [Fact]
+    public void CanCreatePendingArticleDelete()
+    {
+        const long ARTICLE_ID = 42L;
+        var changesDb = this.db!.ArticleChangesDatabase;
+        var result = changesDb.CreatePendingArticleDelete(ARTICLE_ID);
+        Assert.Equal(ARTICLE_ID, result);
+    }
+
+    [Fact]
+    public void CreatingDuplicatePendingArticleDeleteThrowsException()
+    {
+        const long ARTICLE_ID = 42L;
+        var changesDb = this.db!.ArticleChangesDatabase;
+        _ = changesDb.CreatePendingArticleDelete(ARTICLE_ID);
+        Assert.Throws<DuplicatePendingArticleDelete>(() => changesDb.CreatePendingArticleDelete(ARTICLE_ID));
+    }
+
+    [Fact]
+    public void CanCheckExistenceOfPendingArticleDeleteById()
+    {
+        const long ARTICLE_ID = 42L;
+        var changesDb = this.db!.ArticleChangesDatabase;
+        _ = changesDb.CreatePendingArticleDelete(ARTICLE_ID);
+        Assert.True(changesDb.HasPendingArticleDelete(ARTICLE_ID));
+    }
+
+    [Fact]
+    public void CheckingForPendingArticleDeleteThatIsntPresentReturnsFalse()
+    {
+        const long ARTICLE_ID = 42L;
+        var changesDb = this.db!.ArticleChangesDatabase;
+        Assert.False(changesDb.HasPendingArticleDelete(ARTICLE_ID));
+    }
+
+    [Fact]
+    public void CanListPendingArticleDeletes()
+    {
+        const long ARTICLE_ID_1 = 42L;
+        const long ARTICLE_ID_2 = 43L;
+        var changesDb = this.db!.ArticleChangesDatabase;
+        _ = changesDb.CreatePendingArticleDelete(ARTICLE_ID_1);
+        _ = changesDb.CreatePendingArticleDelete(ARTICLE_ID_2);
+
+        var result = changesDb.ListPendingArticleDeletes();
+        Assert.Equal(2, result.Count);
+        Assert.Contains(ARTICLE_ID_1, result);
+        Assert.Contains(ARTICLE_ID_2, result);
+    }
+
+    [Fact]
+    public void ListingPendingArticleDeletesWhenEmptyReturnsEmptyList()
+    {
+        var changesDb = this.db!.ArticleChangesDatabase;
+        var result = changesDb.ListPendingArticleDeletes();
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void CanDeletePendingArticleDelete()
+    {
+        const long ARTICLE_ID = 42L;
+        var changesDb = this.db!.ArticleChangesDatabase;
+        _ = changesDb.CreatePendingArticleDelete(ARTICLE_ID);
+        changesDb.RemovePendingArticleDelete(ARTICLE_ID);
+
+        Assert.False(changesDb.HasPendingArticleDelete(ARTICLE_ID));
+    }
+
+    [Fact]
+    public void DeletingNonExistentArticleDeleteSucceeds()
+    {
+        const long ARTICLE_ID = 42L;
+        var changesDb = this.db!.ArticleChangesDatabase;
+        changesDb.RemovePendingArticleDelete(ARTICLE_ID);
+    }
 }

@@ -106,6 +106,79 @@ public class ArticleChanges : IArticleChangesDatabase
         return result;
     }
 
+    /// <inheritdoc />
+    public long CreatePendingArticleDelete(long articleId)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            INSERT INTO article_deletes(id)
+            VALUES (@articleId)
+        ");
+
+        query.AddParameter("@articleId", articleId);
+
+        try
+        {
+            query.ExecuteNonQuery();
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
+        {
+            throw new DuplicatePendingArticleDelete(articleId);
+        }
+
+        return articleId;
+    }
+
+    /// <inheritdoc />
+    public bool HasPendingArticleDelete(long articleId)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            SELECT id
+            FROM article_deletes
+            WHERE id = @articleId
+        ");
+
+        query.AddParameter("@articleId", articleId);
+
+        using var row = query.ExecuteReader();
+        return row.Read();
+    }
+
+    /// <inheritdoc />
+    public IList<long> ListPendingArticleDeletes()
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            SELECT *
+            FROM article_deletes
+        ");
+
+        using var row = query.ExecuteReader();
+        var result = new List<long>();
+        while(row.Read())
+        {
+            var articleId = row.GetInt64("id");
+            result.Add(articleId);
+        }
+
+        return result;
+    }
+
+    public void RemovePendingArticleDelete(long articleId)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            DELETE FROM article_deletes
+            WHERE id = @articleId
+        ");
+
+        query.AddParameter("@articleId", articleId);
+
+        query.ExecuteNonQuery();
+    }
+
     /// <summary>
     /// For the supplied DB connection, get an instance of the Pending Article
     /// Changes API.

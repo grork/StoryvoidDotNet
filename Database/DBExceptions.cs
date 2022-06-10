@@ -67,3 +67,13 @@ public sealed class DuplicatePendingArticleAdd : Exception
         this.ArticleUrl = articleUrl;
     }
 }
+
+public sealed class DuplicatePendingArticleDelete : Exception
+{
+    public readonly long ArticleId;
+    public DuplicatePendingArticleDelete(long articleId)
+        : base($"A pending article delete was already present for {articleId}")
+    {
+        this.ArticleId = articleId;
+    }
+}
