@@ -111,7 +111,7 @@ public sealed record PendingArticleAdd
     public string? Title { get; init; }
 
     /// <summary>
-    /// For a database row, conver it to a complete instance of a pending
+    /// For a database row, convert it to a complete instance of a pending
     /// article add
     /// </summary>
     /// <param name="row">Row to convert</param>
@@ -131,6 +131,42 @@ public sealed record PendingArticleAdd
         {
             Url = url,
             Title = title
+        };
+    }
+}
+
+/// <summary>
+/// Pending Article State Change sourced from the database
+/// </summary>
+public sealed class PendingArticleStateChange
+{
+    private PendingArticleStateChange() { }
+
+    /// <summary>
+    /// Article ID that this state change is for
+    /// </summary>
+    public long ArticleId { get; init; }
+
+    /// <summary>
+    /// New like state for the article
+    /// </summary>
+    public bool Liked { get; init; }
+
+    /// <summary>
+    /// For a database row, convert it to a complete instance of a pending
+    /// article state change.
+    /// </summary>
+    /// <param name="row">Row to convert</param>
+    /// <returns>Instance of a pending article state change</returns>
+    internal static PendingArticleStateChange FromRow(IDataReader row)
+    {
+        var articleId = row.GetInt64("article_id");
+        var likeState = row.GetBoolean("liked");
+
+        return new PendingArticleStateChange()
+        {
+            ArticleId = articleId,
+            Liked = likeState
         };
     }
 }

@@ -38,41 +38,61 @@ public sealed class LocalOnlyStateNotFoundException : Exception
     }
 }
 
-public sealed class DuplicatePendingFolderDelete : Exception
+public sealed class DuplicatePendingFolderDeleteException : Exception
 {
     public readonly long ServiceId;
-    public DuplicatePendingFolderDelete(long serviceId)
+    public DuplicatePendingFolderDeleteException(long serviceId)
         : base($"A pending folder delete was already present for {serviceId}")
     {
         this.ServiceId = serviceId;
     }
 }
 
-public sealed class DuplicatePendingFolderAdd : Exception
+public sealed class DuplicatePendingFolderAddException : Exception
 {
     public readonly long LocalFolderId;
-    public DuplicatePendingFolderAdd(long localFolderId)
+    public DuplicatePendingFolderAddException(long localFolderId)
         : base($"A pending folder add was already present for {localFolderId}")
     {
         this.LocalFolderId = localFolderId;
     }
 }
 
-public sealed class DuplicatePendingArticleAdd : Exception
+public sealed class DuplicatePendingArticleAddException : Exception
 {
     public readonly Uri ArticleUrl;
-    public DuplicatePendingArticleAdd(Uri articleUrl)
+    public DuplicatePendingArticleAddException(Uri articleUrl)
         : base($"A pending article add was already present for {articleUrl}")
     {
         this.ArticleUrl = articleUrl;
     }
 }
 
-public sealed class DuplicatePendingArticleDelete : Exception
+public sealed class DuplicatePendingArticleDeleteException : Exception
 {
     public readonly long ArticleId;
-    public DuplicatePendingArticleDelete(long articleId)
+    public DuplicatePendingArticleDeleteException(long articleId)
         : base($"A pending article delete was already present for {articleId}")
+    {
+        this.ArticleId = articleId;
+    }
+}
+
+public sealed class DuplicatePendingArticleStateChangeException : Exception
+{
+    public readonly long ArticleId;
+    public DuplicatePendingArticleStateChangeException(long articleId)
+        : base($"A pending article state change was already present for {articleId}")
+    {
+        this.ArticleId = articleId;
+    }
+}
+
+public sealed class PendingChangeExistsForArticleException: Exception
+{
+    public readonly long ArticleId;
+    public PendingChangeExistsForArticleException(long articleId)
+        : base($"Pending changes exist for article {articleId}")
     {
         this.ArticleId = articleId;
     }

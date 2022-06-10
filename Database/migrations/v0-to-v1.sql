@@ -92,5 +92,22 @@ CREATE TABLE article_deletes (
     id INTEGER NOT NULL PRIMARY KEY
 );
 
+-- Like state changes on articles. The presense of an article here implies it is
+-- a state *change* from the source of truth. Since state change on the service
+-- is idempotent, theres low risk to running it when the state on the service
+-- matches. *However*, if we have an unsync'd state change, and the user changes
+-- the state again, we're effecting reverting to an unchanges state. e.g. there
+-- can only be one article state change at a time (hence the PK on the article
+-- id).
+-- 
+-- Also note that isn't a FK reference to the articles table. This is because
+-- you may like/unlike an article and then delete it; we need to sync that. For
+-- unliking, this isn't significant. However, since the instapaper service pushes
+-- out tweets etc for liked articles, you might like to share, and then purge.
+CREATE TABLE article_liked_changes (
+    article_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    liked BOOLEAN
+);
+
 -- Set version to indicate default state created
 PRAGMA user_version = 1;

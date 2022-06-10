@@ -64,4 +64,33 @@ public interface IArticleChangesDatabase
     /// matches, no error is raised.
     /// </summary>
     void RemovePendingArticleDelete(long articleId);
+
+    /// <summary>
+    /// Creates a pending article state change (e.g. like/unlike) for the
+    /// supplied ID.
+    /// </summary>
+    /// <param name="articleId">ID the state change is for</param>
+    /// <param name="likeState">The state to apply (liked/unliked)</param>
+    /// <returns>Pending article state change information</returns>
+    PendingArticleStateChange CreatePendingArticleStateChange(long articleId, bool likeState);
+
+    /// <summary>
+    /// Given an article id, retrieves the pending article state change
+    /// </summary>
+    /// <param name="articleId">ID of the article to look up</param>
+    /// <returns>Instance if found, null otherwise</returns>
+    PendingArticleStateChange? GetPendingArticleStateChangeByArticleId(long articleId);
+
+    /// <summary>
+    /// Lists any pending article state changes (e.g. like/unlike)
+    /// </summary>
+    /// <returns>Unordered article state changes</returns>
+    IList<PendingArticleStateChange> ListPendingArticleStateChanges();
+
+    /// <summary>
+    /// Removes a pending article state change that matches the supplied ID. If
+    /// no id matches, no error is raised.
+    /// </summary>
+    /// <param name="articleId">ID of the pending state change to remove</param>
+    void RemovePendingArticleStateChange(long articleId);
 }

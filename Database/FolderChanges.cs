@@ -49,7 +49,7 @@ public class FolderChanges : IFolderChangesDatabase
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
         {
-            throw new DuplicatePendingFolderAdd(localFolderId);
+            throw new DuplicatePendingFolderAddException(localFolderId);
         }
     }
 
@@ -168,7 +168,7 @@ public class FolderChanges : IFolderChangesDatabase
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
         {
-            throw new DuplicatePendingFolderDelete(serviceId);
+            throw new DuplicatePendingFolderDeleteException(serviceId);
         }
     }
 

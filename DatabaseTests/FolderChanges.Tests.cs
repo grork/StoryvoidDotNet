@@ -145,7 +145,7 @@ public sealed class FolderChangesTests : IAsyncLifetime
     public void AddingDuplicatePendingFolderAddShouldFail()
     {
         _ = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-        Assert.Throws<DuplicatePendingFolderAdd>(() => this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId));
+        Assert.Throws<DuplicatePendingFolderAddException>(() => this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId));
     }
 
     [Fact]
@@ -266,21 +266,21 @@ public sealed class FolderChangesTests : IAsyncLifetime
     public void AddingDuplicatePendingFolderDeleteShouldForServiceId()
     {
         _ = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        Assert.Throws<DuplicatePendingFolderDelete>(() => this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title2"));
+        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title2"));
     }
 
     [Fact]
     public void AddingDuplicatePendingFolderDeleteShouldForTitle()
     {
         _ = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        Assert.Throws<DuplicatePendingFolderDelete>(() => this.db!.FolderChangesDatabase.CreatePendingFolderDelete(98L, "Title"));
+        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db!.FolderChangesDatabase.CreatePendingFolderDelete(98L, "Title"));
     }
 
     [Fact]
     public void AddingDuplicatePendingFolderDeleteShouldForServiceIdAndTitle()
     {
         _ = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        Assert.Throws<DuplicatePendingFolderDelete>(() => this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title"));
+        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title"));
     }
     #endregion
 }

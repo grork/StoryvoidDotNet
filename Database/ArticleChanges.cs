@@ -41,7 +41,7 @@ public class ArticleChanges : IArticleChangesDatabase
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
         {
-            throw new DuplicatePendingArticleAdd(url);
+            throw new DuplicatePendingArticleAddException(url);
         }
     }
 
@@ -124,7 +124,7 @@ public class ArticleChanges : IArticleChangesDatabase
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
         {
-            throw new DuplicatePendingArticleDelete(articleId);
+            throw new DuplicatePendingArticleDeleteException(articleId);
         }
 
         return articleId;
@@ -166,6 +166,7 @@ public class ArticleChanges : IArticleChangesDatabase
         return result;
     }
 
+    /// <inheritdoc />
     public void RemovePendingArticleDelete(long articleId)
     {
         var c = this.connection;
@@ -177,6 +178,96 @@ public class ArticleChanges : IArticleChangesDatabase
         query.AddParameter("@articleId", articleId);
 
         query.ExecuteNonQuery();
+    }
+
+    /// <inheritdoc />
+    public PendingArticleStateChange CreatePendingArticleStateChange(long articleId, bool liked)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            INSERT INTO article_liked_changes(article_id, liked)
+            VALUES (@articleId, @liked)
+        ");
+
+        query.AddParameter("@articleId", articleId);
+        query.AddParameter("@liked", liked);
+
+        try
+        {
+            query.ExecuteNonQuery();
+            return GetPendingArticleStateChangeByArticleId(c, articleId)!;
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
+        {
+            throw new DuplicatePendingArticleStateChangeException(articleId);
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
+        {
+            throw new ArticleNotFoundException(articleId);
+        }
+    }
+
+    /// <inheritdoc />
+    public PendingArticleStateChange? GetPendingArticleStateChangeByArticleId(long articleId)
+    {
+        var c = this.connection;
+        return GetPendingArticleStateChangeByArticleId(c, articleId);
+    }
+
+    /// <inheritdoc />
+    public IList<PendingArticleStateChange> ListPendingArticleStateChanges()
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            SELECT *
+            FROM article_liked_changes
+        ");
+
+        using var row = query.ExecuteReader();
+        var result = new List<PendingArticleStateChange>();
+        while(row.Read())
+        {
+            var pendingArticleStateChange = PendingArticleStateChange.FromRow(row);
+            result.Add(pendingArticleStateChange);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public void RemovePendingArticleStateChange(long articleId)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            DELETE FROM article_liked_changes
+            WHERE article_id = @articleId
+        ");
+
+        query.AddParameter("@articleId", articleId);
+
+        query.ExecuteNonQuery();
+    }
+
+    private static PendingArticleStateChange? GetPendingArticleStateChangeByArticleId(IDbConnection connection, long articleId)
+    {
+        using var query = connection.CreateCommand(@"
+            SELECT article_id, liked
+            FROM article_liked_changes
+            WHERE article_id = @articleId
+        ");
+
+        query.AddParameter("@articleId", articleId);
+
+        PendingArticleStateChange? result = null;
+        using var row = query.ExecuteReader();
+        if(row.Read())
+        {
+            result = PendingArticleStateChange.FromRow(row);
+        }
+
+        return result;
     }
 
     /// <summary>
