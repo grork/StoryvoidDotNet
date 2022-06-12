@@ -2,7 +2,7 @@
 
 namespace Codevoid.Test.Storyvoid;
 
-public sealed class ArticleTests : IAsyncLifetime
+public sealed class ArticleDatabaseTests : IAsyncLifetime
 {
     private static readonly Uri BASE_URI = new("https://www.bing.com");
     private IArticleDatabase? db;

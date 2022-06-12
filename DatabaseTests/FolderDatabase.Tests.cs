@@ -3,7 +3,7 @@ using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
-public sealed class FolderTests : IAsyncLifetime
+public sealed class FolderDatabaseTests : IAsyncLifetime
 {
     private static void FoldersMatch(DatabaseFolder? folder1, DatabaseFolder? folder2)
     {
