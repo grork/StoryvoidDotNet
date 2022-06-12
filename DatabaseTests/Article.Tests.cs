@@ -4,6 +4,7 @@ namespace Codevoid.Test.Storyvoid;
 
 public sealed class ArticleTests : IAsyncLifetime
 {
+    private static readonly Uri BASE_URI = new("https://www.bing.com");
     private IArticleDatabase? db;
     private IInstapaperDatabase? instapaperDb;
     private DatabaseFolder? CustomFolder1;
@@ -38,7 +39,7 @@ public sealed class ArticleTests : IAsyncLifetime
         return new(
             id: nextArticleId++,
             title: "Sample Article",
-            url: new Uri("https://www.bing.com"),
+            url: new Uri(BASE_URI, $"/{nextArticleId}"),
             description: String.Empty,
             readProgress: 0.0F,
             readProgressTimestamp: DateTime.Now,

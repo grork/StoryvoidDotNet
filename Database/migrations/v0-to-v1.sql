@@ -9,7 +9,8 @@ CREATE TABLE articles (
     read_progress REAL NOT NULL DEFAULT 0.0,
     read_progress_timestamp INTEGER NOT NULL DEFAULT 0,
     hash TEXT NOT NULL,
-    liked INTEGER NOT NULL DEFAULT 0
+    liked INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(url)
 );
 
 CREATE TABLE folders (
@@ -36,6 +37,7 @@ CREATE TABLE article_to_folder (
     article_id INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY(local_folder_id) REFERENCES folders(local_id), 
     FOREIGN KEY(article_id) REFERENCES articles(id)
+    UNIQUE(article_id)
 );
 
 CREATE TABLE article_local_only_state (

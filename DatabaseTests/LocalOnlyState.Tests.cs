@@ -49,7 +49,7 @@ public class LocalOnlyStateTests : IAsyncLifetime
         var article3 = this.db!.AddArticleToFolder(new(
             3,
             "Sample Article 3",
-            new("https://www.codevoid.net/2"),
+            new("https://www.codevoid.net/3"),
             String.Empty,
             0.0F,
             DateTime.Now,
