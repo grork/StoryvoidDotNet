@@ -9,10 +9,10 @@ internal sealed partial class ArticleDatabase
     {
         var c = this.connection;
         using var query = c.CreateCommand(@"
-                SELECT *
-                FROM article_local_only_state
-                WHERE article_id = @articleId
-            ");
+            SELECT *
+            FROM article_local_only_state
+            WHERE article_id = @articleId
+        ");
 
         query.AddParameter("@articleId", articleId);
 
@@ -32,23 +32,23 @@ internal sealed partial class ArticleDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                INSERT INTO article_local_only_state(article_id,
-                                                        available_locally,
-                                                        first_image_local_path,
-                                                        first_image_remote_path,
-                                                        local_path,
-                                                        extracted_description,
-                                                        article_unavailable,
-                                                        include_in_mru)
-                VALUES (@articleId,
-                        @availableLocally,
-                        @firstImageLocalPath,
-                        @firstImageRemotePath,
-                        @localPath,
-                        @extractedDescription,
-                        @articleUnavailable,
-                        @includeInMRU)
-            ");
+            INSERT INTO article_local_only_state(article_id,
+                                                    available_locally,
+                                                    first_image_local_path,
+                                                    first_image_remote_path,
+                                                    local_path,
+                                                    extracted_description,
+                                                    article_unavailable,
+                                                    include_in_mru)
+            VALUES (@articleId,
+                    @availableLocally,
+                    @firstImageLocalPath,
+                    @firstImageRemotePath,
+                    @localPath,
+                    @extractedDescription,
+                    @articleUnavailable,
+                    @includeInMRU)
+        ");
 
         query.AddParameter("@articleId", localOnlyArticleState.ArticleId);
         query.AddParameter("@availableLocally", localOnlyArticleState.AvailableLocally);
@@ -86,9 +86,9 @@ internal sealed partial class ArticleDatabase
     {
         var c = this.connection;
         using var query = c.CreateCommand(@"
-                DELETE FROM article_local_only_state
-                WHERE article_id = @articleId
-            ");
+            DELETE FROM article_local_only_state
+            WHERE article_id = @articleId
+        ");
 
         query.AddParameter("@articleId", articleId);
         query.ExecuteNonQuery();
@@ -105,16 +105,16 @@ internal sealed partial class ArticleDatabase
         var articleId = updatedLocalOnlyArticleState.ArticleId;
 
         using var query = c.CreateCommand(@"
-                    UPDATE article_local_only_state SET
-                        available_locally = @availableLocally,
-                        first_image_local_path = @firstImageLocalPath,
-                        first_image_remote_path = @firstImageRemotePath,
-                        local_path = @localPath,
-                        extracted_description = @extractedDescription,
-                        article_unavailable = @articleUnavailable,
-                        include_in_mru = @includeInMru
-                    WHERE article_id = @articleId
-                ");
+            UPDATE article_local_only_state SET
+                available_locally = @availableLocally,
+                first_image_local_path = @firstImageLocalPath,
+                first_image_remote_path = @firstImageRemotePath,
+                local_path = @localPath,
+                extracted_description = @extractedDescription,
+                article_unavailable = @articleUnavailable,
+                include_in_mru = @includeInMru
+            WHERE article_id = @articleId
+        ");
 
         query.AddParameter("@articleId", articleId);
         query.AddParameter("@availableLocally", updatedLocalOnlyArticleState.AvailableLocally);

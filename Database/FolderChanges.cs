@@ -28,9 +28,9 @@ public class FolderChanges : IFolderChangesDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                INSERT INTO folder_adds(local_id)
-                VALUES (@localId);
-            ");
+            INSERT INTO folder_adds(local_id)
+            VALUES (@localId);
+        ");
 
         query.AddParameter("@localId", localFolderId);
 
@@ -54,10 +54,10 @@ public class FolderChanges : IFolderChangesDatabase
     private static PendingFolderAdd? GetPendingFolderAddById(IDbConnection connection, long localFolderId)
     {
         using var query = connection.CreateCommand(@"
-                SELECT local_id, title
-                FROM folder_adds_with_folder_information
-                WHERE local_id = @localId
-            ");
+            SELECT local_id, title
+            FROM folder_adds_with_folder_information
+            WHERE local_id = @localId
+        ");
 
         query.AddParameter("@localId", localFolderId);
 
@@ -84,9 +84,9 @@ public class FolderChanges : IFolderChangesDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                DELETE FROM folder_adds
-                WHERE local_id = @localId
-            ");
+            DELETE FROM folder_adds
+            WHERE local_id = @localId
+        ");
 
         query.AddParameter("@localId", localFolderId);
 
@@ -99,9 +99,9 @@ public class FolderChanges : IFolderChangesDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                SELECT *
-                FROM folder_adds_with_folder_information
-            ");
+            SELECT *
+            FROM folder_adds_with_folder_information
+        ");
 
         using var pendingFolderAdds = query.ExecuteReader();
 
@@ -128,9 +128,9 @@ public class FolderChanges : IFolderChangesDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                INSERT INTO folder_deletes(service_id, title)
-                VALUES (@serviceId, @title);
-            ");
+            INSERT INTO folder_deletes(service_id, title)
+            VALUES (@serviceId, @title);
+        ");
 
         query.AddParameter("@serviceId", serviceId);
         query.AddParameter("@title", title);
@@ -153,9 +153,9 @@ public class FolderChanges : IFolderChangesDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                DELETE FROM folder_deletes
-                WHERE service_id = @serviceId
-            ");
+            DELETE FROM folder_deletes
+            WHERE service_id = @serviceId
+        ");
 
         query.AddParameter("@serviceId", serviceId);
 
@@ -165,10 +165,10 @@ public class FolderChanges : IFolderChangesDatabase
     private static PendingFolderDelete? GetPendingFolderDeleteByServiceId(IDbConnection connection, long serviceId)
     {
         using var query = connection.CreateCommand(@"
-                SELECT service_id, title
-                FROM folder_deletes
-                WHERE service_id = @serviceId
-            ");
+            SELECT service_id, title
+            FROM folder_deletes
+            WHERE service_id = @serviceId
+        ");
 
         query.AddParameter("@serviceId", serviceId);
 
@@ -217,9 +217,9 @@ public class FolderChanges : IFolderChangesDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                SELECT *
-                FROM folder_deletes
-            ");
+            SELECT *
+            FROM folder_deletes
+        ");
 
         using var pendingFolderDeletes = query.ExecuteReader();
 

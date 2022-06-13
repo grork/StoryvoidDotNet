@@ -21,12 +21,12 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                SELECT a.*
-                FROM article_to_folder
-                INNER JOIN articles_with_local_only_state a
-                    ON article_to_folder.article_id = a.id
-                WHERE article_to_folder.local_folder_id = @localFolderId
-            ");
+            SELECT a.*
+            FROM article_to_folder
+            INNER JOIN articles_with_local_only_state a
+                ON article_to_folder.article_id = a.id
+            WHERE article_to_folder.local_folder_id = @localFolderId
+        ");
 
         query.AddParameter("@localFolderId", localFolderId);
 
@@ -46,10 +46,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                SELECT *
-                FROM articles_with_local_only_state
-                WHERE liked = true
-            ");
+            SELECT *
+            FROM articles_with_local_only_state
+            WHERE liked = true
+        ");
 
         var results = new List<DatabaseArticle>();
         using var rows = query.ExecuteReader();
@@ -66,10 +66,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     {
         var c = this.connection;
         using var query = c.CreateCommand(@"
-                SELECT *
-                FROM articles_with_local_only_state
-                WHERE id = @id
-            ");
+            SELECT *
+            FROM articles_with_local_only_state
+            WHERE id = @id
+        ");
 
         query.AddParameter("@id", id);
 
@@ -98,11 +98,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         }
 
         using var query = c.CreateCommand(@"
-                INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
-                VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
+            INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
+            VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
 
-                SELECT last_insert_rowid();
-            ");
+            SELECT last_insert_rowid();
+        ");
 
         query.AddParameter("@id", data.id);
         query.AddParameter("@title", data.title);
@@ -116,9 +116,9 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         query.ExecuteNonQuery();
 
         using var pairWithFolderQuery = c.CreateCommand(@"
-                INSERT INTO article_to_folder(local_folder_id, article_id)
-                VALUES (@localFolderId, @articleId);
-            ");
+            INSERT INTO article_to_folder(local_folder_id, article_id)
+            VALUES (@localFolderId, @articleId);
+        ");
 
         pairWithFolderQuery.AddParameter("@articleId", data.id);
         pairWithFolderQuery.AddParameter("@localFolderId", localFolderId);
@@ -134,16 +134,16 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                UPDATE articles SET
-                    url = @url,
-                    title = @title,
-                    description = @description,
-                    read_progress = @readProgress,
-                    read_progresS_timestamp = @readProgressTimestamp,
-                    hash = @hash,
-                    liked = @liked
-                WHERE id = @id
-            ");
+            UPDATE articles SET
+                url = @url,
+                title = @title,
+                description = @description,
+                read_progress = @readProgress,
+                read_progresS_timestamp = @readProgressTimestamp,
+                hash = @hash,
+                liked = @liked
+            WHERE id = @id
+        ");
 
         query.AddParameter("@id", updatedData.id);
         query.AddParameter("@url", updatedData.url);
@@ -167,10 +167,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     private static void UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked)
     {
         using var query = c.CreateCommand(@"
-                UPDATE articles
-                SET liked = @liked
-                WHERE id = @id
-            ");
+            UPDATE articles
+            SET liked = @liked
+            WHERE id = @id
+        ");
 
         query.AddParameter("@id", id);
         query.AddParameter("@liked", liked);
@@ -228,10 +228,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
 
 
         using var query = c.CreateCommand(@"
-                UPDATE articles
-                SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
-                WHERE id = @id
-            ");
+            UPDATE articles
+            SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
+            WHERE id = @id
+        ");
 
         query.AddParameter("@id", articleId);
         query.AddParameter("@readProgress", readProgress);
@@ -265,10 +265,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
 
 
         using var query = c.CreateCommand(@"
-                UPDATE article_to_folder
-                SET local_folder_id = @localFolderId
-                WHERE article_id = @articleId;
-            ");
+            UPDATE article_to_folder
+            SET local_folder_id = @localFolderId
+            WHERE article_id = @articleId;
+        ");
 
         query.AddParameter("@articleId", articleId);
         query.AddParameter("@localFolderId", localFolderId);
@@ -284,9 +284,9 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         void RemoveFromFolder()
         {
             using var query = c.CreateCommand(@"
-                    DELETE FROM article_to_folder
-                    WHERE article_id = @articleId
-                ");
+                DELETE FROM article_to_folder
+                WHERE article_id = @articleId
+            ");
 
             query.AddParameter("@articleId", articleId);
 
@@ -304,9 +304,9 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
             // Now that we've deleted the local state, we can delete the
             // article itself.
             using var query = c.CreateCommand(@"
-                    DELETE FROM articles
-                    WHERE id = @id
-                ");
+                DELETE FROM articles
+                WHERE id = @id
+            ");
 
             query.AddParameter("@id", articleId);
 

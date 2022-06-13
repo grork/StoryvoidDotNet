@@ -19,10 +19,10 @@ internal sealed class FolderDatabase : IFolderDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                SELECT *
-                FROM folders
-                ORDER BY position ASC
-            ");
+            SELECT *
+            FROM folders
+            ORDER BY position ASC
+        ");
 
         using var folders = query.ExecuteReader();
 
@@ -43,10 +43,10 @@ internal sealed class FolderDatabase : IFolderDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                SELECT *
-                FROM folders
-                WHERE service_id = @serviceId
-            ");
+            SELECT *
+            FROM folders
+            WHERE service_id = @serviceId
+        ");
 
         query.AddParameter("@serviceId", serviceId);
 
@@ -66,10 +66,10 @@ internal sealed class FolderDatabase : IFolderDatabase
     {
         var c = this.connection;
         using var query = c.CreateCommand(@"
-                SELECT *
-                FROM folders
-                WHERE local_id = @localId
-            ");
+            SELECT *
+            FROM folders
+            WHERE local_id = @localId
+        ");
 
         query.AddParameter("@localId", localId);
 
@@ -95,11 +95,11 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
 
         using var query = c.CreateCommand(@"
-                INSERT INTO folders(title)
-                VALUES (@title);
+            INSERT INTO folders(title)
+            VALUES (@title);
 
-                SELECT last_insert_rowid();
-            ");
+            SELECT last_insert_rowid();
+        ");
 
         query.AddParameter("@title", title);
         var rowId = (long)query.ExecuteScalar();
@@ -110,10 +110,10 @@ internal sealed class FolderDatabase : IFolderDatabase
     private static bool FolderWithTitleExists(IDbConnection connection, string title)
     {
         using var query = connection.CreateCommand(@"
-                SELECT COUNT(*)
-                FROM folders
-                WHERE title = @title
-            ");
+            SELECT COUNT(*)
+            FROM folders
+            WHERE title = @title
+        ");
 
         query.AddParameter("@title", title);
 
@@ -133,11 +133,11 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
 
         using var query = c.CreateCommand(@"
-                INSERT INTO folders(title, service_id, position, should_sync)
-                VALUES (@title, @serviceId, @position, @shouldSync);
+            INSERT INTO folders(title, service_id, position, should_sync)
+            VALUES (@title, @serviceId, @position, @shouldSync);
 
-                SELECT last_insert_rowid();
-            ");
+            SELECT last_insert_rowid();
+        ");
 
         query.AddParameter("@title", title);
         query.AddParameter("@serviceId", serviceId);
@@ -155,13 +155,13 @@ internal sealed class FolderDatabase : IFolderDatabase
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
-                UPDATE folders SET
-                    service_id = @serviceId,
-                    title = @title,
-                    position = @position,
-                    should_sync = @shouldSync
-                WHERE local_id = @localId
-            ");
+            UPDATE folders SET
+                service_id = @serviceId,
+                title = @title,
+                position = @position,
+                should_sync = @shouldSync
+            WHERE local_id = @localId
+        ");
 
         query.AddParameter("@localId", localId);
         if (serviceId != null)
@@ -170,7 +170,7 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
         else
         {
-            query.AddNull(@"serviceId", DbType.Int64);
+            query.AddNull("@serviceId", DbType.Int64);
         }
 
         query.AddParameter("@title", title);
@@ -220,9 +220,9 @@ internal sealed class FolderDatabase : IFolderDatabase
 
         // Remove any article-folder-pairs
         using var removeArticleFolderPairsQuery = c.CreateCommand(@"
-                DELETE FROM article_to_folder
-                WHERE local_folder_id = @localFolderId
-            ");
+            DELETE FROM article_to_folder
+            WHERE local_folder_id = @localFolderId
+        ");
 
         removeArticleFolderPairsQuery.AddParameter("@localFolderId", localFolderId);
 
@@ -230,9 +230,9 @@ internal sealed class FolderDatabase : IFolderDatabase
 
         // Delete the folder
         using var deleteFolderQuery = c.CreateCommand(@"
-                DELETE FROM folders
-                WHERE local_id = @localId
-            ");
+            DELETE FROM folders
+            WHERE local_id = @localId
+        ");
 
         deleteFolderQuery.AddParameter("@localId", localFolderId);
 
