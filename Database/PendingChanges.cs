@@ -10,11 +10,6 @@ public sealed record PendingFolderAdd
     private PendingFolderAdd() { }
 
     /// <summary>
-    /// ID for the pending change itself, so that it can be deleted later.
-    /// </summary>
-    public long ChangeId { get; init; }
-
-    /// <summary>
     /// ID of the folder that has been added, so additional information may
     /// be later retrieved about that folder
     /// </summary>
@@ -33,13 +28,11 @@ public sealed record PendingFolderAdd
     /// <returns>Instance of a Pending Folder Add</returns>
     internal static PendingFolderAdd FromRow(IDataReader row)
     {
-        var changeId = row.GetInt64("change_id");
         var folderLocalId = row.GetInt64("local_id");
         var title = row.GetString("title")!;
 
         var change = new PendingFolderAdd()
         {
-            ChangeId = changeId,
             FolderLocalId = folderLocalId,
             Title = title
         };
@@ -54,11 +47,6 @@ public sealed record PendingFolderAdd
 public sealed record PendingFolderDelete
 {
     private PendingFolderDelete() { }
-
-    /// <summary>
-    /// ID for the pending change itself, so that it can be deleted later.
-    /// </summary>
-    public long ChangeId { get; init; }
 
     /// <summary>
     /// Service ID for the folder that is being deleted.
@@ -78,13 +66,11 @@ public sealed record PendingFolderDelete
     /// <returns></returns>
     internal static PendingFolderDelete FromRow(IDataReader row)
     {
-        var changeId = row.GetInt64("change_id");
         var serviceId = row.GetInt64("service_id");
         var title = row.GetString("title")!;
 
         var change = new PendingFolderDelete()
         {
-            ChangeId = changeId,
             ServiceId = serviceId,
             Title = title
         };

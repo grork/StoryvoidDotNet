@@ -205,7 +205,7 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
 
         var folderChangesDB = this.database.FolderChangesDatabase;
-        if (folderChangesDB.GetPendingFolderAddByLocalFolderId(localFolderId) != null)
+        if (folderChangesDB.GetPendingFolderAdd(localFolderId) != null)
         {
             throw new InvalidOperationException($"Folder {localFolderId} had a pending folder add");
         }

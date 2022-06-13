@@ -61,9 +61,7 @@ CREATE VIEW articles_with_local_only_state AS
 
 -- Change Tracking tables
 CREATE TABLE folder_adds (
-    change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    local_id INTEGER NOT NULL,
-    UNIQUE(local_id),
+    local_id INTEGER NOT NULL PRIMARY KEY,
     FOREIGN KEY(local_id) REFERENCES folders(local_id)
 );
 
@@ -73,10 +71,8 @@ CREATE VIEW folder_adds_with_folder_information AS
     ON a.local_id = f.local_id;
 
 CREATE TABLE folder_deletes (
-    change_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    service_id INTEGER NOT NULL,
+    service_id INTEGER NOT NULL PRIMARY KEY,
     title TEXT NOT NULL,
-    UNIQUE(service_id),
     UNIQUE(title) -- Titles can't be duplicated on the service; enforce here
 );
 

@@ -34,7 +34,6 @@ public sealed class FolderChangesTests : IAsyncLifetime
     public void CanCreatePendingFolderAdd()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-        Assert.NotEqual(0L, change.ChangeId);
         Assert.Equal(this.CustomLocalFolder1!.LocalId, change.FolderLocalId);
         Assert.Equal(this.CustomLocalFolder1!.Title, change.Title);
     }
@@ -51,19 +50,11 @@ public sealed class FolderChangesTests : IAsyncLifetime
     }
 
     [Fact]
-    public void CanGetPendingFolderAddByChangeId()
-    {
-        var originalChange = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-        var readChange = this.db!.FolderChangesDatabase.GetPendingFolderAdd(originalChange.ChangeId);
-        Assert.Equal(originalChange, readChange);
-    }
-
-    [Fact]
     public void CanGetPendingFolderAddByLocalFolderId()
     {
-        var change = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-        var changeViaFolderId = this.db!.FolderChangesDatabase.GetPendingFolderAddByLocalFolderId(this.CustomLocalFolder1!.LocalId);
-        Assert.Equal(change, changeViaFolderId);
+        var originalChange = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
+        var readChange = this.db!.FolderChangesDatabase.GetPendingFolderAdd(originalChange.FolderLocalId);
+        Assert.Equal(originalChange, readChange);
     }
 
     [Fact]
@@ -74,10 +65,10 @@ public sealed class FolderChangesTests : IAsyncLifetime
     }
 
     [Fact]
-    public void CanRemovePendingFolderAddByChangeId()
+    public void CanRemovePendingFolderAddByLocalFolderId()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-        this.db!.FolderChangesDatabase.RemovePendingFolderAdd(change.ChangeId);
+        this.db!.FolderChangesDatabase.RemovePendingFolderAdd(change.FolderLocalId);
     }
 
     [Fact]
@@ -90,9 +81,9 @@ public sealed class FolderChangesTests : IAsyncLifetime
     public void RemovedPendingFolderAddIsActuallyRemoved()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-        this.db!.FolderChangesDatabase.RemovePendingFolderAdd(change.ChangeId);
+        this.db!.FolderChangesDatabase.RemovePendingFolderAdd(change.FolderLocalId);
 
-        var result = this.db!.FolderChangesDatabase.GetPendingFolderAdd(change.ChangeId);
+        var result = this.db!.FolderChangesDatabase.GetPendingFolderAdd(change.FolderLocalId);
         Assert.Null(result);
 
         var results = this.db!.FolderChangesDatabase.ListPendingFolderAdds();
@@ -163,17 +154,17 @@ public sealed class FolderChangesTests : IAsyncLifetime
         var f = (ServiceId: 1, Title: "Title");
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(f.ServiceId,
                                                                                f.Title);
-        Assert.NotEqual(0L, change.ChangeId);
+        Assert.NotEqual(0L, change.ServiceId);
         Assert.Equal(f.ServiceId, change.ServiceId);
         Assert.Equal(f.Title, change.Title);
     }
 
     [Fact]
-    public void CanGetPendingFolderDeleteByChangeId()
+    public void CanGetPendingFolderDeleteByServiceId()
     {
         var f = (ServiceId: 1, Title: "Title");
         var originalChange = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(f.ServiceId, f.Title);
-        var readChange = this.db!.FolderChangesDatabase.GetPendingFolderDelete(originalChange.ChangeId);
+        var readChange = this.db!.FolderChangesDatabase.GetPendingFolderDelete(originalChange.ServiceId);
 
         Assert.Equal(originalChange, readChange);
     }
@@ -196,10 +187,10 @@ public sealed class FolderChangesTests : IAsyncLifetime
     }
 
     [Fact]
-    public void CanRemovePendingFolderDeleteByChangeId()
+    public void CanRemovePendingFolderDeleteByServiceId()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        this.db!.FolderChangesDatabase.RemovePendingFolderDelete(change.ChangeId);
+        this.db!.FolderChangesDatabase.RemovePendingFolderDelete(change.ServiceId);
     }
 
     [Fact]
@@ -212,9 +203,9 @@ public sealed class FolderChangesTests : IAsyncLifetime
     public void RemovedPendingFolderDeleteIsActuallyRemoved()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        this.db!.FolderChangesDatabase.RemovePendingFolderDelete(change.ChangeId);
+        this.db!.FolderChangesDatabase.RemovePendingFolderDelete(change.ServiceId);
 
-        var result = this.db!.FolderChangesDatabase.GetPendingFolderDelete(change.ChangeId);
+        var result = this.db!.FolderChangesDatabase.GetPendingFolderDelete(change.ServiceId);
         Assert.Null(result);
 
         var results = this.db!.FolderChangesDatabase.ListPendingFolderDeletes();

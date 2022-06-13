@@ -19,23 +19,15 @@ public interface IFolderChangesDatabase
     /// Removes a pending folder add from the changes database. If no change
     /// with that ID is present, it completes silently.
     /// </summary>
-    /// <param name="changeId">Pending folder add to remove</param>
-    void RemovePendingFolderAdd(long changeId);
-
-    /// <summary>
-    /// Gets a specific pending folder addition by the change ID for that
-    /// change, if present in the database.
-    /// </summary>
-    /// <param name="changeId">Change ID for that folder add</param>
-    /// <returns>Change for the supplied ID</returns>
-    PendingFolderAdd? GetPendingFolderAdd(long changeId);
+    /// <param name="localFolderId">Pending folder add to remove</param>
+    void RemovePendingFolderAdd(long localFolderId);
 
     /// <summary>
     /// Gets a pending folder add by the local folder ID if it exists.
     /// </summary>
     /// <param name="localFolderId">Local folder ID to search for</param>
     /// <returns>Pending folder add if found</returns>
-    PendingFolderAdd? GetPendingFolderAddByLocalFolderId(long localFolderId);
+    PendingFolderAdd? GetPendingFolderAdd(long localFolderId);
 
     /// <summary>
     /// Returns all pending folder additions
@@ -55,16 +47,18 @@ public interface IFolderChangesDatabase
     /// Removes a pending folder delete from the changes database. If no
     /// change with that is present, it completes silently
     /// </summary>
-    /// <param name="changeId">Pending folder delete to remove </param>
-    void RemovePendingFolderDelete(long changeId);
+    /// <param name="serviceId">
+    /// Service ID of folder delete to remove the pending change for
+    /// </param>
+    void RemovePendingFolderDelete(long serviceId);
 
     /// <summary>
     /// Get a specific pending folder delete by the change ID for that
     /// change, if present in the database
     /// </summary>
-    /// <param name="changeId">Change ID for that folder delete</param>
+    /// <param name="serviceId">Service ID for that folder delete</param>
     /// <returns>A pending folder delete instance if found</returns>
-    PendingFolderDelete? GetPendingFolderDelete(long changeId);
+    PendingFolderDelete? GetPendingFolderDelete(long serviceId);
 
     /// <summary>
     /// Get a specific pending folder delete by the title of the deleted folded

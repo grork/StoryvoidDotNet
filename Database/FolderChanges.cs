@@ -30,16 +30,14 @@ public class FolderChanges : IFolderChangesDatabase
         using var query = c.CreateCommand(@"
                 INSERT INTO folder_adds(local_id)
                 VALUES (@localId);
-
-                SELECT last_insert_rowid();
             ");
 
         query.AddParameter("@localId", localFolderId);
 
         try
         {
-            var changeId = (long)query.ExecuteScalar();
-            return GetPendingFolderAddById(c, changeId)!;
+            query.ExecuteScalar();
+            return GetPendingFolderAddById(c, localFolderId)!;
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
@@ -47,21 +45,21 @@ public class FolderChanges : IFolderChangesDatabase
             throw new FolderNotFoundException(localFolderId);
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
-                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
         {
             throw new DuplicatePendingFolderAddException(localFolderId);
         }
     }
 
-    private static PendingFolderAdd? GetPendingFolderAddById(IDbConnection connection, long changeId)
+    private static PendingFolderAdd? GetPendingFolderAddById(IDbConnection connection, long localFolderId)
     {
         using var query = connection.CreateCommand(@"
-                SELECT change_id, local_id, title
+                SELECT local_id, title
                 FROM folder_adds_with_folder_information
-                WHERE change_id = @changeId
+                WHERE local_id = @localId
             ");
 
-        query.AddParameter("@changeId", changeId);
+        query.AddParameter("@localId", localFolderId);
 
         PendingFolderAdd? result = null;
         using var row = query.ExecuteReader();
@@ -74,44 +72,23 @@ public class FolderChanges : IFolderChangesDatabase
     }
 
     /// <inheritdoc/>
-    public PendingFolderAdd? GetPendingFolderAdd(long changeId)
+    public PendingFolderAdd? GetPendingFolderAdd(long localFolderId)
     {
         var c = this.connection;
-        return GetPendingFolderAddById(c, changeId);
-    }
-
-    public PendingFolderAdd? GetPendingFolderAddByLocalFolderId(long localFolderId)
-    {
-        var c = connection;
-        using var query = c.CreateCommand(@"
-                SELECT change_id, local_id, title
-                FROM folder_adds_with_folder_information
-                WHERE local_id = @localFolderId
-            ");
-
-        query.AddParameter("@localFolderId", localFolderId);
-
-        PendingFolderAdd? result = null;
-        using var row = query.ExecuteReader();
-        if (row.Read())
-        {
-            result = PendingFolderAdd.FromRow(row);
-        }
-
-        return result;
+        return GetPendingFolderAddById(c, localFolderId);
     }
 
     /// <inheritdoc/>
-    public void RemovePendingFolderAdd(long changeId)
+    public void RemovePendingFolderAdd(long localFolderId)
     {
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
                 DELETE FROM folder_adds
-                WHERE change_id = @changeId
+                WHERE local_id = @localId
             ");
 
-        query.AddParameter("@changeId", changeId);
+        query.AddParameter("@localId", localFolderId);
 
         query.ExecuteNonQuery();
     }
@@ -153,8 +130,6 @@ public class FolderChanges : IFolderChangesDatabase
         using var query = c.CreateCommand(@"
                 INSERT INTO folder_deletes(service_id, title)
                 VALUES (@serviceId, @title);
-
-                SELECT last_insert_rowid();
             ");
 
         query.AddParameter("@serviceId", serviceId);
@@ -162,40 +137,40 @@ public class FolderChanges : IFolderChangesDatabase
 
         try
         {
-            var changeId = (long)query.ExecuteScalar();
-            return GetPendingFolderDeleteByChangeId(c, changeId)!;
+            query.ExecuteScalar();
+            return GetPendingFolderDeleteByServiceId(c, serviceId)!;
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
-                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
+                                     && (ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY) || ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
         {
             throw new DuplicatePendingFolderDeleteException(serviceId);
         }
     }
 
     /// <inheritdoc/>
-    public void RemovePendingFolderDelete(long changeId)
+    public void RemovePendingFolderDelete(long serviceId)
     {
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
                 DELETE FROM folder_deletes
-                WHERE change_id = @changeId
+                WHERE service_id = @serviceId
             ");
 
-        query.AddParameter("@changeId", changeId);
+        query.AddParameter("@serviceId", serviceId);
 
         query.ExecuteNonQuery();
     }
 
-    private static PendingFolderDelete? GetPendingFolderDeleteByChangeId(IDbConnection connection, long changeId)
+    private static PendingFolderDelete? GetPendingFolderDeleteByServiceId(IDbConnection connection, long serviceId)
     {
         using var query = connection.CreateCommand(@"
-                SELECT change_id, service_id, title
+                SELECT service_id, title
                 FROM folder_deletes
-                WHERE change_id = @changeId
+                WHERE service_id = @serviceId
             ");
 
-        query.AddParameter("@changeId", changeId);
+        query.AddParameter("@serviceId", serviceId);
 
         PendingFolderDelete? result = null;
         using var row = query.ExecuteReader();
@@ -208,10 +183,10 @@ public class FolderChanges : IFolderChangesDatabase
     }
 
     /// <inheritdoc/>
-    public PendingFolderDelete? GetPendingFolderDelete(long changeId)
+    public PendingFolderDelete? GetPendingFolderDelete(long serviceId)
     {
         var c = this.connection;
-        return GetPendingFolderDeleteByChangeId(c, changeId);
+        return GetPendingFolderDeleteByServiceId(c, serviceId);
     }
 
     /// <inheritdoc/>
@@ -219,7 +194,7 @@ public class FolderChanges : IFolderChangesDatabase
     {
         var c = this.connection;
         using var query = connection.CreateCommand(@"
-            SELECT change_id, service_id, title
+            SELECT service_id, title
             FROM folder_deletes
             WHERE title = @title
         ");
