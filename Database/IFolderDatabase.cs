@@ -102,4 +102,10 @@ public interface IFolderDatabase
     /// </summary>
     /// <param name="localFolderId">Folder to delete</param>
     void DeleteFolder(long localFolderId);
+
+    /// <summary>
+    /// Raised after a folder has been successfully added to the database. When
+    /// raised, the folder information is included
+    /// </summary>
+    event EventHandler<DatabaseFolder> FolderAdded;
 }

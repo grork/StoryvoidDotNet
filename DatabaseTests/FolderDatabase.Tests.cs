@@ -118,6 +118,17 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void FolderAddedEventRaisedForSingleFolderAdd()
+    {
+        DatabaseFolder? eventPayload = null;
+
+        this.db!.FolderAdded += (_, addedFolder) => eventPayload = addedFolder;
+
+        var addedFolder = this.db!.CreateFolder("Sample");
+        Assert.Equal(addedFolder, eventPayload);
+    }
+
+    [Fact]
     public void CanAddMultipleFolders()
     {
         // Create folder; check results are returned
@@ -138,6 +149,21 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void FolderAddedEventRaisedForMultipleFolders()
+    {
+        var eventPayloads = new List<DatabaseFolder>();
+
+        this.db!.FolderAdded += (_, addedFolder) => eventPayloads.Add(addedFolder);
+
+        var firstFolder = this.db!.CreateFolder("Sample");
+        var secondFolder = this.db!.CreateFolder("Sample2");
+
+        Assert.Equal(2, eventPayloads.Count);
+        Assert.Equal(firstFolder, eventPayloads[0]);
+        Assert.Equal(secondFolder, eventPayloads[1]);
+    }
+
+    [Fact]
     public void AddingFolderWithDuplicateTitleFails()
     {
         // Create folder; then created it again, expecting it to fail
@@ -147,6 +173,20 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         // Check a spurious folder wasn't created
         var allFolders = this.db!.ListAllFolders();
         Assert.Equal(3, allFolders.Count);
+    }
+
+    [Fact]
+    public void FolderAddedEventNotRaisedWhenAddFails()
+    {
+        var eventPayloads = new List<DatabaseFolder>();
+
+        this.db!.FolderAdded += (_, addedFolder) => eventPayloads.Add(addedFolder);
+
+        var firstFolder = this.db!.CreateFolder("Sample");
+        Assert.Throws<DuplicateNameException>(() => this.db!.CreateFolder("Sample"));
+
+        Assert.Single(eventPayloads);
+        Assert.Equal(firstFolder, eventPayloads[0]);
     }
 
     [Fact]
@@ -174,6 +214,24 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         var allFolders = this.db!.ListAllFolders();
         var folderFromList = allFolders.Where((f) => f.LocalId == addedFolder.LocalId).FirstOrDefault();
         FoldersMatch(addedFolder, folderFromList);
+    }
+
+    [Fact]
+    public void FolderAddedEventRaisedWhenKnownFolderAdded()
+    {
+        DatabaseFolder? eventPayload = null;
+
+        this.db!.FolderAdded += (_, addedFolder) => eventPayload = addedFolder;
+
+        // Create folder; check results are returned
+        var addedFolder = this.db!.AddKnownFolder(
+            title: "Sample",
+            serviceId: 10L,
+            position: 9L,
+            shouldSync: true
+        );
+
+        Assert.Equal(addedFolder, eventPayload);
     }
 
     [Fact]

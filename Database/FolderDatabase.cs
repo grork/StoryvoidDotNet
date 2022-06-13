@@ -7,6 +7,8 @@ internal sealed class FolderDatabase : IFolderDatabase
     private IDbConnection connection;
     private IInstapaperDatabase database;
 
+    public event EventHandler<DatabaseFolder>? FolderAdded;
+
     public FolderDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
         this.connection = connection;
@@ -104,7 +106,11 @@ internal sealed class FolderDatabase : IFolderDatabase
         query.AddParameter("@title", title);
         var rowId = (long)query.ExecuteScalar();
 
-        return GetFolderByLocalId(rowId)!;
+        var addedFolder = GetFolderByLocalId(rowId)!;
+
+        this.RaiseFolderAdded(addedFolder);
+
+        return addedFolder;
     }
 
     private static bool FolderWithTitleExists(IDbConnection connection, string title)
@@ -146,7 +152,10 @@ internal sealed class FolderDatabase : IFolderDatabase
 
         var rowId = (long)query.ExecuteScalar();
 
-        return GetFolderByLocalId(rowId)!;
+        var addedFolder = GetFolderByLocalId(rowId)!;
+        this.RaiseFolderAdded(addedFolder);
+
+        return addedFolder;
     }
 
     /// <inheritdoc/>
@@ -238,4 +247,16 @@ internal sealed class FolderDatabase : IFolderDatabase
 
         deleteFolderQuery.ExecuteNonQuery();
     }
+
+    #region Event Helpers
+    private void RaiseFolderAdded(DatabaseFolder addedFolder)
+    {
+        var handlers = this.FolderAdded;
+        if(handlers is null) {
+            return;
+        }
+
+        handlers(this, addedFolder);
+    }
+    #endregion
 }
