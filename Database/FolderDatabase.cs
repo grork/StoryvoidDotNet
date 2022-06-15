@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid;
 
@@ -8,6 +9,7 @@ internal sealed class FolderDatabase : IFolderDatabase
     private IInstapaperDatabase database;
 
     public event EventHandler<DatabaseFolder>? FolderAdded;
+    public event EventHandler<DatabaseFolder>? FolderWillBeDeleted;
 
     public FolderDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
@@ -208,15 +210,10 @@ internal sealed class FolderDatabase : IFolderDatabase
             throw new InvalidOperationException("Deleting the Archive folder is not allowed");
         }
 
-        if(this.GetFolderByLocalId(localFolderId) is null)
+        var folder = this.GetFolderByLocalId(localFolderId);
+        if(folder is null)
         {
             return;
-        }
-
-        var folderChangesDB = this.database.FolderChangesDatabase;
-        if (folderChangesDB.GetPendingFolderAdd(localFolderId) != null)
-        {
-            throw new InvalidOperationException($"Folder {localFolderId} had a pending folder add");
         }
 
         var articleChangesDb = this.database.ArticleChangesDatabase;
@@ -227,6 +224,8 @@ internal sealed class FolderDatabase : IFolderDatabase
 
         var c = this.connection;
 
+        this.RaiseFolderWillBeDeleted(folder);
+
         // Remove any article-folder-pairs
         using var removeArticleFolderPairsQuery = c.CreateCommand(@"
             DELETE FROM article_to_folder
@@ -234,7 +233,6 @@ internal sealed class FolderDatabase : IFolderDatabase
         ");
 
         removeArticleFolderPairsQuery.AddParameter("@localFolderId", localFolderId);
-
         removeArticleFolderPairsQuery.ExecuteNonQuery();
 
         // Delete the folder
@@ -245,18 +243,43 @@ internal sealed class FolderDatabase : IFolderDatabase
 
         deleteFolderQuery.AddParameter("@localId", localFolderId);
 
-        deleteFolderQuery.ExecuteNonQuery();
+        try
+        {
+            deleteFolderQuery.ExecuteNonQuery();
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
+        {
+            if(this.database.FolderChangesDatabase.GetPendingFolderAdd(localFolderId) is not null)
+            {
+                throw new InvalidOperationException($"Can't delete folder {localFolderId} that is pending addition. Clear its pending operations first");
+            }
+
+            throw;
+        }
     }
 
     #region Event Helpers
     private void RaiseFolderAdded(DatabaseFolder addedFolder)
     {
         var handlers = this.FolderAdded;
-        if(handlers is null) {
+        if(handlers is null)
+        {
             return;
         }
 
         handlers(this, addedFolder);
+    }
+
+    private void RaiseFolderWillBeDeleted(DatabaseFolder toBeDeleted)
+    {
+        var handlers = this.FolderWillBeDeleted;
+        if (handlers is null)
+        {
+            return;
+        }
+
+        handlers(this, toBeDeleted);
     }
     #endregion
 }

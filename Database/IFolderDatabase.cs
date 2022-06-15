@@ -108,4 +108,11 @@ public interface IFolderDatabase
     /// raised, the folder information is included
     /// </summary>
     event EventHandler<DatabaseFolder> FolderAdded;
+
+    /// <summary>
+    /// Raised immediately prior to the folder being deleted. Primarily intended
+    /// to clean up database state that would cause the delete to fail (E.g., 
+    /// foreign key references).
+    /// </summary>
+    event EventHandler<DatabaseFolder> FolderWillBeDeleted;
 }

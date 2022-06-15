@@ -125,6 +125,7 @@ public class FolderChanges : IFolderChangesDatabase
         {
             throw new InvalidOperationException("Can't create pending delete for well known folders");
         }
+
         var c = this.connection;
 
         using var query = c.CreateCommand(@"
