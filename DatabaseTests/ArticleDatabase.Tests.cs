@@ -516,6 +516,18 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void DeletingArticleRaisesArticleDeletedEvent()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+
+        long? deletedArticle = null;
+        this.db!.ArticleDeleted += (_, payload) => deletedArticle = payload;
+        this.db!.DeleteArticle(article.Id);
+
+        Assert.Equal(article.Id, deletedArticle);
+    }
+
+    [Fact]
     public void CanDeleteArticleInCustomFolder()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
@@ -532,11 +544,39 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void DeletingNonExistantArticleDoesNotRaiseEvent()
+    {
+        var eventWasRaised = false;
+        this.db!.ArticleDeleted += (_, _) => eventWasRaised = true;
+        this.db!.DeleteArticle(999);
+
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
     public void CanDeleteOrphanedArticle()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
         this.instapaperDb!.FolderDatabase.DeleteFolder(this.CustomFolder1!.LocalId);
         this.db!.DeleteArticle(article.Id);
+
+        var retrievedArticle = this.db!.GetArticleById(article.Id);
+        Assert.Null(retrievedArticle);
+    }
+
+    [Fact]
+    public void DeletingOrphanedArticleDoesRaiseEvent()
+    {
+        var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
+
+        long? deletedItem = null;
+        this.db!.ArticleDeleted += (_, payload) => deletedItem = payload;
+        this.instapaperDb!.FolderDatabase.DeleteFolder(this.CustomFolder1!.LocalId);
+        Assert.Null(deletedItem);
+
+        this.db!.DeleteArticle(article.Id);
+
+        Assert.Equal(article.Id, deletedItem);
     }
 
     [Fact]

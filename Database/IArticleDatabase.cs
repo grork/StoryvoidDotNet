@@ -141,4 +141,6 @@ public interface IArticleDatabase
     /// with the *new* status.
     /// </summary>
     public event EventHandler<DatabaseArticle> ArticleLikeStatusChanged;
+
+    public event EventHandler<long> ArticleDeleted;
 }

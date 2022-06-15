@@ -10,6 +10,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     private IInstapaperDatabase database;
 
     public event EventHandler<DatabaseArticle>? ArticleLikeStatusChanged;
+    public event EventHandler<long>? ArticleDeleted;
 
     internal ArticleDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
@@ -302,14 +303,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
             query.ExecuteNonQuery();
         }
 
-        void DeleteArticle()
+        bool DeleteArticle()
         {
-            // Delete the local only state first, since that has a foreign
-            // key relationship to the articles table. This is expected
-            // to not throw an error if there is no local state associated
-            // with the article being deleted.
-            this.DeleteLocalOnlyArticleState(articleId);
-
             // Now that we've deleted the local state, we can delete the
             // article itself.
             using var query = c.CreateCommand(@"
@@ -319,11 +314,22 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
 
             query.AddParameter("@id", articleId);
 
-            query.ExecuteNonQuery();
+            return (query.ExecuteNonQuery() > 0);
         }
 
         RemoveFromFolder();
-        DeleteArticle();
+        // Delete the local only state first, since that has a foreign
+        // key relationship to the articles table. This is expected
+        // to not throw an error if there is no local state associated
+        // with the article being deleted.
+        this.DeleteLocalOnlyArticleState(articleId);
+        var wasDeleted = DeleteArticle();
+
+        if (wasDeleted)
+        {
+            // Only raise the event if we actually deleted something
+            this.RaiseArticleDeletedEvent(articleId);
+        }
     }
 
     #region Event Helpers
@@ -336,6 +342,17 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         }
 
         handlers(this, article);
+    }
+
+    private void RaiseArticleDeletedEvent(long articleId)
+    {
+        var handlers = this.ArticleDeleted;
+        if(handlers is null)
+        {
+            return;
+        }
+
+        handlers(this, articleId);
     }
     #endregion
 }
