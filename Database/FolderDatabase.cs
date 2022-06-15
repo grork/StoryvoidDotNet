@@ -217,6 +217,8 @@ internal sealed class FolderDatabase : IFolderDatabase
             return;
         }
 
+        this.RaiseFolderWillBeDeleted(folder);
+
         var articleChangesDb = this.database.ArticleChangesDatabase;
         if(articleChangesDb.ListPendingArticleMovesForLocalFolderId(localFolderId).Any())
         {
@@ -224,8 +226,6 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
 
         var c = this.connection;
-
-        this.RaiseFolderWillBeDeleted(folder);
 
         // Remove any article-folder-pairs
         using var removeArticleFolderPairsQuery = c.CreateCommand(@"
