@@ -16,11 +16,11 @@ public interface IFolderChangesDatabase
     PendingFolderAdd CreatePendingFolderAdd(long localFolderId);
 
     /// <summary>
-    /// Removes a pending folder add from the changes database. If no change
+    /// Deletes a pending folder add from the changes database. If no change
     /// with that ID is present, it completes silently.
     /// </summary>
-    /// <param name="localFolderId">Pending folder add to remove</param>
-    void RemovePendingFolderAdd(long localFolderId);
+    /// <param name="localFolderId">Pending folder add to delete</param>
+    void DeletePendingFolderAdd(long localFolderId);
 
     /// <summary>
     /// Gets a pending folder add by the local folder ID if it exists.
@@ -44,13 +44,13 @@ public interface IFolderChangesDatabase
     PendingFolderDelete CreatePendingFolderDelete(long serviceId, string title);
 
     /// <summary>
-    /// Removes a pending folder delete from the changes database. If no
+    /// Delete a pending folder delete from the changes database. If no
     /// change with that is present, it completes silently
     /// </summary>
     /// <param name="serviceId">
-    /// Service ID of folder delete to remove the pending change for
+    /// Service ID of folder delete to delete the pending change for
     /// </param>
-    void RemovePendingFolderDelete(long serviceId);
+    void DeletePendingFolderDelete(long serviceId);
 
     /// <summary>
     /// Get a specific pending folder delete by the change ID for that

@@ -98,7 +98,7 @@ public interface IFolderDatabase
     /// <summary>
     /// Delete the specified folder. Any articles in this folder will be
     /// orphaned until they're reconciled against the server, or othewise
-    /// removed.
+    /// deleted.
     /// </summary>
     /// <param name="localFolderId">Folder to delete</param>
     void DeleteFolder(long localFolderId);

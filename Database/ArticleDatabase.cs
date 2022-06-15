@@ -298,7 +298,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     {
         var c = this.connection;
 
-        void RemoveFromFolder()
+        void DeleteFromFolder()
         {
             using var query = c.CreateCommand(@"
                 DELETE FROM article_to_folder
@@ -324,7 +324,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
             return (query.ExecuteNonQuery() > 0);
         }
 
-        RemoveFromFolder();
+        DeleteFromFolder();
         // Delete the local only state first, since that has a foreign
         // key relationship to the articles table. This is expected
         // to not throw an error if there is no local state associated

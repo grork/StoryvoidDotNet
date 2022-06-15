@@ -34,11 +34,11 @@ public interface IArticleChangesDatabase
     IList<PendingArticleAdd> ListPendingArticleAdds();
 
     /// <summary>
-    /// Removes a pending article add that matches the supplied URL. If no url
+    /// Deletes a pending article add that matches the supplied URL. If no url
     /// matches, no error is raised.
     /// </summary>
-    /// <param name="url">Url for the pending add to remove</param>
-    void RemovePendingArticleAdd(Uri url);
+    /// <param name="url">Url for the pending add to delete</param>
+    void DeletePendingArticleAdd(Uri url);
 
     /// <summary>
     /// Creates a pending article delete for the supplied ID
@@ -60,10 +60,10 @@ public interface IArticleChangesDatabase
     IList<long> ListPendingArticleDeletes();
 
     /// <summary>
-    /// Removes a pending article delete that matches the supplied ID. If no id
+    /// Deletes a pending article delete that matches the supplied ID. If no id
     /// matches, no error is raised.
     /// </summary>
-    void RemovePendingArticleDelete(long articleId);
+    void DeletePendingArticleDelete(long articleId);
 
     /// <summary>
     /// Creates a pending article state change (e.g. like/unlike) for the
@@ -88,11 +88,11 @@ public interface IArticleChangesDatabase
     IList<PendingArticleStateChange> ListPendingArticleStateChanges();
 
     /// <summary>
-    /// Removes a pending article state change that matches the supplied ID. If
+    /// Deletes a pending article state change that matches the supplied ID. If
     /// no id matches, no error is raised.
     /// </summary>
-    /// <param name="articleId">ID of the pending state change to remove</param>
-    void RemovePendingArticleStateChange(long articleId);
+    /// <param name="articleId">ID of the pending state change to delete</param>
+    void DeletePendingArticleStateChange(long articleId);
 
     /// <summary>
     /// Creates a pending article move to a specified destination folder
@@ -118,8 +118,8 @@ public interface IArticleChangesDatabase
     IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId);
 
     /// <summary>
-    /// Removes a pending article move that matches the supplied ID. If no id
+    /// Deletes a pending article move that matches the supplied ID. If no id
     /// matches, no error is raised.
     /// </summary>
-    void RemovePendingArticleMove(long articleId);
+    void DeletePendingArticleMove(long articleId);
 }

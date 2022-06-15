@@ -120,7 +120,7 @@ public interface IArticleDatabase
     /// <param name="articleId">
     /// ID of the Article for which to delete local only state
     /// </param>
-    /// <returns>Task that completes when the data is removed</returns>
+    /// <returns>Task that completes when the data is deleted</returns>
     void DeleteLocalOnlyArticleState(long articleId);
 
     /// <summary>
@@ -143,7 +143,7 @@ public interface IArticleDatabase
     public event EventHandler<DatabaseArticle> ArticleLikeStatusChanged;
 
     /// <summary>
-    /// Raised when an article has been completely removed from the database.
+    /// Raised when an article has been completely deleted from the database.
     /// Because the article is being deleted, only the ID is provided.
     /// </summary>
     public event EventHandler<long> ArticleDeleted;

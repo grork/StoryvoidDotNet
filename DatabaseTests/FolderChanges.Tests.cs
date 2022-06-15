@@ -68,20 +68,20 @@ public sealed class FolderChangesTests : IAsyncLifetime
     public void CanRemovePendingFolderAddByLocalFolderId()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-        this.db!.FolderChangesDatabase.RemovePendingFolderAdd(change.FolderLocalId);
+        this.db!.FolderChangesDatabase.DeletePendingFolderAdd(change.FolderLocalId);
     }
 
     [Fact]
     public void RemovingNonExistentPendingFolderAddCompletesWithoutError()
     {
-        this.db!.FolderChangesDatabase.RemovePendingFolderAdd(1L);
+        this.db!.FolderChangesDatabase.DeletePendingFolderAdd(1L);
     }
 
     [Fact]
-    public void RemovedPendingFolderAddIsActuallyRemoved()
+    public void DeletePendingFolderAddIsActuallyRemoved()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1!.LocalId);
-        this.db!.FolderChangesDatabase.RemovePendingFolderAdd(change.FolderLocalId);
+        this.db!.FolderChangesDatabase.DeletePendingFolderAdd(change.FolderLocalId);
 
         var result = this.db!.FolderChangesDatabase.GetPendingFolderAdd(change.FolderLocalId);
         Assert.Null(result);
@@ -190,20 +190,20 @@ public sealed class FolderChangesTests : IAsyncLifetime
     public void CanRemovePendingFolderDeleteByServiceId()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        this.db!.FolderChangesDatabase.RemovePendingFolderDelete(change.ServiceId);
+        this.db!.FolderChangesDatabase.DeletePendingFolderDelete(change.ServiceId);
     }
 
     [Fact]
     public void RemovingNonExistentPendingFolderDeleteCompletesWithoutError()
     {
-        this.db!.FolderChangesDatabase.RemovePendingFolderDelete(1L);
+        this.db!.FolderChangesDatabase.DeletePendingFolderDelete(1L);
     }
 
     [Fact]
-    public void RemovedPendingFolderDeleteIsActuallyRemoved()
+    public void DeletePendingFolderDeleteIsActuallyRemoved()
     {
         var change = this.db!.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        this.db!.FolderChangesDatabase.RemovePendingFolderDelete(change.ServiceId);
+        this.db!.FolderChangesDatabase.DeletePendingFolderDelete(change.ServiceId);
 
         var result = this.db!.FolderChangesDatabase.GetPendingFolderDelete(change.ServiceId);
         Assert.Null(result);

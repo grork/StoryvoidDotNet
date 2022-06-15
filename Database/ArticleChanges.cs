@@ -75,7 +75,7 @@ public class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public void RemovePendingArticleAdd(Uri url)
+    public void DeletePendingArticleAdd(Uri url)
     {
         var c = this.connection;
         using var query = c.CreateCommand(@"
@@ -169,7 +169,7 @@ public class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public void RemovePendingArticleDelete(long articleId)
+    public void DeletePendingArticleDelete(long articleId)
     {
         var c = this.connection;
         using var query = c.CreateCommand(@"
@@ -239,7 +239,7 @@ public class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public void RemovePendingArticleStateChange(long articleId)
+    public void DeletePendingArticleStateChange(long articleId)
     {
         var c = this.connection;
         using var query = c.CreateCommand(@"
@@ -369,7 +369,7 @@ public class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public void RemovePendingArticleMove(long articleId)
+    public void DeletePendingArticleMove(long articleId)
     {
         var c = this.connection;
         using var query = c.CreateCommand(@"

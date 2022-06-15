@@ -227,14 +227,14 @@ internal sealed class FolderDatabase : IFolderDatabase
 
         var c = this.connection;
 
-        // Remove any article-folder-pairs
-        using var removeArticleFolderPairsQuery = c.CreateCommand(@"
+        // Delete any article-folder-pairs
+        using var deleteArticleFolderPairsQuery = c.CreateCommand(@"
             DELETE FROM article_to_folder
             WHERE local_folder_id = @localFolderId
         ");
 
-        removeArticleFolderPairsQuery.AddParameter("@localFolderId", localFolderId);
-        removeArticleFolderPairsQuery.ExecuteNonQuery();
+        deleteArticleFolderPairsQuery.AddParameter("@localFolderId", localFolderId);
+        deleteArticleFolderPairsQuery.ExecuteNonQuery();
 
         // Delete the folder
         using var deleteFolderQuery = c.CreateCommand(@"

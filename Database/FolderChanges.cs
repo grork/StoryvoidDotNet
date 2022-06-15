@@ -79,7 +79,7 @@ public class FolderChanges : IFolderChangesDatabase
     }
 
     /// <inheritdoc/>
-    public void RemovePendingFolderAdd(long localFolderId)
+    public void DeletePendingFolderAdd(long localFolderId)
     {
         var c = this.connection;
 
@@ -149,7 +149,7 @@ public class FolderChanges : IFolderChangesDatabase
     }
 
     /// <inheritdoc/>
-    public void RemovePendingFolderDelete(long serviceId)
+    public void DeletePendingFolderDelete(long serviceId)
     {
         var c = this.connection;
 

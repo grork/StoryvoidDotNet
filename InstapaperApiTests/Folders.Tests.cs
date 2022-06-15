@@ -76,7 +76,7 @@ public sealed class FoldersTests
         var folders = await client.ListAsync();
         Assert.DoesNotContain(folders, (folder) => (folderToDelete.Title == folder.Title));
 
-        // We removed a folder, so clear it from our recent ones
+        // We deleted a folder, so clear it from our recent ones
         this.SharedState.UpdateOrSetRecentFolder(null);
     }
 
