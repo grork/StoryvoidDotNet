@@ -417,6 +417,21 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void MovingArticleFromUnreadToCustomFolderRaisesMoveEvent()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+
+        long? destinationId = null;
+        DatabaseArticle? eventArticle = null;
+
+        this.db!.ArticleMovedToFolder += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db!.MoveArticleToFolder(article.Id, this.CustomFolder1!.LocalId);
+
+        Assert.Equal(this.CustomFolder1!.LocalId, destinationId);
+        Assert.Equal(article, eventArticle);
+    }
+
+    [Fact]
     public void CanMoveArticlesFromUnreadToArchiveFolder()
     {
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
@@ -433,6 +448,21 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void MovingArticleFromUnreadToArchiveFolderRaisesMoveEvent()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+
+        long? destinationId = null;
+        DatabaseArticle? eventArticle = null;
+
+        this.db!.ArticleMovedToFolder += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db!.MoveArticleToFolder(article.Id, WellKnownLocalFolderIds.Archive);
+
+        Assert.Equal(WellKnownLocalFolderIds.Archive, destinationId);
+        Assert.Equal(article, eventArticle);
+    }
+
+    [Fact]
     public void CanMoveArticleFromCustomFolderToUnread()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
@@ -446,6 +476,21 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
         // Check it's not present in unread
         var customArticles = this.db!.ListArticlesForLocalFolder(this.CustomFolder1!.LocalId);
         Assert.Empty(customArticles);
+    }
+
+    [Fact]
+    public void MovingArticleFromCustomFolderToUnreadRaisesMoveEvent()
+    {
+        var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
+
+        long? destinationId = null;
+        DatabaseArticle? eventArticle = null;
+
+        this.db!.ArticleMovedToFolder += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db!.MoveArticleToFolder(article.Id, WellKnownLocalFolderIds.Unread);
+
+        Assert.Equal(WellKnownLocalFolderIds.Unread, destinationId);
+        Assert.Equal(article, eventArticle);
     }
 
     [Fact]
@@ -472,14 +517,26 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MovingArticleToAFolderItIsAlreadyInSucceeds()
+    public void MovingArticleFromUnreadToNonExistantFolderDoesNotRaiseMoveEvent()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+
+        var eventWasRaised = false;
+        this.db!.ArticleMovedToFolder += (_, _) => eventWasRaised = true;
+        Assert.Throws<FolderNotFoundException>(() => this.db!.MoveArticleToFolder(article.Id, 999));
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
+    public void MovingArticleToAFolderItIsAlreadyInDoesNotRaiseFolderMoveEvent()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
+
+        var eventWasRaised = false;
+        this.db!.ArticleMovedToFolder += (_, _) => eventWasRaised = true;
         this.db!.MoveArticleToFolder(article.Id, this.CustomFolder1!.LocalId);
 
-        var customArticles = this.db!.ListArticlesForLocalFolder(this.CustomFolder1!.LocalId);
-        Assert.Equal(1, customArticles.Count);
-        Assert.Contains(customArticles, (f) => f.Id == article.Id);
+        Assert.False(eventWasRaised);
     }
 
     [Fact]
@@ -489,9 +546,27 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void MovingNonExistantArticleToCustomFolderDoesNotRaiseMoveEvent()
+    {
+        var eventWasRaised = false;
+        this.db!.ArticleMovedToFolder += (_, _) => eventWasRaised = true;
+        Assert.Throws<ArticleNotFoundException>(() => this.db!.MoveArticleToFolder(999, this.CustomFolder1!.LocalId));
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
     public void MovingNonExistantArticleToNonExistantFolder()
     {
         Assert.Throws<FolderNotFoundException>(() => this.db!.MoveArticleToFolder(999, 888));
+    }
+
+    [Fact]
+    public void MovingNonExistantArticleToNonExistantFolderDoesNotRaiseMoveEvent()
+    {
+        var eventWasRaised = false;
+        this.db!.ArticleMovedToFolder += (_, _) => eventWasRaised = true;
+        Assert.Throws<FolderNotFoundException>(() => this.db!.MoveArticleToFolder(999, 888));
+        Assert.False(eventWasRaised);
     }
 
     [Fact]

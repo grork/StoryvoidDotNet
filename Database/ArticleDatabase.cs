@@ -11,6 +11,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
 
     public event EventHandler<DatabaseArticle>? ArticleLikeStatusChanged;
     public event EventHandler<long>? ArticleDeleted;
+    public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMovedToFolder;
 
     internal ArticleDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
@@ -277,13 +278,19 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         using var query = c.CreateCommand(@"
             UPDATE article_to_folder
             SET local_folder_id = @localFolderId
-            WHERE article_id = @articleId;
+            WHERE article_id = @articleId AND local_folder_id <> @localFolderId;
         ");
 
         query.AddParameter("@articleId", articleId);
         query.AddParameter("@localFolderId", localFolderId);
 
-        query.ExecuteNonQuery();
+        var impactedRows = query.ExecuteNonQuery();
+        if(impactedRows > 0)
+        {
+            // Only raise (and get the article) if we actually affected a move
+            var article = this.GetArticleById(articleId)!;
+            this.RaiseArticleMovedToFolder(article, localFolderId);
+        }
     }
 
     /// <inheritdoc/>
@@ -328,7 +335,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         if (wasDeleted)
         {
             // Only raise the event if we actually deleted something
-            this.RaiseArticleDeletedEvent(articleId);
+            this.RaiseArticleDeleted(articleId);
         }
     }
 
@@ -344,7 +351,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         handlers(this, article);
     }
 
-    private void RaiseArticleDeletedEvent(long articleId)
+    private void RaiseArticleDeleted(long articleId)
     {
         var handlers = this.ArticleDeleted;
         if(handlers is null)
@@ -353,6 +360,17 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         }
 
         handlers(this, articleId);
+    }
+
+    private void RaiseArticleMovedToFolder(DatabaseArticle article, long destinationLocalFolderId)
+    {
+        var handlers = this.ArticleMovedToFolder;
+        if(handlers is null)
+        {
+            return;
+        }
+
+        handlers(this, (article, destinationLocalFolderId));
     }
     #endregion
 }

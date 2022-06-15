@@ -147,4 +147,11 @@ public interface IArticleDatabase
     /// Because the article is being deleted, only the ID is provided.
     /// </summary>
     public event EventHandler<long> ArticleDeleted;
+
+    /// <summary>
+    /// Raised when an article is moved between folders. When raised, the
+    /// article being moved is supplied, along with the local ID of the folder
+    /// its being moved to.
+    /// </summary>
+    public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)> ArticleMovedToFolder;
 }
