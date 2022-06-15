@@ -10,6 +10,7 @@ internal sealed class FolderDatabase : IFolderDatabase
 
     public event EventHandler<DatabaseFolder>? FolderAdded;
     public event EventHandler<DatabaseFolder>? FolderWillBeDeleted;
+    public event EventHandler<DatabaseFolder>? FolderDeleted;
 
     public FolderDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
@@ -257,6 +258,8 @@ internal sealed class FolderDatabase : IFolderDatabase
 
             throw;
         }
+
+        this.RaiseFolderDeleted(folder);
     }
 
     #region Event Helpers
@@ -280,6 +283,17 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
 
         handlers(this, toBeDeleted);
+    }
+
+    private void RaiseFolderDeleted(DatabaseFolder deleted)
+    {
+        var handlers = this.FolderDeleted;
+        if(handlers is null)
+        {
+            return;
+        }
+
+        handlers(this, deleted);
     }
     #endregion
 }

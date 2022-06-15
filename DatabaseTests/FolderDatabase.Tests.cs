@@ -340,6 +340,49 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void FolderDeletedEventRaised()
+    {
+        // Create folder; check results are returned
+        var addedFolder = this.db!.AddKnownFolder(
+            title: "Sample",
+            serviceId: 10L,
+            position: 9L,
+            shouldSync: true
+        );
+
+        DatabaseFolder? folderDeleted = null;
+        this.db!.FolderDeleted += (_, folder) => folderDeleted = folder;
+
+        this.db!.DeleteFolder(addedFolder.LocalId);
+
+        Assert.Equal(addedFolder, folderDeleted);
+    }
+
+    [Fact]
+    public void FolderWillBeAndDeletedEventsRaised()
+    {
+        // Create folder; check results are returned
+        var addedFolder = this.db!.AddKnownFolder(
+            title: "Sample",
+            serviceId: 10L,
+            position: 9L,
+            shouldSync: true
+        );
+
+        DatabaseFolder? folderToBeDeleted = null;
+        DatabaseFolder? folderDeleted = null;
+        this.db!.FolderWillBeDeleted += (_, folder) => folderToBeDeleted = folder;
+        this.db!.FolderDeleted += (_, folder) => folderDeleted = folder;
+
+
+        this.db!.DeleteFolder(addedFolder.LocalId);
+
+        Assert.Equal(addedFolder, folderToBeDeleted);
+        Assert.Equal(addedFolder, folderDeleted);
+        Assert.Equal(folderToBeDeleted, folderDeleted);
+    }
+
+    [Fact]
     public void DeletingMissingFolderNoOps()
     {
         this.db!.DeleteFolder(999);
@@ -349,10 +392,34 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void FolderWillBeDeletedEventNotRaisedWhenNoFolderToDelete()
     {
         var wasRaised = false;
-        this.db!.FolderWillBeDeleted += (_, folder) => wasRaised = true;
+        this.db!.FolderWillBeDeleted += (_, _) => wasRaised = true;
         this.db!.DeleteFolder(999);
 
         Assert.False(wasRaised);
+    }
+
+    [Fact]
+    public void FolderDeletedEventNotRaisedWhenNoFolderToDelete()
+    {
+        var wasRaised = false;
+        this.db!.FolderDeleted += (_, _) => wasRaised = true;
+        this.db!.DeleteFolder(999);
+
+        Assert.False(wasRaised);
+    }
+
+    [Fact]
+    public void FolderWillBeAndDeletedEventsNotRaisedWhenNoFolderToDelete()
+    {
+        var willBeDeletedRaised = false;
+        var deletedRaised = false;
+        this.db!.FolderWillBeDeleted += (_, _) => willBeDeletedRaised = true;
+        this.db!.FolderDeleted += (_, _) => deletedRaised = true;
+
+        this.db!.DeleteFolder(999);
+
+        Assert.False(willBeDeletedRaised);
+        Assert.False(deletedRaised);
     }
 
     [Fact]
@@ -362,12 +429,33 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void DeletingUnreadFolderDeosntRaiseWillDeleteEvent()
+    public void DeletingUnreadFolderDoesntRaiseWillDeleteEvent()
     {
         var wasRaised = false;
-        this.db!.FolderWillBeDeleted += (_, folder) => wasRaised = true;
+        this.db!.FolderWillBeDeleted += (_, _) => wasRaised = true;
         Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Unread));
         Assert.False(wasRaised);
+    }
+
+    [Fact]
+    public void DeletingUnreadFolderDoesntRaiseDeletedEvent()
+    {
+        var wasRaised = false;
+        this.db!.FolderDeleted += (_, _) => wasRaised = true;
+        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Unread));
+        Assert.False(wasRaised);
+    }
+
+    [Fact]
+    public void DeletingUnreadFolderDoesntRaiseWillDeleteOrDeletedEvent()
+    {
+        var willDeleteRaised = false;
+        var deletedRaised = false;
+        this.db!.FolderWillBeDeleted += (_, _) => willDeleteRaised = true;
+        this.db!.FolderDeleted += (_, _) => deletedRaised = true;
+        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Unread));
+        Assert.False(willDeleteRaised);
+        Assert.False(deletedRaised);
     }
 
     [Fact]
@@ -376,13 +464,25 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Archive));
     }
 
-        [Fact]
-    public void DeletingArchiveFolderDeosntRaiseWillDeleteEvent()
+    [Fact]
+    public void DeletingArchiveFolderDoesntRaiseWillDeleteEvent()
     {
         var wasRaised = false;
-        this.db!.FolderWillBeDeleted += (_, folder) => wasRaised = true;
+        this.db!.FolderWillBeDeleted += (_, _) => wasRaised = true;
         Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Archive));
         Assert.False(wasRaised);
+    }
+
+    [Fact]
+    public void DeletingArchiveFolderDoesntRaiseWillDeleteOrDeletedEvent()
+    {
+        var willDeleteRaised = false;
+        var deletedRaised = false;
+        this.db!.FolderWillBeDeleted += (_, _) => willDeleteRaised = true;
+        this.db!.FolderDeleted += (_, _) => deletedRaised = true;
+        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Archive));
+        Assert.False(willDeleteRaised);
+        Assert.False(deletedRaised);
     }
 
     [Fact]

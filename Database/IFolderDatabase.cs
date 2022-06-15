@@ -115,4 +115,9 @@ public interface IFolderDatabase
     /// foreign key references).
     /// </summary>
     event EventHandler<DatabaseFolder> FolderWillBeDeleted;
+
+    /// <summary>
+    /// Raised immediately after a folder has been successuflly deleted.
+    /// </summary>
+    event EventHandler<DatabaseFolder> FolderDeleted;
 }
