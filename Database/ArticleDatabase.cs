@@ -9,6 +9,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     private IDbConnection connection;
     private IInstapaperDatabase database;
 
+    public event EventHandler<DatabaseArticle>? ArticleLikeStatusChanged;
+
     internal ArticleDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
         this.connection = connection;
@@ -164,40 +166,47 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         return this.GetArticleById(updatedData.id)!;
     }
 
-    private static void UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked)
+    private DatabaseArticle UpdateLikeStatusForArticle(long id, bool liked)
     {
+        var c = this.connection;
         using var query = c.CreateCommand(@"
             UPDATE articles
             SET liked = @liked
-            WHERE id = @id
+            WHERE id = @id AND liked <> @liked
         ");
 
         query.AddParameter("@id", id);
         query.AddParameter("@liked", liked);
 
         var impactedRows = query.ExecuteNonQuery();
-        if (impactedRows < 1)
+
+        var updatedArticle = this.GetArticleById(id);
+        if (updatedArticle is null)
         {
+            // We don't need to check anything if we can't get the article back
+            // again
             throw new ArticleNotFoundException(id);
         }
+
+        if (impactedRows > 0)
+        {
+            // Only raise the change event if the table was actually updated
+            this.RaiseArticleLikeStatusChanged(updatedArticle!);
+        }
+
+        return updatedArticle!;
     }
 
     /// <inheritdoc/>
     public DatabaseArticle LikeArticle(long id)
     {
-        var c = this.connection;
-
-        UpdateLikeStatusForArticle(c, id, true);
-        return this.GetArticleById(id)!;
+        return this.UpdateLikeStatusForArticle(id, true);
     }
 
     /// <inheritdoc/>
     public DatabaseArticle UnlikeArticle(long id)
     {
-        var c = this.connection;
-
-        UpdateLikeStatusForArticle(c, id, false);
-        return this.GetArticleById(id)!;
+        return this.UpdateLikeStatusForArticle(id, false);
     }
 
     /// <inheritdoc/>
@@ -316,4 +325,17 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         RemoveFromFolder();
         DeleteArticle();
     }
+
+    #region Event Helpers
+    private void RaiseArticleLikeStatusChanged(DatabaseArticle article)
+    {
+        var handlers = this.ArticleLikeStatusChanged;
+        if(handlers is null)
+        {
+            return;
+        }
+
+        handlers(this, article);
+    }
+    #endregion
 }

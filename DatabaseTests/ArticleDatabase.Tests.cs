@@ -194,6 +194,19 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void LikingArticleThatIsUnlikedRaisesLikeStatusChangedEvent()
+    {
+        var unlikedArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+
+        DatabaseArticle? eventChangeArticle = null;
+        this.db!.ArticleLikeStatusChanged += (_, article) => eventChangeArticle = article;
+
+        var likedArticle = this.db!.LikeArticle(unlikedArticle.Id);
+        Assert.Equal(likedArticle, eventChangeArticle);
+        Assert.True(eventChangeArticle!.Liked);
+    }
+
+    [Fact]
     public void CanListOnlyLikedArticle()
     {
         var article = this.GetRandomArticle() with { liked = true };
@@ -235,27 +248,53 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void UnlikingArticleThatIsLikedRaisesLikeStatusChangedEvent()
+    {
+        var originalArticle = this.db!.AddArticleToFolder(this.GetRandomArticle() with { liked = true }, WellKnownLocalFolderIds.Unread);
+
+        DatabaseArticle? eventChangeArticle = null;
+        this.db!.ArticleLikeStatusChanged += (_, article) => eventChangeArticle = article;
+
+        var unlikedArticle = this.db!.UnlikeArticle(originalArticle.Id);
+        Assert.Equal(unlikedArticle, eventChangeArticle);
+        Assert.False(eventChangeArticle!.Liked);
+    }
+
+    [Fact]
     public void LikingMissingArticleThrows()
     {
-        Assert.Throws<ArticleNotFoundException>(() =>
-        {
-            _ = this.db!.LikeArticle(1);
-        });
+        Assert.Throws<ArticleNotFoundException>(() => this.db!.LikeArticle(1));
+    }
+
+    [Fact]
+    public void LikingMissingArticleDoesNotRaiseLikeStatusChangeEvent()
+    {
+        var eventWasRaised = false;
+        this.db!.ArticleLikeStatusChanged += (_, _) => eventWasRaised = true;
+        Assert.Throws<ArticleNotFoundException>(() => this.db!.LikeArticle(1));
+        Assert.False(eventWasRaised);
     }
 
     [Fact]
     public void UnlikingMissingArticleThrows()
     {
-        Assert.Throws<ArticleNotFoundException>(() =>
-        {
-            _ = this.db!.UnlikeArticle(1);
-        });
+        Assert.Throws<ArticleNotFoundException>(() => this.db!.UnlikeArticle(1));
+    }
+
+    [Fact]
+    public void UnlikingMissingArticleDoesNotRaiseLikeStatusChangeEvent()
+    {
+        var eventWasRaised = false;
+        this.db!.ArticleLikeStatusChanged += (_, _) => eventWasRaised = true;
+        Assert.Throws<ArticleNotFoundException>(() => this.db!.UnlikeArticle(1));
+        Assert.False(eventWasRaised);
     }
 
     [Fact]
     public void LikingArticleThatIsLikedSucceeds()
     {
-        var likedArticleOriginal = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var a = this.GetRandomArticle() with { liked = true };
+        var likedArticleOriginal = this.db!.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
         var likedArticle = this.db!.LikeArticle(likedArticleOriginal.Id);
 
         Assert.Equal(likedArticleOriginal.Id, likedArticle.Id);
@@ -263,13 +302,27 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void LikingArticleThatIsLikedDoesNotRaiseLikeStatusChangeEvent()
+    {
+        var a = this.GetRandomArticle() with { liked = true };
+        var likedArticleOriginal = this.db!.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
+
+        var eventWasRaised = false;
+        this.db!.ArticleLikeStatusChanged += (_, _) => eventWasRaised = true;
+
+        _ = this.db!.LikeArticle(likedArticleOriginal.Id);
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
     public void UnlikingArticleThatIsNotLikedSucceeds()
     {
         var unlikedArticleOriginal = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
-        var unlikedArticle = this.db!.UnlikeArticle(unlikedArticleOriginal.Id);
 
-        Assert.Equal(unlikedArticleOriginal.Id, unlikedArticle.Id);
-        Assert.False(unlikedArticle.Liked);
+        var eventWasRaised = false;
+        this.db!.ArticleLikeStatusChanged += (_, _) => eventWasRaised = true;
+        _ = this.db!.UnlikeArticle(unlikedArticleOriginal.Id);
+        Assert.False(eventWasRaised);
     }
 
     [Fact]
@@ -498,7 +551,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void CanUpdateArticlekWithFullSetOfInformation()
+    public void CanUpdateArticleWithFullSetOfInformation()
     {
         // Get article
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);

@@ -135,4 +135,10 @@ public interface IArticleDatabase
     /// </param>
     /// <returns>The updated details</returns>
     DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState);
+
+    /// <summary>
+    /// Raised whenver an article's liked status is changed. Event is raised
+    /// with the *new* status.
+    /// </summary>
+    public event EventHandler<DatabaseArticle> ArticleLikeStatusChanged;
 }
