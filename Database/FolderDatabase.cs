@@ -266,34 +266,19 @@ internal sealed class FolderDatabase : IFolderDatabase
     private void RaiseFolderAdded(DatabaseFolder addedFolder)
     {
         var handlers = this.FolderAdded;
-        if(handlers is null)
-        {
-            return;
-        }
-
-        handlers(this, addedFolder);
+        handlers?.Invoke(this, addedFolder);
     }
 
     private void RaiseFolderWillBeDeleted(DatabaseFolder toBeDeleted)
     {
         var handlers = this.FolderWillBeDeleted;
-        if (handlers is null)
-        {
-            return;
-        }
-
-        handlers(this, toBeDeleted);
+        handlers?.Invoke(this, toBeDeleted);
     }
 
     private void RaiseFolderDeleted(DatabaseFolder deleted)
     {
         var handlers = this.FolderDeleted;
-        if(handlers is null)
-        {
-            return;
-        }
-
-        handlers(this, deleted);
+        handlers?.Invoke(this, deleted);
     }
     #endregion
 }

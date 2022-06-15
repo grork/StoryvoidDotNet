@@ -343,34 +343,19 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     private void RaiseArticleLikeStatusChanged(DatabaseArticle article)
     {
         var handlers = this.ArticleLikeStatusChanged;
-        if(handlers is null)
-        {
-            return;
-        }
-
-        handlers(this, article);
+        handlers?.Invoke(this, article);
     }
 
     private void RaiseArticleDeleted(long articleId)
     {
         var handlers = this.ArticleDeleted;
-        if(handlers is null)
-        {
-            return;
-        }
-
-        handlers(this, articleId);
+        handlers?.Invoke(this, articleId);
     }
 
     private void RaiseArticleMovedToFolder(DatabaseArticle article, long destinationLocalFolderId)
     {
         var handlers = this.ArticleMovedToFolder;
-        if(handlers is null)
-        {
-            return;
-        }
-
-        handlers(this, (article, destinationLocalFolderId));
+        handlers?.Invoke(this, (article, destinationLocalFolderId));
     }
     #endregion
 }
