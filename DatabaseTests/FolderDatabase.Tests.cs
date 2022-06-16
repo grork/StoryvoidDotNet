@@ -5,18 +5,6 @@ namespace Codevoid.Test.Storyvoid;
 
 public sealed class FolderDatabaseTests : IAsyncLifetime
 {
-    private static void FoldersMatch(DatabaseFolder? folder1, DatabaseFolder? folder2)
-    {
-        Assert.NotNull(folder1);
-        Assert.NotNull(folder2);
-
-        Assert.Equal(folder1!.LocalId, folder2!.LocalId);
-        Assert.Equal(folder1!.ServiceId, folder2!.ServiceId);
-        Assert.Equal(folder1!.Title, folder2!.Title);
-        Assert.Equal(folder1!.Position, folder2!.Position);
-        Assert.Equal(folder1!.ShouldSync, folder2!.ShouldSync);
-    }
-
     private IInstapaperDatabase? instapaperDb;
     private IFolderDatabase? db;
 
@@ -109,7 +97,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
 
         // Request the folder explicitily, check it's data
         DatabaseFolder folder = (this.db!.GetFolderByLocalId(addedFolder.LocalId))!;
-        FoldersMatch(addedFolder, folder);
+        Assert.Equal(addedFolder, folder);
 
         // Check it comes back when listing all folders
         var allFolders = this.db!.ListAllFolders();
@@ -219,12 +207,12 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
 
         // Request the folder explicitily, check it's data
         DatabaseFolder folder = (this.db!.GetFolderByLocalId(addedFolder.LocalId))!;
-        FoldersMatch(addedFolder, folder);
+        Assert.Equal(addedFolder, folder);
 
         // Check it comes back when listing all folders
         var allFolders = this.db!.ListAllFolders();
         var folderFromList = allFolders.Where((f) => f.LocalId == addedFolder.LocalId).FirstOrDefault();
-        FoldersMatch(addedFolder, folderFromList);
+        Assert.Equal(addedFolder, folderFromList);
     }
 
     [Fact]
