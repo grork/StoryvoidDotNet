@@ -14,7 +14,7 @@ public interface IArticleDatabase
     /// List all articles, across all folders, that are Liked
     /// </summary>
     /// <returns>All articles that are in a Liked state</returns>
-    IList<DatabaseArticle> ListLikedArticle();
+    IList<DatabaseArticle> ListLikedArticles();
 
     /// <summary>
     /// Gets articles for a specific local folder
@@ -22,6 +22,22 @@ public interface IArticleDatabase
     /// <param name="localId">Local Folder ID to get articles for</param>
     /// <returns>Articles in that folder</returns>
     IList<DatabaseArticle> ListArticlesForLocalFolder(long localId);
+
+    /// <summary>
+    /// Lists all the articles in the database, irrespective of their folder
+    /// </summary>
+    /// <returns>
+    /// List of articles in the database, and the folder ID 
+    /// </returns>
+    IList<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder();
+
+    /// <summary>
+    /// List all articles that are not in a folder (e.g. orphaned articles when
+    /// a folder is deleted, or they're past the services article limit for a
+    /// folder)
+    /// </summary>
+    /// <returns>List of articles that are not in a folder</returns>
+    IList<DatabaseArticle> ListArticlesNotInAFolder();
 
     /// <summary>
     /// Add a article to the database

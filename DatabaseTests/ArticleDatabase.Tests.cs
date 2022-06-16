@@ -139,6 +139,29 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void CanListAllArticlesInAllFolders()
+    {
+        var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var customArticle = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
+
+        var articles = this.db!.ListAllArticlesInAFolder();
+        Assert.Equal(2, articles.Count);
+        Assert.Contains(articles, (c) =>
+        {
+            var matchingArticle = c.Article.Id == customArticle.Id;
+            var matchingFolder = c.LocalFolderId == this.CustomFolder1!.LocalId;
+            return matchingArticle && matchingFolder;
+        });
+
+        Assert.Contains(articles, (u) =>
+        {
+            var matchingArticle = u.Article.Id == unreadArticle.Id;
+            var matchingFolder = u.LocalFolderId == WellKnownLocalFolderIds.Unread;
+            return matchingArticle && matchingFolder;
+        });
+    }
+
+    [Fact]
     public void AddingArticleToNonExistantFolderFails()
     {
         var article = this.GetRandomArticle();
@@ -180,7 +203,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void ListingLikedArticlesWithNoLikedArticlesReturnsEmptyList()
     {
-        var likedArticles = this.db!.ListLikedArticle();
+        var likedArticles = this.db!.ListLikedArticles();
         Assert.Empty(likedArticles);
     }
 
@@ -216,7 +239,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
             WellKnownLocalFolderIds.Unread
         );
 
-        var likedArticles = this.db!.ListLikedArticle();
+        var likedArticles = this.db!.ListLikedArticles();
         Assert.Equal(1, likedArticles.Count);
         Assert.Contains(likedArticles, (a) => (a.Id == article.id) && a.Liked);
     }
@@ -230,7 +253,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
         var article2 = this.GetRandomArticle() with { liked = true };
         _ = this.db!.AddArticleToFolder(article2, this.CustomFolder1!.LocalId);
 
-        var likedArticles = this.db!.ListLikedArticle();
+        var likedArticles = this.db!.ListLikedArticles();
         Assert.Equal(2, likedArticles.Count);
         Assert.Contains(likedArticles, (a) => (a.Id == article1.id) && a.Liked);
         Assert.Contains(likedArticles, (a) => (a.Id == article2.id) && a.Liked);
@@ -540,7 +563,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MovingNonExistantArticleToCustomFolder()
+    public void MovingNonExistantArticleToCustomFolderThrowsException()
     {
         Assert.Throws<ArticleNotFoundException>(() => this.db!.MoveArticleToFolder(999, this.CustomFolder1!.LocalId));
     }
@@ -637,6 +660,51 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
 
         var retrievedArticle = this.db!.GetArticleById(article.Id);
         Assert.Null(retrievedArticle);
+    }
+
+    [Fact]
+    public void ListingAllArticlesInFoldersDoesNotReturnOrphanedArticles()
+    {
+        var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var customArticle1 = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
+        var customArticle2 = this.AddRandomArticleToFolder(this.CustomFolder2!.LocalId);
+        this.instapaperDb!.FolderDatabase.DeleteFolder(this.CustomFolder2!.LocalId);
+
+        var articles = this.db!.ListAllArticlesInAFolder();
+        Assert.Equal(2, articles.Count);
+        Assert.Contains(articles, (c) =>
+        {
+            var matchingArticle = c.Article.Id == customArticle1.Id;
+            var matchingFolder = c.LocalFolderId == this.CustomFolder1!.LocalId;
+            return matchingArticle && matchingFolder;
+        });
+
+        Assert.Contains(articles, (u) =>
+        {
+            var matchingArticle = u.Article.Id == unreadArticle.Id;
+            var matchingFolder = u.LocalFolderId == WellKnownLocalFolderIds.Unread;
+            return matchingArticle && matchingFolder;
+        });
+
+        Assert.DoesNotContain(articles, (c2) => c2.Article.Id == customArticle2.Id);
+    }
+
+    [Fact]
+    public void ListingAllArticlesNotInAFolderOnlyReturnesOrphanedArticles()
+    {
+        var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var customArticle1 = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
+        var customArticle2 = this.AddRandomArticleToFolder(this.CustomFolder2!.LocalId);
+        var customArticle3 = this.AddRandomArticleToFolder(this.CustomFolder2!.LocalId);
+
+        this.instapaperDb!.FolderDatabase.DeleteFolder(this.CustomFolder2!.LocalId);
+
+        var articles = this.db!.ListArticlesNotInAFolder();
+        Assert.Equal(2, articles.Count);
+        Assert.Contains(customArticle2, articles);
+        Assert.Contains(customArticle3, articles);
+        Assert.DoesNotContain(unreadArticle, articles);
+        Assert.DoesNotContain(customArticle1, articles);
     }
 
     [Fact]

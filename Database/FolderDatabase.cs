@@ -89,12 +89,35 @@ internal sealed class FolderDatabase : IFolderDatabase
         return folder;
     }
 
+    /// <inheritdoc />
+    public DatabaseFolder? GetFolderByTitle(string title)
+    {
+        var c = this.connection;
+        using var query = c.CreateCommand(@"
+            SELECT *
+            FROM folders
+            WHERE title = @title
+        ");
+
+        query.AddParameter("@title", title);
+
+        using var folderRow = query.ExecuteReader();
+
+        DatabaseFolder? folder = null;
+        if(folderRow.Read())
+        {
+            folder = DatabaseFolder.FromRow(folderRow);
+        }
+
+        return folder;
+    }
+
     /// <inheritdoc/>
     public DatabaseFolder CreateFolder(string title)
     {
         var c = this.connection;
 
-        if (FolderWithTitleExists(c, title))
+        if (this.GetFolderByTitle(title) is not null)
         {
             throw new DuplicateNameException($"Folder with name '{title}' already exists");
         }
@@ -116,27 +139,12 @@ internal sealed class FolderDatabase : IFolderDatabase
         return addedFolder;
     }
 
-    private static bool FolderWithTitleExists(IDbConnection connection, string title)
-    {
-        using var query = connection.CreateCommand(@"
-            SELECT COUNT(*)
-            FROM folders
-            WHERE title = @title
-        ");
-
-        query.AddParameter("@title", title);
-
-        var foldersWithTitleCount = (long)query.ExecuteScalar();
-
-        return (foldersWithTitleCount > 0);
-    }
-
     /// <inheritdoc/>
     public DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync)
     {
         var c = this.connection;
 
-        if (FolderWithTitleExists(c, title))
+        if (this.GetFolderByTitle(title) is not null)
         {
             throw new DuplicateNameException($"Folder with name '{title}' already exists");
         }

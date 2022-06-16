@@ -62,6 +62,14 @@ public interface IFolderDatabase
     DatabaseFolder? GetFolderByLocalId(long localId);
 
     /// <summary>
+    /// Gets a specific folder by its title. Since titles are unique, this will
+    /// return only a single folder.
+    /// </summary>
+    /// <param name="title">Title of the folder to get</param>
+    /// <returns>Folder if present, null otherwise</returns>
+    DatabaseFolder? GetFolderByTitle(string title);
+
+    /// <summary>
     /// Creates a new, local folder
     /// </summary>
     /// <param name="title">Title of the folder</param>

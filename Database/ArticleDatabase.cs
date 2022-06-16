@@ -44,8 +44,53 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         return results;
     }
 
+    /// <inheritdoc />
+    public IList<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder()
+    {
+        var c = this.connection;
+
+        using var query = c.CreateCommand(@"
+            SELECT a.*, article_to_folder.local_folder_id
+            FROM article_to_folder
+            INNER JOIN articles_with_local_only_state a
+                ON article_to_folder.article_id = a.id
+        ");
+
+        var results = new List<(DatabaseArticle, long)>();
+        using var rows = query.ExecuteReader();
+        while (rows.Read())
+        {
+            var article = DatabaseArticle.FromRow(rows);
+            var folderId = rows.GetInt64("local_folder_id");
+            results.Add((article, folderId));
+        }
+
+        return results;
+    }
+
+    /// <inheritdoc />
+    public IList<DatabaseArticle> ListArticlesNotInAFolder()
+    {
+        var c = this.connection;
+
+        using var query = c.CreateCommand(@"
+            SELECT *
+            FROM articles
+            WHERE id NOT IN (SELECT article_id FROM article_to_folder)
+        ");
+
+        var results = new List<DatabaseArticle>();
+        using var rows = query.ExecuteReader();
+        while (rows.Read())
+        {
+            results.Add(DatabaseArticle.FromRow(rows));
+        }
+
+        return results;    
+    }
+
     /// <inheritdoc/>
-    public IList<DatabaseArticle> ListLikedArticle()
+    public IList<DatabaseArticle> ListLikedArticles()
     {
         var c = this.connection;
 

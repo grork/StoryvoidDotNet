@@ -118,6 +118,17 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
+    public void CanGetSingleDefaultFolderByTitle()
+    {
+        // Create folder; check results are returned
+        var addedFolder = this.db!.CreateFolder("Sample");
+
+        // Request the folder explicitily, check it's data
+        DatabaseFolder folder = this.db!.GetFolderByTitle("Sample")!;
+        Assert.Equal(addedFolder.LocalId, folder.LocalId);
+    }
+
+    [Fact]
     public void FolderAddedEventRaisedForSingleFolderAdd()
     {
         DatabaseFolder? eventPayload = null;
@@ -290,6 +301,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void UpdatingFolderThatDoesntExistFails()
     {
+        var preCount = this.db!.ListAllFolders().Count;
         Assert.Throws<FolderNotFoundException>(() =>
         {
             _ = db!.UpdateFolder(
@@ -300,6 +312,10 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
                 shouldSync: false
             );
         });
+
+        // Check there wasn't one created
+        var postCount = this.db!.ListAllFolders().Count;
+        Assert.Equal(preCount, postCount);
     }
 
     [Fact]

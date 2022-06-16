@@ -85,7 +85,7 @@ public sealed record DatabaseArticle
 
         // If there is an associated article ID, this implies that there is
         // download / local state.
-        if (!row.IsDBNull("article_id"))
+        if (row.HasColumn("article_id") && !row.IsDBNull("article_id"))
         {
             localOnlyState = DatabaseLocalOnlyArticleState.FromRow(row);
         }

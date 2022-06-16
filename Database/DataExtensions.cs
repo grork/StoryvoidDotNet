@@ -132,6 +132,27 @@ internal static class DataExtensions
     }
 
     /// <summary>
+    /// Checks if the reader has an actual named column.
+    /// 
+    /// Note, this says nothing about the *value* of the column -- it could be
+    /// null.
+    /// </summary>
+    /// <param name="name">Column name to check for</param>
+    /// <returns>True if the column is in the row, otherwise false.</returns>
+    public static bool HasColumn(this IDataReader instance, string name)
+    {
+        for (var index = 0; index < instance.FieldCount; index +=1)
+        {
+            if(instance.GetName(index) == name)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Add a named parameter of type long to this command.
     /// </summary>
     /// <param name="name">Name of the parameter in the query</param>
@@ -228,6 +249,11 @@ internal static class DataExtensions
         instance.Parameters.Add(parameter);
     }
 
+    /// <summary>
+    /// Adds a null into the command for the given param & type
+    /// </summary>
+    /// <param name="name">Parameter name</param>
+    /// <param name="type">The datatype</param>
     public static void AddNull(this IDbCommand instance, string name, DbType type)
     {
         var parameter = instance.CreateParameter();
