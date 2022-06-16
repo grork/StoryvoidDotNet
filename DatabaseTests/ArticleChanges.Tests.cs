@@ -4,9 +4,6 @@ namespace Codevoid.Test.Storyvoid;
 
 public sealed class ArticleChangesTests : IAsyncLifetime
 {
-    private static readonly Uri SAMPLE_URL = new("https://www.codevoid.net");
-    private long nextArticleId = 41L;
-    private const string SAMPLE_TITLE = "Codevoid";
     private IList<DatabaseArticle> SampleArticles = new List<DatabaseArticle>();
     private IList<DatabaseFolder> SampleFolders = new List<DatabaseFolder>();
 
@@ -21,7 +18,7 @@ public sealed class ArticleChangesTests : IAsyncLifetime
             this.AddRandomArticle()
         };
 
-        for (var index = 1; index < 3; index +=1)
+        for (var index = 1; index < 3; index += 1)
         {
             this.SampleFolders.Add(this.db!.FolderDatabase.CreateFolder(index.ToString()));
         }
@@ -29,16 +26,10 @@ public sealed class ArticleChangesTests : IAsyncLifetime
 
     private DatabaseArticle AddRandomArticle()
     {
-        var article = this.db!.ArticleDatabase.AddArticleToFolder(new(
-            id: (this.nextArticleId += 1),
-            title: SAMPLE_TITLE,
-            url: new (SAMPLE_URL, $"/{this.nextArticleId}"),
-            description: String.Empty,
-            readProgress: 0.0F,
-            readProgressTimestamp: DateTime.Now,
-            hash: "ABC",
-            liked: false
-        ), WellKnownLocalFolderIds.Unread);
+        var article = this.db!.ArticleDatabase.AddArticleToFolder(
+            TestUtilities.GetRandomArticle(),
+            WellKnownLocalFolderIds.Unread
+        );
 
         return article;
     }
@@ -60,17 +51,21 @@ public sealed class ArticleChangesTests : IAsyncLifetime
     public void CanAddPendingUrlWithTitle()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        var result = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
-        Assert.Equal(SAMPLE_URL, result.Url);
-        Assert.Equal(SAMPLE_TITLE, result.Title);
+        var result = changesDb.CreatePendingArticleAdd(
+            TestUtilities.BASE_URI,
+            TestUtilities.SAMPLE_TITLE
+        );
+
+        Assert.Equal(TestUtilities.BASE_URI, result.Url);
+        Assert.Equal(TestUtilities.SAMPLE_TITLE, result.Title);
     }
 
     [Fact]
     public void CanAddPendingUrlWithoutTitle()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        var result = changesDb.CreatePendingArticleAdd(SAMPLE_URL, null);
-        Assert.Equal(SAMPLE_URL, result.Url);
+        var result = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
+        Assert.Equal(TestUtilities.BASE_URI, result.Url);
         Assert.Null(result.Title);
     }
 
@@ -78,45 +73,45 @@ public sealed class ArticleChangesTests : IAsyncLifetime
     public void AddingArticleWithTitleExistingUrlFails()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
-        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE));
+        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE));
     }
 
     [Fact]
     public void AddingArticleWithoutTitleExistingUrlFails()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, null);
-        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(SAMPLE_URL, null));
+        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
+        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null));
     }
 
     [Fact]
     public void AddingArticleWithDifferentTitleExistingUrlFails()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
-        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(SAMPLE_URL, null));
+        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null));
     }
 
     [Fact]
     public void CanRetrieveArticleByUrlWithTitle()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
-        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.NotNull(result);
-        Assert.Equal(SAMPLE_URL, result!.Url);
-        Assert.Equal(SAMPLE_TITLE, result!.Title);
+        Assert.Equal(TestUtilities.BASE_URI, result!.Url);
+        Assert.Equal(TestUtilities.SAMPLE_TITLE, result!.Title);
     }
 
     [Fact]
     public void CanRetrieveArticleByUrlWithoutTitle()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, null);
-        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
+        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.NotNull(result);
-        Assert.Equal(SAMPLE_URL, result!.Url);
+        Assert.Equal(TestUtilities.BASE_URI, result!.Url);
         Assert.Null(result!.Title);
     }
 
@@ -125,7 +120,7 @@ public sealed class ArticleChangesTests : IAsyncLifetime
     public void TryingToRetrieveNonExistantUrlReturnsNull()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.Null(result);
     }
 
@@ -133,8 +128,8 @@ public sealed class ArticleChangesTests : IAsyncLifetime
     public void CanListPendingArticleAdds()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        var articleOne = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
-        var articleTwo = changesDb.CreatePendingArticleAdd(new (SAMPLE_URL, "/somethingelse"), SAMPLE_TITLE);
+        var articleOne = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        var articleTwo = changesDb.CreatePendingArticleAdd(new(TestUtilities.BASE_URI, "/somethingelse"), TestUtilities.SAMPLE_TITLE);
 
         var result = changesDb.ListPendingArticleAdds();
         Assert.Equal(2, result.Count);
@@ -146,10 +141,10 @@ public sealed class ArticleChangesTests : IAsyncLifetime
     public void CanDeletePendingArticleAdd()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
-        changesDb.DeletePendingArticleAdd(SAMPLE_URL);
+        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        changesDb.DeletePendingArticleAdd(TestUtilities.BASE_URI);
 
-        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.Null(result);
     }
 
@@ -157,10 +152,10 @@ public sealed class ArticleChangesTests : IAsyncLifetime
     public void DeletingNonExistantArticleAddSucceeds()
     {
         var changesDb = this.db!.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(SAMPLE_URL, SAMPLE_TITLE);
-        changesDb.DeletePendingArticleAdd(new("https://www.codevoid.net/something"));
+        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        changesDb.DeletePendingArticleAdd(new(TestUtilities.BASE_URI, "/something"));
 
-        var result = changesDb.GetPendingArticleAddByUrl(SAMPLE_URL);
+        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.NotNull(result);
     }
 
@@ -478,7 +473,7 @@ public sealed class ArticleChangesTests : IAsyncLifetime
         _ = changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
 
         changesDb.DeletePendingArticleMove(sampleArticleId);
-        
+
         var result = changesDb.GetPendingArticleMove(sampleArticleId);
         Assert.Null(result);
     }

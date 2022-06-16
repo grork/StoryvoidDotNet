@@ -24,38 +24,9 @@ public class LocalOnlyStateTests : IAsyncLifetime
     public IList<DatabaseArticle> PopulateDatabaseWithArticles()
     {
         var unreadFolder = WellKnownLocalFolderIds.Unread;
-        var article1 = this.db!.AddArticleToFolder(new(
-            1,
-            "Sample Article 1",
-            new("https://www.codevoid.net/1"),
-            String.Empty,
-            0.0F,
-            DateTime.Now,
-            String.Empty,
-            false
-        ), unreadFolder);
-
-        var article2 = this.db!.AddArticleToFolder(new(
-            2,
-            "Sample Article 2",
-            new("https://www.codevoid.net/2"),
-            String.Empty,
-            0.0F,
-            DateTime.Now,
-            String.Empty,
-            false
-        ), unreadFolder);
-
-        var article3 = this.db!.AddArticleToFolder(new(
-            3,
-            "Sample Article 3",
-            new("https://www.codevoid.net/3"),
-            String.Empty,
-            0.0F,
-            DateTime.Now,
-            String.Empty,
-            false
-        ), unreadFolder);
+        var article1 = this.db!.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
+        var article2 = this.db!.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
+        var article3 = this.db!.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
 
         return new List<DatabaseArticle> { article1, article2, article3 };
     }

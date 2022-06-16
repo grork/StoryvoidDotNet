@@ -4,7 +4,6 @@ namespace Codevoid.Test.Storyvoid;
 
 public sealed class ArticleDatabaseTests : IAsyncLifetime
 {
-    private static readonly Uri BASE_URI = new("https://www.bing.com");
     private IArticleDatabase? db;
     private IInstapaperDatabase? instapaperDb;
     private DatabaseFolder? CustomFolder1;
@@ -33,25 +32,10 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    private int nextArticleId = 0;
-    private ArticleRecordInformation GetRandomArticle()
-    {
-        return new(
-            id: nextArticleId++,
-            title: "Sample Article",
-            url: new Uri(BASE_URI, $"/{nextArticleId}"),
-            description: String.Empty,
-            readProgress: 0.0F,
-            readProgressTimestamp: DateTime.Now,
-            hash: "ABC",
-            liked: false
-        );
-    }
-
     private DatabaseArticle AddRandomArticleToFolder(long localFolderId)
     {
         var article = this.db!.AddArticleToFolder(
-            this.GetRandomArticle(),
+            TestUtilities.GetRandomArticle(),
             localFolderId
         );
 
@@ -68,7 +52,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void CanAddArticles()
     {
-        var a = this.GetRandomArticle();
+        var a = TestUtilities.GetRandomArticle();
         var result = this.db!.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
 
         // Ensure the article we are handed back on completion is the
@@ -164,7 +148,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void AddingArticleToNonExistantFolderFails()
     {
-        var article = this.GetRandomArticle();
+        var article = TestUtilities.GetRandomArticle();
         Assert.Throws<FolderNotFoundException>(() =>
         {
             _ = this.db!.AddArticleToFolder(article, 999L);
@@ -232,7 +216,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void CanListOnlyLikedArticle()
     {
-        var article = this.GetRandomArticle() with { liked = true };
+        var article = TestUtilities.GetRandomArticle() with { liked = true };
 
         _ = this.db!.AddArticleToFolder(
             article,
@@ -247,10 +231,10 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void ListingLikedArticlesReturnsResultsAcrossFolders()
     {
-        var article1 = this.GetRandomArticle() with { liked = true };
+        var article1 = TestUtilities.GetRandomArticle() with { liked = true };
         _ = this.db!.AddArticleToFolder(article1, WellKnownLocalFolderIds.Unread);
 
-        var article2 = this.GetRandomArticle() with { liked = true };
+        var article2 = TestUtilities.GetRandomArticle() with { liked = true };
         _ = this.db!.AddArticleToFolder(article2, this.CustomFolder1!.LocalId);
 
         var likedArticles = this.db!.ListLikedArticles();
@@ -262,7 +246,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void CanUnlikeArticleThatIsLiked()
     {
-        var a = this.GetRandomArticle() with { liked = true };
+        var a = TestUtilities.GetRandomArticle() with { liked = true };
         var likedArticle = this.db!.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
 
         var unlikedArticle = this.db!.UnlikeArticle(likedArticle.Id);
@@ -273,7 +257,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void UnlikingArticleThatIsLikedRaisesLikeStatusChangedEvent()
     {
-        var originalArticle = this.db!.AddArticleToFolder(this.GetRandomArticle() with { liked = true }, WellKnownLocalFolderIds.Unread);
+        var originalArticle = this.db!.AddArticleToFolder(TestUtilities.GetRandomArticle() with { liked = true }, WellKnownLocalFolderIds.Unread);
 
         DatabaseArticle? eventChangeArticle = null;
         this.db!.ArticleLikeStatusChanged += (_, article) => eventChangeArticle = article;
@@ -316,7 +300,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void LikingArticleThatIsLikedSucceeds()
     {
-        var a = this.GetRandomArticle() with { liked = true };
+        var a = TestUtilities.GetRandomArticle() with { liked = true };
         var likedArticleOriginal = this.db!.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
         var likedArticle = this.db!.LikeArticle(likedArticleOriginal.Id);
 
@@ -327,7 +311,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     [Fact]
     public void LikingArticleThatIsLikedDoesNotRaiseLikeStatusChangeEvent()
     {
-        var a = this.GetRandomArticle() with { liked = true };
+        var a = TestUtilities.GetRandomArticle() with { liked = true };
         var likedArticleOriginal = this.db!.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
 
         var eventWasRaised = false;
@@ -394,7 +378,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     public void UpdatingProgressOutsideSupportedRangeThrows()
     {
         _ = this.db!.AddArticleToFolder(
-            this.GetRandomArticle(),
+            TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
 
@@ -413,7 +397,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     public void UpdatingProgressWithTimeStampOutsideUnixEpochThrows()
     {
         _ = this.db!.AddArticleToFolder(
-            this.GetRandomArticle(),
+            TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
 
