@@ -216,6 +216,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     private DatabaseArticle UpdateLikeStatusForArticle(long id, bool liked)
     {
         var c = this.connection;
+        using var t = c.BeginTransaction();
+
         using var query = c.CreateCommand(@"
             UPDATE articles
             SET liked = @liked
@@ -240,6 +242,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
             // Only raise the change event if the table was actually updated
             this.RaiseArticleLikeStatusChanged(updatedArticle!);
         }
+
+        t.Commit();
 
         return updatedArticle!;
     }
@@ -282,7 +286,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         var r = new Random();
         var fauxHash = r.Next().ToString();
 
-
         using var query = c.CreateCommand(@"
             UPDATE articles
             SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
@@ -309,6 +312,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     {
         var c = this.connection;
 
+        using var t = c.BeginTransaction();
+
         if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) is null)
         {
             throw new FolderNotFoundException(localFolderId);
@@ -318,7 +323,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         {
             throw new ArticleNotFoundException(articleId);
         }
-
 
         using var query = c.CreateCommand(@"
             UPDATE article_to_folder
@@ -336,12 +340,15 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
             var article = this.GetArticleById(articleId)!;
             this.RaiseArticleMovedToFolder(article, localFolderId);
         }
+
+        t.Commit();
     }
 
     /// <inheritdoc/>
     public void DeleteArticle(long articleId)
     {
         var c = this.connection;
+        using var t = c.BeginTransaction();
 
         void DeleteFromFolder()
         {
@@ -382,6 +389,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
             // Only raise the event if we actually deleted something
             this.RaiseArticleDeleted(articleId);
         }
+
+        t.Commit();
     }
 
     #region Event Helpers
