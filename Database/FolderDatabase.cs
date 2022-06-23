@@ -116,6 +116,7 @@ internal sealed class FolderDatabase : IFolderDatabase
     public DatabaseFolder CreateFolder(string title)
     {
         var c = this.connection;
+        using var t = c.BeginTransaction();
 
         if (this.GetFolderByTitle(title) is not null)
         {
@@ -125,16 +126,16 @@ internal sealed class FolderDatabase : IFolderDatabase
         using var query = c.CreateCommand(@"
             INSERT INTO folders(title)
             VALUES (@title);
-
-            SELECT last_insert_rowid();
         ");
 
         query.AddParameter("@title", title);
-        var rowId = (long)query.ExecuteScalar();
+        query.ExecuteScalar();
 
-        var addedFolder = GetFolderByLocalId(rowId)!;
+        var addedFolder = GetFolderByTitle(title)!;
 
         this.RaiseFolderAdded(addedFolder);
+
+        t.Commit();
 
         return addedFolder;
     }
@@ -143,6 +144,7 @@ internal sealed class FolderDatabase : IFolderDatabase
     public DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync)
     {
         var c = this.connection;
+        using var t = c.BeginTransaction();
 
         if (this.GetFolderByTitle(title) is not null)
         {
@@ -165,6 +167,8 @@ internal sealed class FolderDatabase : IFolderDatabase
 
         var addedFolder = GetFolderByLocalId(rowId)!;
         this.RaiseFolderAdded(addedFolder);
+
+        t.Commit();
 
         return addedFolder;
     }
@@ -219,6 +223,9 @@ internal sealed class FolderDatabase : IFolderDatabase
             throw new InvalidOperationException("Deleting the Archive folder is not allowed");
         }
 
+        var c = this.connection;
+        using var t = c.BeginTransaction();
+
         var folder = this.GetFolderByLocalId(localFolderId);
         if(folder is null)
         {
@@ -232,8 +239,6 @@ internal sealed class FolderDatabase : IFolderDatabase
         {
             throw new FolderHasPendingArticleMoveException(localFolderId);
         }
-
-        var c = this.connection;
 
         // Delete any article-folder-pairs
         using var deleteArticleFolderPairsQuery = c.CreateCommand(@"
@@ -268,6 +273,8 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
 
         this.RaiseFolderDeleted(folder);
+
+        t.Commit();
     }
 
     #region Event Helpers
