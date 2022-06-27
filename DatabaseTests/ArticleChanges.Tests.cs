@@ -494,6 +494,6 @@ public sealed class ArticleChangesTests : IAsyncLifetime
         var changesDb = this.db!.ArticleChangesDatabase;
         _ = changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
 
-        Assert.Throws<FolderHasPendingArticleMoveException>(() => this.db!.FolderDatabase.DeleteFolder(destinationFolderLocalId));
+        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => this.db!.FolderDatabase.DeleteFolder(destinationFolderLocalId));
     }
 }

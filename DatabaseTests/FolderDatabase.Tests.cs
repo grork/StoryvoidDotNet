@@ -119,12 +119,12 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void FolderAddedEventRaisedForSingleFolderAdd()
     {
-        DatabaseFolder? eventPayload = null;
+        string? eventPayload = null;
 
         this.db!.FolderAdded += (_, addedFolder) => eventPayload = addedFolder;
 
         var addedFolder = this.db!.CreateFolder("Sample");
-        Assert.Equal(addedFolder, eventPayload);
+        Assert.Equal(addedFolder.Title, eventPayload);
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void FolderAddedEventRaisedForMultipleFolders()
     {
-        var eventPayloads = new List<DatabaseFolder>();
+        var eventPayloads = new List<string>();
 
         this.db!.FolderAdded += (_, addedFolder) => eventPayloads.Add(addedFolder);
 
@@ -158,8 +158,8 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         var secondFolder = this.db!.CreateFolder("Sample2");
 
         Assert.Equal(2, eventPayloads.Count);
-        Assert.Equal(firstFolder, eventPayloads[0]);
-        Assert.Equal(secondFolder, eventPayloads[1]);
+        Assert.Equal(firstFolder.Title, eventPayloads[0]);
+        Assert.Equal(secondFolder.Title, eventPayloads[1]);
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void FolderAddedEventNotRaisedWhenAddFails()
     {
-        var eventPayloads = new List<DatabaseFolder>();
+        var eventPayloads = new List<string>();
 
         this.db!.FolderAdded += (_, addedFolder) => eventPayloads.Add(addedFolder);
 
@@ -185,7 +185,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         Assert.Throws<DuplicateNameException>(() => this.db!.CreateFolder("Sample"));
 
         Assert.Single(eventPayloads);
-        Assert.Equal(firstFolder, eventPayloads[0]);
+        Assert.Equal(firstFolder.Title, eventPayloads[0]);
     }
 
     [Fact]

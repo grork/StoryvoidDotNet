@@ -113,9 +113,10 @@ public interface IFolderDatabase
 
     /// <summary>
     /// Raised after a folder has been successfully added to the database. When
-    /// raised, the folder information is included
+    /// raised, the folder title is supplied. Handlers need to retrieve the
+    /// folder by title to perform additional mutations
     /// </summary>
-    event EventHandler<DatabaseFolder> FolderAdded;
+    event EventHandler<string> FolderAdded;
 
     /// <summary>
     /// Raised immediately prior to the folder being deleted. Primarily intended

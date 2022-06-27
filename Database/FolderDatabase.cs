@@ -8,7 +8,7 @@ internal sealed class FolderDatabase : IFolderDatabase
     private IDbConnection connection;
     private IInstapaperDatabase database;
 
-    public event EventHandler<DatabaseFolder>? FolderAdded;
+    public event EventHandler<string>? FolderAdded;
     public event EventHandler<DatabaseFolder>? FolderWillBeDeleted;
     public event EventHandler<DatabaseFolder>? FolderDeleted;
 
@@ -131,13 +131,11 @@ internal sealed class FolderDatabase : IFolderDatabase
         query.AddParameter("@title", title);
         query.ExecuteScalar();
 
-        var addedFolder = GetFolderByTitle(title)!;
-
-        this.RaiseFolderAdded(addedFolder);
+        this.RaiseFolderAdded(title);
 
         t.Commit();
 
-        return addedFolder;
+        return GetFolderByTitle(title)!;
     }
 
     /// <inheritdoc/>
@@ -176,7 +174,6 @@ internal sealed class FolderDatabase : IFolderDatabase
     public DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync)
     {
         var c = this.connection;
-        using var t = c.BeginTransaction();
 
         using var query = c.CreateCommand(@"
             UPDATE folders SET
@@ -201,15 +198,39 @@ internal sealed class FolderDatabase : IFolderDatabase
         query.AddParameter("@position", position);
         query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
 
-        var impactedRows = query.ExecuteNonQuery();
-        if (impactedRows < 1)
+        var t = query.Transaction;
+        var transactionCreated = false;
+        if(t is null)
         {
-            throw new FolderNotFoundException(localId);
+            t = c.BeginTransaction();
+            query.Transaction = t;
+            transactionCreated = true;
         }
 
-        var updatedFolder =  GetFolderByLocalId(localId)!;
-        t.Commit();
-        return updatedFolder;
+        try
+        {
+            var impactedRows = query.ExecuteNonQuery();
+            if (impactedRows < 1)
+            {
+                throw new FolderNotFoundException(localId);
+            }
+
+            var updatedFolder = GetFolderByLocalId(localId)!;
+
+            if (transactionCreated)
+            {
+                t?.Commit();
+            }
+
+            return updatedFolder;
+        }
+        finally
+        {
+            if (transactionCreated)
+            {
+                t?.Dispose();
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -235,12 +256,6 @@ internal sealed class FolderDatabase : IFolderDatabase
         }
 
         this.RaiseFolderWillBeDeleted(folder);
-
-        var articleChangesDb = this.database.ArticleChangesDatabase;
-        if(articleChangesDb.ListPendingArticleMovesForLocalFolderId(localFolderId).Any())
-        {
-            throw new FolderHasPendingArticleMoveException(localFolderId);
-        }
 
         // Delete any article-folder-pairs
         using var deleteArticleFolderPairsQuery = c.CreateCommand(@"
@@ -280,10 +295,10 @@ internal sealed class FolderDatabase : IFolderDatabase
     }
 
     #region Event Helpers
-    private void RaiseFolderAdded(DatabaseFolder addedFolder)
+    private void RaiseFolderAdded(string title)
     {
         var handlers = this.FolderAdded;
-        handlers?.Invoke(this, addedFolder);
+        handlers?.Invoke(this, title);
     }
 
     private void RaiseFolderWillBeDeleted(DatabaseFolder toBeDeleted)

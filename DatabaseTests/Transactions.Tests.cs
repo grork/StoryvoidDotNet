@@ -26,7 +26,8 @@ public sealed class FolderTransactionTests : IAsyncLifetime
     {
         this.db!.FolderAdded += (_, folder) =>
         {
-            this.instapaperDb!.FolderChangesDatabase.CreatePendingFolderAdd(folder.LocalId);
+            var added = this.db!.GetFolderByTitle(folder)!;
+            this.instapaperDb!.FolderChangesDatabase.CreatePendingFolderAdd(added.LocalId);
             this.ThrowException();
         };
 
