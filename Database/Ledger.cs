@@ -4,17 +4,26 @@ internal class Ledger : IDisposable
 {
     private IFolderDatabase folderDatabase;
     private IFolderChangesDatabase folderChangesDatabase;
+    private IArticleDatabase articleDatabase;
     private IArticleChangesDatabase articleChangesDatabase;
 
-    internal Ledger(IFolderDatabase folderDatabase, IFolderChangesDatabase folderChangesDatabase, IArticleChangesDatabase articleChangesDatabase)
+    internal Ledger(
+        IFolderDatabase folderDatabase,
+        IFolderChangesDatabase folderChangesDatabase,
+        IArticleDatabase articleDatabase,
+        IArticleChangesDatabase articleChangesDatabase)
     {
         this.folderDatabase = folderDatabase;
         this.folderChangesDatabase = folderChangesDatabase;
+        this.articleDatabase = articleDatabase;
         this.articleChangesDatabase = articleChangesDatabase;
 
         this.folderDatabase.FolderAdded += this.HandleFolderAdded;
         this.folderDatabase.FolderWillBeDeleted += this.HandleFolderWillBeDeleted;
         this.folderDatabase.FolderDeleted += this.HandleFolderDeleted;
+        this.articleDatabase.ArticleDeleted += this.HandleArticleDeleted;
+        this.articleDatabase.ArticleLikeStatusChanged += this.HandleArticleLikeStatusChanged;
+        this.articleDatabase.ArticleMovedToFolder += this.HandleArticleMovedToFolder;
     }
 
     private void HandleFolderAdded(object _, string title)
@@ -38,9 +47,11 @@ internal class Ledger : IDisposable
                 added.Position,
                 added.ShouldSync
             );
+
             return;
         }
-        this.folderChangesDatabase.CreatePendingFolderAdd(added.LocalId);
+
+        _ = this.folderChangesDatabase.CreatePendingFolderAdd(added.LocalId);
     }
 
     private void HandleFolderWillBeDeleted(object _, DatabaseFolder toBeDeleted)
@@ -68,13 +79,57 @@ internal class Ledger : IDisposable
             return;
         }
 
-        this.folderChangesDatabase.CreatePendingFolderDelete(
+        _ = this.folderChangesDatabase.CreatePendingFolderDelete(
             deleted.ServiceId!.Value,
             deleted.Title);
+    }
+
+    private void HandleArticleDeleted(object _, long deletedId)
+    {
+        _ = this.articleChangesDatabase.CreatePendingArticleDelete(deletedId);
+    }
+
+    private void HandleArticleLikeStatusChanged(object _, DatabaseArticle article)
+    {
+        // Get any existing like status change...
+        var existingStatusChange = this.articleChangesDatabase.GetPendingArticleStateChangeByArticleId(article.Id);
+        if(existingStatusChange is not null)
+        {
+            // If it's opposite to our new state, we can just delete it.
+            if(article.Liked != existingStatusChange.Liked)
+            {
+                this.articleChangesDatabase.DeletePendingArticleStateChange(article.Id);
+            }
+
+            // and since it's back to it's original state or the same as the
+            // pending edit, we can give up.
+            return;
+        }
+
+        // If there wasn't, create one for the new pending state
+        _ = this.articleChangesDatabase.CreatePendingArticleStateChange(article.Id, article.Liked);
+    }
+
+    private void HandleArticleMovedToFolder(object _, (DatabaseArticle Article, long DestinationLocalFolderId) payload)
+    {
+        // Check to see if this article was already pending a move to a folder.
+        // If so, we don't need it anymore, and it'll need to be cleaned up first
+        var existingMove = this.articleChangesDatabase.GetPendingArticleMove(payload.Article.Id);
+        if(existingMove is not null)
+        {
+            this.articleChangesDatabase.DeletePendingArticleMove(payload.Article.Id);
+        }
+
+        _ = this.articleChangesDatabase.CreatePendingArticleMove(payload.Article.Id, payload.DestinationLocalFolderId);
     }
 
     public void Dispose()
     {
         this.folderDatabase.FolderAdded -= this.HandleFolderAdded;
+        this.folderDatabase.FolderWillBeDeleted -= this.HandleFolderWillBeDeleted;
+        this.folderDatabase.FolderDeleted -= this.HandleFolderDeleted;
+        this.articleDatabase.ArticleDeleted -= this.HandleArticleDeleted;
+        this.articleDatabase.ArticleLikeStatusChanged -= this.HandleArticleLikeStatusChanged;
+        this.articleDatabase.ArticleMovedToFolder -= this.HandleArticleMovedToFolder;
     }
 }
