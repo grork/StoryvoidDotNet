@@ -140,6 +140,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     )
     {
         var c = this.connection;
+        using var t = c.BeginTransaction();
 
         if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) is null)
         {
@@ -174,13 +175,17 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
 
         pairWithFolderQuery.ExecuteNonQuery();
 
-        return this.GetArticleById(data.id)!;
+        var addedArticle = this.GetArticleById(data.id)!;
+        t.Commit();
+
+        return addedArticle;
     }
 
     /// <inheritdoc />
     public DatabaseArticle UpdateArticle(ArticleRecordInformation updatedData)
     {
         var c = this.connection;
+        using var t = c.BeginTransaction();
 
         using var query = c.CreateCommand(@"
             UPDATE articles SET
@@ -210,7 +215,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
             throw new ArticleNotFoundException(updatedData.id);
         }
 
-        return this.GetArticleById(updatedData.id)!;
+        var updatedArticle = this.GetArticleById(updatedData.id)!;
+
+        t.Commit();
+
+        return updatedArticle;
     }
 
     private DatabaseArticle UpdateLikeStatusForArticle(long id, bool liked)
@@ -274,6 +283,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         }
 
         var c = this.connection;
+        using var t = c.BeginTransaction();
 
         // The hash field is driven by the service, and complately opaque
         // to us. The hash is also how the service determines if progress
@@ -303,8 +313,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
             throw new ArticleNotFoundException(articleId);
         }
 
+        var updatedArticle = this.GetArticleById(articleId)!;
+        
+        t.Commit();
 
-        return this.GetArticleById(articleId)!;
+        return updatedArticle;
     }
 
     /// <inheritdoc/>

@@ -176,6 +176,7 @@ internal sealed class FolderDatabase : IFolderDatabase
     public DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync)
     {
         var c = this.connection;
+        using var t = c.BeginTransaction();
 
         using var query = c.CreateCommand(@"
             UPDATE folders SET
@@ -206,7 +207,9 @@ internal sealed class FolderDatabase : IFolderDatabase
             throw new FolderNotFoundException(localId);
         }
 
-        return GetFolderByLocalId(localId)!;
+        var updatedFolder =  GetFolderByLocalId(localId)!;
+        t.Commit();
+        return updatedFolder;
     }
 
     /// <inheritdoc />
