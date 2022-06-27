@@ -166,7 +166,6 @@ internal sealed class FolderDatabase : IFolderDatabase
         var rowId = (long)query.ExecuteScalar();
 
         var addedFolder = GetFolderByLocalId(rowId)!;
-        this.RaiseFolderAdded(addedFolder);
 
         t.Commit();
 

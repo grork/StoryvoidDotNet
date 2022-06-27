@@ -216,24 +216,6 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void FolderAddedEventRaisedWhenKnownFolderAdded()
-    {
-        DatabaseFolder? eventPayload = null;
-
-        this.db!.FolderAdded += (_, addedFolder) => eventPayload = addedFolder;
-
-        // Create folder; check results are returned
-        var addedFolder = this.db!.AddKnownFolder(
-            title: "Sample",
-            serviceId: 10L,
-            position: 9L,
-            shouldSync: true
-        );
-
-        Assert.Equal(addedFolder, eventPayload);
-    }
-
-    [Fact]
     public void AddFlderDuplicateTitleUsingServiceInformationThrows()
     {
         // Create folder; check results are returned

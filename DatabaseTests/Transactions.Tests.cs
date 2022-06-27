@@ -37,21 +37,6 @@ public sealed class FolderTransactionTests : IAsyncLifetime
     }
 
     [Fact]
-    public void ExceptionDuringAddingKnownFolderAddEventRollsBackEntireChange()
-    {
-        this.db!.FolderAdded += (_, folder) =>
-        {
-            this.instapaperDb!.FolderChangesDatabase.CreatePendingFolderAdd(folder.LocalId);
-            this.ThrowException();
-        };
-
-        Assert.Throws<Exception>(() => this.db!.AddKnownFolder("Sample", 1L, 1L, true));
-
-        Assert.Equal(2, this.db!.ListAllFolders().Count);
-        Assert.Empty(this.instapaperDb!.FolderChangesDatabase.ListPendingFolderAdds());
-    }
-
-    [Fact]
     public void ExceptionDuringWillDeleteFolderEventRollsBackEntireChange()
     {
         var createdFolder = this.db!.AddKnownFolder("Sample", 10L, 1L, true);
