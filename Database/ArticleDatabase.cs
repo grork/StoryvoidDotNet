@@ -2,7 +2,7 @@
 
 namespace Codevoid.Storyvoid;
 
-internal sealed partial class ArticleDatabase : IArticleDatabase
+internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionEvents
 {
     private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
