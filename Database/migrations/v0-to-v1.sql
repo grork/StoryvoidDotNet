@@ -7,11 +7,11 @@ CREATE TABLE articles (
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     read_progress REAL NOT NULL DEFAULT 0.0,
-    read_progress_timestamp INTEGER NOT NULL DEFAULT 0,
+    read_progress_timestamp TEXT NOT NULL DEFAULT 0,
     hash TEXT NOT NULL,
     liked INTEGER NOT NULL DEFAULT 0,
     UNIQUE(url)
-);
+) STRICT;
 
 CREATE TABLE folders (
     local_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -22,7 +22,7 @@ CREATE TABLE folders (
     should_sync INTEGER NOT NULL DEFAULT 1,
     UNIQUE(service_id),
     UNIQUE(title)
-);
+) STRICT;
 
 -- Insert the system folders
 INSERT INTO folders(local_id, service_id, title, position)
@@ -38,7 +38,7 @@ CREATE TABLE article_to_folder (
     FOREIGN KEY(local_folder_id) REFERENCES folders(local_id), 
     FOREIGN KEY(article_id) REFERENCES articles(id)
     UNIQUE(article_id)
-);
+) STRICT;
 
 CREATE TABLE article_local_only_state (
     article_id INTEGER NOT NULL PRIMARY KEY,
@@ -50,7 +50,7 @@ CREATE TABLE article_local_only_state (
     article_unavailable INTEGER NOT NULL DEFAULT 0,
     include_in_mru INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(article_id) REFERENCES articles(id)
-);
+) STRICT;
 
 -- View to bundle up the articles w/ their download state to be abstract away
 -- some of the source information from the wrapper library
@@ -63,7 +63,7 @@ CREATE VIEW articles_with_local_only_state AS
 CREATE TABLE folder_adds (
     local_id INTEGER NOT NULL PRIMARY KEY,
     FOREIGN KEY(local_id) REFERENCES folders(local_id)
-);
+) STRICT;
 
 CREATE VIEW folder_adds_with_folder_information AS
     SELECT f.title, a.* FROM folder_adds a
@@ -74,21 +74,21 @@ CREATE TABLE folder_deletes (
     service_id INTEGER NOT NULL PRIMARY KEY,
     title TEXT NOT NULL,
     UNIQUE(title) -- Titles can't be duplicated on the service; enforce here
-);
+) STRICT;
 
 -- Used when adding a URL, not when adding a bookmark directly; we always need
 -- a round trip to the service + sync to get the article visible somewhere
 CREATE TABLE article_adds (
     url TEXT NOT NULL PRIMARY KEY,
     title TEXT
-);
+) STRICT;
 
 -- Store article deletes. These only need the actual article ID for a deletion
 -- since they can't be resurrected (adding has to go via the service), and don't
 -- need any reference to the folder they're in
 CREATE TABLE article_deletes (
     id INTEGER NOT NULL PRIMARY KEY
-);
+) STRICT;
 
 -- Like state changes on articles. The presense of an article here implies it is
 -- a state *change* from the source of truth. Since state change on the service
@@ -104,8 +104,8 @@ CREATE TABLE article_deletes (
 -- out tweets etc for liked articles, you might like to share, and then purge.
 CREATE TABLE article_liked_changes (
     article_id INTEGER NOT NULL PRIMARY KEY,
-    liked BOOLEAN
-);
+    liked INTEGER NOT NULL
+) STRICT;
 
 -- Track article moves between folders. There is only expected to be one folder
 -- change per article, even if the article is moved multiple times; only one
@@ -116,7 +116,7 @@ CREATE TABLE article_folder_changes (
 
     FOREIGN KEY(article_id) REFERENCES articles(id),
     FOREIGN KEY(destination_local_id) REFERENCES folders(local_id)
-);
+) STRICT;
 
 -- Set version to indicate default state created
 PRAGMA user_version = 1;
