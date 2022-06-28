@@ -2,8 +2,7 @@
 
 namespace Codevoid.Storyvoid;
 
-internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
-                                                   IDisposable
+internal sealed partial class InstapaperDatabase : IInstapaperDatabase
 {
     // To help diagnose calls that skipped initialization
     private int initialized = 0;
@@ -22,7 +21,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
     }
 
     private bool alreadyDisposed;
-    void IDisposable.Dispose()
+    public void Dispose()
     {
         if (alreadyDisposed)
         {
