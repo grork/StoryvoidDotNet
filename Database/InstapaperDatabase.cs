@@ -35,8 +35,6 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase,
 
         this.connection.Close();
         this.connection.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>
