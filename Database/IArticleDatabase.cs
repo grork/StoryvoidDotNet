@@ -151,23 +151,31 @@ public interface IArticleDatabase
     /// </param>
     /// <returns>The updated details</returns>
     DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState);
+}
 
+/// <summary>
+/// We need to expose events _within_ a transaction, so that errors propagate to
+/// cancel the transaction. However, we don't want 'user' behaviour to propagate
+/// to cancel  the transactions. So we limit the accessibility of those events
+/// </summary>
+internal interface IArticleDatabaseWithTransactionEvents : IArticleDatabase
+{
     /// <summary>
     /// Raised whenver an article's liked status is changed. Event is raised
     /// with the *new* status.
     /// </summary>
-    public event EventHandler<DatabaseArticle> ArticleLikeStatusChanged;
+    public event EventHandler<DatabaseArticle> ArticleLikeStatusChangedWithinTransaction;
 
     /// <summary>
     /// Raised when an article has been completely deleted from the database.
     /// Because the article is being deleted, only the ID is provided.
     /// </summary>
-    public event EventHandler<long> ArticleDeleted;
+    public event EventHandler<long> ArticleDeletedWithinTransaction;
 
     /// <summary>
     /// Raised when an article is moved between folders. When raised, the
     /// article being moved is supplied, along with the local ID of the folder
     /// its being moved to.
     /// </summary>
-    public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)> ArticleMovedToFolder;
+    public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)> ArticleMovedToFolderWithinTransaction;
 }

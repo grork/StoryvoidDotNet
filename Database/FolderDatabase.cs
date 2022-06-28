@@ -3,14 +3,14 @@ using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid;
 
-internal sealed class FolderDatabase : IFolderDatabase
+internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 {
     private IDbConnection connection;
     private IInstapaperDatabase database;
 
-    public event EventHandler<string>? FolderAdded;
-    public event EventHandler<DatabaseFolder>? FolderWillBeDeleted;
-    public event EventHandler<DatabaseFolder>? FolderDeleted;
+    public event EventHandler<string>? FolderAddedWithinTransaction;
+    public event EventHandler<DatabaseFolder>? FolderWillBeDeletedWithinTransaction;
+    public event EventHandler<DatabaseFolder>? FolderDeletedWithinTransaction;
 
     public FolderDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
@@ -131,7 +131,7 @@ internal sealed class FolderDatabase : IFolderDatabase
         query.AddParameter("@title", title);
         query.ExecuteScalar();
 
-        this.RaiseFolderAdded(title);
+        this.RaiseFolderAddedWithinTransaction(title);
 
         t.Commit();
 
@@ -255,7 +255,7 @@ internal sealed class FolderDatabase : IFolderDatabase
             return;
         }
 
-        this.RaiseFolderWillBeDeleted(folder);
+        this.RaiseFolderWillBeDeletedWithinTransaction(folder);
 
         // Delete any article-folder-pairs
         using var deleteArticleFolderPairsQuery = c.CreateCommand(@"
@@ -289,27 +289,27 @@ internal sealed class FolderDatabase : IFolderDatabase
             throw;
         }
 
-        this.RaiseFolderDeleted(folder);
+        this.RaiseFolderDeletedWithinTransaction(folder);
 
         t.Commit();
     }
 
     #region Event Helpers
-    private void RaiseFolderAdded(string title)
+    private void RaiseFolderAddedWithinTransaction(string title)
     {
-        var handlers = this.FolderAdded;
+        var handlers = this.FolderAddedWithinTransaction;
         handlers?.Invoke(this, title);
     }
 
-    private void RaiseFolderWillBeDeleted(DatabaseFolder toBeDeleted)
+    private void RaiseFolderWillBeDeletedWithinTransaction(DatabaseFolder toBeDeleted)
     {
-        var handlers = this.FolderWillBeDeleted;
+        var handlers = this.FolderWillBeDeletedWithinTransaction;
         handlers?.Invoke(this, toBeDeleted);
     }
 
-    private void RaiseFolderDeleted(DatabaseFolder deleted)
+    private void RaiseFolderDeletedWithinTransaction(DatabaseFolder deleted)
     {
-        var handlers = this.FolderDeleted;
+        var handlers = this.FolderDeletedWithinTransaction;
         handlers?.Invoke(this, deleted);
     }
     #endregion

@@ -5,12 +5,12 @@ namespace Codevoid.Test.Storyvoid;
 public sealed class FolderTransactionTests : IAsyncLifetime
 {
     private IInstapaperDatabase? instapaperDb;
-    private IFolderDatabase? db;
+    private IFolderDatabaseWithTransactionEvents? db;
 
     public async Task InitializeAsync()
     {
         this.instapaperDb = await TestUtilities.GetDatabase();
-        this.db = this.instapaperDb.FolderDatabase;
+        this.db = this.instapaperDb.FolderDatabase as IFolderDatabaseWithTransactionEvents;
     }
 
     public Task DisposeAsync()
@@ -24,7 +24,7 @@ public sealed class FolderTransactionTests : IAsyncLifetime
     [Fact]
     public void ExceptionDuringFolderCreationAddEventRollsBackEntireChange()
     {
-        this.db!.FolderAdded += (_, folder) =>
+        this.db!.FolderAddedWithinTransaction += (_, folder) =>
         {
             var added = this.db!.GetFolderByTitle(folder)!;
             this.instapaperDb!.FolderChangesDatabase.CreatePendingFolderAdd(added.LocalId);
@@ -41,7 +41,7 @@ public sealed class FolderTransactionTests : IAsyncLifetime
     public void ExceptionDuringWillDeleteFolderEventRollsBackEntireChange()
     {
         var createdFolder = this.db!.AddKnownFolder("Sample", 10L, 1L, true);
-        this.db!.FolderWillBeDeleted += (_, folder) =>
+        this.db!.FolderWillBeDeletedWithinTransaction += (_, folder) =>
         {
             this.instapaperDb!.FolderChangesDatabase.CreatePendingFolderDelete((createdFolder!).ServiceId!.Value, createdFolder.Title);
             this.ThrowException();
@@ -56,13 +56,13 @@ public sealed class FolderTransactionTests : IAsyncLifetime
 public sealed class ArticleTransactionTests : IAsyncLifetime
 {
     private IInstapaperDatabase? instapaperDb;
-    private IArticleDatabase? db;
+    private IArticleDatabaseWithTransactionEvents? db;
     private DatabaseFolder? CustomFolder1;
 
     public async Task InitializeAsync()
     {
         this.instapaperDb = await TestUtilities.GetDatabase();
-        this.db = this.instapaperDb.ArticleDatabase;
+        this.db = this.instapaperDb.ArticleDatabase as IArticleDatabaseWithTransactionEvents;
 
         // Add sample folders
         this.CustomFolder1 = this.instapaperDb.FolderDatabase.AddKnownFolder(title: "Sample1",
@@ -85,7 +85,7 @@ public sealed class ArticleTransactionTests : IAsyncLifetime
         var randomArticle = TestUtilities.GetRandomArticle();
         this.db!.AddArticleToFolder(randomArticle, WellKnownLocalFolderIds.Unread);
 
-        this.db!.ArticleLikeStatusChanged += (_, article) =>
+        this.db!.ArticleLikeStatusChangedWithinTransaction += (_, article) =>
         {
             this.instapaperDb!.ArticleChangesDatabase.CreatePendingArticleStateChange(article.Id, article.Liked);
             this.ThrowException();
@@ -105,7 +105,7 @@ public sealed class ArticleTransactionTests : IAsyncLifetime
 
         this.db!.AddArticleToFolder(randomArticle, WellKnownLocalFolderIds.Unread);
 
-        this.db!.ArticleLikeStatusChanged += (_, article) =>
+        this.db!.ArticleLikeStatusChangedWithinTransaction += (_, article) =>
         {
             this.instapaperDb!.ArticleChangesDatabase.CreatePendingArticleStateChange(article.Id, article.Liked);
             this.ThrowException();
@@ -124,7 +124,7 @@ public sealed class ArticleTransactionTests : IAsyncLifetime
         var randomArticle = TestUtilities.GetRandomArticle();
         this.db!.AddArticleToFolder(randomArticle, WellKnownLocalFolderIds.Unread);
 
-        this.db!.ArticleMovedToFolder += (_, payload) =>
+        this.db!.ArticleMovedToFolderWithinTransaction += (_, payload) =>
         {
             this.instapaperDb!.ArticleChangesDatabase.CreatePendingArticleMove(payload.Article.Id, payload.DestinationLocalFolderId);
             this.ThrowException();
@@ -143,7 +143,7 @@ public sealed class ArticleTransactionTests : IAsyncLifetime
         this.db!.AddArticleToFolder(randomArticle, WellKnownLocalFolderIds.Unread);
         this.db!.AddLocalOnlyStateForArticle(new() { ArticleId = randomArticle.id });
 
-        this.db!.ArticleDeleted += (_, articleId) =>
+        this.db!.ArticleDeletedWithinTransaction += (_, articleId) =>
         {
             this.instapaperDb!.ArticleChangesDatabase.CreatePendingArticleDelete(articleId);
             this.ThrowException();

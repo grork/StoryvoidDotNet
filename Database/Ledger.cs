@@ -2,15 +2,15 @@ namespace Codevoid.Storyvoid;
 
 internal class Ledger : IDisposable
 {
-    private IFolderDatabase folderDatabase;
+    private IFolderDatabaseWithTransactionEvents folderDatabase;
     private IFolderChangesDatabase folderChangesDatabase;
-    private IArticleDatabase articleDatabase;
+    private IArticleDatabaseWithTransactionEvents articleDatabase;
     private IArticleChangesDatabase articleChangesDatabase;
 
     internal Ledger(
-        IFolderDatabase folderDatabase,
+        IFolderDatabaseWithTransactionEvents folderDatabase,
         IFolderChangesDatabase folderChangesDatabase,
-        IArticleDatabase articleDatabase,
+        IArticleDatabaseWithTransactionEvents articleDatabase,
         IArticleChangesDatabase articleChangesDatabase)
     {
         this.folderDatabase = folderDatabase;
@@ -18,12 +18,12 @@ internal class Ledger : IDisposable
         this.articleDatabase = articleDatabase;
         this.articleChangesDatabase = articleChangesDatabase;
 
-        this.folderDatabase.FolderAdded += this.HandleFolderAdded;
-        this.folderDatabase.FolderWillBeDeleted += this.HandleFolderWillBeDeleted;
-        this.folderDatabase.FolderDeleted += this.HandleFolderDeleted;
-        this.articleDatabase.ArticleDeleted += this.HandleArticleDeleted;
-        this.articleDatabase.ArticleLikeStatusChanged += this.HandleArticleLikeStatusChanged;
-        this.articleDatabase.ArticleMovedToFolder += this.HandleArticleMovedToFolder;
+        this.folderDatabase.FolderAddedWithinTransaction += this.HandleFolderAdded;
+        this.folderDatabase.FolderWillBeDeletedWithinTransaction += this.HandleFolderWillBeDeleted;
+        this.folderDatabase.FolderDeletedWithinTransaction += this.HandleFolderDeleted;
+        this.articleDatabase.ArticleDeletedWithinTransaction += this.HandleArticleDeleted;
+        this.articleDatabase.ArticleLikeStatusChangedWithinTransaction += this.HandleArticleLikeStatusChanged;
+        this.articleDatabase.ArticleMovedToFolderWithinTransaction += this.HandleArticleMovedToFolder;
     }
 
     private void HandleFolderAdded(object _, string title)
@@ -125,11 +125,11 @@ internal class Ledger : IDisposable
 
     public void Dispose()
     {
-        this.folderDatabase.FolderAdded -= this.HandleFolderAdded;
-        this.folderDatabase.FolderWillBeDeleted -= this.HandleFolderWillBeDeleted;
-        this.folderDatabase.FolderDeleted -= this.HandleFolderDeleted;
-        this.articleDatabase.ArticleDeleted -= this.HandleArticleDeleted;
-        this.articleDatabase.ArticleLikeStatusChanged -= this.HandleArticleLikeStatusChanged;
-        this.articleDatabase.ArticleMovedToFolder -= this.HandleArticleMovedToFolder;
+        this.folderDatabase.FolderAddedWithinTransaction -= this.HandleFolderAdded;
+        this.folderDatabase.FolderWillBeDeletedWithinTransaction -= this.HandleFolderWillBeDeleted;
+        this.folderDatabase.FolderDeletedWithinTransaction -= this.HandleFolderDeleted;
+        this.articleDatabase.ArticleDeletedWithinTransaction -= this.HandleArticleDeleted;
+        this.articleDatabase.ArticleLikeStatusChangedWithinTransaction -= this.HandleArticleLikeStatusChanged;
+        this.articleDatabase.ArticleMovedToFolderWithinTransaction -= this.HandleArticleMovedToFolder;
     }
 }

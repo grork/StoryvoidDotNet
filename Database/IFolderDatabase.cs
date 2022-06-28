@@ -110,23 +110,31 @@ public interface IFolderDatabase
     /// </summary>
     /// <param name="localFolderId">Folder to delete</param>
     void DeleteFolder(long localFolderId);
+}
 
+/// <summary>
+/// We need to expose events _within_ a transaction, so that errors propagate to
+/// cancel the transaction. However, we don't want 'user' behaviour to propagate
+/// to cancel  the transactions. So we limit the accessibility of those events
+/// </summary>
+internal interface IFolderDatabaseWithTransactionEvents : IFolderDatabase
+{
     /// <summary>
     /// Raised after a folder has been successfully added to the database. When
     /// raised, the folder title is supplied. Handlers need to retrieve the
     /// folder by title to perform additional mutations
     /// </summary>
-    event EventHandler<string> FolderAdded;
+    event EventHandler<string> FolderAddedWithinTransaction;
 
     /// <summary>
     /// Raised immediately prior to the folder being deleted. Primarily intended
     /// to clean up database state that would cause the delete to fail (E.g., 
     /// foreign key references).
     /// </summary>
-    event EventHandler<DatabaseFolder> FolderWillBeDeleted;
+    event EventHandler<DatabaseFolder> FolderWillBeDeletedWithinTransaction;
 
     /// <summary>
     /// Raised immediately after a folder has been successuflly deleted.
     /// </summary>
-    event EventHandler<DatabaseFolder> FolderDeleted;
+    event EventHandler<DatabaseFolder> FolderDeletedWithinTransaction;
 }

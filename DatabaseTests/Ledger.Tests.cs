@@ -15,9 +15,9 @@ public sealed class FolderLedgerTests : IAsyncLifetime
         this.db = await TestUtilities.GetDatabase();
         this.folders = this.db.FolderDatabase;
         this.folderChanges = this.db.FolderChangesDatabase;
-        this.ledger = new(this.folders,
+        this.ledger = new((IFolderDatabaseWithTransactionEvents)this.folders,
                           this.folderChanges,
-                          this.db.ArticleDatabase,
+                          (IArticleDatabaseWithTransactionEvents)this.db.ArticleDatabase,
                           this.db.ArticleChangesDatabase);
     }
 
@@ -146,9 +146,9 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
         this.articles = this.db.ArticleDatabase;
         this.articleChanges = this.db.ArticleChangesDatabase;
         this.folders = this.db.FolderDatabase;
-        this.ledger = new(this.folders,
+        this.ledger = new((IFolderDatabaseWithTransactionEvents)this.folders,
                           this.db!.FolderChangesDatabase,
-                          this.articles,
+                          (IArticleDatabaseWithTransactionEvents)this.articles,
                           this.articleChanges);
     }
 

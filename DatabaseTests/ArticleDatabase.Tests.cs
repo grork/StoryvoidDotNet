@@ -4,7 +4,7 @@ namespace Codevoid.Test.Storyvoid;
 
 public sealed class ArticleDatabaseTests : IAsyncLifetime
 {
-    private IArticleDatabase? db;
+    private IArticleDatabaseWithTransactionEvents? db;
     private IInstapaperDatabase? instapaperDb;
     private DatabaseFolder? CustomFolder1;
     private DatabaseFolder? CustomFolder2;
@@ -12,7 +12,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         this.instapaperDb = await TestUtilities.GetDatabase();
-        this.db = this.instapaperDb.ArticleDatabase;
+        this.db = this.instapaperDb.ArticleDatabase as IArticleDatabaseWithTransactionEvents;
 
         // Add sample folders
         this.CustomFolder1 = this.instapaperDb.FolderDatabase.AddKnownFolder(title: "Sample1",
@@ -201,12 +201,12 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void LikingArticleThatIsUnlikedRaisesLikeStatusChangedEvent()
+    public void LikingArticleThatIsUnlikedRaisesLikeStatusChangedWithinTransactionEvent()
     {
         var unlikedArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         DatabaseArticle? eventChangeArticle = null;
-        this.db!.ArticleLikeStatusChanged += (_, article) => eventChangeArticle = article;
+        this.db!.ArticleLikeStatusChangedWithinTransaction += (_, article) => eventChangeArticle = article;
 
         var likedArticle = this.db!.LikeArticle(unlikedArticle.Id);
         Assert.Equal(likedArticle, eventChangeArticle);
@@ -255,12 +255,12 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void UnlikingArticleThatIsLikedRaisesLikeStatusChangedEvent()
+    public void UnlikingArticleThatIsLikedRaisesLikeStatusChangedWithinTransactionEvent()
     {
         var originalArticle = this.db!.AddArticleToFolder(TestUtilities.GetRandomArticle() with { liked = true }, WellKnownLocalFolderIds.Unread);
 
         DatabaseArticle? eventChangeArticle = null;
-        this.db!.ArticleLikeStatusChanged += (_, article) => eventChangeArticle = article;
+        this.db!.ArticleLikeStatusChangedWithinTransaction += (_, article) => eventChangeArticle = article;
 
         var unlikedArticle = this.db!.UnlikeArticle(originalArticle.Id);
         Assert.Equal(unlikedArticle, eventChangeArticle);
@@ -274,10 +274,10 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void LikingMissingArticleDoesNotRaiseLikeStatusChangeEvent()
+    public void LikingMissingArticleDoesNotRaiseLikeStatusChangeWithinTransactionEvent()
     {
         var eventWasRaised = false;
-        this.db!.ArticleLikeStatusChanged += (_, _) => eventWasRaised = true;
+        this.db!.ArticleLikeStatusChangedWithinTransaction += (_, _) => eventWasRaised = true;
         Assert.Throws<ArticleNotFoundException>(() => this.db!.LikeArticle(1));
         Assert.False(eventWasRaised);
     }
@@ -289,10 +289,10 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void UnlikingMissingArticleDoesNotRaiseLikeStatusChangeEvent()
+    public void UnlikingMissingArticleDoesNotRaiseLikeStatusChangeWithinTransactionEvent()
     {
         var eventWasRaised = false;
-        this.db!.ArticleLikeStatusChanged += (_, _) => eventWasRaised = true;
+        this.db!.ArticleLikeStatusChangedWithinTransaction += (_, _) => eventWasRaised = true;
         Assert.Throws<ArticleNotFoundException>(() => this.db!.UnlikeArticle(1));
         Assert.False(eventWasRaised);
     }
@@ -309,13 +309,13 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void LikingArticleThatIsLikedDoesNotRaiseLikeStatusChangeEvent()
+    public void LikingArticleThatIsLikedDoesNotRaiseLikeStatusChangeWithinTransactionEvent()
     {
         var a = TestUtilities.GetRandomArticle() with { liked = true };
         var likedArticleOriginal = this.db!.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
 
         var eventWasRaised = false;
-        this.db!.ArticleLikeStatusChanged += (_, _) => eventWasRaised = true;
+        this.db!.ArticleLikeStatusChangedWithinTransaction += (_, _) => eventWasRaised = true;
 
         _ = this.db!.LikeArticle(likedArticleOriginal.Id);
         Assert.False(eventWasRaised);
@@ -327,7 +327,7 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
         var unlikedArticleOriginal = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         var eventWasRaised = false;
-        this.db!.ArticleLikeStatusChanged += (_, _) => eventWasRaised = true;
+        this.db!.ArticleLikeStatusChangedWithinTransaction += (_, _) => eventWasRaised = true;
         _ = this.db!.UnlikeArticle(unlikedArticleOriginal.Id);
         Assert.False(eventWasRaised);
     }
@@ -424,14 +424,14 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MovingArticleFromUnreadToCustomFolderRaisesMoveEvent()
+    public void MovingArticleFromUnreadToCustomFolderRaisesMoveWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         long? destinationId = null;
         DatabaseArticle? eventArticle = null;
 
-        this.db!.ArticleMovedToFolder += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db!.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload;
         this.db!.MoveArticleToFolder(article.Id, this.CustomFolder1!.LocalId);
 
         Assert.Equal(this.CustomFolder1!.LocalId, destinationId);
@@ -455,14 +455,14 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MovingArticleFromUnreadToArchiveFolderRaisesMoveEvent()
+    public void MovingArticleFromUnreadToArchiveFolderRaisesMoveWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         long? destinationId = null;
         DatabaseArticle? eventArticle = null;
 
-        this.db!.ArticleMovedToFolder += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db!.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload;
         this.db!.MoveArticleToFolder(article.Id, WellKnownLocalFolderIds.Archive);
 
         Assert.Equal(WellKnownLocalFolderIds.Archive, destinationId);
@@ -486,14 +486,14 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MovingArticleFromCustomFolderToUnreadRaisesMoveEvent()
+    public void MovingArticleFromCustomFolderToUnreadRaisesMoveWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
 
         long? destinationId = null;
         DatabaseArticle? eventArticle = null;
 
-        this.db!.ArticleMovedToFolder += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db!.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload;
         this.db!.MoveArticleToFolder(article.Id, WellKnownLocalFolderIds.Unread);
 
         Assert.Equal(WellKnownLocalFolderIds.Unread, destinationId);
@@ -524,23 +524,23 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MovingArticleFromUnreadToNonExistantFolderDoesNotRaiseMoveEvent()
+    public void MovingArticleFromUnreadToNonExistantFolderDoesNotRaiseMoveWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         var eventWasRaised = false;
-        this.db!.ArticleMovedToFolder += (_, _) => eventWasRaised = true;
+        this.db!.ArticleMovedToFolderWithinTransaction += (_, _) => eventWasRaised = true;
         Assert.Throws<FolderNotFoundException>(() => this.db!.MoveArticleToFolder(article.Id, 999));
         Assert.False(eventWasRaised);
     }
 
     [Fact]
-    public void MovingArticleToAFolderItIsAlreadyInDoesNotRaiseFolderMoveEvent()
+    public void MovingArticleToAFolderItIsAlreadyInDoesNotRaiseFolderMoveWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
 
         var eventWasRaised = false;
-        this.db!.ArticleMovedToFolder += (_, _) => eventWasRaised = true;
+        this.db!.ArticleMovedToFolderWithinTransaction += (_, _) => eventWasRaised = true;
         this.db!.MoveArticleToFolder(article.Id, this.CustomFolder1!.LocalId);
 
         Assert.False(eventWasRaised);
@@ -553,10 +553,10 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MovingNonExistantArticleToCustomFolderDoesNotRaiseMoveEvent()
+    public void MovingNonExistantArticleToCustomFolderDoesNotRaiseMoveWithinTransactionEvent()
     {
         var eventWasRaised = false;
-        this.db!.ArticleMovedToFolder += (_, _) => eventWasRaised = true;
+        this.db!.ArticleMovedToFolderWithinTransaction += (_, _) => eventWasRaised = true;
         Assert.Throws<ArticleNotFoundException>(() => this.db!.MoveArticleToFolder(999, this.CustomFolder1!.LocalId));
         Assert.False(eventWasRaised);
     }
@@ -568,10 +568,10 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MovingNonExistantArticleToNonExistantFolderDoesNotRaiseMoveEvent()
+    public void MovingNonExistantArticleToNonExistantFolderDoesNotRaiseMoveWithinTransactionEvent()
     {
         var eventWasRaised = false;
-        this.db!.ArticleMovedToFolder += (_, _) => eventWasRaised = true;
+        this.db!.ArticleMovedToFolderWithinTransaction += (_, _) => eventWasRaised = true;
         Assert.Throws<FolderNotFoundException>(() => this.db!.MoveArticleToFolder(999, 888));
         Assert.False(eventWasRaised);
     }
@@ -598,12 +598,12 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void DeletingArticleRaisesArticleDeletedEvent()
+    public void DeletingArticleRaisesArticleDeletedWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         long? deletedArticle = null;
-        this.db!.ArticleDeleted += (_, payload) => deletedArticle = payload;
+        this.db!.ArticleDeletedWithinTransaction += (_, payload) => deletedArticle = payload;
         this.db!.DeleteArticle(article.Id);
 
         Assert.Equal(article.Id, deletedArticle);
@@ -626,10 +626,10 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void DeletingNonExistantArticleDoesNotRaiseEvent()
+    public void DeletingNonExistantArticleDoesNotRaiseDeleteWithinTransactionEvent()
     {
         var eventWasRaised = false;
-        this.db!.ArticleDeleted += (_, _) => eventWasRaised = true;
+        this.db!.ArticleDeletedWithinTransaction += (_, _) => eventWasRaised = true;
         this.db!.DeleteArticle(999);
 
         Assert.False(eventWasRaised);
@@ -692,12 +692,12 @@ public sealed class ArticleDatabaseTests : IAsyncLifetime
     }
 
     [Fact]
-    public void DeletingOrphanedArticleDoesRaiseEvent()
+    public void DeletingOrphanedArticleDoesRaiseDeletedWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1!.LocalId);
 
         long? deletedItem = null;
-        this.db!.ArticleDeleted += (_, payload) => deletedItem = payload;
+        this.db!.ArticleDeletedWithinTransaction += (_, payload) => deletedItem = payload;
         this.instapaperDb!.FolderDatabase.DeleteFolder(this.CustomFolder1!.LocalId);
         Assert.Null(deletedItem);
 

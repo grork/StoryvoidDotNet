@@ -9,9 +9,9 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
     private IDbConnection connection;
     private IInstapaperDatabase database;
 
-    public event EventHandler<DatabaseArticle>? ArticleLikeStatusChanged;
-    public event EventHandler<long>? ArticleDeleted;
-    public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMovedToFolder;
+    public event EventHandler<DatabaseArticle>? ArticleLikeStatusChangedWithinTransaction;
+    public event EventHandler<long>? ArticleDeletedWithinTransaction;
+    public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMovedToFolderWithinTransaction;
 
     internal ArticleDatabase(IDbConnection connection, IInstapaperDatabase database)
     {
@@ -249,7 +249,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         if (impactedRows > 0)
         {
             // Only raise the change event if the table was actually updated
-            this.RaiseArticleLikeStatusChanged(updatedArticle!);
+            this.RaiseArticleLikeStatusChangedWithinTransaction(updatedArticle!);
         }
 
         t.Commit();
@@ -351,7 +351,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         {
             // Only raise (and get the article) if we actually affected a move
             var article = this.GetArticleById(articleId)!;
-            this.RaiseArticleMovedToFolder(article, localFolderId);
+            this.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
         }
 
         t.Commit();
@@ -400,28 +400,28 @@ internal sealed partial class ArticleDatabase : IArticleDatabase
         if (wasDeleted)
         {
             // Only raise the event if we actually deleted something
-            this.RaiseArticleDeleted(articleId);
+            this.RaiseArticleDeletedWithinTransaction(articleId);
         }
 
         t.Commit();
     }
 
     #region Event Helpers
-    private void RaiseArticleLikeStatusChanged(DatabaseArticle article)
+    private void RaiseArticleLikeStatusChangedWithinTransaction(DatabaseArticle article)
     {
-        var handlers = this.ArticleLikeStatusChanged;
+        var handlers = this.ArticleLikeStatusChangedWithinTransaction;
         handlers?.Invoke(this, article);
     }
 
-    private void RaiseArticleDeleted(long articleId)
+    private void RaiseArticleDeletedWithinTransaction(long articleId)
     {
-        var handlers = this.ArticleDeleted;
+        var handlers = this.ArticleDeletedWithinTransaction;
         handlers?.Invoke(this, articleId);
     }
 
-    private void RaiseArticleMovedToFolder(DatabaseArticle article, long destinationLocalFolderId)
+    private void RaiseArticleMovedToFolderWithinTransaction(DatabaseArticle article, long destinationLocalFolderId)
     {
-        var handlers = this.ArticleMovedToFolder;
+        var handlers = this.ArticleMovedToFolderWithinTransaction;
         handlers?.Invoke(this, (article, destinationLocalFolderId));
     }
     #endregion
