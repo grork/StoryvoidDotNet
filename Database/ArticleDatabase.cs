@@ -144,8 +144,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         using var query = c.CreateCommand(@"
             INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
             VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
-
-            SELECT last_insert_rowid();
         ");
 
         query.AddParameter("@id", data.id);

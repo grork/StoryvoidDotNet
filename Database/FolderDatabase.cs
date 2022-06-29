@@ -150,8 +150,6 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         using var query = c.CreateCommand(@"
             INSERT INTO folders(title, service_id, position, should_sync)
             VALUES (@title, @serviceId, @position, @shouldSync);
-
-            SELECT last_insert_rowid();
         ");
 
         query.AddParameter("@title", title);
@@ -159,9 +157,9 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         query.AddParameter("@position", position);
         query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
 
-        var rowId = (long)query.ExecuteScalar();
+        query.ExecuteScalar();
 
-        var addedFolder = GetFolderByLocalId(rowId)!;
+        var addedFolder = GetFolderByServiceId(serviceId)!;
 
         t.Commit();
 
