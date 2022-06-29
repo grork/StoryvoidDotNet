@@ -54,6 +54,19 @@ public sealed class FolderTransactionTests : IDisposable
         Assert.Equal(3, this.db.ListAllFolders().Count);
         Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
     }
+
+    [Fact]
+    public void ExceptionDuringFolderDeletedEventRollsBackEntireChange()
+    {
+        var createdFolder = this.db.AddKnownFolder("Sample", 10L, 1L, true);
+        this.db.FolderWillBeDeletedWithinTransaction += (_, folder) => this.folderChanges.CreatePendingFolderDelete((createdFolder).ServiceId!.Value, createdFolder.Title);
+        this.db.FolderDeletedWithinTransaction += (_, _) => this.ThrowException();
+        
+        Assert.Throws<Exception>(() => this.db.DeleteFolder(createdFolder.LocalId));
+
+        Assert.Equal(3, this.db.ListAllFolders().Count);
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
+    }
 }
 
 public sealed class ArticleTransactionTests : IDisposable
