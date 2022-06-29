@@ -2,17 +2,16 @@ using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
-public sealed class FolderLedgerTests : IAsyncLifetime
+public sealed class FolderLedgerTests : IDisposable
 {
-    private IInstapaperDatabase? db;
-    private IFolderDatabase? folders;
-    private IFolderChangesDatabase? folderChanges;
+    private IInstapaperDatabase db;
+    private IFolderDatabase folders;
+    private IFolderChangesDatabase folderChanges;
+    private Ledger ledger;
 
-    private Ledger? ledger;
-
-    public async Task InitializeAsync()
+    public FolderLedgerTests()
     {
-        this.db = await TestUtilities.GetDatabase();
+        this.db = TestUtilities.GetDatabase();
         this.folders = this.db.FolderDatabase;
         this.folderChanges = this.db.FolderChangesDatabase;
         this.ledger = new((IFolderDatabaseWithTransactionEvents)this.folders,
@@ -21,19 +20,18 @@ public sealed class FolderLedgerTests : IAsyncLifetime
                           this.db.ArticleChangesDatabase);
     }
 
-    public Task DisposeAsync()
+    public void Dispose()
     {
-        this.ledger?.Dispose();
-        this.db?.Dispose();
-        return Task.CompletedTask;
+        this.ledger.Dispose();
+        this.db.Dispose();
     }
 
     [Fact]
     public void AddsPendingAddWhenFolderIsCreated()
     {
-        Assert.Empty(this.folderChanges!.ListPendingFolderAdds());
+        Assert.Empty(this.folderChanges.ListPendingFolderAdds());
 
-        var folder = this.folders!.CreateFolder("Sample");
+        var folder = this.folders.CreateFolder("Sample");
         var pendingAdds = this.folderChanges.ListPendingFolderAdds();
         Assert.Equal(1, pendingAdds.Count);
         Assert.Equal(folder.Title, pendingAdds[0].Title);
@@ -43,21 +41,21 @@ public sealed class FolderLedgerTests : IAsyncLifetime
     [Fact]
     public void DoesNotAddPendingAddWhenKnownFolderIsAdded()
     {
-        Assert.Empty(this.folderChanges!.ListPendingFolderAdds());
+        Assert.Empty(this.folderChanges.ListPendingFolderAdds());
 
-        var folder = this.folders!.AddKnownFolder("Known Folder", 1L, 1L, true);
+        var folder = this.folders.AddKnownFolder("Known Folder", 1L, 1L, true);
         Assert.Empty(this.folderChanges.ListPendingFolderAdds());
     }
 
     [Fact]
     public void DeletingKnownFolderCreatesPendingDeleteWithServiceProperties()
     {
-        var folder = this.folders!.AddKnownFolder("Sample", 1L, 1L, true);
+        var folder = this.folders.AddKnownFolder("Sample", 1L, 1L, true);
         
-        Assert.Empty(this.folderChanges!.ListPendingFolderDeletes());
-        this.folders!.DeleteFolder(folder.LocalId);
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
+        this.folders.DeleteFolder(folder.LocalId);
 
-        var pendingDeletes = this.folderChanges!.ListPendingFolderDeletes();
+        var pendingDeletes = this.folderChanges.ListPendingFolderDeletes();
         Assert.Equal(1, pendingDeletes.Count);
         Assert.Equal(folder.ServiceId, pendingDeletes[0].ServiceId);
         Assert.Equal(folder.Title, pendingDeletes[0].Title);
@@ -66,111 +64,108 @@ public sealed class FolderLedgerTests : IAsyncLifetime
     [Fact]
     public void DeletingAFolderTwiceDoesNotCreateDuplicatePendingEntries()
     {
-        var folder = this.folders!.AddKnownFolder("Known Folder", 1L, 1L, true);
+        var folder = this.folders.AddKnownFolder("Known Folder", 1L, 1L, true);
 
-        Assert.Empty(this.folderChanges!.ListPendingFolderDeletes());
-        this.folders!.DeleteFolder(folder.LocalId);
-        this.folders!.DeleteFolder(folder.LocalId);
-        Assert.Equal(1, this.folderChanges!.ListPendingFolderDeletes().Count);
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
+        this.folders.DeleteFolder(folder.LocalId);
+        this.folders.DeleteFolder(folder.LocalId);
+        Assert.Equal(1, this.folderChanges.ListPendingFolderDeletes().Count);
     }
 
     [Fact]
     public void PendingAddsAreCleanedUpWhenAFolderWithAPendingAddIsDeletedAndDoesntCreateANewDelete()
     {
-        Assert.Empty(this.folderChanges!.ListPendingFolderAdds());
-        Assert.Empty(this.folderChanges!.ListPendingFolderDeletes());
-        var folder = this.folders!.CreateFolder("Sample");
+        Assert.Empty(this.folderChanges.ListPendingFolderAdds());
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
+        var folder = this.folders.CreateFolder("Sample");
         Assert.NotEmpty(this.folderChanges.ListPendingFolderAdds());
 
-        this.folders!.DeleteFolder(folder.LocalId);
+        this.folders.DeleteFolder(folder.LocalId);
 
-        Assert.Empty(this.folderChanges!.ListPendingFolderAdds());
-        Assert.Empty(this.folderChanges!.ListPendingFolderDeletes());
+        Assert.Empty(this.folderChanges.ListPendingFolderAdds());
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
     }
 
     [Fact]
     public void AddingPreviouslyDeletedKnownFolderResurrectsItsServiceProperties()
     {
-        var folder = this.folders!.AddKnownFolder("Sample", 1L, 1L, true);
+        var folder = this.folders.AddKnownFolder("Sample", 1L, 1L, true);
         
-        Assert.Empty(this.folderChanges!.ListPendingFolderDeletes());
-        this.folders!.DeleteFolder(folder.LocalId);
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
+        this.folders.DeleteFolder(folder.LocalId);
 
         var resurrectedFolder = this.folders.CreateFolder(folder.Title);
         Assert.Equal(folder.ServiceId, resurrectedFolder.ServiceId);
 
-        Assert.Empty(this.folderChanges!.ListPendingFolderDeletes());
-        Assert.Empty(this.folderChanges!.ListPendingFolderAdds());
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
+        Assert.Empty(this.folderChanges.ListPendingFolderAdds());
     }
 
     [Fact]
     public void DeletingFolderThatHasPendingArticleMoveToItThrowsException()
     {
         // Move to init
-        var sampleArticle = this.db!.ArticleDatabase.AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
-        var destinationFolder = this.folders!.AddKnownFolder("Sample", 1L, 1L, true);
+        var sampleArticle = this.db.ArticleDatabase.AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
+        var destinationFolder = this.folders.AddKnownFolder("Sample", 1L, 1L, true);
 
-        var changesDb = this.db!.ArticleChangesDatabase;
+        var changesDb = this.db.ArticleChangesDatabase;
         _ = changesDb.CreatePendingArticleMove(sampleArticle.Id, destinationFolder.LocalId);
 
-        Assert.Throws<FolderHasPendingArticleMoveException>(() => this.db!.FolderDatabase.DeleteFolder(destinationFolder.LocalId));
+        Assert.Throws<FolderHasPendingArticleMoveException>(() => this.db.FolderDatabase.DeleteFolder(destinationFolder.LocalId));
     }
 
     [Fact]
     public void LedgerDoesNotOperateAfterBeingDisposed()
     {
-        this.ledger!.Dispose();
-        this.ledger = null;
+        this.ledger.Dispose();
 
-        var folder = this.folders!.CreateFolder("Something");
-        Assert.Empty(this.folderChanges!.ListPendingFolderAdds());
+        var folder = this.folders.CreateFolder("Something");
+        Assert.Empty(this.folderChanges.ListPendingFolderAdds());
 
-        var knownFolder = this.folders!.AddKnownFolder("Known", 1L, 1L, true);
-        this.folders!.DeleteFolder(knownFolder.LocalId);
-        Assert.Empty(this.folderChanges!.ListPendingFolderDeletes());
+        var knownFolder = this.folders.AddKnownFolder("Known", 1L, 1L, true);
+        this.folders.DeleteFolder(knownFolder.LocalId);
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
     }
 }
 
-public sealed class ArticleLedgerTests : IAsyncLifetime
+public sealed class ArticleLedgerTests : IDisposable
 {
-    private IInstapaperDatabase? db;
-    private IArticleDatabase? articles;
-    private IArticleChangesDatabase? articleChanges;
-    private IFolderDatabase? folders;
+    private IInstapaperDatabase db;
+    private IArticleDatabase articles;
+    private IArticleChangesDatabase articleChanges;
+    private IFolderDatabase folders;
+    private Ledger ledger;
 
-    private Ledger? ledger;
-
-    public async Task InitializeAsync()
+    public ArticleLedgerTests()
     {
-        this.db = await TestUtilities.GetDatabase();
+        this.db = TestUtilities.GetDatabase();
         this.articles = this.db.ArticleDatabase;
         this.articleChanges = this.db.ArticleChangesDatabase;
         this.folders = this.db.FolderDatabase;
         this.ledger = new((IFolderDatabaseWithTransactionEvents)this.folders,
-                          this.db!.FolderChangesDatabase,
+                          this.db.FolderChangesDatabase,
                           (IArticleDatabaseWithTransactionEvents)this.articles,
                           this.articleChanges);
     }
 
-    public Task DisposeAsync()
+    public void Dispose()
     {
-        this.ledger?.Dispose();
-        this.db?.Dispose();
-        return Task.CompletedTask;
+        this.ledger.Dispose();
+        this.db.Dispose();
     }
 
     [Fact]
     public void PendingDeleteCreatedWhenArticleDeleted()
     {
-        var article = this.articles!.AddArticleToFolder(
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleDeletes());
-        this.articles!.DeleteArticle(article.Id);
+        Assert.Empty(this.articleChanges.ListPendingArticleDeletes());
+        this.articles.DeleteArticle(article.Id);
 
-        var pendingDeletes = this.articleChanges!.ListPendingArticleDeletes();
+        var pendingDeletes = this.articleChanges.ListPendingArticleDeletes();
         Assert.Equal(1, pendingDeletes.Count);
 
         Assert.Equal(article.Id, pendingDeletes[0]);
@@ -179,19 +174,19 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
     [Fact]
     public void MovingArticleToFolderCreatesPendingMove()
     {
-        var folder = this.folders!.CreateFolder("Sample");
-        var article = this.articles!.AddArticleToFolder(
+        var folder = this.folders.CreateFolder("Sample");
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleMoves());
+        Assert.Empty(this.articleChanges.ListPendingArticleMoves());
         this.articles.MoveArticleToFolder(
             article.Id,
             folder.LocalId
         );
 
-        var pendingMoves = this.articleChanges!.ListPendingArticleMoves();
+        var pendingMoves = this.articleChanges.ListPendingArticleMoves();
         Assert.Equal(1, pendingMoves.Count);
 
         Assert.Equal(article.Id, pendingMoves[0].ArticleId);
@@ -201,14 +196,14 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
     [Fact]
     public void MovingArticleMultipleTimesToDifferentFolderLeavesSinglePendingMove()
     {
-        var folder1 = this.folders!.CreateFolder("Sample");
-        var folder2 = this.folders!.CreateFolder("Sample 2");
-        var article = this.articles!.AddArticleToFolder(
+        var folder1 = this.folders.CreateFolder("Sample");
+        var folder2 = this.folders.CreateFolder("Sample 2");
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleMoves());
+        Assert.Empty(this.articleChanges.ListPendingArticleMoves());
         this.articles.MoveArticleToFolder(
             article.Id,
             folder1.LocalId
@@ -219,7 +214,7 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
             folder2.LocalId
         );
 
-        var pendingMoves = this.articleChanges!.ListPendingArticleMoves();
+        var pendingMoves = this.articleChanges.ListPendingArticleMoves();
         Assert.Equal(1, pendingMoves.Count);
 
         Assert.Equal(article.Id, pendingMoves[0].ArticleId);
@@ -229,15 +224,15 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
     [Fact]
     public void LikingUnlikedArticleCreatesPendingEdit()
     {
-        var article = this.articles!.AddArticleToFolder(
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
         this.articles.LikeArticle(article.Id);
 
-        var pendingStateChanges = this.articleChanges!.ListPendingArticleStateChanges();
+        var pendingStateChanges = this.articleChanges.ListPendingArticleStateChanges();
         Assert.Equal(1, pendingStateChanges.Count);
         Assert.Equal(article.Id, pendingStateChanges[0].ArticleId);
         Assert.True(pendingStateChanges[0].Liked);
@@ -246,29 +241,29 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
     [Fact]
     public void LikingLikedArticleDoesNotCreatePendingEdit()
     {
-        var article = this.articles!.AddArticleToFolder(
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle() with { liked = true },
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
         this.articles.LikeArticle(article.Id);
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
     }
 
     [Fact]
     public void UnlikingLikedArticleCreatesPendingEdit()
     {
-        var article = this.articles!.AddArticleToFolder(
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle() with { liked = true },
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
         this.articles.UnlikeArticle(article.Id);
 
-        var pendingStateChanges = this.articleChanges!.ListPendingArticleStateChanges();
+        var pendingStateChanges = this.articleChanges.ListPendingArticleStateChanges();
         Assert.Equal(1, pendingStateChanges.Count);
         Assert.Equal(article.Id, pendingStateChanges[0].ArticleId);
         Assert.False(pendingStateChanges[0].Liked);
@@ -277,28 +272,28 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
     [Fact]
     public void UnlikingUnlikedArticleDoesNotCreatePendingEdit()
     {
-        var article = this.articles!.AddArticleToFolder(
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
         this.articles.UnlikeArticle(article.Id);
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
     }
 
     [Fact]
     public void UnlikingLikedArticleWithPendingEditRemovesPendingEdit()
     {
-        var article = this.articles!.AddArticleToFolder(
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
         this.articles.LikeArticle(article.Id);
-        Assert.NotEmpty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.NotEmpty(this.articleChanges.ListPendingArticleStateChanges());
 
         this.articles.UnlikeArticle(article.Id);
         Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
@@ -307,14 +302,14 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
     [Fact]
     public void LikingUnlikedArticleWithPendingEditRemovesPendingEdit()
     {
-        var article = this.articles!.AddArticleToFolder(
+        var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle() with { liked = true },
             WellKnownLocalFolderIds.Unread
         );
 
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
         this.articles.UnlikeArticle(article.Id);
-        Assert.NotEmpty(this.articleChanges!.ListPendingArticleStateChanges());
+        Assert.NotEmpty(this.articleChanges.ListPendingArticleStateChanges());
 
         this.articles.LikeArticle(article.Id);
         Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
@@ -324,18 +319,17 @@ public sealed class ArticleLedgerTests : IAsyncLifetime
     public void LedgerDoesNotOperateAfterBeingDisposed()
     {
         this.ledger?.Dispose();
-        this.ledger = null;
 
-        var folder = this.folders!.CreateFolder("Sample");
-        var article = this.articles!.AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
+        var folder = this.folders.CreateFolder("Sample");
+        var article = this.articles.AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
 
-        this.articles!.LikeArticle(article.Id);
-        Assert.Empty(this.articleChanges!.ListPendingArticleStateChanges());
+        this.articles.LikeArticle(article.Id);
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
 
         this.articles.MoveArticleToFolder(article.Id, folder.LocalId);
-        Assert.Empty(this.articleChanges!.ListPendingArticleMoves());
+        Assert.Empty(this.articleChanges.ListPendingArticleMoves());
 
-        this.articles!.DeleteArticle(article.Id);
+        this.articles.DeleteArticle(article.Id);
         Assert.Empty(this.articleChanges.ListPendingArticleDeletes());
     }
 }

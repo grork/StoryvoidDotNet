@@ -3,27 +3,26 @@ using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
-public sealed class FolderDatabaseTests : IAsyncLifetime
+public sealed class FolderDatabaseTests : IDisposable
 {
-    private IInstapaperDatabase? instapaperDb;
-    private IFolderDatabaseWithTransactionEvents? db;
+    private IInstapaperDatabase instapaperDb;
+    private IFolderDatabaseWithTransactionEvents db;
 
-    public async Task InitializeAsync()
+    public FolderDatabaseTests()
     {
-        this.instapaperDb = await TestUtilities.GetDatabase();
-        this.db = this.instapaperDb.FolderDatabase as IFolderDatabaseWithTransactionEvents;
+        this.instapaperDb = TestUtilities.GetDatabase();
+        this.db = (IFolderDatabaseWithTransactionEvents)this.instapaperDb.FolderDatabase;
     }
 
-    public Task DisposeAsync()
+    public void Dispose()
     {
-        this.instapaperDb?.Dispose();
-        return Task.CompletedTask;
+        this.instapaperDb.Dispose();
     }
 
     [Fact]
     public void DefaultFoldersAreCreated()
     {
-        IList<DatabaseFolder> result = this.db!.ListAllFolders();
+        IList<DatabaseFolder> result = this.db.ListAllFolders();
         Assert.Equal(2, result.Count);
 
         var unreadFolder = result.Where((f) => f.ServiceId == WellKnownServiceFolderIds.Unread).First()!;
@@ -37,7 +36,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void DefaultFoldersAreSortedCorrectly()
     {
-        IList<DatabaseFolder> result = this.db!.ListAllFolders();
+        IList<DatabaseFolder> result = this.db.ListAllFolders();
         Assert.Equal(2, result.Count);
 
         var firstFolder = result[0];
@@ -51,7 +50,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void CanGetSingleDefaultFolderByServiceId()
     {
-        var folder = db!.GetFolderByServiceId(WellKnownServiceFolderIds.Unread);
+        var folder = this.db.GetFolderByServiceId(WellKnownServiceFolderIds.Unread);
 
         Assert.NotNull(folder);
         Assert.Equal("Home", folder!.Title);
@@ -62,8 +61,8 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void CanGetSingleDefaultFolderByLocalId()
     {
-        var folder = this.db!.GetFolderByServiceId(WellKnownServiceFolderIds.Unread);
-        folder = this.db!.GetFolderByLocalId(folder!.LocalId);
+        var folder = this.db.GetFolderByServiceId(WellKnownServiceFolderIds.Unread);
+        folder = this.db.GetFolderByLocalId(folder!.LocalId);
 
         Assert.NotNull(folder);
         Assert.Equal("Home", folder!.Title);
@@ -73,7 +72,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void GettingFolderThatDoesntExistByServiceIdDoesntReturnAnything()
     {
-        var folder = this.db!.GetFolderByServiceId(1);
+        var folder = this.db.GetFolderByServiceId(1);
 
         Assert.Null(folder);
     }
@@ -81,7 +80,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void GettingFolderThatDoesntExistByLocalIdDoesntReturnAnything()
     {
-        var folder = this.db!.GetFolderByLocalId(5);
+        var folder = this.db.GetFolderByLocalId(5);
 
         Assert.Null(folder);
     }
@@ -90,17 +89,17 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void CanAddFolder()
     {
         // Create folder; check results are returned
-        var addedFolder = this.db!.CreateFolder("Sample");
+        var addedFolder = this.db.CreateFolder("Sample");
         Assert.Null(addedFolder.ServiceId);
         Assert.Equal("Sample", addedFolder.Title);
         Assert.NotEqual(0L, addedFolder.LocalId);
 
         // Request the folder explicitily, check it's data
-        DatabaseFolder folder = (this.db!.GetFolderByLocalId(addedFolder.LocalId))!;
+        DatabaseFolder folder = (this.db.GetFolderByLocalId(addedFolder.LocalId))!;
         Assert.Equal(addedFolder, folder);
 
         // Check it comes back when listing all folders
-        var allFolders = this.db!.ListAllFolders();
+        var allFolders = this.db.ListAllFolders();
         Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
         Assert.Equal(3, allFolders.Count);
     }
@@ -109,10 +108,10 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void CanGetSingleDefaultFolderByTitle()
     {
         // Create folder; check results are returned
-        var addedFolder = this.db!.CreateFolder("Sample");
+        var addedFolder = this.db.CreateFolder("Sample");
 
         // Request the folder explicitily, check it's data
-        DatabaseFolder folder = this.db!.GetFolderByTitle("Sample")!;
+        DatabaseFolder folder = this.db.GetFolderByTitle("Sample")!;
         Assert.Equal(addedFolder.LocalId, folder.LocalId);
     }
 
@@ -121,9 +120,9 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     {
         string? eventPayload = null;
 
-        this.db!.FolderAddedWithinTransaction += (_, addedFolder) => eventPayload = addedFolder;
+        this.db.FolderAddedWithinTransaction += (_, addedFolder) => eventPayload = addedFolder;
 
-        var addedFolder = this.db!.CreateFolder("Sample");
+        var addedFolder = this.db.CreateFolder("Sample");
         Assert.Equal(addedFolder.Title, eventPayload);
     }
 
@@ -131,18 +130,18 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void CanAddMultipleFolders()
     {
         // Create folder; check results are returned
-        var addedFolder = this.db!.CreateFolder("Sample");
+        var addedFolder = this.db.CreateFolder("Sample");
         Assert.Null(addedFolder.ServiceId);
         Assert.Equal("Sample", addedFolder.Title);
         Assert.NotEqual(0L, addedFolder.LocalId);
 
-        var addedFolder2 = this.db!.CreateFolder("Sample2");
+        var addedFolder2 = this.db.CreateFolder("Sample2");
         Assert.Null(addedFolder2.ServiceId);
         Assert.Equal("Sample2", addedFolder2.Title);
         Assert.NotEqual(0L, addedFolder2.LocalId);
 
         // Check it comes back when listing all folders
-        var allFolders = this.db!.ListAllFolders();
+        var allFolders = this.db.ListAllFolders();
         Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
         Assert.Equal(4, allFolders.Count);
     }
@@ -152,10 +151,10 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     {
         var eventPayloads = new List<string>();
 
-        this.db!.FolderAddedWithinTransaction += (_, addedFolder) => eventPayloads.Add(addedFolder);
+        this.db.FolderAddedWithinTransaction += (_, addedFolder) => eventPayloads.Add(addedFolder);
 
-        var firstFolder = this.db!.CreateFolder("Sample");
-        var secondFolder = this.db!.CreateFolder("Sample2");
+        var firstFolder = this.db.CreateFolder("Sample");
+        var secondFolder = this.db.CreateFolder("Sample2");
 
         Assert.Equal(2, eventPayloads.Count);
         Assert.Equal(firstFolder.Title, eventPayloads[0]);
@@ -166,11 +165,11 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void AddingFolderWithDuplicateTitleFails()
     {
         // Create folder; then created it again, expecting it to fail
-        _ = this.db!.CreateFolder("Sample");
-        Assert.Throws<DuplicateNameException>(() => this.db!.CreateFolder("Sample"));
+        _ = this.db.CreateFolder("Sample");
+        Assert.Throws<DuplicateNameException>(() => this.db.CreateFolder("Sample"));
 
         // Check a spurious folder wasn't created
-        var allFolders = this.db!.ListAllFolders();
+        var allFolders = this.db.ListAllFolders();
         Assert.Equal(3, allFolders.Count);
     }
 
@@ -179,10 +178,10 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     {
         var eventPayloads = new List<string>();
 
-        this.db!.FolderAddedWithinTransaction += (_, addedFolder) => eventPayloads.Add(addedFolder);
+        this.db.FolderAddedWithinTransaction += (_, addedFolder) => eventPayloads.Add(addedFolder);
 
-        var firstFolder = this.db!.CreateFolder("Sample");
-        Assert.Throws<DuplicateNameException>(() => this.db!.CreateFolder("Sample"));
+        var firstFolder = this.db.CreateFolder("Sample");
+        Assert.Throws<DuplicateNameException>(() => this.db.CreateFolder("Sample"));
 
         Assert.Single(eventPayloads);
         Assert.Equal(firstFolder.Title, eventPayloads[0]);
@@ -192,7 +191,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void CanAddFolderWithAllServiceInformation()
     {
         // Create folder; check results are returned
-        DatabaseFolder addedFolder = this.db!.AddKnownFolder(
+        DatabaseFolder addedFolder = this.db.AddKnownFolder(
             title: "Sample",
             serviceId: 10L,
             position: 9L,
@@ -206,11 +205,11 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         Assert.True(addedFolder.ShouldSync);
 
         // Request the folder explicitily, check it's data
-        DatabaseFolder folder = (this.db!.GetFolderByLocalId(addedFolder.LocalId))!;
+        DatabaseFolder folder = (this.db.GetFolderByLocalId(addedFolder.LocalId))!;
         Assert.Equal(addedFolder, folder);
 
         // Check it comes back when listing all folders
-        var allFolders = this.db!.ListAllFolders();
+        var allFolders = this.db.ListAllFolders();
         var folderFromList = allFolders.Where((f) => f.LocalId == addedFolder.LocalId).FirstOrDefault();
         Assert.Equal(addedFolder, folderFromList);
     }
@@ -219,14 +218,14 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void AddFlderDuplicateTitleUsingServiceInformationThrows()
     {
         // Create folder; check results are returned
-        var addedFolder = this.db!.AddKnownFolder(
+        var addedFolder = this.db.AddKnownFolder(
             title: "Sample",
             serviceId: 10L,
             position: 9L,
             shouldSync: true
         );
 
-        Assert.Throws<DuplicateNameException>(() => this.db!.AddKnownFolder(
+        Assert.Throws<DuplicateNameException>(() => this.db.AddKnownFolder(
             title: addedFolder.Title,
             serviceId: addedFolder.ServiceId!.Value,
             position: addedFolder.Position,
@@ -234,7 +233,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         ));
 
         // Check it comes back when listing all folders
-        var allFolders = this.db!.ListAllFolders();
+        var allFolders = this.db.ListAllFolders();
         Assert.Equal(3, allFolders.Count);
     }
 
@@ -242,7 +241,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void CanUpdateAddedFolderWithFullSetOfInformation()
     {
         // Create local only folder
-        var folder = this.db!.CreateFolder("Sample");
+        var folder = this.db.CreateFolder("Sample");
         Assert.Null(folder.ServiceId);
         Assert.False(folder.IsOnService);
 
@@ -271,10 +270,10 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void UpdatingFolderThatDoesntExistFails()
     {
-        var preCount = this.db!.ListAllFolders().Count;
+        var preCount = this.db.ListAllFolders().Count;
         Assert.Throws<FolderNotFoundException>(() =>
         {
-            _ = db!.UpdateFolder(
+            _ = this.db.UpdateFolder(
                 localId: 9,
                 serviceId: 9L,
                 title: "Sample2",
@@ -284,7 +283,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         });
 
         // Check there wasn't one created
-        var postCount = this.db!.ListAllFolders().Count;
+        var postCount = this.db.ListAllFolders().Count;
         Assert.Equal(preCount, postCount);
     }
 
@@ -292,17 +291,17 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void CanDeleteEmptyFolder()
     {
         // Create folder; check results are returned
-        var addedFolder = this.db!.AddKnownFolder(
+        var addedFolder = this.db.AddKnownFolder(
             title: "Sample",
             serviceId: 10L,
             position: 9L,
             shouldSync: true
         );
 
-        this.db!.DeleteFolder(addedFolder.LocalId);
+        this.db.DeleteFolder(addedFolder.LocalId);
 
         // Verify folder is missing
-        var folders = this.db!.ListAllFolders();
+        var folders = this.db.ListAllFolders();
         Assert.Equal(2, folders.Count);
     }
 
@@ -310,7 +309,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void FolderWillBeDeletedWithinTransactionEventRaised()
     {
         // Create folder; check results are returned
-        var addedFolder = this.db!.AddKnownFolder(
+        var addedFolder = this.db.AddKnownFolder(
             title: "Sample",
             serviceId: 10L,
             position: 9L,
@@ -318,9 +317,9 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         );
 
         DatabaseFolder? folderToBeDeleted = null;
-        this.db!.FolderWillBeDeletedWithinTransaction += (_, folder) => folderToBeDeleted = folder;
+        this.db.FolderWillBeDeletedWithinTransaction += (_, folder) => folderToBeDeleted = folder;
 
-        this.db!.DeleteFolder(addedFolder.LocalId);
+        this.db.DeleteFolder(addedFolder.LocalId);
 
         Assert.Equal(addedFolder, folderToBeDeleted);
     }
@@ -329,7 +328,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void FolderDeletedWithinTransactionEventRaised()
     {
         // Create folder; check results are returned
-        var addedFolder = this.db!.AddKnownFolder(
+        var addedFolder = this.db.AddKnownFolder(
             title: "Sample",
             serviceId: 10L,
             position: 9L,
@@ -337,9 +336,9 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
         );
 
         DatabaseFolder? folderDeleted = null;
-        this.db!.FolderDeletedWithinTransaction += (_, folder) => folderDeleted = folder;
+        this.db.FolderDeletedWithinTransaction += (_, folder) => folderDeleted = folder;
 
-        this.db!.DeleteFolder(addedFolder.LocalId);
+        this.db.DeleteFolder(addedFolder.LocalId);
 
         Assert.Equal(addedFolder, folderDeleted);
     }
@@ -348,7 +347,7 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void FolderWillBeAndDeletedWithinTransactionEventsRaised()
     {
         // Create folder; check results are returned
-        var addedFolder = this.db!.AddKnownFolder(
+        var addedFolder = this.db.AddKnownFolder(
             title: "Sample",
             serviceId: 10L,
             position: 9L,
@@ -357,11 +356,11 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
 
         DatabaseFolder? folderToBeDeleted = null;
         DatabaseFolder? folderDeleted = null;
-        this.db!.FolderWillBeDeletedWithinTransaction += (_, folder) => folderToBeDeleted = folder;
-        this.db!.FolderDeletedWithinTransaction += (_, folder) => folderDeleted = folder;
+        this.db.FolderWillBeDeletedWithinTransaction += (_, folder) => folderToBeDeleted = folder;
+        this.db.FolderDeletedWithinTransaction += (_, folder) => folderDeleted = folder;
 
 
-        this.db!.DeleteFolder(addedFolder.LocalId);
+        this.db.DeleteFolder(addedFolder.LocalId);
 
         Assert.Equal(addedFolder, folderToBeDeleted);
         Assert.Equal(addedFolder, folderDeleted);
@@ -371,15 +370,15 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void DeletingMissingFolderNoOps()
     {
-        this.db!.DeleteFolder(999);
+        this.db.DeleteFolder(999);
     }
 
     [Fact]
     public void FolderWillBeDeletedWithinTransactionEventNotRaisedWhenNoFolderToDelete()
     {
         var wasRaised = false;
-        this.db!.FolderWillBeDeletedWithinTransaction += (_, _) => wasRaised = true;
-        this.db!.DeleteFolder(999);
+        this.db.FolderWillBeDeletedWithinTransaction += (_, _) => wasRaised = true;
+        this.db.DeleteFolder(999);
 
         Assert.False(wasRaised);
     }
@@ -388,8 +387,8 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void FolderDeletedWithinTransacationEventNotRaisedWhenNoFolderToDelete()
     {
         var wasRaised = false;
-        this.db!.FolderDeletedWithinTransaction += (_, _) => wasRaised = true;
-        this.db!.DeleteFolder(999);
+        this.db.FolderDeletedWithinTransaction += (_, _) => wasRaised = true;
+        this.db.DeleteFolder(999);
 
         Assert.False(wasRaised);
     }
@@ -399,10 +398,10 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     {
         var willBeDeletedRaised = false;
         var deletedRaised = false;
-        this.db!.FolderWillBeDeletedWithinTransaction += (_, _) => willBeDeletedRaised = true;
-        this.db!.FolderDeletedWithinTransaction += (_, _) => deletedRaised = true;
+        this.db.FolderWillBeDeletedWithinTransaction += (_, _) => willBeDeletedRaised = true;
+        this.db.FolderDeletedWithinTransaction += (_, _) => deletedRaised = true;
 
-        this.db!.DeleteFolder(999);
+        this.db.DeleteFolder(999);
 
         Assert.False(willBeDeletedRaised);
         Assert.False(deletedRaised);
@@ -411,15 +410,15 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void DeletingUnreadFolderThrows()
     {
-        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Unread));
+        Assert.Throws<InvalidOperationException>(() => this.db.DeleteFolder(WellKnownLocalFolderIds.Unread));
     }
 
     [Fact]
     public void DeletingUnreadFolderDoesntRaiseWillDeleteWithinTransacationEvent()
     {
         var wasRaised = false;
-        this.db!.FolderWillBeDeletedWithinTransaction += (_, _) => wasRaised = true;
-        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Unread));
+        this.db.FolderWillBeDeletedWithinTransaction += (_, _) => wasRaised = true;
+        Assert.Throws<InvalidOperationException>(() => this.db.DeleteFolder(WellKnownLocalFolderIds.Unread));
         Assert.False(wasRaised);
     }
 
@@ -427,8 +426,8 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void DeletingUnreadFolderDoesntRaiseDeletedWithinTransactionEvent()
     {
         var wasRaised = false;
-        this.db!.FolderDeletedWithinTransaction += (_, _) => wasRaised = true;
-        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Unread));
+        this.db.FolderDeletedWithinTransaction += (_, _) => wasRaised = true;
+        Assert.Throws<InvalidOperationException>(() => this.db.DeleteFolder(WellKnownLocalFolderIds.Unread));
         Assert.False(wasRaised);
     }
 
@@ -437,9 +436,9 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     {
         var willDeleteRaised = false;
         var deletedRaised = false;
-        this.db!.FolderWillBeDeletedWithinTransaction += (_, _) => willDeleteRaised = true;
-        this.db!.FolderDeletedWithinTransaction += (_, _) => deletedRaised = true;
-        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Unread));
+        this.db.FolderWillBeDeletedWithinTransaction += (_, _) => willDeleteRaised = true;
+        this.db.FolderDeletedWithinTransaction += (_, _) => deletedRaised = true;
+        Assert.Throws<InvalidOperationException>(() => this.db.DeleteFolder(WellKnownLocalFolderIds.Unread));
         Assert.False(willDeleteRaised);
         Assert.False(deletedRaised);
     }
@@ -447,15 +446,15 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     [Fact]
     public void DeletingArchiveFolderThrows()
     {
-        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Archive));
+        Assert.Throws<InvalidOperationException>(() => this.db.DeleteFolder(WellKnownLocalFolderIds.Archive));
     }
 
     [Fact]
     public void DeletingArchiveFolderDoesntRaiseWillDeleteWithinTransactionEvent()
     {
         var wasRaised = false;
-        this.db!.FolderWillBeDeletedWithinTransaction += (_, _) => wasRaised = true;
-        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Archive));
+        this.db.FolderWillBeDeletedWithinTransaction += (_, _) => wasRaised = true;
+        Assert.Throws<InvalidOperationException>(() => this.db.DeleteFolder(WellKnownLocalFolderIds.Archive));
         Assert.False(wasRaised);
     }
 
@@ -464,9 +463,9 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     {
         var willDeleteRaised = false;
         var deletedRaised = false;
-        this.db!.FolderWillBeDeletedWithinTransaction += (_, _) => willDeleteRaised = true;
-        this.db!.FolderDeletedWithinTransaction += (_, _) => deletedRaised = true;
-        Assert.Throws<InvalidOperationException>(() => this.db!.DeleteFolder(WellKnownLocalFolderIds.Archive));
+        this.db.FolderWillBeDeletedWithinTransaction += (_, _) => willDeleteRaised = true;
+        this.db.FolderDeletedWithinTransaction += (_, _) => deletedRaised = true;
+        Assert.Throws<InvalidOperationException>(() => this.db.DeleteFolder(WellKnownLocalFolderIds.Archive));
         Assert.False(willDeleteRaised);
         Assert.False(deletedRaised);
     }
@@ -475,10 +474,10 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     public void AddingFolderWithoutPositionReturnsAfterWellKnownFolders()
     {
         // Create folder
-        var addedFolder = this.db!.CreateFolder("Sample");
+        var addedFolder = this.db.CreateFolder("Sample");
 
         // Check that the folder order is correct
-        var allFolders = this.db!.ListAllFolders();
+        var allFolders = this.db.ListAllFolders();
         Assert.Equal(WellKnownLocalFolderIds.Unread, allFolders[0].LocalId);
         Assert.Equal(WellKnownLocalFolderIds.Archive, allFolders[1].LocalId);
         Assert.Equal(addedFolder.LocalId, allFolders[2].LocalId);
@@ -489,16 +488,16 @@ public sealed class FolderDatabaseTests : IAsyncLifetime
     {
         // Create two folders, with their position ordering them opposite
         // to insertion order.
-        var firstAddedFolder = this.db!.CreateFolder("Sample 1 - Sorted Second");
-        this.db!.UpdateFolder(firstAddedFolder.LocalId, firstAddedFolder.ServiceId, firstAddedFolder.Title, 99L, firstAddedFolder.ShouldSync);
+        var firstAddedFolder = this.db.CreateFolder("Sample 1 - Sorted Second");
+        this.db.UpdateFolder(firstAddedFolder.LocalId, firstAddedFolder.ServiceId, firstAddedFolder.Title, 99L, firstAddedFolder.ShouldSync);
 
-        var secondAddedFolder = this.db!.CreateFolder("Sample 2 - Sorted First");
-        this.db!.UpdateFolder(secondAddedFolder.LocalId, secondAddedFolder.ServiceId, secondAddedFolder.Title, 11L, secondAddedFolder.ShouldSync);
+        var secondAddedFolder = this.db.CreateFolder("Sample 2 - Sorted First");
+        this.db.UpdateFolder(secondAddedFolder.LocalId, secondAddedFolder.ServiceId, secondAddedFolder.Title, 11L, secondAddedFolder.ShouldSync);
 
-        var thirdAddedFolder = this.db!.CreateFolder("Sample 3 - No position, sorted between well known and explicit positions");
+        var thirdAddedFolder = this.db.CreateFolder("Sample 3 - No position, sorted between well known and explicit positions");
 
         // Check it comes back when listing all folders
-        var allFolders = this.db!.ListAllFolders();
+        var allFolders = this.db.ListAllFolders();
 
         // Check that the folder order is correct
         Assert.Equal(WellKnownLocalFolderIds.Unread, allFolders[0].LocalId);

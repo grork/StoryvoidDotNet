@@ -2,31 +2,30 @@
 
 namespace Codevoid.Test.Storyvoid;
 
-public class LocalOnlyStateTests : IAsyncLifetime
+public class LocalOnlyStateTests : IDisposable
 {
-    private IInstapaperDatabase? instapaperDb;
-    private IArticleDatabase? db;
+    private IInstapaperDatabase instapaperDb;
+    private IArticleDatabase db;
     private IList<DatabaseArticle> sampleArticles = new List<DatabaseArticle>();
 
-    public async Task InitializeAsync()
+    public LocalOnlyStateTests()
     {
-        this.instapaperDb = await TestUtilities.GetDatabase();
+        this.instapaperDb = TestUtilities.GetDatabase();
         this.db = this.instapaperDb.ArticleDatabase;
         this.sampleArticles = this.PopulateDatabaseWithArticles();
     }
 
-    public Task DisposeAsync()
+    public void Dispose()
     {
-        this.instapaperDb?.Dispose();
-        return Task.CompletedTask;
+        this.instapaperDb.Dispose();
     }
 
     public IList<DatabaseArticle> PopulateDatabaseWithArticles()
     {
         var unreadFolder = WellKnownLocalFolderIds.Unread;
-        var article1 = this.db!.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
-        var article2 = this.db!.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
-        var article3 = this.db!.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
+        var article1 = this.db.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
+        var article2 = this.db.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
+        var article3 = this.db.AddArticleToFolder(TestUtilities.GetRandomArticle(), unreadFolder);
 
         return new List<DatabaseArticle> { article1, article2, article3 };
     }
@@ -49,7 +48,7 @@ public class LocalOnlyStateTests : IAsyncLifetime
     [Fact]
     public void RequestingLocalStateForMissingArticleReturnsNothing()
     {
-        var result = this.db!.GetLocalOnlyStateByArticleId(this.sampleArticles.First().Id);
+        var result = this.db.GetLocalOnlyStateByArticleId(this.sampleArticles.First().Id);
         Assert.Null(result);
     }
 
@@ -61,7 +60,7 @@ public class LocalOnlyStateTests : IAsyncLifetime
             ArticleId = this.sampleArticles.First().Id,
         };
 
-        var result = this.db!.AddLocalOnlyStateForArticle(data);
+        var result = this.db.AddLocalOnlyStateForArticle(data);
         Assert.Equal(data.ArticleId, result.ArticleId);
         Assert.Equal(data, result);
     }
@@ -74,7 +73,7 @@ public class LocalOnlyStateTests : IAsyncLifetime
             ArticleId = 99
         };
 
-        var ex = Assert.Throws<ArticleNotFoundException>(() => this.db!.AddLocalOnlyStateForArticle(data));
+        var ex = Assert.Throws<ArticleNotFoundException>(() => this.db.AddLocalOnlyStateForArticle(data));
         Assert.Equal(data.ArticleId, ex.ArticleId);
     }
 
@@ -86,8 +85,8 @@ public class LocalOnlyStateTests : IAsyncLifetime
             ArticleId = this.sampleArticles.First().Id,
         };
 
-        _ = this.db!.AddLocalOnlyStateForArticle(data);
-        var ex = Assert.Throws<LocalOnlyStateExistsException>(() => this.db!.AddLocalOnlyStateForArticle(data));
+        _ = this.db.AddLocalOnlyStateForArticle(data);
+        var ex = Assert.Throws<LocalOnlyStateExistsException>(() => this.db.AddLocalOnlyStateForArticle(data));
         Assert.Equal(data.ArticleId, ex.ArticleId);
     }
 
@@ -99,8 +98,8 @@ public class LocalOnlyStateTests : IAsyncLifetime
         var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
         { ExtractedDescription = extractedDescription };
 
-        _ = this.db!.AddLocalOnlyStateForArticle(data);
-        var result = (this.db!.GetLocalOnlyStateByArticleId(articleId))!;
+        _ = this.db.AddLocalOnlyStateForArticle(data);
+        var result = (this.db.GetLocalOnlyStateByArticleId(articleId))!;
         Assert.Equal(data, result);
     }
 
@@ -113,8 +112,8 @@ public class LocalOnlyStateTests : IAsyncLifetime
         var data = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId) with
         { ExtractedDescription = extractedDescription };
 
-        _ = this.db!.AddLocalOnlyStateForArticle(data);
-        var article = (this.db!.GetArticleById(articleId))!;
+        _ = this.db.AddLocalOnlyStateForArticle(data);
+        var article = (this.db.GetArticleById(articleId))!;
         Assert.True(article.HasLocalState);
         Assert.Equal(data, article.LocalOnlyState!);
     }
@@ -125,8 +124,8 @@ public class LocalOnlyStateTests : IAsyncLifetime
         var articleId = this.sampleArticles.First().Id;
         var articleData = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId);
 
-        _ = this.db!.AddLocalOnlyStateForArticle(articleData);
-        var articles = this.db!.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        _ = this.db.AddLocalOnlyStateForArticle(articleData);
+        var articles = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
 
         var articleWithLocalState = (from a in articles
                                      where a.Id == articleId
@@ -148,12 +147,12 @@ public class LocalOnlyStateTests : IAsyncLifetime
         foreach (var a in this.sampleArticles)
         {
             var data = LocalOnlyStateTests.GetSampleLocalOnlyState(a.Id);
-            _ = this.db!.AddLocalOnlyStateForArticle(data);
+            _ = this.db.AddLocalOnlyStateForArticle(data);
 
             addedLocalState.Add(data);
         }
 
-        var articles = this.db!.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        var articles = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
         var articlesWithLocalState = (from a in articles
                                       where a.HasLocalState
                                       select a);
@@ -174,39 +173,39 @@ public class LocalOnlyStateTests : IAsyncLifetime
     public void CanRemoveLocalOnlyStateForArticleWhenPresent()
     {
         var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-        _ = this.db!.AddLocalOnlyStateForArticle(state);
+        _ = this.db.AddLocalOnlyStateForArticle(state);
 
-        this.db!.DeleteLocalOnlyArticleState(state.ArticleId);
+        this.db.DeleteLocalOnlyArticleState(state.ArticleId);
 
-        var result = this.db!.GetLocalOnlyStateByArticleId(state.ArticleId);
+        var result = this.db.GetLocalOnlyStateByArticleId(state.ArticleId);
         Assert.Null(result);
     }
 
     [Fact]
     public void CanRemoveLocalOnlyStateWhenArticleIsPresentButStateIsnt()
     {
-        this.db!.DeleteLocalOnlyArticleState(this.sampleArticles.First()!.Id);
+        this.db.DeleteLocalOnlyArticleState(this.sampleArticles.First()!.Id);
     }
 
     [Fact]
     public void WhenRemovingStateForArticleThatIsntPresentNoErrorReturned()
     {
-        this.db!.DeleteLocalOnlyArticleState(999L);
+        this.db.DeleteLocalOnlyArticleState(999L);
     }
 
     [Fact]
     public void CanUpdateSingleFieldLocalOnlyStateWithExistingState()
     {
         var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-        _ = this.db!.AddLocalOnlyStateForArticle(state);
+        _ = this.db.AddLocalOnlyStateForArticle(state);
 
         var newState = state with
         {
             ExtractedDescription = "I have been updated"
         };
 
-        var updated = this.db!.UpdateLocalOnlyArticleState(newState);
-        var readFromDatabase = this.db!.GetLocalOnlyStateByArticleId(newState.ArticleId);
+        var updated = this.db.UpdateLocalOnlyArticleState(newState);
+        var readFromDatabase = this.db.GetLocalOnlyStateByArticleId(newState.ArticleId);
 
         Assert.NotEqual(state, updated);
         Assert.Equal(newState, updated);
@@ -217,7 +216,7 @@ public class LocalOnlyStateTests : IAsyncLifetime
     public void CanUpdateAllFieldsFieldLocalOnlyStateWithExistingState()
     {
         var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-        _ = this.db!.AddLocalOnlyStateForArticle(state);
+        _ = this.db.AddLocalOnlyStateForArticle(state);
 
         var newState = state with
         {
@@ -230,8 +229,8 @@ public class LocalOnlyStateTests : IAsyncLifetime
             IncludeInMRU = !state.IncludeInMRU
         };
 
-        var updated = this.db!.UpdateLocalOnlyArticleState(newState);
-        var readFromDatabase = this.db!.GetLocalOnlyStateByArticleId(newState.ArticleId);
+        var updated = this.db.UpdateLocalOnlyArticleState(newState);
+        var readFromDatabase = this.db.GetLocalOnlyStateByArticleId(newState.ArticleId);
 
         Assert.NotEqual(state, updated);
         Assert.Equal(newState, updated);
@@ -242,24 +241,24 @@ public class LocalOnlyStateTests : IAsyncLifetime
     public void UpdatingLocalOnlyStateWhenNoLocalStatePresentThrowsException()
     {
         var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-        Assert.Throws<LocalOnlyStateNotFoundException>(() => this.db!.UpdateLocalOnlyArticleState(state));
+        Assert.Throws<LocalOnlyStateNotFoundException>(() => this.db.UpdateLocalOnlyArticleState(state));
     }
 
     [Fact]
     public void UpdatingLocalOnlyStateWithInvalidArticleIdThrowException()
     {
-        Assert.Throws<ArgumentException>(() => this.db!.UpdateLocalOnlyArticleState(new DatabaseLocalOnlyArticleState()));
+        Assert.Throws<ArgumentException>(() => this.db.UpdateLocalOnlyArticleState(new DatabaseLocalOnlyArticleState()));
     }
 
     [Fact]
     public void DeletingArticleAlsoDeletesLocalOnlyState()
     {
         var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);
-        _ = this.db!.AddLocalOnlyStateForArticle(state);
+        _ = this.db.AddLocalOnlyStateForArticle(state);
 
-        this.db!.DeleteArticle(state.ArticleId);
+        this.db.DeleteArticle(state.ArticleId);
 
-        var result = this.db!.GetLocalOnlyStateByArticleId(state.ArticleId);
+        var result = this.db.GetLocalOnlyStateByArticleId(state.ArticleId);
         Assert.Null(result);
     }
 }

@@ -63,48 +63,44 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase
     /// Opens, creates, or migrates the database
     /// </summary>
     /// <returns>Task that completes when the database is ready</returns>
-    public Task<IInstapaperDatabase> OpenOrCreateDatabaseAsync()
+    public IInstapaperDatabase OpenOrCreateDatabase()
     {
         var c = this.connection;
-        IInstapaperDatabase OpenAndCreateDatabase()
-        {
-            c.Open();
 
-            // Perform any migrations
-            using (var checkIfUpdated = c.CreateCommand("PRAGMA user_version"))
+        c.Open();
+
+        // Perform any migrations
+        using (var checkIfUpdated = c.CreateCommand("PRAGMA user_version"))
+        {
+            var databaseVersion = Convert.ToInt32(checkIfUpdated.ExecuteScalar());
+            if (!IsCurrentDBVersion(databaseVersion))
             {
-                var databaseVersion = Convert.ToInt32(checkIfUpdated.ExecuteScalar());
+                // Database is not the right version, so do a migration
+                var migrateQueryText = File.ReadAllText("migrations/v0-to-v1.sql");
+
+                using var migrate = c.CreateCommand(migrateQueryText);
+                var result = migrate.ExecuteNonQuery();
+                if (result == 0)
+                {
+                    throw new InvalidOperationException("Unable to create database");
+                }
+
+                // Since there may be subtle syntax errors in the
+                // migration file that do not cause an outright failure
+                // in execution, we leverage the fact that the version
+                // bump of the DB is at the end of the script. If the
+                // version doesn't match, we'll fail.
+                databaseVersion = Convert.ToInt32(checkIfUpdated.ExecuteScalar());
                 if (!IsCurrentDBVersion(databaseVersion))
                 {
-                    // Database is not the right version, so do a migration
-                    var migrateQueryText = File.ReadAllText("migrations/v0-to-v1.sql");
-
-                    using var migrate = c.CreateCommand(migrateQueryText);
-                    var result = migrate.ExecuteNonQuery();
-                    if (result == 0)
-                    {
-                        throw new InvalidOperationException("Unable to create database");
-                    }
-
-                    // Since there may be subtle syntax errors in the
-                    // migration file that do not cause an outright failure
-                    // in execution, we leverage the fact that the version
-                    // bump of the DB is at the end of the script. If the
-                    // version doesn't match, we'll fail.
-                    databaseVersion = Convert.ToInt32(checkIfUpdated.ExecuteScalar());
-                    if (!IsCurrentDBVersion(databaseVersion))
-                    {
-                        throw new InvalidOperationException("Unable to create database");
-                    }
+                    throw new InvalidOperationException("Unable to create database");
                 }
             }
-
-            Interlocked.Increment(ref this.initialized);
-
-            return this;
         }
 
-        return Task.Run(OpenAndCreateDatabase);
+        Interlocked.Increment(ref this.initialized);
+
+        return this;
     }
 
     /// <inheritdoc />

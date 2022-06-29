@@ -9,11 +9,11 @@ public static class TestUtilities
     public static readonly Uri BASE_URI = new("https://www.codevoid.net");
     public const string SAMPLE_TITLE = "Codevoid";
 
-    internal static async Task<IInstapaperDatabase> GetDatabase()
+    internal static IInstapaperDatabase GetDatabase()
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         var db = new InstapaperDatabase(connection);
-        return await db.OpenOrCreateDatabaseAsync();
+        return db.OpenOrCreateDatabase();
     }
 
     public static ArticleRecordInformation GetRandomArticle()

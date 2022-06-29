@@ -6,20 +6,20 @@ namespace Codevoid.Test.Storyvoid;
 public sealed class InstapaperDatabaseTests
 {
     [Fact]
-    public async Task CanOpenDatabase()
+    public void CanOpenDatabase()
     {
-        using var db = await TestUtilities.GetDatabase();
+        using var db = TestUtilities.GetDatabase();
         Assert.NotNull(db);
     }
 
     [Fact]
-    public async Task CanReopenDatabase()
+    public void CanReopenDatabase()
     {
         using var connection = new SqliteConnection("Data Source=:memory:");
         var first = new InstapaperDatabase(connection);
-        await first.OpenOrCreateDatabaseAsync();
+        first.OpenOrCreateDatabase();
 
         var second = new InstapaperDatabase(connection);
-        await first.OpenOrCreateDatabaseAsync();
+        second.OpenOrCreateDatabase();
     }
 }
