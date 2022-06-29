@@ -563,7 +563,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     [Fact]
     public void MovingNonExistantArticleToNonExistantFolder()
     {
-        Assert.Throws<FolderNotFoundException>(() => this.db.MoveArticleToFolder(999, 888));
+        Assert.Throws<ArticleNotFoundException>(() => this.db.MoveArticleToFolder(999, 888));
     }
 
     [Fact]
@@ -571,7 +571,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     {
         var eventWasRaised = false;
         this.db.ArticleMovedToFolderWithinTransaction += (_, _) => eventWasRaised = true;
-        Assert.Throws<FolderNotFoundException>(() => this.db.MoveArticleToFolder(999, 888));
+        Assert.Throws<ArticleNotFoundException>(() => this.db.MoveArticleToFolder(999, 888));
         Assert.False(eventWasRaised);
     }
 

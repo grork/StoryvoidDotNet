@@ -4,15 +4,13 @@ using Microsoft.Data.Sqlite;
 namespace Codevoid.Storyvoid;
 
 /// <inheritdoc />
-public class FolderChanges : IFolderChangesDatabase
+internal class FolderChanges : IFolderChangesDatabase
 {
     private IDbConnection connection;
-    private IInstapaperDatabase database;
 
-    private FolderChanges(IDbConnection connection, IInstapaperDatabase database)
+    internal FolderChanges(IDbConnection connection)
     {
         this.connection = connection;
-        this.database = database;
     }
 
     #region Pending Folder Adds
@@ -234,22 +232,4 @@ public class FolderChanges : IFolderChangesDatabase
         return result;
     }
     #endregion
-
-    /// <summary>
-    /// For the supplied DB connection, get an instance of the Pending Folder
-    /// Changes API.
-    /// </summary>
-    /// <param name="connection">
-    /// The opened DB Connection to use to access the database.
-    /// </param>
-    /// <returns>Instance of the the API</returns>
-    public static IFolderChangesDatabase GetPendingFolderChangeDatabase(IDbConnection connection, IInstapaperDatabase database)
-    {
-        if (connection.State != ConnectionState.Open)
-        {
-            throw new InvalidOperationException("Database must be opened");
-        }
-
-        return new FolderChanges(connection, database);
-    }
 }

@@ -4,15 +4,13 @@ using Microsoft.Data.Sqlite;
 namespace Codevoid.Storyvoid;
 
 /// <inheritdoc />
-public class ArticleChanges : IArticleChangesDatabase
+internal class ArticleChanges : IArticleChangesDatabase
 {
     private IDbConnection connection;
-    private IInstapaperDatabase database;
 
-    private ArticleChanges(IDbConnection connection, IInstapaperDatabase database)
+    internal ArticleChanges(IDbConnection connection)
     {
         this.connection = connection;
-        this.database = database;
     }
 
     /// <inheritdoc />
@@ -300,8 +298,21 @@ public class ArticleChanges : IArticleChangesDatabase
             // We need to determine if it's a missing article or a missing
             // folder. The assumption is that if there *is* an article, then it
             // must be the folder thats awol.
-            var article = this.database.ArticleDatabase.GetArticleById(articleId);
-            if(article == null)
+            //
+            // Why aren't we just using the article database wrapper directly?
+            // To break the dependency on that class directly. Sure, taking a
+            // dependency on the DB query itself is... well, a dependency... but
+            // since we're already dependent on the configuration of the DB this
+            // seems a fair trade off to remove the _code_ dependency.
+            var articleExistsCommand = c.CreateCommand(@"
+                SELECT COUNT(id) FROM articles
+                WHERE id = @articleId
+            ");
+
+            articleExistsCommand.AddParameter("@articleId", articleId);
+
+            var article = (long)articleExistsCommand.ExecuteScalar();
+            if(article == 0)
             {
                 throw new ArticleNotFoundException(articleId);
             }
@@ -343,11 +354,6 @@ public class ArticleChanges : IArticleChangesDatabase
     public IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId)
     {
         var c = this.connection;
-
-        if(this.database.FolderDatabase.GetFolderByLocalId(localFolderId) is null)
-        {
-            throw new FolderNotFoundException(localFolderId);
-        }
 
         using var query = c.CreateCommand(@"
             SELECT *
@@ -400,23 +406,5 @@ public class ArticleChanges : IArticleChangesDatabase
         }
 
         return result;
-    }
-
-    /// <summary>
-    /// For the supplied DB connection, get an instance of the Pending Article
-    /// Changes API.
-    /// </summary>
-    /// <param name="connection">
-    /// The opened DB Connection to use to access the database.
-    /// </param>
-    /// <returns>Instance of the the API</returns>
-    public static IArticleChangesDatabase GetPendingArticleChangeDatabase(IDbConnection connection, IInstapaperDatabase instapaperDatabase)
-    {
-        if (connection.State != ConnectionState.Open)
-        {
-            throw new InvalidOperationException("Database must be opened");
-        }
-
-        return new ArticleChanges(connection, instapaperDatabase);
     }
 }

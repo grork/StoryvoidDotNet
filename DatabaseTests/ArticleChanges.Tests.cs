@@ -456,10 +456,11 @@ public sealed class ArticleChangesTests : IDisposable
     }
 
     [Fact]
-    public void ListingPendingArticleMovesForANonExistantFolderThrowsException()
+    public void ListingPendingArticleMovesForANonExistantFolderDoesNotThrowException()
     {
         var changesDb = this.db.ArticleChangesDatabase;
-        Assert.Throws<FolderNotFoundException>(() => changesDb.ListPendingArticleMovesForLocalFolderId(this.SampleFolders.Last().LocalId + 1));
+        var result = changesDb.ListPendingArticleMovesForLocalFolderId(this.SampleFolders.Last().LocalId + 1);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -493,6 +494,6 @@ public sealed class ArticleChangesTests : IDisposable
         var changesDb = this.db.ArticleChangesDatabase;
         _ = changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
 
-        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => this.db.FolderDatabase.DeleteFolder(destinationFolderLocalId));
+        Assert.Throws<InvalidOperationException>(() => this.db.FolderDatabase.DeleteFolder(destinationFolderLocalId));
     }
 }

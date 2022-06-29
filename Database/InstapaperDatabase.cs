@@ -111,7 +111,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase
             if (folderDatabase is null)
             {
                 this.ThrowIfNotReady();
-                folderDatabase = new FolderDatabase(this.connection, this);
+                folderDatabase = new FolderDatabase(this.connection);
             }
 
             return folderDatabase!;
@@ -126,7 +126,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase
             if (this.folderChangesDatabase is null)
             {
                 this.ThrowIfNotReady();
-                this.folderChangesDatabase = FolderChanges.GetPendingFolderChangeDatabase(this.connection, this);
+                this.folderChangesDatabase = new FolderChanges(this.connection);
             }
 
             return this.folderChangesDatabase;
@@ -141,7 +141,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase
             if (this.articleDatabase is null)
             {
                 this.ThrowIfNotReady();
-                this.articleDatabase = new ArticleDatabase(this.connection, this);
+                this.articleDatabase = new ArticleDatabase(this.connection);
             }
 
             return this.articleDatabase;
@@ -156,7 +156,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase
             if (this.articleChangesDatabase is null)
             {
                 this.ThrowIfNotReady();
-                this.articleChangesDatabase = ArticleChanges.GetPendingArticleChangeDatabase(this.connection, this);
+                this.articleChangesDatabase = new ArticleChanges(this.connection);
             }
 
             return this.articleChangesDatabase;

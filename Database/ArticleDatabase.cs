@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid;
 
@@ -7,16 +8,14 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
     private IDbConnection connection;
-    private IInstapaperDatabase database;
 
     public event EventHandler<DatabaseArticle>? ArticleLikeStatusChangedWithinTransaction;
     public event EventHandler<long>? ArticleDeletedWithinTransaction;
     public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMovedToFolderWithinTransaction;
 
-    internal ArticleDatabase(IDbConnection connection, IInstapaperDatabase database)
+    internal ArticleDatabase(IDbConnection connection)
     {
         this.connection = connection;
-        this.database = database;
     }
 
     /// <inheritdoc/>
@@ -142,11 +141,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         var c = this.connection;
         using var t = c.BeginTransaction();
 
-        if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) is null)
-        {
-            throw new FolderNotFoundException(localFolderId);
-        }
-
         using var query = c.CreateCommand(@"
             INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
             VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
@@ -173,7 +167,17 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         pairWithFolderQuery.AddParameter("@articleId", data.id);
         pairWithFolderQuery.AddParameter("@localFolderId", localFolderId);
 
-        pairWithFolderQuery.ExecuteNonQuery();
+        try
+        {
+            pairWithFolderQuery.ExecuteNonQuery();
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
+        {
+            // Assume that this isn't about the article failing the foreign key
+            // constraint
+            throw new FolderNotFoundException(localFolderId);
+        }
 
         var addedArticle = this.GetArticleById(data.id)!;
         t.Commit();
@@ -327,11 +331,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
         using var t = c.BeginTransaction();
 
-        if (this.database.FolderDatabase.GetFolderByLocalId(localFolderId) is null)
-        {
-            throw new FolderNotFoundException(localFolderId);
-        }
-
         if (this.GetArticleById(articleId) is null)
         {
             throw new ArticleNotFoundException(articleId);
@@ -346,15 +345,25 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         query.AddParameter("@articleId", articleId);
         query.AddParameter("@localFolderId", localFolderId);
 
-        var impactedRows = query.ExecuteNonQuery();
-        if(impactedRows > 0)
+        try
         {
-            // Only raise (and get the article) if we actually affected a move
-            var article = this.GetArticleById(articleId)!;
-            this.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
-        }
+            var impactedRows = query.ExecuteNonQuery();
+            if (impactedRows > 0)
+            {
+                // Only raise (and get the article) if we actually affected a move
+                var article = this.GetArticleById(articleId)!;
+                this.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
+            }
 
-        t.Commit();
+            t.Commit();
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
+                                     && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
+        {
+            // Assume that this isn't about the article failing the foreign key
+            // constraint
+            throw new FolderNotFoundException(localFolderId);
+        }
     }
 
     /// <inheritdoc/>

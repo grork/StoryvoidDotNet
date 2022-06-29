@@ -6,16 +6,14 @@ namespace Codevoid.Storyvoid;
 internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 {
     private IDbConnection connection;
-    private IInstapaperDatabase database;
 
     public event EventHandler<string>? FolderAddedWithinTransaction;
     public event EventHandler<DatabaseFolder>? FolderWillBeDeletedWithinTransaction;
     public event EventHandler<DatabaseFolder>? FolderDeletedWithinTransaction;
 
-    public FolderDatabase(IDbConnection connection, IInstapaperDatabase database)
+    public FolderDatabase(IDbConnection connection)
     {
         this.connection = connection;
-        this.database = database;
     }
 
     /// <inheritdoc/>
@@ -281,12 +279,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
         {
-            if(this.database.FolderChangesDatabase.GetPendingFolderAdd(localFolderId) is not null)
-            {
-                throw new InvalidOperationException($"Can't delete folder {localFolderId} that is pending addition. Clear its pending operations first");
-            }
-
-            throw;
+            throw new InvalidOperationException($"Can't delete folder {localFolderId} that is pending operation. Clear its pending operations first", ex);
         }
 
         this.RaiseFolderDeletedWithinTransaction(folder);
