@@ -1,38 +1,42 @@
-﻿using Codevoid.Storyvoid;
+﻿using System.Data;
+using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
 public sealed class FolderChangesTests : IDisposable
 {
-    private IInstapaperDatabase db;
+    private IDbConnection connection;
+    private IFolderChangesDatabase db;
     private DatabaseFolder CustomLocalFolder1;
     private DatabaseFolder CustomLocalFolder2;
 
     public FolderChangesTests()
     {
-        this.db = TestUtilities.GetDatabase();
+        this.connection = TestUtilities.GetConnection();
+        this.db = new FolderChanges(this.connection);
+        var folderDb = new FolderDatabase(this.connection);
 
-        this.CustomLocalFolder1 = this.db.FolderDatabase.CreateFolder("LocalSample1");
-        this.CustomLocalFolder2 = this.db.FolderDatabase.CreateFolder("LocalSample2");
+        this.CustomLocalFolder1 = folderDb.CreateFolder("LocalSample1");
+        this.CustomLocalFolder2 = folderDb.CreateFolder("LocalSample2");
     }
 
     public void Dispose()
     {
-        this.db.Dispose();
+        this.connection.Close();
+        this.connection.Dispose(); 
     }
 
     [Fact]
     public void CanGetFolderChangesDatabase()
     {
-        var changesDb = this.db.FolderChangesDatabase;
-        Assert.NotNull(changesDb);
+        Assert.NotNull(this.db);
     }
 
     #region Pending Folder Adds
     [Fact]
     public void CanCreatePendingFolderAdd()
     {
-        var change = this.db.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
+        var change = this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
         Assert.Equal(this.CustomLocalFolder1.LocalId, change.FolderLocalId);
         Assert.Equal(this.CustomLocalFolder1.Title, change.Title);
     }
@@ -40,63 +44,57 @@ public sealed class FolderChangesTests : IDisposable
     [Fact]
     public void CreatingPendingFolderAddForNonExistentFolderThrows()
     {
-        void Work()
-        {
-            var change = this.db.FolderChangesDatabase.CreatePendingFolderAdd(99L);
-        }
-
-        Assert.Throws<FolderNotFoundException>(Work);
+        Assert.Throws<FolderNotFoundException>(() => this.db.CreatePendingFolderAdd(99L));
     }
 
     [Fact]
     public void CanGetPendingFolderAddByLocalFolderId()
     {
-        var originalChange = this.db.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
-        var readChange = this.db.FolderChangesDatabase.GetPendingFolderAdd(originalChange.FolderLocalId);
+        var originalChange = this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
+        var readChange = this.db.GetPendingFolderAdd(originalChange.FolderLocalId);
         Assert.Equal(originalChange, readChange);
     }
 
     [Fact]
     public void GettingNonExistentPendingFolderAddReturnsNull()
     {
-        var change = this.db.FolderChangesDatabase.GetPendingFolderAdd(99L);
+        var change = this.db.GetPendingFolderAdd(99L);
         Assert.Null(change);
     }
 
     [Fact]
     public void CanRemovePendingFolderAddByLocalFolderId()
     {
-        var change = this.db.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
-        this.db.FolderChangesDatabase.DeletePendingFolderAdd(change.FolderLocalId);
+        var change = this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
+        this.db.DeletePendingFolderAdd(change.FolderLocalId);
     }
 
     [Fact]
     public void RemovingNonExistentPendingFolderAddCompletesWithoutError()
     {
-        this.db.FolderChangesDatabase.DeletePendingFolderAdd(1L);
+        this.db.DeletePendingFolderAdd(1L);
     }
 
     [Fact]
     public void DeletePendingFolderAddIsActuallyRemoved()
     {
-        var change = this.db.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
-        this.db.FolderChangesDatabase.DeletePendingFolderAdd(change.FolderLocalId);
+        var change = this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
+        this.db.DeletePendingFolderAdd(change.FolderLocalId);
 
-        var result = this.db.FolderChangesDatabase.GetPendingFolderAdd(change.FolderLocalId);
+        var result = this.db.GetPendingFolderAdd(change.FolderLocalId);
         Assert.Null(result);
 
-        var results = this.db.FolderChangesDatabase.ListPendingFolderAdds();
+        var results = this.db.ListPendingFolderAdds();
         Assert.Empty(results);
     }
 
     [Fact]
     public void CanListAllPendingFolderAdds()
     {
-        var changes = this.db.FolderChangesDatabase;
-        var change1 = changes.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
-        var change2 = changes.CreatePendingFolderAdd(this.CustomLocalFolder2.LocalId);
+        var change1 = this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
+        var change2 = this.db.CreatePendingFolderAdd(this.CustomLocalFolder2.LocalId);
 
-        var allChanges = changes.ListPendingFolderAdds();
+        var allChanges = this.db.ListPendingFolderAdds();
         Assert.Equal(2, allChanges.Count);
         Assert.Contains(change1, allChanges);
         Assert.Contains(change2, allChanges);
@@ -105,44 +103,34 @@ public sealed class FolderChangesTests : IDisposable
     [Fact]
     public void ListingPendingFolderAddsWithNoAddsCompletesWithZeroResults()
     {
-        var results = this.db.FolderChangesDatabase.ListPendingFolderAdds();
+        var results = this.db.ListPendingFolderAdds();
         Assert.Empty(results);
     }
 
     [Fact]
     public void AddingPendingFolderAddForUnreadFolderShouldFail()
     {
-        void Work()
-        {
-            this.db.FolderChangesDatabase.CreatePendingFolderAdd(WellKnownLocalFolderIds.Unread);
-        }
-
-        Assert.Throws<InvalidOperationException>(Work);
+        Assert.Throws<InvalidOperationException>(() => this.db.CreatePendingFolderAdd(WellKnownLocalFolderIds.Unread));
     }
 
     [Fact]
     public void AddingPendingFolderAddForArchiveFolderShouldFail()
     {
-        void Work()
-        {
-            this.db.FolderChangesDatabase.CreatePendingFolderAdd(WellKnownLocalFolderIds.Archive);
-        }
-
-        Assert.Throws<InvalidOperationException>(Work);
+        Assert.Throws<InvalidOperationException>(() => this.db.CreatePendingFolderAdd(WellKnownLocalFolderIds.Archive));
     }
 
     [Fact]
     public void AddingDuplicatePendingFolderAddShouldFail()
     {
-        _ = this.db.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
-        Assert.Throws<DuplicatePendingFolderAddException>(() => this.db.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId));
+        _ = this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
+        Assert.Throws<DuplicatePendingFolderAddException>(() => this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId));
     }
 
     [Fact]
     public void DeletingLocalFolderWithPendingAddShouldFail()
     {
-        _ = this.db.FolderChangesDatabase.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
-        Assert.Throws<InvalidOperationException>(() => this.db.FolderDatabase.DeleteFolder(this.CustomLocalFolder1.LocalId));
+        _ = this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
+        Assert.Throws<InvalidOperationException>(() => new FolderDatabase(this.connection).DeleteFolder(this.CustomLocalFolder1.LocalId));
     }
     #endregion
 
@@ -151,7 +139,7 @@ public sealed class FolderChangesTests : IDisposable
     public void CanCreatePendingFolderDelete()
     {
         var f = (ServiceId: 1, Title: "Title");
-        var change = this.db.FolderChangesDatabase.CreatePendingFolderDelete(f.ServiceId,
+        var change = this.db.CreatePendingFolderDelete(f.ServiceId,
                                                                                f.Title);
         Assert.NotEqual(0L, change.ServiceId);
         Assert.Equal(f.ServiceId, change.ServiceId);
@@ -162,8 +150,8 @@ public sealed class FolderChangesTests : IDisposable
     public void CanGetPendingFolderDeleteByServiceId()
     {
         var f = (ServiceId: 1, Title: "Title");
-        var originalChange = this.db.FolderChangesDatabase.CreatePendingFolderDelete(f.ServiceId, f.Title);
-        var readChange = this.db.FolderChangesDatabase.GetPendingFolderDelete(originalChange.ServiceId);
+        var originalChange = this.db.CreatePendingFolderDelete(f.ServiceId, f.Title);
+        var readChange = this.db.GetPendingFolderDelete(originalChange.ServiceId);
 
         Assert.Equal(originalChange, readChange);
     }
@@ -172,8 +160,8 @@ public sealed class FolderChangesTests : IDisposable
     public void CanGetPendingFolderDeleteByFolderTitle()
     {
         var f = (ServiceId: 1, Title: "Title");
-        var originalChange = this.db.FolderChangesDatabase.CreatePendingFolderDelete(f.ServiceId, f.Title);
-        var readChange = this.db.FolderChangesDatabase.GetPendingFolderDeleteByTitle(originalChange.Title);
+        var originalChange = this.db.CreatePendingFolderDelete(f.ServiceId, f.Title);
+        var readChange = this.db.GetPendingFolderDeleteByTitle(originalChange.Title);
 
         Assert.Equal(originalChange, readChange);
     }
@@ -181,44 +169,43 @@ public sealed class FolderChangesTests : IDisposable
     [Fact]
     public void GettingNonExistentPendingFolderDeleteReturnsNull()
     {
-        var change = this.db.FolderChangesDatabase.GetPendingFolderDelete(99L);
+        var change = this.db.GetPendingFolderDelete(99L);
         Assert.Null(change);
     }
 
     [Fact]
     public void CanRemovePendingFolderDeleteByServiceId()
     {
-        var change = this.db.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        this.db.FolderChangesDatabase.DeletePendingFolderDelete(change.ServiceId);
+        var change = this.db.CreatePendingFolderDelete(99L, "Title");
+        this.db.DeletePendingFolderDelete(change.ServiceId);
     }
 
     [Fact]
     public void RemovingNonExistentPendingFolderDeleteCompletesWithoutError()
     {
-        this.db.FolderChangesDatabase.DeletePendingFolderDelete(1L);
+        this.db.DeletePendingFolderDelete(1L);
     }
 
     [Fact]
     public void DeletePendingFolderDeleteIsActuallyRemoved()
     {
-        var change = this.db.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        this.db.FolderChangesDatabase.DeletePendingFolderDelete(change.ServiceId);
+        var change = this.db.CreatePendingFolderDelete(99L, "Title");
+        this.db.DeletePendingFolderDelete(change.ServiceId);
 
-        var result = this.db.FolderChangesDatabase.GetPendingFolderDelete(change.ServiceId);
+        var result = this.db.GetPendingFolderDelete(change.ServiceId);
         Assert.Null(result);
 
-        var results = this.db.FolderChangesDatabase.ListPendingFolderDeletes();
+        var results = this.db.ListPendingFolderDeletes();
         Assert.Empty(results);
     }
 
     [Fact]
     public void CanListAllPendingFolderDeletes()
     {
-        var changes = this.db.FolderChangesDatabase;
-        var change1 = changes.CreatePendingFolderDelete(1, "Title");
-        var change2 = changes.CreatePendingFolderDelete(2, "Title2");
+        var change1 = this.db.CreatePendingFolderDelete(1, "Title");
+        var change2 = this.db.CreatePendingFolderDelete(2, "Title2");
 
-        var allChanges = changes.ListPendingFolderDeletes();
+        var allChanges = this.db.ListPendingFolderDeletes();
         Assert.Contains(change1, allChanges);
         Assert.Contains(change2, allChanges);
     }
@@ -226,7 +213,7 @@ public sealed class FolderChangesTests : IDisposable
     [Fact]
     public void ListingPendingFolderDeletesWithNoDeletesCompletesWithZeroResults()
     {
-        var results = this.db.FolderChangesDatabase.ListPendingFolderDeletes();
+        var results = this.db.ListPendingFolderDeletes();
         Assert.Empty(results);
     }
 
@@ -235,7 +222,7 @@ public sealed class FolderChangesTests : IDisposable
     {
         void Work()
         {
-            this.db.FolderChangesDatabase.CreatePendingFolderDelete(WellKnownServiceFolderIds.Unread, "Unread");
+            this.db.CreatePendingFolderDelete(WellKnownServiceFolderIds.Unread, "Unread");
         }
 
         Assert.Throws<InvalidOperationException>(Work);
@@ -246,7 +233,7 @@ public sealed class FolderChangesTests : IDisposable
     {
         void Work()
         {
-            this.db.FolderChangesDatabase.CreatePendingFolderDelete(WellKnownServiceFolderIds.Archive, "Archive");
+            this.db.CreatePendingFolderDelete(WellKnownServiceFolderIds.Archive, "Archive");
         }
 
         Assert.Throws<InvalidOperationException>(Work);
@@ -255,22 +242,22 @@ public sealed class FolderChangesTests : IDisposable
     [Fact]
     public void AddingDuplicatePendingFolderDeleteShouldForServiceId()
     {
-        _ = this.db.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title2"));
+        _ = this.db.CreatePendingFolderDelete(99L, "Title");
+        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db.CreatePendingFolderDelete(99L, "Title2"));
     }
 
     [Fact]
     public void AddingDuplicatePendingFolderDeleteShouldForTitle()
     {
-        _ = this.db.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db.FolderChangesDatabase.CreatePendingFolderDelete(98L, "Title"));
+        _ = this.db.CreatePendingFolderDelete(99L, "Title");
+        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db.CreatePendingFolderDelete(98L, "Title"));
     }
 
     [Fact]
     public void AddingDuplicatePendingFolderDeleteShouldForServiceIdAndTitle()
     {
-        _ = this.db.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title");
-        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db.FolderChangesDatabase.CreatePendingFolderDelete(99L, "Title"));
+        _ = this.db.CreatePendingFolderDelete(99L, "Title");
+        Assert.Throws<DuplicatePendingFolderDeleteException>(() => this.db.CreatePendingFolderDelete(99L, "Title"));
     }
     #endregion
 }

@@ -1,21 +1,25 @@
+using System.Data;
 using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
 public sealed class FolderTransactionTests : IDisposable
 {
-    private IInstapaperDatabase instapaperDb;
+    private IDbConnection connection;
     private IFolderDatabaseWithTransactionEvents db;
+    private IFolderChangesDatabase folderChanges;
 
     public FolderTransactionTests()
     {
-        this.instapaperDb = TestUtilities.GetDatabase();
-        this.db = (IFolderDatabaseWithTransactionEvents)this.instapaperDb.FolderDatabase;
+        this.connection = TestUtilities.GetConnection();
+        this.db = new FolderDatabase(this.connection);
+        this.folderChanges = new FolderChanges(this.connection);
     }
 
     public void Dispose()
     {
-        this.instapaperDb.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     private void ThrowException() => throw new Exception("Sample Exception");
@@ -26,14 +30,14 @@ public sealed class FolderTransactionTests : IDisposable
         this.db.FolderAddedWithinTransaction += (_, folder) =>
         {
             var added = this.db.GetFolderByTitle(folder)!;
-            this.instapaperDb.FolderChangesDatabase.CreatePendingFolderAdd(added.LocalId);
+            this.folderChanges.CreatePendingFolderAdd(added.LocalId);
             this.ThrowException();
         };
 
         Assert.Throws<Exception>(() => this.db.CreateFolder("Sample"));
 
         Assert.Equal(2, this.db.ListAllFolders().Count);
-        Assert.Empty(this.instapaperDb.FolderChangesDatabase.ListPendingFolderAdds());
+        Assert.Empty(this.folderChanges.ListPendingFolderAdds());
     }
 
     [Fact]
@@ -42,37 +46,40 @@ public sealed class FolderTransactionTests : IDisposable
         var createdFolder = this.db.AddKnownFolder("Sample", 10L, 1L, true);
         this.db.FolderWillBeDeletedWithinTransaction += (_, folder) =>
         {
-            this.instapaperDb.FolderChangesDatabase.CreatePendingFolderDelete((createdFolder).ServiceId!.Value, createdFolder.Title);
+            this.folderChanges.CreatePendingFolderDelete((createdFolder).ServiceId!.Value, createdFolder.Title);
             this.ThrowException();
         };
         Assert.Throws<Exception>(() => this.db.DeleteFolder(createdFolder.LocalId));
 
         Assert.Equal(3, this.db.ListAllFolders().Count);
-        Assert.Empty(this.instapaperDb.FolderChangesDatabase.ListPendingFolderDeletes());
+        Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
     }
 }
 
 public sealed class ArticleTransactionTests : IDisposable
 {
-    private IInstapaperDatabase instapaperDb;
+    private IDbConnection connection;
     private IArticleDatabaseWithTransactionEvents db;
+    private IArticleChangesDatabase articleChanges;
     private DatabaseFolder CustomFolder1;
 
     public ArticleTransactionTests()
     {
-        this.instapaperDb = TestUtilities.GetDatabase();
-        this.db = (IArticleDatabaseWithTransactionEvents)this.instapaperDb.ArticleDatabase;
+        this.connection = TestUtilities.GetConnection();
+        this.db = new ArticleDatabase(this.connection);
+        this.articleChanges = new ArticleChanges(this.connection);
 
         // Add sample folders
-        this.CustomFolder1 = this.instapaperDb.FolderDatabase.AddKnownFolder(title: "Sample1",
-                                                              serviceId: 9L,
-                                                              position: 1,
-                                                              shouldSync: true);
+        this.CustomFolder1 = new FolderDatabase(this.connection).AddKnownFolder(title: "Sample1",
+                                                                                serviceId: 9L,
+                                                                                position: 1,
+                                                                                shouldSync: true);
     }
 
     public void Dispose()
     {
-        this.instapaperDb.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     private void ThrowException() => throw new Exception("Sample Exception");
@@ -85,7 +92,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         this.db.ArticleLikeStatusChangedWithinTransaction += (_, article) =>
         {
-            this.instapaperDb.ArticleChangesDatabase.CreatePendingArticleStateChange(article.Id, article.Liked);
+            this.articleChanges.CreatePendingArticleStateChange(article.Id, article.Liked);
             this.ThrowException();
         };
 
@@ -93,7 +100,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         var retreivedArticle = this.db.GetArticleById(randomArticle.id)!;
         Assert.Equal(randomArticle.liked ,retreivedArticle.Liked);
-        Assert.Empty(this.instapaperDb.ArticleChangesDatabase.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
     }
 
     [Fact]
@@ -105,7 +112,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         this.db.ArticleLikeStatusChangedWithinTransaction += (_, article) =>
         {
-            this.instapaperDb.ArticleChangesDatabase.CreatePendingArticleStateChange(article.Id, article.Liked);
+            this.articleChanges.CreatePendingArticleStateChange(article.Id, article.Liked);
             this.ThrowException();
         };
 
@@ -113,7 +120,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         var retreivedArticle = this.db.GetArticleById(randomArticle.id)!;
         Assert.Equal(randomArticle.liked ,retreivedArticle.Liked);
-        Assert.Empty(this.instapaperDb.ArticleChangesDatabase.ListPendingArticleStateChanges());
+        Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
     }
 
     [Fact]
@@ -124,7 +131,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         this.db.ArticleMovedToFolderWithinTransaction += (_, payload) =>
         {
-            this.instapaperDb.ArticleChangesDatabase.CreatePendingArticleMove(payload.Article.Id, payload.DestinationLocalFolderId);
+            this.articleChanges.CreatePendingArticleMove(payload.Article.Id, payload.DestinationLocalFolderId);
             this.ThrowException();
         };
 
@@ -143,7 +150,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         this.db.ArticleDeletedWithinTransaction += (_, articleId) =>
         {
-            this.instapaperDb.ArticleChangesDatabase.CreatePendingArticleDelete(articleId);
+            this.articleChanges.CreatePendingArticleDelete(articleId);
             this.ThrowException();
         };
 

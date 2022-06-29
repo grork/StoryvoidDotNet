@@ -2,51 +2,9 @@
 
 namespace Codevoid.Storyvoid;
 
-internal sealed partial class InstapaperDatabase : IInstapaperDatabase
+internal static class InstapaperDatabase
 {
-    // To help diagnose calls that skipped initialization
-    private int initialized = 0;
-
     private const int CURRENT_DB_VERSION = 1;
-
-    private readonly IDbConnection connection;
-    private IFolderChangesDatabase? folderChangesDatabase;
-    private IArticleChangesDatabase? articleChangesDatabase;
-    private IFolderDatabase? folderDatabase;
-    private IArticleDatabase? articleDatabase;
-
-    public InstapaperDatabase(IDbConnection connection)
-    {
-        this.connection = connection;
-    }
-
-    private bool alreadyDisposed;
-    public void Dispose()
-    {
-        if (alreadyDisposed)
-        {
-            return;
-        }
-
-        this.alreadyDisposed = true;
-        this.initialized = 0;
-        this.folderChangesDatabase = null;
-
-        this.connection.Close();
-        this.connection.Dispose();
-    }
-
-    /// <summary>
-    /// Checks if we're ready to be used for accessing data, and throws if not
-    /// </summary>
-    private void ThrowIfNotReady()
-    {
-        var state = this.initialized;
-        if (state < 1)
-        {
-            throw new InvalidOperationException("Database must be initialized before use");
-        }
-    }
 
     /// <summary>
     /// Checks if the supplied version is the version of the DB we are
@@ -59,18 +17,12 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase
         return (CURRENT_DB_VERSION == version);
     }
 
-    /// <summary>
-    /// Opens, creates, or migrates the database
-    /// </summary>
-    /// <returns>Task that completes when the database is ready</returns>
-    public IInstapaperDatabase OpenOrCreateDatabase()
+    public static void OpenOrCreateDatabase(IDbConnection connection)
     {
-        var c = this.connection;
-
-        c.Open();
+        connection.Open();
 
         // Perform any migrations
-        using (var checkIfUpdated = c.CreateCommand("PRAGMA user_version"))
+        using (var checkIfUpdated = connection.CreateCommand("PRAGMA user_version"))
         {
             var databaseVersion = Convert.ToInt32(checkIfUpdated.ExecuteScalar());
             if (!IsCurrentDBVersion(databaseVersion))
@@ -78,7 +30,7 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase
                 // Database is not the right version, so do a migration
                 var migrateQueryText = File.ReadAllText("migrations/v0-to-v1.sql");
 
-                using var migrate = c.CreateCommand(migrateQueryText);
+                using var migrate = connection.CreateCommand(migrateQueryText);
                 var result = migrate.ExecuteNonQuery();
                 if (result == 0)
                 {
@@ -96,70 +48,6 @@ internal sealed partial class InstapaperDatabase : IInstapaperDatabase
                     throw new InvalidOperationException("Unable to create database");
                 }
             }
-        }
-
-        Interlocked.Increment(ref this.initialized);
-
-        return this;
-    }
-
-    /// <inheritdoc />
-    public IFolderDatabase FolderDatabase
-    {
-        get
-        {
-            if (folderDatabase is null)
-            {
-                this.ThrowIfNotReady();
-                folderDatabase = new FolderDatabase(this.connection);
-            }
-
-            return folderDatabase!;
-        }
-    }
-
-    /// <inheritdoc/>
-    public IFolderChangesDatabase FolderChangesDatabase
-    {
-        get
-        {
-            if (this.folderChangesDatabase is null)
-            {
-                this.ThrowIfNotReady();
-                this.folderChangesDatabase = new FolderChanges(this.connection);
-            }
-
-            return this.folderChangesDatabase;
-        }
-    }
-
-    /// <inheritdoc />
-    public IArticleDatabase ArticleDatabase
-    {
-        get
-        {
-            if (this.articleDatabase is null)
-            {
-                this.ThrowIfNotReady();
-                this.articleDatabase = new ArticleDatabase(this.connection);
-            }
-
-            return this.articleDatabase;
-        }
-    }
-
-    /// <inheritdoc/>
-    public IArticleChangesDatabase ArticleChangesDatabase
-    {
-        get
-        {
-            if (this.articleChangesDatabase is null)
-            {
-                this.ThrowIfNotReady();
-                this.articleChangesDatabase = new ArticleChanges(this.connection);
-            }
-
-            return this.articleChangesDatabase;
         }
     }
 }

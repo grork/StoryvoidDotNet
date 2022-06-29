@@ -1,3 +1,4 @@
+using System.Data;
 using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
@@ -7,11 +8,16 @@ public sealed class ArticleChangesTests : IDisposable
     private IList<DatabaseArticle> SampleArticles = new List<DatabaseArticle>();
     private IList<DatabaseFolder> SampleFolders = new List<DatabaseFolder>();
 
-    private IInstapaperDatabase db;
+    private IDbConnection connection;
+    private IArticleChangesDatabase articleChangesDb;
 
     public ArticleChangesTests()
     {
-        this.db = TestUtilities.GetDatabase();
+        this.connection = TestUtilities.GetConnection();
+        this.articleChangesDb = new ArticleChanges(this.connection);
+
+        var folderDb = new FolderDatabase(this.connection);
+
         this.SampleArticles = new List<DatabaseArticle>() {
             this.AddRandomArticle(),
             this.AddRandomArticle(),
@@ -20,13 +26,14 @@ public sealed class ArticleChangesTests : IDisposable
 
         for (var index = 1; index < 3; index += 1)
         {
-            this.SampleFolders.Add(this.db.FolderDatabase.CreateFolder(index.ToString()));
+            this.SampleFolders.Add(folderDb.CreateFolder(index.ToString()));
         }
     }
 
     private DatabaseArticle AddRandomArticle()
     {
-        var article = this.db.ArticleDatabase.AddArticleToFolder(
+        var articleDb = new ArticleDatabase(this.connection);
+        var article = articleDb.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
         );
@@ -36,21 +43,21 @@ public sealed class ArticleChangesTests : IDisposable
 
     public void Dispose()
     {
-        this.db.Dispose();
+        // Clean up
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     [Fact]
     public void CanGetFolderChangesDatabase()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        Assert.NotNull(changesDb);
+        Assert.NotNull(this.articleChangesDb);
     }
 
     [Fact]
     public void CanAddPendingUrlWithTitle()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.CreatePendingArticleAdd(
+        var result = this.articleChangesDb.CreatePendingArticleAdd(
             TestUtilities.BASE_URI,
             TestUtilities.SAMPLE_TITLE
         );
@@ -62,8 +69,7 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void CanAddPendingUrlWithoutTitle()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
+        var result = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
         Assert.Equal(TestUtilities.BASE_URI, result.Url);
         Assert.Null(result.Title);
     }
@@ -71,33 +77,29 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void AddingArticleWithTitleExistingUrlFails()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
-        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE));
+        _ = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        Assert.Throws<DuplicatePendingArticleAddException>(() => this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE));
     }
 
     [Fact]
     public void AddingArticleWithoutTitleExistingUrlFails()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
-        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null));
+        _ = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
+        Assert.Throws<DuplicatePendingArticleAddException>(() => this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null));
     }
 
     [Fact]
     public void AddingArticleWithDifferentTitleExistingUrlFails()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
-        Assert.Throws<DuplicatePendingArticleAddException>(() => changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null));
+        _ = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        Assert.Throws<DuplicatePendingArticleAddException>(() => this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null));
     }
 
     [Fact]
     public void CanRetrieveArticleByUrlWithTitle()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
-        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
+        _ = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        var result = this.articleChangesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.NotNull(result);
         Assert.Equal(TestUtilities.BASE_URI, result!.Url);
         Assert.Equal(TestUtilities.SAMPLE_TITLE, result!.Title);
@@ -106,9 +108,8 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void CanRetrieveArticleByUrlWithoutTitle()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
-        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
+        _ = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, null);
+        var result = this.articleChangesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.NotNull(result);
         Assert.Equal(TestUtilities.BASE_URI, result!.Url);
         Assert.Null(result!.Title);
@@ -118,19 +119,17 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void TryingToRetrieveNonExistantUrlReturnsNull()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
+        var result = this.articleChangesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.Null(result);
     }
 
     [Fact]
     public void CanListPendingArticleAdds()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var articleOne = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
-        var articleTwo = changesDb.CreatePendingArticleAdd(new(TestUtilities.BASE_URI, "/somethingelse"), TestUtilities.SAMPLE_TITLE);
+        var articleOne = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        var articleTwo = this.articleChangesDb.CreatePendingArticleAdd(new(TestUtilities.BASE_URI, "/somethingelse"), TestUtilities.SAMPLE_TITLE);
 
-        var result = changesDb.ListPendingArticleAdds();
+        var result = this.articleChangesDb.ListPendingArticleAdds();
         Assert.Equal(2, result.Count);
         Assert.Contains(articleOne, result);
         Assert.Contains(articleTwo, result);
@@ -139,22 +138,20 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void CanDeletePendingArticleAdd()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
-        changesDb.DeletePendingArticleAdd(TestUtilities.BASE_URI);
+        _ = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        this.articleChangesDb.DeletePendingArticleAdd(TestUtilities.BASE_URI);
 
-        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
+        var result = this.articleChangesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.Null(result);
     }
 
     [Fact]
     public void DeletingNonExistantArticleAddSucceeds()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
-        changesDb.DeletePendingArticleAdd(new(TestUtilities.BASE_URI, "/something"));
+        _ = this.articleChangesDb.CreatePendingArticleAdd(TestUtilities.BASE_URI, TestUtilities.SAMPLE_TITLE);
+        this.articleChangesDb.DeletePendingArticleAdd(new(TestUtilities.BASE_URI, "/something"));
 
-        var result = changesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
+        var result = this.articleChangesDb.GetPendingArticleAddByUrl(TestUtilities.BASE_URI);
         Assert.NotNull(result);
     }
 
@@ -162,8 +159,7 @@ public sealed class ArticleChangesTests : IDisposable
     public void CanCreatePendingArticleDelete()
     {
         var sampleArticle = this.SampleArticles.First();
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.CreatePendingArticleDelete(sampleArticle.Id);
+        var result = this.articleChangesDb.CreatePendingArticleDelete(sampleArticle.Id);
         Assert.Equal(sampleArticle.Id, result);
     }
 
@@ -171,25 +167,22 @@ public sealed class ArticleChangesTests : IDisposable
     public void CreatingDuplicatePendingArticleDeleteThrowsException()
     {
         var sampleArticle = this.SampleArticles.First();
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleDelete(sampleArticle.Id);
-        Assert.Throws<DuplicatePendingArticleDeleteException>(() => changesDb.CreatePendingArticleDelete(sampleArticle.Id));
+        _ = this.articleChangesDb.CreatePendingArticleDelete(sampleArticle.Id);
+        Assert.Throws<DuplicatePendingArticleDeleteException>(() => this.articleChangesDb.CreatePendingArticleDelete(sampleArticle.Id));
     }
 
     [Fact]
     public void CanCheckExistenceOfPendingArticleDeleteById()
     {
         var sampleArticle = this.SampleArticles.First();
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleDelete(sampleArticle.Id);
-        Assert.True(changesDb.HasPendingArticleDelete(sampleArticle.Id));
+        _ = this.articleChangesDb.CreatePendingArticleDelete(sampleArticle.Id);
+        Assert.True(this.articleChangesDb.HasPendingArticleDelete(sampleArticle.Id));
     }
 
     [Fact]
     public void CheckingForPendingArticleDeleteThatIsntPresentReturnsFalse()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        Assert.False(changesDb.HasPendingArticleDelete(this.SampleArticles.First().Id));
+        Assert.False(this.articleChangesDb.HasPendingArticleDelete(this.SampleArticles.First().Id));
     }
 
     [Fact]
@@ -197,11 +190,10 @@ public sealed class ArticleChangesTests : IDisposable
     {
         var firstArticleId = this.SampleArticles.First().Id;
         var secondArticleId = this.SampleArticles[1]!.Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleDelete(firstArticleId);
-        _ = changesDb.CreatePendingArticleDelete(secondArticleId);
+        _ = this.articleChangesDb.CreatePendingArticleDelete(firstArticleId);
+        _ = this.articleChangesDb.CreatePendingArticleDelete(secondArticleId);
 
-        var result = changesDb.ListPendingArticleDeletes();
+        var result = this.articleChangesDb.ListPendingArticleDeletes();
         Assert.Equal(2, result.Count);
         Assert.Contains(firstArticleId, result);
         Assert.Contains(secondArticleId, result);
@@ -210,8 +202,7 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void ListingPendingArticleDeletesWhenEmptyReturnsEmptyList()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.ListPendingArticleDeletes();
+        var result = this.articleChangesDb.ListPendingArticleDeletes();
         Assert.Empty(result);
     }
 
@@ -219,26 +210,23 @@ public sealed class ArticleChangesTests : IDisposable
     public void CanDeletePendingArticleDelete()
     {
         var sampleArticleId = this.SampleArticles.First().Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleDelete(sampleArticleId);
-        changesDb.DeletePendingArticleDelete(sampleArticleId);
+        _ = this.articleChangesDb.CreatePendingArticleDelete(sampleArticleId);
+        this.articleChangesDb.DeletePendingArticleDelete(sampleArticleId);
 
-        Assert.False(changesDb.HasPendingArticleDelete(sampleArticleId));
+        Assert.False(this.articleChangesDb.HasPendingArticleDelete(sampleArticleId));
     }
 
     [Fact]
     public void DeletingNonExistentArticleDeleteSucceeds()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        changesDb.DeletePendingArticleDelete(this.SampleArticles.First().Id);
+        this.articleChangesDb.DeletePendingArticleDelete(this.SampleArticles.First().Id);
     }
 
     [Fact]
     public void CanCreatePendingArticleStateLikingChange()
     {
         var sampleArticleId = this.SampleArticles.First().Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.CreatePendingArticleStateChange(sampleArticleId, true);
+        var result = this.articleChangesDb.CreatePendingArticleStateChange(sampleArticleId, true);
         Assert.Equal(sampleArticleId, result.ArticleId);
         Assert.True(result.Liked);
     }
@@ -247,8 +235,7 @@ public sealed class ArticleChangesTests : IDisposable
     public void CanCreatePendingArticleStateUnlikingChange()
     {
         var sampleArticleId = this.SampleArticles.First().Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.CreatePendingArticleStateChange(sampleArticleId, false);
+        var result = this.articleChangesDb.CreatePendingArticleStateChange(sampleArticleId, false);
         Assert.Equal(sampleArticleId, result.ArticleId);
         Assert.False(result.Liked);
     }
@@ -257,27 +244,24 @@ public sealed class ArticleChangesTests : IDisposable
     public void AddingDuplicatePendingArticleStateChangeWithSameLikeStateThrowsException()
     {
         var sampleArticleId = this.SampleArticles.First().Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleStateChange(sampleArticleId, true);
-        Assert.Throws<DuplicatePendingArticleStateChangeException>(() => changesDb.CreatePendingArticleStateChange(sampleArticleId, true));
+        _ = this.articleChangesDb.CreatePendingArticleStateChange(sampleArticleId, true);
+        Assert.Throws<DuplicatePendingArticleStateChangeException>(() => this.articleChangesDb.CreatePendingArticleStateChange(sampleArticleId, true));
     }
 
     [Fact]
     public void AddingDuplicatePendingArticleStateChangeWithDifferentLikeStateThrowsException()
     {
         var sampleArticleId = this.SampleArticles.First().Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleStateChange(sampleArticleId, true);
-        Assert.Throws<DuplicatePendingArticleStateChangeException>(() => changesDb.CreatePendingArticleStateChange(sampleArticleId, false));
+        _ = this.articleChangesDb.CreatePendingArticleStateChange(sampleArticleId, true);
+        Assert.Throws<DuplicatePendingArticleStateChangeException>(() => this.articleChangesDb.CreatePendingArticleStateChange(sampleArticleId, false));
     }
 
     [Fact]
     public void CanRetrievePendingArticleState()
     {
         var sampleArticleId = this.SampleArticles.First().Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleStateChange(sampleArticleId, true);
-        var result = changesDb.GetPendingArticleStateChangeByArticleId(sampleArticleId);
+        _ = this.articleChangesDb.CreatePendingArticleStateChange(sampleArticleId, true);
+        var result = this.articleChangesDb.GetPendingArticleStateChangeByArticleId(sampleArticleId);
         Assert.NotNull(result);
         Assert.Equal(sampleArticleId, result!.ArticleId);
         Assert.True(result.Liked);
@@ -286,8 +270,7 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void RetrievingPendingArticleStateForNonExistantPendingArticleStateChangeReturnsNull()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.GetPendingArticleStateChangeByArticleId(this.SampleArticles.First().Id);
+        var result = this.articleChangesDb.GetPendingArticleStateChangeByArticleId(this.SampleArticles.First().Id);
         Assert.Null(result);
     }
 
@@ -296,11 +279,10 @@ public sealed class ArticleChangesTests : IDisposable
     {
         var firstArticleId = this.SampleArticles.First().Id;
         var secondArticleId = this.SampleArticles[1]!.Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleStateChange(firstArticleId, true);
-        _ = changesDb.CreatePendingArticleStateChange(secondArticleId, false);
+        _ = this.articleChangesDb.CreatePendingArticleStateChange(firstArticleId, true);
+        _ = this.articleChangesDb.CreatePendingArticleStateChange(secondArticleId, false);
 
-        var result = changesDb.ListPendingArticleStateChanges();
+        var result = this.articleChangesDb.ListPendingArticleStateChanges();
         Assert.Equal(2, result.Count);
         Assert.Contains(result, x => x.ArticleId == firstArticleId && x.Liked);
         Assert.Contains(result, x => x.ArticleId == secondArticleId && !x.Liked);
@@ -309,8 +291,7 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void CanListPendingArticleStateChangesWhenEmpty()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.ListPendingArticleStateChanges();
+        var result = this.articleChangesDb.ListPendingArticleStateChanges();
         Assert.Empty(result);
     }
 
@@ -318,20 +299,18 @@ public sealed class ArticleChangesTests : IDisposable
     public void CanDeletePendingArticleStateChange()
     {
         var sampleArticleId = this.SampleArticles.First().Id;
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleStateChange(sampleArticleId, true);
+        _ = this.articleChangesDb.CreatePendingArticleStateChange(sampleArticleId, true);
 
-        changesDb.DeletePendingArticleStateChange(sampleArticleId);
+        this.articleChangesDb.DeletePendingArticleStateChange(sampleArticleId);
 
-        var result = changesDb.GetPendingArticleStateChangeByArticleId(sampleArticleId);
+        var result = this.articleChangesDb.GetPendingArticleStateChangeByArticleId(sampleArticleId);
         Assert.Null(result);
     }
 
     [Fact]
     public void DeletingNonExistentPendingArticleStateChangeSucceeds()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        changesDb.DeletePendingArticleStateChange(this.SampleArticles.First().Id);
+        this.articleChangesDb.DeletePendingArticleStateChange(this.SampleArticles.First().Id);
     }
 
     [Fact]
@@ -340,8 +319,7 @@ public sealed class ArticleChangesTests : IDisposable
         var sampleArticleId = this.SampleArticles.First().Id;
         var destinationFolderLocalId = this.SampleFolders.First().LocalId;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
+        var result = this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
         Assert.Equal(sampleArticleId, result.ArticleId);
         Assert.Equal(destinationFolderLocalId, result.DestinationFolderLocalId);
     }
@@ -352,9 +330,8 @@ public sealed class ArticleChangesTests : IDisposable
         var sampleArticleId = this.SampleArticles.First().Id;
         var destinationFolderLocalId = this.SampleFolders.First().LocalId;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
-        Assert.Throws<DuplicatePendingArticleMoveException>(() => changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId));
+        _ = this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
+        Assert.Throws<DuplicatePendingArticleMoveException>(() => this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId));
     }
 
     [Fact]
@@ -363,8 +340,7 @@ public sealed class ArticleChangesTests : IDisposable
         var sampleArticleId = this.SampleArticles.Last().Id + 1;
         var destinationFolderLocalId = this.SampleFolders.Last().LocalId + 1;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        Assert.Throws<ArticleNotFoundException>(() => changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId));
+        Assert.Throws<ArticleNotFoundException>(() => this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId));
     }
 
     [Fact]
@@ -373,8 +349,7 @@ public sealed class ArticleChangesTests : IDisposable
         var sampleArticleId = this.SampleArticles.First().Id;
         var destinationFolderLocalId = this.SampleFolders.Last().LocalId + 1;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        Assert.Throws<FolderNotFoundException>(() => changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId));
+        Assert.Throws<FolderNotFoundException>(() => this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId));
     }
 
     [Fact]
@@ -383,8 +358,7 @@ public sealed class ArticleChangesTests : IDisposable
         var sampleArticleId = this.SampleArticles.Last().Id + 1;
         var destinationFolderLocalId = this.SampleFolders.First().LocalId;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        Assert.Throws<ArticleNotFoundException>(() => changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId));
+        Assert.Throws<ArticleNotFoundException>(() => this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId));
     }
 
     [Fact]
@@ -393,10 +367,9 @@ public sealed class ArticleChangesTests : IDisposable
         var sampleArticleId = this.SampleArticles.First().Id;
         var destinationFolderLocalId = this.SampleFolders.First().LocalId;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
+        _ = this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
 
-        var result = changesDb.GetPendingArticleMove(sampleArticleId);
+        var result = this.articleChangesDb.GetPendingArticleMove(sampleArticleId);
         Assert.NotNull(result);
         Assert.Equal(sampleArticleId, result!.ArticleId);
         Assert.Equal(destinationFolderLocalId, result.DestinationFolderLocalId);
@@ -405,8 +378,7 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void RetrievingPendingArticleMoveThatDoesntExistReturnsNull()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.GetPendingArticleMove(this.SampleArticles.First().Id);
+        var result = this.articleChangesDb.GetPendingArticleMove(this.SampleArticles.First().Id);
         Assert.Null(result);
     }
 
@@ -416,11 +388,10 @@ public sealed class ArticleChangesTests : IDisposable
         var firstArticleId = this.SampleArticles.First().Id;
         var secondArticleId = this.SampleArticles[1]!.Id;
         var destinationFolderLocalId = this.SampleFolders.First().LocalId;
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleMove(firstArticleId, destinationFolderLocalId);
-        _ = changesDb.CreatePendingArticleMove(secondArticleId, destinationFolderLocalId);
+        _ = this.articleChangesDb.CreatePendingArticleMove(firstArticleId, destinationFolderLocalId);
+        _ = this.articleChangesDb.CreatePendingArticleMove(secondArticleId, destinationFolderLocalId);
 
-        var result = changesDb.ListPendingArticleMoves();
+        var result = this.articleChangesDb.ListPendingArticleMoves();
         Assert.Equal(2, result.Count);
         Assert.Contains(result, x => x.ArticleId == firstArticleId && x.DestinationFolderLocalId == destinationFolderLocalId);
         Assert.Contains(result, x => x.ArticleId == secondArticleId && x.DestinationFolderLocalId == destinationFolderLocalId);
@@ -429,8 +400,7 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void ListingPendingArticleMovesWithNothingPendedReturnsEmpty()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.ListPendingArticleMoves();
+        var result = this.articleChangesDb.ListPendingArticleMoves();
         Assert.Empty(result);
     }
 
@@ -444,12 +414,11 @@ public sealed class ArticleChangesTests : IDisposable
         var destinationFolderLocalId = this.SampleFolders.First().LocalId;
         var secondDestinationFolder = this.SampleFolders[1].LocalId;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleMove(firstArticleId, destinationFolderLocalId);
-        _ = changesDb.CreatePendingArticleMove(secondArticleId, destinationFolderLocalId);
-        _ = changesDb.CreatePendingArticleMove(thirdArticleId, secondDestinationFolder);
+        _ = this.articleChangesDb.CreatePendingArticleMove(firstArticleId, destinationFolderLocalId);
+        _ = this.articleChangesDb.CreatePendingArticleMove(secondArticleId, destinationFolderLocalId);
+        _ = this.articleChangesDb.CreatePendingArticleMove(thirdArticleId, secondDestinationFolder);
 
-        var result = changesDb.ListPendingArticleMovesForLocalFolderId(destinationFolderLocalId);
+        var result = this.articleChangesDb.ListPendingArticleMovesForLocalFolderId(destinationFolderLocalId);
         Assert.Equal(2, result.Count);
         Assert.Contains(result, x => x.ArticleId == firstArticleId && x.DestinationFolderLocalId == destinationFolderLocalId);
         Assert.Contains(result, x => x.ArticleId == secondArticleId && x.DestinationFolderLocalId == destinationFolderLocalId);
@@ -458,8 +427,7 @@ public sealed class ArticleChangesTests : IDisposable
     [Fact]
     public void ListingPendingArticleMovesForANonExistantFolderDoesNotThrowException()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        var result = changesDb.ListPendingArticleMovesForLocalFolderId(this.SampleFolders.Last().LocalId + 1);
+        var result = this.articleChangesDb.ListPendingArticleMovesForLocalFolderId(this.SampleFolders.Last().LocalId + 1);
         Assert.Empty(result);
     }
 
@@ -469,20 +437,18 @@ public sealed class ArticleChangesTests : IDisposable
         var sampleArticleId = this.SampleArticles.First().Id;
         var destinationFolderLocalId = this.SampleFolders.First().LocalId;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
+        _ = this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
 
-        changesDb.DeletePendingArticleMove(sampleArticleId);
+        this.articleChangesDb.DeletePendingArticleMove(sampleArticleId);
 
-        var result = changesDb.GetPendingArticleMove(sampleArticleId);
+        var result = this.articleChangesDb.GetPendingArticleMove(sampleArticleId);
         Assert.Null(result);
     }
 
     [Fact]
     public void DeletingNonExistantPendingArticleMoveSucceeds()
     {
-        var changesDb = this.db.ArticleChangesDatabase;
-        changesDb.DeletePendingArticleMove(this.SampleArticles.First().Id);
+        this.articleChangesDb.DeletePendingArticleMove(this.SampleArticles.First().Id);
     }
 
     [Fact]
@@ -491,9 +457,8 @@ public sealed class ArticleChangesTests : IDisposable
         var sampleArticleId = this.SampleArticles.First().Id;
         var destinationFolderLocalId = this.SampleFolders.First().LocalId;
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
+        _ = this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
 
-        Assert.Throws<InvalidOperationException>(() => this.db.FolderDatabase.DeleteFolder(destinationFolderLocalId));
+        Assert.Throws<InvalidOperationException>(() => new FolderDatabase(this.connection).DeleteFolder(destinationFolderLocalId));
     }
 }

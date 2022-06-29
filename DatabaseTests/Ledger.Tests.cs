@@ -1,29 +1,31 @@
+using System.Data;
 using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
 public sealed class FolderLedgerTests : IDisposable
 {
-    private IInstapaperDatabase db;
+    private IDbConnection connection;
     private IFolderDatabase folders;
     private IFolderChangesDatabase folderChanges;
     private Ledger ledger;
 
     public FolderLedgerTests()
     {
-        this.db = TestUtilities.GetDatabase();
-        this.folders = this.db.FolderDatabase;
-        this.folderChanges = this.db.FolderChangesDatabase;
+        this.connection = TestUtilities.GetConnection();
+        this.folders = new FolderDatabase(this.connection);
+        this.folderChanges = new FolderChanges(this.connection);
         this.ledger = new((IFolderDatabaseWithTransactionEvents)this.folders,
                           this.folderChanges,
-                          (IArticleDatabaseWithTransactionEvents)this.db.ArticleDatabase,
-                          this.db.ArticleChangesDatabase);
+                          new ArticleDatabase(this.connection),
+                          new ArticleChanges(this.connection));
     }
 
     public void Dispose()
     {
         this.ledger.Dispose();
-        this.db.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     [Fact]
@@ -105,13 +107,12 @@ public sealed class FolderLedgerTests : IDisposable
     public void DeletingFolderThatHasPendingArticleMoveToItThrowsException()
     {
         // Move to init
-        var sampleArticle = this.db.ArticleDatabase.AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
+        var sampleArticle = new ArticleDatabase(this.connection).AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
         var destinationFolder = this.folders.AddKnownFolder("Sample", 1L, 1L, true);
 
-        var changesDb = this.db.ArticleChangesDatabase;
-        _ = changesDb.CreatePendingArticleMove(sampleArticle.Id, destinationFolder.LocalId);
+        _ = new ArticleChanges(this.connection).CreatePendingArticleMove(sampleArticle.Id, destinationFolder.LocalId);
 
-        Assert.Throws<FolderHasPendingArticleMoveException>(() => this.db.FolderDatabase.DeleteFolder(destinationFolder.LocalId));
+        Assert.Throws<FolderHasPendingArticleMoveException>(() => this.folders.DeleteFolder(destinationFolder.LocalId));
     }
 
     [Fact]
@@ -130,20 +131,25 @@ public sealed class FolderLedgerTests : IDisposable
 
 public sealed class ArticleLedgerTests : IDisposable
 {
-    private IInstapaperDatabase db;
+    private IDbConnection connection;
     private IArticleDatabase articles;
     private IArticleChangesDatabase articleChanges;
-    private IFolderDatabase folders;
+    private DatabaseFolder CustomFolder1;
+    private DatabaseFolder CustomFolder2;
     private Ledger ledger;
 
     public ArticleLedgerTests()
     {
-        this.db = TestUtilities.GetDatabase();
-        this.articles = this.db.ArticleDatabase;
-        this.articleChanges = this.db.ArticleChangesDatabase;
-        this.folders = this.db.FolderDatabase;
-        this.ledger = new((IFolderDatabaseWithTransactionEvents)this.folders,
-                          this.db.FolderChangesDatabase,
+        this.connection = TestUtilities.GetConnection();
+        this.articles = new ArticleDatabase(this.connection);
+        this.articleChanges = new ArticleChanges(this.connection);
+
+        var folders = new FolderDatabase(this.connection);
+        this.CustomFolder1 = folders.CreateFolder("Sample1");
+        this.CustomFolder2 = folders.CreateFolder("Sample2");
+
+        this.ledger = new(folders,
+                          new FolderChanges(this.connection),
                           (IArticleDatabaseWithTransactionEvents)this.articles,
                           this.articleChanges);
     }
@@ -151,7 +157,8 @@ public sealed class ArticleLedgerTests : IDisposable
     public void Dispose()
     {
         this.ledger.Dispose();
-        this.db.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     [Fact]
@@ -174,7 +181,6 @@ public sealed class ArticleLedgerTests : IDisposable
     [Fact]
     public void MovingArticleToFolderCreatesPendingMove()
     {
-        var folder = this.folders.CreateFolder("Sample");
         var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
@@ -183,21 +189,19 @@ public sealed class ArticleLedgerTests : IDisposable
         Assert.Empty(this.articleChanges.ListPendingArticleMoves());
         this.articles.MoveArticleToFolder(
             article.Id,
-            folder.LocalId
+            this.CustomFolder1.LocalId
         );
 
         var pendingMoves = this.articleChanges.ListPendingArticleMoves();
         Assert.Equal(1, pendingMoves.Count);
 
         Assert.Equal(article.Id, pendingMoves[0].ArticleId);
-        Assert.Equal(folder.LocalId, pendingMoves[0].DestinationFolderLocalId);
+        Assert.Equal(this.CustomFolder1.LocalId, pendingMoves[0].DestinationFolderLocalId);
     }
 
     [Fact]
     public void MovingArticleMultipleTimesToDifferentFolderLeavesSinglePendingMove()
     {
-        var folder1 = this.folders.CreateFolder("Sample");
-        var folder2 = this.folders.CreateFolder("Sample 2");
         var article = this.articles.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
@@ -206,19 +210,19 @@ public sealed class ArticleLedgerTests : IDisposable
         Assert.Empty(this.articleChanges.ListPendingArticleMoves());
         this.articles.MoveArticleToFolder(
             article.Id,
-            folder1.LocalId
+            this.CustomFolder1.LocalId
         );
 
         this.articles.MoveArticleToFolder(
             article.Id,
-            folder2.LocalId
+            this.CustomFolder2.LocalId
         );
 
         var pendingMoves = this.articleChanges.ListPendingArticleMoves();
         Assert.Equal(1, pendingMoves.Count);
 
         Assert.Equal(article.Id, pendingMoves[0].ArticleId);
-        Assert.Equal(folder2.LocalId, pendingMoves[0].DestinationFolderLocalId);
+        Assert.Equal(this.CustomFolder2.LocalId, pendingMoves[0].DestinationFolderLocalId);
     }
 
     [Fact]
@@ -320,13 +324,12 @@ public sealed class ArticleLedgerTests : IDisposable
     {
         this.ledger?.Dispose();
 
-        var folder = this.folders.CreateFolder("Sample");
         var article = this.articles.AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
 
         this.articles.LikeArticle(article.Id);
         Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
 
-        this.articles.MoveArticleToFolder(article.Id, folder.LocalId);
+        this.articles.MoveArticleToFolder(article.Id, this.CustomFolder1.LocalId);
         Assert.Empty(this.articleChanges.ListPendingArticleMoves());
 
         this.articles.DeleteArticle(article.Id);

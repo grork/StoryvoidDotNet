@@ -5,18 +5,19 @@ namespace Codevoid.Test.Storyvoid;
 
 public sealed class FolderDatabaseTests : IDisposable
 {
-    private IInstapaperDatabase instapaperDb;
+    private IDbConnection connection;
     private IFolderDatabaseWithTransactionEvents db;
 
     public FolderDatabaseTests()
     {
-        this.instapaperDb = TestUtilities.GetDatabase();
-        this.db = (IFolderDatabaseWithTransactionEvents)this.instapaperDb.FolderDatabase;
+        this.connection = TestUtilities.GetConnection();
+        this.db = new FolderDatabase(this.connection);
     }
 
     public void Dispose()
     {
-        this.instapaperDb.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     [Fact]
@@ -303,6 +304,20 @@ public sealed class FolderDatabaseTests : IDisposable
         // Verify folder is missing
         var folders = this.db.ListAllFolders();
         Assert.Equal(2, folders.Count);
+    }
+    
+    [Fact]
+    public void DeletingFolderContainingArticleRemovesFolder()
+    {
+        var articleDb = new ArticleDatabase(this.connection);
+        var customFolder = this.db.CreateFolder("Sample");
+
+        _ = articleDb.AddArticleToFolder(TestUtilities.GetRandomArticle(), customFolder.LocalId);
+        _ = articleDb.AddArticleToFolder(TestUtilities.GetRandomArticle(), customFolder.LocalId);
+
+        this.db.DeleteFolder(customFolder.LocalId);
+        var folders = this.db.ListAllFolders();
+        Assert.DoesNotContain(folders, (f) => f.LocalId == customFolder.LocalId);
     }
 
     [Fact]

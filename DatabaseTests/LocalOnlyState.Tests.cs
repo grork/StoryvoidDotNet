@@ -1,23 +1,25 @@
-﻿using Codevoid.Storyvoid;
+﻿using System.Data;
+using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
 public class LocalOnlyStateTests : IDisposable
 {
-    private IInstapaperDatabase instapaperDb;
+    private IDbConnection connection;
     private IArticleDatabase db;
     private IList<DatabaseArticle> sampleArticles = new List<DatabaseArticle>();
 
     public LocalOnlyStateTests()
     {
-        this.instapaperDb = TestUtilities.GetDatabase();
-        this.db = this.instapaperDb.ArticleDatabase;
+        this.connection = TestUtilities.GetConnection();
+        this.db = new ArticleDatabase(this.connection);
         this.sampleArticles = this.PopulateDatabaseWithArticles();
     }
 
     public void Dispose()
     {
-        this.instapaperDb.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     public IList<DatabaseArticle> PopulateDatabaseWithArticles()

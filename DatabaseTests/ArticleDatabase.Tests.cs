@@ -1,34 +1,38 @@
-﻿using Codevoid.Storyvoid;
+﻿using System.Data;
+using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
 public sealed class ArticleDatabaseTests : IDisposable
 {
     private IArticleDatabaseWithTransactionEvents db;
-    private IInstapaperDatabase instapaperDb;
+    private IDbConnection connection;
     private DatabaseFolder CustomFolder1;
     private DatabaseFolder CustomFolder2;
 
     public ArticleDatabaseTests()
     {
-        this.instapaperDb = TestUtilities.GetDatabase();
-        this.db = (IArticleDatabaseWithTransactionEvents)this.instapaperDb.ArticleDatabase;
+        this.connection = TestUtilities.GetConnection();
+        this.db = new ArticleDatabase(this.connection);
+
+        var folderDb = new FolderDatabase(this.connection);
 
         // Add sample folders
-        this.CustomFolder1 = this.instapaperDb.FolderDatabase.AddKnownFolder(title: "Sample1",
-                                                              serviceId: 9L,
-                                                              position: 1,
-                                                              shouldSync: true);
+        this.CustomFolder1 = folderDb.AddKnownFolder(title: "Sample1",
+                                                            serviceId: 9L,
+                                                            position: 1,
+                                                            shouldSync: true);
 
-        this.CustomFolder2 = this.instapaperDb.FolderDatabase.AddKnownFolder(title: "Sample2",
-                                                               serviceId: 10L,
-                                                               position: 1,
-                                                               shouldSync: true);
+        this.CustomFolder2 = folderDb.AddKnownFolder(title: "Sample2",
+                                                            serviceId: 10L,
+                                                            position: 1,
+                                                            shouldSync: true);
     }
 
     public void Dispose()
     {
-        this.instapaperDb.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     private DatabaseArticle AddRandomArticleToFolder(long localFolderId)
@@ -576,17 +580,6 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
-    public void DeletingFolderContainingArticleRemovesFolder()
-    {
-        _ = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        _ = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-
-        this.instapaperDb.FolderDatabase.DeleteFolder(this.CustomFolder1.LocalId);
-        var folders = this.instapaperDb.FolderDatabase.ListAllFolders();
-        Assert.DoesNotContain(folders, (f) => f.LocalId == this.CustomFolder1.LocalId);
-    }
-
-    [Fact]
     public void CanDeleteArticleInUnreadFolder()
     {
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
@@ -638,7 +631,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     public void CanDeleteOrphanedArticle()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        this.instapaperDb.FolderDatabase.DeleteFolder(this.CustomFolder1.LocalId);
+        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
         this.db.DeleteArticle(article.Id);
 
         var retrievedArticle = this.db.GetArticleById(article.Id);
@@ -651,7 +644,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
         var customArticle1 = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
         var customArticle2 = this.AddRandomArticleToFolder(this.CustomFolder2.LocalId);
-        this.instapaperDb.FolderDatabase.DeleteFolder(this.CustomFolder2.LocalId);
+        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder2.LocalId);
 
         var articles = this.db.ListAllArticlesInAFolder();
         Assert.Equal(2, articles.Count);
@@ -680,7 +673,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var customArticle2 = this.AddRandomArticleToFolder(this.CustomFolder2.LocalId);
         var customArticle3 = this.AddRandomArticleToFolder(this.CustomFolder2.LocalId);
 
-        this.instapaperDb.FolderDatabase.DeleteFolder(this.CustomFolder2.LocalId);
+        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder2.LocalId);
 
         var articles = this.db.ListArticlesNotInAFolder();
         Assert.Equal(2, articles.Count);
@@ -697,7 +690,7 @@ public sealed class ArticleDatabaseTests : IDisposable
 
         long? deletedItem = null;
         this.db.ArticleDeletedWithinTransaction += (_, payload) => deletedItem = payload;
-        this.instapaperDb.FolderDatabase.DeleteFolder(this.CustomFolder1.LocalId);
+        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
         Assert.Null(deletedItem);
 
         this.db.DeleteArticle(article.Id);
@@ -706,10 +699,10 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
-    public void CanGetArticle()
+    public void CanGetOrphanedArticle()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        this.instapaperDb.FolderDatabase.DeleteFolder(this.CustomFolder1.LocalId);
+        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
 
         var orphaned = this.db.GetArticleById(article.Id);
         Assert.NotNull(orphaned);

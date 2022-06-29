@@ -1,4 +1,5 @@
-﻿using Codevoid.Storyvoid;
+﻿using System.Data;
+using Codevoid.Storyvoid;
 using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Test.Storyvoid;
@@ -9,11 +10,12 @@ public static class TestUtilities
     public static readonly Uri BASE_URI = new("https://www.codevoid.net");
     public const string SAMPLE_TITLE = "Codevoid";
 
-    internal static IInstapaperDatabase GetDatabase()
-    {
+    internal static IDbConnection GetConnection()
+    {   
         var connection = new SqliteConnection("Data Source=:memory:");
-        var db = new InstapaperDatabase(connection);
-        return db.OpenOrCreateDatabase();
+        InstapaperDatabase.OpenOrCreateDatabase(connection);
+
+        return connection;
     }
 
     public static ArticleRecordInformation GetRandomArticle()
