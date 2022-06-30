@@ -194,13 +194,10 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         query.AddParameter("@position", position);
         query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
 
-        var t = query.Transaction;
-        var transactionCreated = false;
-        if(t is null)
+        var t = (query.Transaction != null) ? null : c.BeginTransaction();
+        if(t is not null)
         {
-            t = c.BeginTransaction();
             query.Transaction = t;
-            transactionCreated = true;
         }
 
         try
@@ -213,19 +210,13 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 
             var updatedFolder = GetFolderByLocalId(localId)!;
 
-            if (transactionCreated)
-            {
-                t?.Commit();
-            }
+            t?.Commit();
 
             return updatedFolder;
         }
         finally
         {
-            if (transactionCreated)
-            {
-                t?.Dispose();
-            }
+            t?.Dispose();
         }
     }
 
