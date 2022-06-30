@@ -427,6 +427,30 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void CanMoveOrphanedArticleToUnreadFolder()
+    {
+        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
+        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
+        Assert.Empty(this.db.ListArticlesForLocalFolder(this.CustomFolder1.LocalId));
+        Assert.Empty(this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread));
+
+        this.db.MoveArticleToFolder(article.Id, WellKnownLocalFolderIds.Unread);
+        Assert.Contains(article, this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread));
+    }
+
+    [Fact]
+    public void CanMoveOrphanedArticleToCustomFolder()
+    {
+        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
+        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
+        Assert.Empty(this.db.ListArticlesForLocalFolder(this.CustomFolder1.LocalId));
+        Assert.Empty(this.db.ListArticlesForLocalFolder(this.CustomFolder2.LocalId));
+
+        this.db.MoveArticleToFolder(article.Id, this.CustomFolder2.LocalId);
+        Assert.Contains(article, this.db.ListArticlesForLocalFolder(this.CustomFolder2.LocalId));
+    }
+
+    [Fact]
     public void MovingArticleFromUnreadToCustomFolderRaisesMoveWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);

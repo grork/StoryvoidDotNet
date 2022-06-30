@@ -334,10 +334,39 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             throw new ArticleNotFoundException(articleId);
         }
 
+        // Check and see if the article is already in the destination folder. If
+        // it is, it means we have nothing to do, and we can just go home.
+        using(var isAlreadyInTargetFolder = c.CreateCommand(@"
+            SELECT count(*) FROM article_to_folder
+            WHERE article_id = @articleId AND local_folder_id = @localFolderId
+        "))
+        {
+            isAlreadyInTargetFolder.AddParameter("@articleId", articleId);
+            isAlreadyInTargetFolder.AddParameter("@localFolderId", localFolderId);
+
+            var folderPairs = (long)(isAlreadyInTargetFolder.ExecuteScalar()!);
+            if(folderPairs == 1)
+            {
+                return;
+            }
+        }
+
+        // If there *is* a folder reference, we need to delete it first, so we
+        // we can have a single path for placing in a folder (e.g. no UPDATE vs
+        // INSERT dance).
+
+        using(var removeFromExistingFolder = c.CreateCommand(@"
+            DELETE FROM article_to_folder
+            WHERE article_id = @articleId
+        "))
+        {
+            removeFromExistingFolder.AddParameter("@articleId", articleId);
+            removeFromExistingFolder.ExecuteNonQuery();
+        }
+
         using var query = c.CreateCommand(@"
-            UPDATE article_to_folder
-            SET local_folder_id = @localFolderId
-            WHERE article_id = @articleId AND local_folder_id <> @localFolderId;
+            INSERT INTO article_to_folder(article_id, local_folder_id)
+            VALUES (@articleId, @localFolderId);
         ");
 
         query.AddParameter("@articleId", articleId);
@@ -345,13 +374,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
         try
         {
-            var impactedRows = query.ExecuteNonQuery();
-            if (impactedRows > 0)
-            {
-                // Only raise (and get the article) if we actually affected a move
-                var article = this.GetArticleById(articleId)!;
-                this.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
-            }
+            query.ExecuteNonQuery();
+    
+            var article = this.GetArticleById(articleId)!;
+            this.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
 
             t.Commit();
         }
