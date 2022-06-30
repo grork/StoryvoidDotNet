@@ -49,6 +49,18 @@ public interface IArticleDatabase
         long localFolderId);
 
     /// <summary>
+    /// Adds an article, but does not place it in a folder. This means it won't
+    /// be returned by any APIs that list articles by folder. There is no
+    /// guarantee that the article will remain in the database if it is not
+    /// placed in a folder.
+    /// 
+    /// It can be moved to a folder using <see cref="MoveArticleToFolder(long,long)" />
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    DatabaseArticle AddArticleNoFolder(ArticleRecordInformation data);
+
+    /// <summary>
     /// Updates the specified article with new details, overwriting any
     /// values that are present.
     /// </summary>

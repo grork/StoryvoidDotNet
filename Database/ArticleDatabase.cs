@@ -132,16 +132,24 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         return article;
     }
 
-    /// <inheritdoc/>
-    public DatabaseArticle AddArticleToFolder(
-        ArticleRecordInformation data,
-        long localFolderId
-    )
+    /// <inheritdoc />
+    public DatabaseArticle AddArticleNoFolder(ArticleRecordInformation data)
     {
         var c = this.connection;
         using var t = c.BeginTransaction();
 
-        using var query = c.CreateCommand(@"
+        AddArticle(c, data);
+
+        var addedArticle = this.GetArticleById(data.id)!;
+
+        t.Commit();
+
+        return addedArticle;
+    }
+
+    private static void AddArticle(IDbConnection connection, ArticleRecordInformation data)
+    {
+        using var query = connection.CreateCommand(@"
             INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
             VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
         ");
@@ -156,6 +164,18 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         query.AddParameter("@liked", data.liked);
 
         query.ExecuteNonQuery();
+    }
+    
+    /// <inheritdoc/>
+    public DatabaseArticle AddArticleToFolder(
+        ArticleRecordInformation data,
+        long localFolderId
+    )
+    {
+        var c = this.connection;
+        using var t = c.BeginTransaction();
+
+        AddArticle(c, data);
 
         using var pairWithFolderQuery = c.CreateCommand(@"
             INSERT INTO article_to_folder(local_folder_id, article_id)

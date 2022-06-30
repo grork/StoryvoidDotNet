@@ -149,13 +149,19 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
-    public void AddingArticleToNonExistantFolderFails()
+    public void CanAddArticleWithNoFolder()
     {
         var article = TestUtilities.GetRandomArticle();
-        Assert.Throws<FolderNotFoundException>(() =>
-        {
-            _ = this.db.AddArticleToFolder(article, 999L);
-        });
+        var addedArticle = this.db.AddArticleNoFolder(article);
+        var retreivedArticle = this.db.GetArticleById(article.id);
+
+        Assert.Equal(addedArticle, retreivedArticle);
+    }
+
+    [Fact]
+    public void AddingArticleToNonExistantFolderFails()
+    {
+        Assert.Throws<FolderNotFoundException>(() => this.db.AddArticleToFolder(TestUtilities.GetRandomArticle(), 999L));
     }
 
     [Fact]
@@ -429,8 +435,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     [Fact]
     public void CanMoveOrphanedArticleToUnreadFolder()
     {
-        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
+        var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
         Assert.Empty(this.db.ListArticlesForLocalFolder(this.CustomFolder1.LocalId));
         Assert.Empty(this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread));
 
@@ -441,8 +446,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     [Fact]
     public void CanMoveOrphanedArticleToCustomFolder()
     {
-        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
+        var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
         Assert.Empty(this.db.ListArticlesForLocalFolder(this.CustomFolder1.LocalId));
         Assert.Empty(this.db.ListArticlesForLocalFolder(this.CustomFolder2.LocalId));
 
@@ -654,8 +658,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     [Fact]
     public void CanDeleteOrphanedArticle()
     {
-        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
+        var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
         this.db.DeleteArticle(article.Id);
 
         var retrievedArticle = this.db.GetArticleById(article.Id);
@@ -667,8 +670,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     {
         var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
         var customArticle1 = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        var customArticle2 = this.AddRandomArticleToFolder(this.CustomFolder2.LocalId);
-        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder2.LocalId);
+        var customArticle2 = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
 
         var articles = this.db.ListAllArticlesInAFolder();
         Assert.Equal(2, articles.Count);
@@ -689,15 +691,25 @@ public sealed class ArticleDatabaseTests : IDisposable
         Assert.DoesNotContain(articles, (c2) => c2.Article.Id == customArticle2.Id);
     }
 
+
+    [Fact]
+    public void ListingAllArticlesNotInFolderReturnsOrphanedArticle()
+    {
+        var article = TestUtilities.GetRandomArticle();
+        var addedArticle = this.db.AddArticleNoFolder(article);
+
+        var orphanedArticles = this.db.ListArticlesNotInAFolder();
+        Assert.Equal(1, orphanedArticles.Count);
+        Assert.Equal(addedArticle, orphanedArticles[0]);
+    }
+
     [Fact]
     public void ListingAllArticlesNotInAFolderOnlyReturnesOrphanedArticles()
     {
         var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
         var customArticle1 = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        var customArticle2 = this.AddRandomArticleToFolder(this.CustomFolder2.LocalId);
-        var customArticle3 = this.AddRandomArticleToFolder(this.CustomFolder2.LocalId);
-
-        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder2.LocalId);
+        var customArticle2 = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
+        var customArticle3 = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
 
         var articles = this.db.ListArticlesNotInAFolder();
         Assert.Equal(2, articles.Count);
@@ -710,11 +722,10 @@ public sealed class ArticleDatabaseTests : IDisposable
     [Fact]
     public void DeletingOrphanedArticleDoesRaiseDeletedWithinTransactionEvent()
     {
-        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
+        var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
 
         long? deletedItem = null;
         this.db.ArticleDeletedWithinTransaction += (_, payload) => deletedItem = payload;
-        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
         Assert.Null(deletedItem);
 
         this.db.DeleteArticle(article.Id);
@@ -725,8 +736,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     [Fact]
     public void CanGetOrphanedArticle()
     {
-        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
-        new FolderDatabase(this.connection).DeleteFolder(this.CustomFolder1.LocalId);
+        var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
 
         var orphaned = this.db.GetArticleById(article.Id);
         Assert.NotNull(orphaned);
