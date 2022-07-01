@@ -19,8 +19,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public IList<DatabaseFolder> ListAllFolders()
     {
-        var c = this.connection;
+        return ListAllFolders(this.connection);
+    }
 
+    private static IList<DatabaseFolder> ListAllFolders(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM folders
@@ -43,8 +46,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder? GetFolderByServiceId(long serviceId)
     {
-        var c = this.connection;
+        return GetFolderByServiceId(this.connection, serviceId);
+    }
 
+    private static DatabaseFolder? GetFolderByServiceId(IDbConnection c, long serviceId)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM folders
@@ -67,7 +73,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder? GetFolderByLocalId(long localId)
     {
-        var c = this.connection;
+        return GetFolderByLocalId(this.connection, localId);
+    }
+
+    private static DatabaseFolder? GetFolderByLocalId(IDbConnection c, long localId)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM folders
@@ -90,7 +100,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc />
     public DatabaseFolder? GetFolderByTitle(string title)
     {
-        var c = this.connection;
+        return GetFolderByTitle(this.connection, title);
+    }
+
+    private static DatabaseFolder? GetFolderByTitle(IDbConnection c, string title)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM folders
@@ -102,7 +116,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         using var folderRow = query.ExecuteReader();
 
         DatabaseFolder? folder = null;
-        if(folderRow.Read())
+        if (folderRow.Read())
         {
             folder = DatabaseFolder.FromRow(folderRow);
         }
@@ -113,10 +127,14 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder CreateFolder(string title)
     {
-        var c = this.connection;
+        return CreateFolder(this.connection, title, this);
+    }
+
+    private static DatabaseFolder CreateFolder(IDbConnection c, string title, FolderDatabase eventSource)
+    {
         using var t = c.BeginTransaction();
 
-        if (this.GetFolderByTitle(title) is not null)
+        if (GetFolderByTitle(c, title) is not null)
         {
             throw new DuplicateNameException($"Folder with name '{title}' already exists");
         }
@@ -129,20 +147,24 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         query.AddParameter("@title", title);
         query.ExecuteScalar();
 
-        this.RaiseFolderAddedWithinTransaction(title);
+        eventSource.RaiseFolderAddedWithinTransaction(title);
 
         t.Commit();
 
-        return GetFolderByTitle(title)!;
+        return GetFolderByTitle(c, title)!;
     }
 
     /// <inheritdoc/>
     public DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync)
     {
-        var c = this.connection;
+        return AddKnownFolder(this.connection, title, serviceId, position, shouldSync);
+    }
+
+    private static DatabaseFolder AddKnownFolder(IDbConnection c, string title, long serviceId, long position, bool shouldSync)
+    {
         using var t = c.BeginTransaction();
 
-        if (this.GetFolderByTitle(title) is not null)
+        if (GetFolderByTitle(c, title) is not null)
         {
             throw new DuplicateNameException($"Folder with name '{title}' already exists");
         }
@@ -159,7 +181,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 
         query.ExecuteScalar();
 
-        var addedFolder = GetFolderByServiceId(serviceId)!;
+        var addedFolder = GetFolderByServiceId(c, serviceId)!;
 
         t.Commit();
 
@@ -169,8 +191,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync)
     {
-        var c = this.connection;
+        return UpdateFolder(this.connection, localId, serviceId, title, position, shouldSync);
+    }
 
+    private static DatabaseFolder UpdateFolder(IDbConnection c, long localId, long? serviceId, string title, long position, bool shouldSync)
+    {
         using var query = c.CreateCommand(@"
             UPDATE folders SET
                 service_id = @serviceId,
@@ -195,7 +220,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
 
         var t = (query.Transaction != null) ? null : c.BeginTransaction();
-        if(t is not null)
+        if (t is not null)
         {
             query.Transaction = t;
         }
@@ -208,7 +233,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
                 throw new FolderNotFoundException(localId);
             }
 
-            var updatedFolder = GetFolderByLocalId(localId)!;
+            var updatedFolder = GetFolderByLocalId(c, localId)!;
 
             t?.Commit();
 
@@ -233,16 +258,20 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
             throw new InvalidOperationException("Deleting the Archive folder is not allowed");
         }
 
-        var c = this.connection;
+        DeleteFolder(this.connection, localFolderId, this);
+    }
+
+    private static void DeleteFolder(IDbConnection c, long localFolderId, FolderDatabase eventSource)
+    {
         using var t = c.BeginTransaction();
 
-        var folder = this.GetFolderByLocalId(localFolderId);
-        if(folder is null)
+        var folder = GetFolderByLocalId(c, localFolderId);
+        if (folder is null)
         {
             return;
         }
 
-        this.RaiseFolderWillBeDeletedWithinTransaction(folder);
+        eventSource.RaiseFolderWillBeDeletedWithinTransaction(folder);
 
         // Delete any article-folder-pairs
         using var deleteArticleFolderPairsQuery = c.CreateCommand(@"
@@ -271,7 +300,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
             throw new InvalidOperationException($"Can't delete folder {localFolderId} that is pending operation. Clear its pending operations first", ex);
         }
 
-        this.RaiseFolderDeletedWithinTransaction(folder);
+        eventSource.RaiseFolderDeletedWithinTransaction(folder);
 
         t.Commit();
     }

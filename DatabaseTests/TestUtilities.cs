@@ -11,9 +11,10 @@ public static class TestUtilities
     public const string SAMPLE_TITLE = "Codevoid";
 
     internal static IDbConnection GetConnection()
-    {   
+    {
         var connection = new SqliteConnection("Data Source=:memory:");
-        InstapaperDatabase.OpenOrCreateDatabase(connection);
+        connection.Open();
+        InstapaperDatabase.CreateDatabaseIfNeeded(connection);
 
         return connection;
     }

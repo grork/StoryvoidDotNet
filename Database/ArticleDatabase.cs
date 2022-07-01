@@ -21,8 +21,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public IList<DatabaseArticle> ListArticlesForLocalFolder(long localFolderId)
     {
-        var c = this.connection;
+        return ListArticlesForLocalFolder(this.connection, localFolderId);
+    }
 
+    private static IList<DatabaseArticle> ListArticlesForLocalFolder(IDbConnection c, long localFolderId)
+    {
         using var query = c.CreateCommand(@"
             SELECT a.*
             FROM article_to_folder
@@ -46,8 +49,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc />
     public IList<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder()
     {
-        var c = this.connection;
+        return ListAllArticlesInAFolder(this.connection);
+    }
 
+    private static IList<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT a.*, article_to_folder.local_folder_id
             FROM article_to_folder
@@ -70,8 +76,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc />
     public IList<DatabaseArticle> ListArticlesNotInAFolder()
     {
-        var c = this.connection;
+        return ListArticlesNotInAFolder(this.connection);
+    }
 
+    private static IList<DatabaseArticle> ListArticlesNotInAFolder(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM articles
@@ -85,14 +94,17 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             results.Add(DatabaseArticle.FromRow(rows));
         }
 
-        return results;    
+        return results;
     }
 
     /// <inheritdoc/>
     public IList<DatabaseArticle> ListLikedArticles()
     {
-        var c = this.connection;
+        return ListLikedArticles(this.connection);
+    }
 
+    private static IList<DatabaseArticle> ListLikedArticles(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM articles_with_local_only_state
@@ -112,7 +124,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public DatabaseArticle? GetArticleById(long id)
     {
-        var c = this.connection;
+        return GetArticleById(this.connection, id);
+    }
+
+    private static DatabaseArticle? GetArticleById(IDbConnection c, long id)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM articles_with_local_only_state
@@ -135,12 +151,16 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc />
     public DatabaseArticle AddArticleNoFolder(ArticleRecordInformation data)
     {
-        var c = this.connection;
+        return AddArticleNoFolder(this.connection, data);
+    }
+
+    private static DatabaseArticle AddArticleNoFolder(IDbConnection c, ArticleRecordInformation data)
+    {
         using var t = c.BeginTransaction();
 
         AddArticle(c, data);
 
-        var addedArticle = this.GetArticleById(data.id)!;
+        var addedArticle = GetArticleById(c, data.id)!;
 
         t.Commit();
 
@@ -165,14 +185,18 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
         query.ExecuteNonQuery();
     }
-    
+
     /// <inheritdoc/>
     public DatabaseArticle AddArticleToFolder(
         ArticleRecordInformation data,
         long localFolderId
     )
     {
-        var c = this.connection;
+        return AddArticleToFolder(this.connection, data, localFolderId);
+    }
+
+    private static DatabaseArticle AddArticleToFolder(IDbConnection c, ArticleRecordInformation data, long localFolderId)
+    {
         using var t = c.BeginTransaction();
 
         AddArticle(c, data);
@@ -197,7 +221,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             throw new FolderNotFoundException(localFolderId);
         }
 
-        var addedArticle = this.GetArticleById(data.id)!;
+        var addedArticle = GetArticleById(c, data.id)!;
         t.Commit();
 
         return addedArticle;
@@ -206,7 +230,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc />
     public DatabaseArticle UpdateArticle(ArticleRecordInformation updatedData)
     {
-        var c = this.connection;
+        return UpdateArticle(this.connection, updatedData);
+    }
+
+    private static DatabaseArticle UpdateArticle(IDbConnection c, ArticleRecordInformation updatedData)
+    {
         using var t = c.BeginTransaction();
 
         using var query = c.CreateCommand(@"
@@ -237,16 +265,27 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             throw new ArticleNotFoundException(updatedData.id);
         }
 
-        var updatedArticle = this.GetArticleById(updatedData.id)!;
+        var updatedArticle = GetArticleById(c, updatedData.id)!;
 
         t.Commit();
 
         return updatedArticle;
     }
 
-    private DatabaseArticle UpdateLikeStatusForArticle(long id, bool liked)
+    /// <inheritdoc/>
+    public DatabaseArticle LikeArticle(long id)
     {
-        var c = this.connection;
+        return UpdateLikeStatusForArticle(this.connection, id, true);
+    }
+
+    /// <inheritdoc/>
+    public DatabaseArticle UnlikeArticle(long id)
+    {
+        return UpdateLikeStatusForArticle(this.connection, id, false);
+    }
+
+    private DatabaseArticle UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked)
+    {
         using var t = c.BeginTransaction();
 
         using var query = c.CreateCommand(@"
@@ -280,18 +319,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     }
 
     /// <inheritdoc/>
-    public DatabaseArticle LikeArticle(long id)
-    {
-        return this.UpdateLikeStatusForArticle(id, true);
-    }
-
-    /// <inheritdoc/>
-    public DatabaseArticle UnlikeArticle(long id)
-    {
-        return this.UpdateLikeStatusForArticle(id, false);
-    }
-
-    /// <inheritdoc/>
     public DatabaseArticle UpdateReadProgressForArticle(float readProgress, DateTime readProgressTimestamp, long articleId)
     {
         if (readProgress < 0.0 || readProgress > 1.0)
@@ -304,7 +331,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             throw new ArgumentOutOfRangeException(nameof(readProgressTimestamp), "Progress Timestamp must be within the Unix Epoch");
         }
 
-        var c = this.connection;
+        return UpdateReadProgressForArticle(this.connection, readProgress, readProgressTimestamp, articleId);
+    }
+
+    private static DatabaseArticle UpdateReadProgressForArticle(IDbConnection c, float readProgress, DateTime readProgressTimestamp, long articleId)
+    {
         using var t = c.BeginTransaction();
 
         // The hash field is driven by the service, and complately opaque
@@ -335,8 +366,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             throw new ArticleNotFoundException(articleId);
         }
 
-        var updatedArticle = this.GetArticleById(articleId)!;
-        
+        var updatedArticle = GetArticleById(c, articleId)!;
+
         t.Commit();
 
         return updatedArticle;
@@ -345,18 +376,21 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public void MoveArticleToFolder(long articleId, long localFolderId)
     {
-        var c = this.connection;
+        MoveArticleToFolder(this.connection, articleId, localFolderId, this);
+    }
 
+    private static void MoveArticleToFolder(IDbConnection c, long articleId, long localFolderId, ArticleDatabase eventSource)
+    {
         using var t = c.BeginTransaction();
 
-        if (this.GetArticleById(articleId) is null)
+        if (GetArticleById(c, articleId) is null)
         {
             throw new ArticleNotFoundException(articleId);
         }
 
         // Check and see if the article is already in the destination folder. If
         // it is, it means we have nothing to do, and we can just go home.
-        using(var isAlreadyInTargetFolder = c.CreateCommand(@"
+        using (var isAlreadyInTargetFolder = c.CreateCommand(@"
             SELECT count(*) FROM article_to_folder
             WHERE article_id = @articleId AND local_folder_id = @localFolderId
         "))
@@ -365,7 +399,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             isAlreadyInTargetFolder.AddParameter("@localFolderId", localFolderId);
 
             var folderPairs = (long)(isAlreadyInTargetFolder.ExecuteScalar()!);
-            if(folderPairs == 1)
+            if (folderPairs == 1)
             {
                 return;
             }
@@ -375,7 +409,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         // we can have a single path for placing in a folder (e.g. no UPDATE vs
         // INSERT dance).
 
-        using(var removeFromExistingFolder = c.CreateCommand(@"
+        using (var removeFromExistingFolder = c.CreateCommand(@"
             DELETE FROM article_to_folder
             WHERE article_id = @articleId
         "))
@@ -395,9 +429,9 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         try
         {
             query.ExecuteNonQuery();
-    
-            var article = this.GetArticleById(articleId)!;
-            this.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
+
+            var article = GetArticleById(c, articleId)!;
+            eventSource.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
 
             t.Commit();
         }
@@ -413,7 +447,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public void DeleteArticle(long articleId)
     {
-        var c = this.connection;
+        DeleteArticle(this.connection, articleId, this);
+    }
+
+    private static void DeleteArticle(IDbConnection c, long articleId, ArticleDatabase eventSource)
+    {
         using var t = c.BeginTransaction();
 
         void DeleteFromFolder()
@@ -443,17 +481,18 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         }
 
         DeleteFromFolder();
+
         // Delete the local only state first, since that has a foreign
         // key relationship to the articles table. This is expected
         // to not throw an error if there is no local state associated
         // with the article being deleted.
-        this.DeleteLocalOnlyArticleState(articleId);
+        DeleteLocalOnlyArticleState(c, articleId);
         var wasDeleted = DeleteArticle();
 
         if (wasDeleted)
         {
             // Only raise the event if we actually deleted something
-            this.RaiseArticleDeletedWithinTransaction(articleId);
+            eventSource.RaiseArticleDeletedWithinTransaction(articleId);
         }
 
         t.Commit();

@@ -23,8 +23,11 @@ internal class FolderChanges : IFolderChangesDatabase
             throw new InvalidOperationException("Can't create a folder add for wellknown folders");
         }
 
-        var c = this.connection;
+        return CreatePendingFolderAdd(this.connection, localFolderId);
+    }
 
+    private static PendingFolderAdd CreatePendingFolderAdd(IDbConnection c, long localFolderId)
+    {
         using var query = c.CreateCommand(@"
             INSERT INTO folder_adds(local_id)
             VALUES (@localId);
@@ -79,8 +82,11 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public void DeletePendingFolderAdd(long localFolderId)
     {
-        var c = this.connection;
+        DeletePendingFolderAdd(this.connection, localFolderId);
+    }
 
+    private static void DeletePendingFolderAdd(IDbConnection c, long localFolderId)
+    {
         using var query = c.CreateCommand(@"
             DELETE FROM folder_adds
             WHERE local_id = @localId
@@ -94,8 +100,11 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public IList<PendingFolderAdd> ListPendingFolderAdds()
     {
-        var c = this.connection;
+        return ListPendingFolderAdds(this.connection);
+    }
 
+    private static IList<PendingFolderAdd> ListPendingFolderAdds(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM folder_adds_with_folder_information
@@ -124,8 +133,11 @@ internal class FolderChanges : IFolderChangesDatabase
             throw new InvalidOperationException("Can't create pending delete for well known folders");
         }
 
-        var c = this.connection;
+        return CreatePendingFolderDelete(this.connection, serviceId, title);
+    }
 
+    private static PendingFolderDelete CreatePendingFolderDelete(IDbConnection c, long serviceId, string title)
+    {
         using var query = c.CreateCommand(@"
             INSERT INTO folder_deletes(service_id, title)
             VALUES (@serviceId, @title);
@@ -149,8 +161,11 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public void DeletePendingFolderDelete(long serviceId)
     {
-        var c = this.connection;
+        DeletePendingFolderDelete(this.connection, serviceId);
+    }
 
+    private static void DeletePendingFolderDelete(IDbConnection c, long serviceId)
+    {
         using var query = c.CreateCommand(@"
             DELETE FROM folder_deletes
             WHERE service_id = @serviceId
@@ -191,8 +206,12 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public PendingFolderDelete? GetPendingFolderDeleteByTitle(string title)
     {
-        var c = this.connection;
-        using var query = connection.CreateCommand(@"
+        return GetPendingFolderDeleteByTitle(this.connection, title);
+    }
+
+    private static PendingFolderDelete? GetPendingFolderDeleteByTitle(IDbConnection c, string title)
+    {
+        using var query = c.CreateCommand(@"
             SELECT service_id, title
             FROM folder_deletes
             WHERE title = @title
@@ -213,8 +232,11 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public IList<PendingFolderDelete> ListPendingFolderDeletes()
     {
-        var c = this.connection;
+        return ListPendingFolderDeletes(this.connection);
+    }
 
+    private static IList<PendingFolderDelete> ListPendingFolderDeletes(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM folder_deletes

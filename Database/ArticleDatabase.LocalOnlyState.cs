@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Data;
+using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Storyvoid;
 
@@ -7,7 +8,11 @@ internal sealed partial class ArticleDatabase
     /// <inheritdoc/>
     public DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(long articleId)
     {
-        var c = this.connection;
+        return GetLocalOnlyStateByArticleId(this.connection, articleId);
+    }
+
+    private static DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(IDbConnection c, long articleId)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM article_local_only_state
@@ -29,8 +34,11 @@ internal sealed partial class ArticleDatabase
     /// <inheritdoc/>
     public DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(DatabaseLocalOnlyArticleState localOnlyArticleState)
     {
-        var c = this.connection;
+        return AddLocalOnlyStateForArticle(this.connection, localOnlyArticleState);
+    }
 
+    private static DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(IDbConnection c, DatabaseLocalOnlyArticleState localOnlyArticleState)
+    {
         using var query = c.CreateCommand(@"
             INSERT INTO article_local_only_state(article_id,
                                                     available_locally,
@@ -78,13 +86,17 @@ internal sealed partial class ArticleDatabase
             throw new LocalOnlyStateExistsException(localOnlyArticleState.ArticleId);
         }
 
-        return this.GetLocalOnlyStateByArticleId(localOnlyArticleState.ArticleId)!;
+        return GetLocalOnlyStateByArticleId(c, localOnlyArticleState.ArticleId)!;
     }
 
     /// <inheritdoc/>
     public void DeleteLocalOnlyArticleState(long articleId)
     {
-        var c = this.connection;
+        DeleteLocalOnlyArticleState(this.connection, articleId);
+    }
+
+    private static void DeleteLocalOnlyArticleState(IDbConnection c, long articleId)
+    {
         using var query = c.CreateCommand(@"
             DELETE FROM article_local_only_state
             WHERE article_id = @articleId
@@ -101,7 +113,11 @@ internal sealed partial class ArticleDatabase
             throw new ArgumentException("Article ID must be greater than 0");
         }
 
-        var c = this.connection;
+        return UpdateLocalOnlyArticleState(this.connection, updatedLocalOnlyArticleState);
+    }
+
+    private static DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(IDbConnection c, DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)
+    {
         var articleId = updatedLocalOnlyArticleState.ArticleId;
 
         using var query = c.CreateCommand(@"
@@ -130,7 +146,7 @@ internal sealed partial class ArticleDatabase
         {
             // Nothing was updated; check if it was just that there was
             // no existing state to update
-            var state = this.GetLocalOnlyStateByArticleId(articleId);
+            var state = GetLocalOnlyStateByArticleId(c, articleId);
             if (state is null)
             {
                 throw new LocalOnlyStateNotFoundException(articleId);
@@ -139,7 +155,7 @@ internal sealed partial class ArticleDatabase
             throw new InvalidOperationException("Unknown error while updating local only state");
         }
 
-        var local = this.GetLocalOnlyStateByArticleId(articleId);
+        var local = GetLocalOnlyStateByArticleId(c, articleId);
         return local!;
     }
 }

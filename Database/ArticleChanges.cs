@@ -16,8 +16,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleAdd CreatePendingArticleAdd(Uri url, string? title)
     {
-        var c = this.connection;
+        return CreatePendingArticleAdd(this.connection, url, title);
+    }
 
+    private static PendingArticleAdd CreatePendingArticleAdd(IDbConnection c, Uri url, string? title)
+    {
         using var query = c.CreateCommand(@"
             INSERT INTO article_adds(url, title)
             VALUES (@url, @title);
@@ -48,14 +51,17 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleAdd? GetPendingArticleAddByUrl(Uri url)
     {
-        var c = this.connection;
-        return GetPendingArticleAddByUrl(c, url);
+        return GetPendingArticleAddByUrl(this.connection, url);
     }
 
     /// <inheritdoc />
     public IList<PendingArticleAdd> ListPendingArticleAdds()
     {
-        var c = this.connection;
+        return ListPendingArticleAdds(this.connection);
+    }
+
+    private static IList<PendingArticleAdd> ListPendingArticleAdds(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT * FROM article_adds;
         ");
@@ -63,7 +69,7 @@ internal class ArticleChanges : IArticleChangesDatabase
         using var pendingArticleAdds = query.ExecuteReader();
 
         var result = new List<PendingArticleAdd>();
-        while(pendingArticleAdds.Read())
+        while (pendingArticleAdds.Read())
         {
             var pendingArticleAdd = PendingArticleAdd.FromRow(pendingArticleAdds);
             result.Add(pendingArticleAdd);
@@ -75,7 +81,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public void DeletePendingArticleAdd(Uri url)
     {
-        var c = this.connection;
+        DeletePendingArticleAdd(this.connection, url);
+    }
+
+    private static void DeletePendingArticleAdd(IDbConnection c, Uri url)
+    {
         using var query = c.CreateCommand(@"
             DELETE FROM article_adds
             WHERE url = @url
@@ -98,7 +108,7 @@ internal class ArticleChanges : IArticleChangesDatabase
 
         PendingArticleAdd? result = null;
         using var row = query.ExecuteReader();
-        if(row.Read())
+        if (row.Read())
         {
             result = PendingArticleAdd.FromRow(row);
         }
@@ -109,7 +119,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public long CreatePendingArticleDelete(long articleId)
     {
-        var c = this.connection;
+        return CreatePendingArticleDelete(this.connection, articleId);
+    }
+
+    private static long CreatePendingArticleDelete(IDbConnection c, long articleId)
+    {
         using var query = c.CreateCommand(@"
             INSERT INTO article_deletes(id)
             VALUES (@articleId)
@@ -133,7 +147,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public bool HasPendingArticleDelete(long articleId)
     {
-        var c = this.connection;
+        return HasPendingArticleDelete(this.connection, articleId);
+    }
+
+    private static bool HasPendingArticleDelete(IDbConnection c, long articleId)
+    {
         using var query = c.CreateCommand(@"
             SELECT id
             FROM article_deletes
@@ -149,7 +167,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public IList<long> ListPendingArticleDeletes()
     {
-        var c = this.connection;
+        return ListPendingArticleDeletes(this.connection);
+    }
+
+    private static IList<long> ListPendingArticleDeletes(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM article_deletes
@@ -157,7 +179,7 @@ internal class ArticleChanges : IArticleChangesDatabase
 
         using var row = query.ExecuteReader();
         var result = new List<long>();
-        while(row.Read())
+        while (row.Read())
         {
             var articleId = row.GetInt64("id");
             result.Add(articleId);
@@ -169,7 +191,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public void DeletePendingArticleDelete(long articleId)
     {
-        var c = this.connection;
+        DeletePendingArticleDelete(this.connection, articleId);
+    }
+
+    private static void DeletePendingArticleDelete(IDbConnection c, long articleId)
+    {
         using var query = c.CreateCommand(@"
             DELETE FROM article_deletes
             WHERE id = @articleId
@@ -183,7 +209,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleStateChange CreatePendingArticleStateChange(long articleId, bool liked)
     {
-        var c = this.connection;
+        return CreatePendingArticleStateChange(this.connection, articleId, liked);
+    }
+
+    private static PendingArticleStateChange CreatePendingArticleStateChange(IDbConnection c, long articleId, bool liked)
+    {
         using var query = c.CreateCommand(@"
             INSERT INTO article_liked_changes(article_id, liked)
             VALUES (@articleId, @liked)
@@ -212,14 +242,17 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleStateChange? GetPendingArticleStateChangeByArticleId(long articleId)
     {
-        var c = this.connection;
-        return GetPendingArticleStateChangeByArticleId(c, articleId);
+        return GetPendingArticleStateChangeByArticleId(this.connection, articleId);
     }
 
     /// <inheritdoc />
     public IList<PendingArticleStateChange> ListPendingArticleStateChanges()
     {
-        var c = this.connection;
+        return ListPendingArticleStateChanges(this.connection);
+    }
+
+    private static IList<PendingArticleStateChange> ListPendingArticleStateChanges(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM article_liked_changes
@@ -227,7 +260,7 @@ internal class ArticleChanges : IArticleChangesDatabase
 
         using var row = query.ExecuteReader();
         var result = new List<PendingArticleStateChange>();
-        while(row.Read())
+        while (row.Read())
         {
             var pendingArticleStateChange = PendingArticleStateChange.FromRow(row);
             result.Add(pendingArticleStateChange);
@@ -239,7 +272,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public void DeletePendingArticleStateChange(long articleId)
     {
-        var c = this.connection;
+        DeletePendingArticleStateChange(this.connection, articleId);
+    }
+
+    private static void DeletePendingArticleStateChange(IDbConnection c, long articleId)
+    {
         using var query = c.CreateCommand(@"
             DELETE FROM article_liked_changes
             WHERE article_id = @articleId
@@ -262,7 +299,7 @@ internal class ArticleChanges : IArticleChangesDatabase
 
         PendingArticleStateChange? result = null;
         using var row = query.ExecuteReader();
-        if(row.Read())
+        if (row.Read())
         {
             result = PendingArticleStateChange.FromRow(row);
         }
@@ -273,7 +310,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleMove CreatePendingArticleMove(long articleId, long destinationFolderLocalId)
     {
-        var c = this.connection;
+        return CreatePendingArticleMove(this.connection, articleId, destinationFolderLocalId);
+    }
+
+    private static PendingArticleMove CreatePendingArticleMove(IDbConnection c, long articleId, long destinationFolderLocalId)
+    {
         using var query = c.CreateCommand(@"
             INSERT INTO article_folder_changes(article_id, destination_local_id)
             VALUES (@articleId, @destinationFolderLocalId)
@@ -312,7 +353,7 @@ internal class ArticleChanges : IArticleChangesDatabase
             articleExistsCommand.AddParameter("@articleId", articleId);
 
             var article = (long)articleExistsCommand.ExecuteScalar();
-            if(article == 0)
+            if (article == 0)
             {
                 throw new ArticleNotFoundException(articleId);
             }
@@ -333,7 +374,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public IList<PendingArticleMove> ListPendingArticleMoves()
     {
-        var c = this.connection;
+        return ListPendingArticleMoves(this.connection);
+    }
+
+    private static IList<PendingArticleMove> ListPendingArticleMoves(IDbConnection c)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM article_folder_changes
@@ -341,7 +386,7 @@ internal class ArticleChanges : IArticleChangesDatabase
 
         using var row = query.ExecuteReader();
         var result = new List<PendingArticleMove>();
-        while(row.Read())
+        while (row.Read())
         {
             var pendingArticleMove = PendingArticleMove.FromRow(row);
             result.Add(pendingArticleMove);
@@ -353,8 +398,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId)
     {
-        var c = this.connection;
+        return ListPendingArticleMovesForLocalFolderId(this.connection, localFolderId);
+    }
 
+    private static IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(IDbConnection c, long localFolderId)
+    {
         using var query = c.CreateCommand(@"
             SELECT *
             FROM article_folder_changes
@@ -365,7 +413,7 @@ internal class ArticleChanges : IArticleChangesDatabase
 
         using var row = query.ExecuteReader();
         var result = new List<PendingArticleMove>();
-        while(row.Read())
+        while (row.Read())
         {
             var pendingArticleMove = PendingArticleMove.FromRow(row);
             result.Add(pendingArticleMove);
@@ -377,7 +425,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public void DeletePendingArticleMove(long articleId)
     {
-        var c = this.connection;
+        DeletePendingArticleMove(this.connection, articleId);
+    }
+
+    private static void DeletePendingArticleMove(IDbConnection c, long articleId)
+    {
         using var query = c.CreateCommand(@"
             DELETE FROM article_folder_changes
             WHERE article_id = @articleId
@@ -388,7 +440,7 @@ internal class ArticleChanges : IArticleChangesDatabase
         query.ExecuteNonQuery();
     }
 
-    private PendingArticleMove? GetPendingArticleMoveByArticleId(IDbConnection connection, long articleId)
+    private static PendingArticleMove? GetPendingArticleMoveByArticleId(IDbConnection connection, long articleId)
     {
         using var query = connection.CreateCommand(@"
             SELECT article_id, destination_local_id
@@ -400,7 +452,7 @@ internal class ArticleChanges : IArticleChangesDatabase
 
         PendingArticleMove? result = null;
         using var row = query.ExecuteReader();
-        if(row.Read())
+        if (row.Read())
         {
             result = PendingArticleMove.FromRow(row);
         }

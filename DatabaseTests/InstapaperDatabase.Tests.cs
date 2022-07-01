@@ -17,7 +17,9 @@ public sealed class InstapaperDatabaseTests
         // Open the DB, and put _something_ in it
         using (var connection1 = new SqliteConnection(CONNECTION_STRING))
         {
-            InstapaperDatabase.OpenOrCreateDatabase(connection1);
+            connection1.Open();
+
+            InstapaperDatabase.CreateDatabaseIfNeeded(connection1);
 
             // Why not use the data access layer? To keep the tests decoupled.
             // This does run the risk of atrophy over time, but removing the
@@ -35,7 +37,8 @@ public sealed class InstapaperDatabaseTests
         // Reopen the db and get _something_ out of it
         using (var connection2 = new SqliteConnection(CONNECTION_STRING))
         {
-            InstapaperDatabase.OpenOrCreateDatabase(connection2);
+            connection2.Open();
+            InstapaperDatabase.CreateDatabaseIfNeeded(connection2);
             using var query = connection2.CreateCommand(@"
                 SELECT COUNT(local_id) FROM folders
                 WHERE local_id = -1
@@ -48,5 +51,12 @@ public sealed class InstapaperDatabaseTests
         }
 
         baseConnection.Close();
+    }
+
+    [Fact]
+    public void PassingUnopenedConnectionToCreateDatabaseThrowsException()
+    {
+        using var connection = new SqliteConnection("Data Source=:memory");
+        Assert.Throws<InvalidOperationException>(() => InstapaperDatabase.CreateDatabaseIfNeeded(connection));
     }
 }

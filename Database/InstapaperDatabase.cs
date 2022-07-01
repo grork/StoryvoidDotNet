@@ -17,9 +17,12 @@ internal static class InstapaperDatabase
         return (CURRENT_DB_VERSION == version);
     }
 
-    public static void OpenOrCreateDatabase(IDbConnection connection)
+    public static void CreateDatabaseIfNeeded(IDbConnection connection)
     {
-        connection.Open();
+        if (connection.State != ConnectionState.Open)
+        {
+            throw new InvalidOperationException("Connection must be opened");
+        }
 
         // Perform any migrations
         using (var checkIfUpdated = connection.CreateCommand("PRAGMA user_version"))
