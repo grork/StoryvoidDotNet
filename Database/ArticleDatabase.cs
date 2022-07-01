@@ -9,9 +9,9 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private IDbConnection connection;
 
-    public event EventHandler<DatabaseArticle>? ArticleLikeStatusChangedWithinTransaction;
-    public event EventHandler<long>? ArticleDeletedWithinTransaction;
-    public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMovedToFolderWithinTransaction;
+    public event WithinTransactionEventHandler<IArticleDatabase, DatabaseArticle>? ArticleLikeStatusChangedWithinTransaction;
+    public event WithinTransactionEventHandler<IArticleDatabase, long>? ArticleDeletedWithinTransaction;
+    public event WithinTransactionEventHandler<IArticleDatabase, (DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMovedToFolderWithinTransaction;
 
     internal ArticleDatabase(IDbConnection connection)
     {
@@ -311,7 +311,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         if (impactedRows > 0)
         {
             // Only raise the change event if the table was actually updated
-            this.RaiseArticleLikeStatusChangedWithinTransaction(updatedArticle!);
+            this.RaiseArticleLikeStatusChangedWithinTransaction(c, updatedArticle!);
         }
 
         t?.Commit();
@@ -433,7 +433,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             query.ExecuteNonQuery();
 
             var article = GetArticleById(c, articleId)!;
-            eventSource.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
+            eventSource.RaiseArticleMovedToFolderWithinTransaction(c, article, localFolderId);
 
             t?.Commit();
         }
@@ -496,29 +496,29 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         if (wasDeleted)
         {
             // Only raise the event if we actually deleted something
-            eventSource.RaiseArticleDeletedWithinTransaction(articleId);
+            eventSource.RaiseArticleDeletedWithinTransaction(c, articleId);
         }
 
         t?.Commit();
     }
 
     #region Event Helpers
-    private void RaiseArticleLikeStatusChangedWithinTransaction(DatabaseArticle article)
+    private void RaiseArticleLikeStatusChangedWithinTransaction(IDbConnection c, DatabaseArticle article)
     {
         var handlers = this.ArticleLikeStatusChangedWithinTransaction;
-        handlers?.Invoke(this, article);
+        handlers?.Invoke(this, new(c, article));
     }
 
-    private void RaiseArticleDeletedWithinTransaction(long articleId)
+    private void RaiseArticleDeletedWithinTransaction(IDbConnection c, long articleId)
     {
         var handlers = this.ArticleDeletedWithinTransaction;
-        handlers?.Invoke(this, articleId);
+        handlers?.Invoke(this, new(c, articleId));
     }
 
-    private void RaiseArticleMovedToFolderWithinTransaction(DatabaseArticle article, long destinationLocalFolderId)
+    private void RaiseArticleMovedToFolderWithinTransaction(IDbConnection c, DatabaseArticle article, long destinationLocalFolderId)
     {
         var handlers = this.ArticleMovedToFolderWithinTransaction;
-        handlers?.Invoke(this, (article, destinationLocalFolderId));
+        handlers?.Invoke(this, new(c, (article, destinationLocalFolderId)));
     }
     #endregion
 }

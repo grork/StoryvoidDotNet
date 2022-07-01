@@ -215,7 +215,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var unlikedArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         DatabaseArticle? eventChangeArticle = null;
-        this.db.ArticleLikeStatusChangedWithinTransaction += (_, article) => eventChangeArticle = article;
+        this.db.ArticleLikeStatusChangedWithinTransaction += (_, payload) => eventChangeArticle = payload.Data;
 
         var likedArticle = this.db.LikeArticle(unlikedArticle.Id);
         Assert.Equal(likedArticle, eventChangeArticle);
@@ -269,7 +269,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var originalArticle = this.db.AddArticleToFolder(TestUtilities.GetRandomArticle() with { liked = true }, WellKnownLocalFolderIds.Unread);
 
         DatabaseArticle? eventChangeArticle = null;
-        this.db.ArticleLikeStatusChangedWithinTransaction += (_, article) => eventChangeArticle = article;
+        this.db.ArticleLikeStatusChangedWithinTransaction += (_, payload) => eventChangeArticle = payload.Data;
 
         var unlikedArticle = this.db.UnlikeArticle(originalArticle.Id);
         Assert.Equal(unlikedArticle, eventChangeArticle);
@@ -462,7 +462,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         long? destinationId = null;
         DatabaseArticle? eventArticle = null;
 
-        this.db.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload.Data;
         this.db.MoveArticleToFolder(article.Id, this.CustomFolder1.LocalId);
 
         Assert.Equal(this.CustomFolder1.LocalId, destinationId);
@@ -493,7 +493,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         long? destinationId = null;
         DatabaseArticle? eventArticle = null;
 
-        this.db.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload.Data;
         this.db.MoveArticleToFolder(article.Id, WellKnownLocalFolderIds.Archive);
 
         Assert.Equal(WellKnownLocalFolderIds.Archive, destinationId);
@@ -524,7 +524,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         long? destinationId = null;
         DatabaseArticle? eventArticle = null;
 
-        this.db.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload;
+        this.db.ArticleMovedToFolderWithinTransaction += (_, payload) => (eventArticle, destinationId) = payload.Data;
         this.db.MoveArticleToFolder(article.Id, WellKnownLocalFolderIds.Unread);
 
         Assert.Equal(WellKnownLocalFolderIds.Unread, destinationId);
@@ -623,7 +623,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         long? deletedArticle = null;
-        this.db.ArticleDeletedWithinTransaction += (_, payload) => deletedArticle = payload;
+        this.db.ArticleDeletedWithinTransaction += (_, payload) => deletedArticle = payload.Data;
         this.db.DeleteArticle(article.Id);
 
         Assert.Equal(article.Id, deletedArticle);
@@ -725,7 +725,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
 
         long? deletedItem = null;
-        this.db.ArticleDeletedWithinTransaction += (_, payload) => deletedItem = payload;
+        this.db.ArticleDeletedWithinTransaction += (_, payload) => deletedItem = payload.Data;
         Assert.Null(deletedItem);
 
         this.db.DeleteArticle(article.Id);

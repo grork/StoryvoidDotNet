@@ -27,8 +27,9 @@ public sealed class FolderTransactionTests : IDisposable
     [Fact]
     public void ExceptionDuringFolderCreationAddEventRollsBackEntireChange()
     {
-        this.db.FolderAddedWithinTransaction += (_, folder) =>
+        this.db.FolderAddedWithinTransaction += (_, payload) =>
         {
+            var folder = payload.Data;
             var added = this.db.GetFolderByTitle(folder)!;
             this.folderChanges.CreatePendingFolderAdd(added.LocalId);
             this.ThrowException();
@@ -61,7 +62,7 @@ public sealed class FolderTransactionTests : IDisposable
         var createdFolder = this.db.AddKnownFolder("Sample", 10L, 1L, true);
         this.db.FolderWillBeDeletedWithinTransaction += (_, folder) => this.folderChanges.CreatePendingFolderDelete((createdFolder).ServiceId!.Value, createdFolder.Title);
         this.db.FolderDeletedWithinTransaction += (_, _) => this.ThrowException();
-        
+
         Assert.Throws<Exception>(() => this.db.DeleteFolder(createdFolder.LocalId));
 
         Assert.Equal(3, this.db.ListAllFolders().Count);
@@ -103,8 +104,9 @@ public sealed class ArticleTransactionTests : IDisposable
         var randomArticle = TestUtilities.GetRandomArticle();
         this.db.AddArticleToFolder(randomArticle, WellKnownLocalFolderIds.Unread);
 
-        this.db.ArticleLikeStatusChangedWithinTransaction += (_, article) =>
+        this.db.ArticleLikeStatusChangedWithinTransaction += (_, payload) =>
         {
+            var article = payload.Data;
             this.articleChanges.CreatePendingArticleStateChange(article.Id, article.Liked);
             this.ThrowException();
         };
@@ -112,7 +114,7 @@ public sealed class ArticleTransactionTests : IDisposable
         Assert.Throws<Exception>(() => this.db.LikeArticle(randomArticle.id));
 
         var retreivedArticle = this.db.GetArticleById(randomArticle.id)!;
-        Assert.Equal(randomArticle.liked ,retreivedArticle.Liked);
+        Assert.Equal(randomArticle.liked, retreivedArticle.Liked);
         Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
     }
 
@@ -123,8 +125,9 @@ public sealed class ArticleTransactionTests : IDisposable
 
         this.db.AddArticleToFolder(randomArticle, WellKnownLocalFolderIds.Unread);
 
-        this.db.ArticleLikeStatusChangedWithinTransaction += (_, article) =>
+        this.db.ArticleLikeStatusChangedWithinTransaction += (_, payload) =>
         {
+            var article = payload.Data;
             this.articleChanges.CreatePendingArticleStateChange(article.Id, article.Liked);
             this.ThrowException();
         };
@@ -132,7 +135,7 @@ public sealed class ArticleTransactionTests : IDisposable
         Assert.Throws<Exception>(() => this.db.UnlikeArticle(randomArticle.id));
 
         var retreivedArticle = this.db.GetArticleById(randomArticle.id)!;
-        Assert.Equal(randomArticle.liked ,retreivedArticle.Liked);
+        Assert.Equal(randomArticle.liked, retreivedArticle.Liked);
         Assert.Empty(this.articleChanges.ListPendingArticleStateChanges());
     }
 
@@ -142,8 +145,9 @@ public sealed class ArticleTransactionTests : IDisposable
         var randomArticle = TestUtilities.GetRandomArticle();
         this.db.AddArticleToFolder(randomArticle, WellKnownLocalFolderIds.Unread);
 
-        this.db.ArticleMovedToFolderWithinTransaction += (_, payload) =>
+        this.db.ArticleMovedToFolderWithinTransaction += (_, args) =>
         {
+            var payload = args.Data;
             this.articleChanges.CreatePendingArticleMove(payload.Article.Id, payload.DestinationLocalFolderId);
             this.ThrowException();
         };
@@ -161,9 +165,9 @@ public sealed class ArticleTransactionTests : IDisposable
         this.db.AddArticleToFolder(randomArticle, WellKnownLocalFolderIds.Unread);
         this.db.AddLocalOnlyStateForArticle(new() { ArticleId = randomArticle.id });
 
-        this.db.ArticleDeletedWithinTransaction += (_, articleId) =>
+        this.db.ArticleDeletedWithinTransaction += (_, payload) =>
         {
-            this.articleChanges.CreatePendingArticleDelete(articleId);
+            this.articleChanges.CreatePendingArticleDelete(payload.Data);
             this.ThrowException();
         };
 

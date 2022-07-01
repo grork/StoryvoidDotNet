@@ -176,18 +176,18 @@ internal interface IArticleDatabaseWithTransactionEvents : IArticleDatabase
     /// Raised whenver an article's liked status is changed. Event is raised
     /// with the *new* status.
     /// </summary>
-    event EventHandler<DatabaseArticle> ArticleLikeStatusChangedWithinTransaction;
+    event WithinTransactionEventHandler<IArticleDatabase, DatabaseArticle> ArticleLikeStatusChangedWithinTransaction;
 
     /// <summary>
     /// Raised when an article has been completely deleted from the database.
     /// Because the article is being deleted, only the ID is provided.
     /// </summary>
-    event EventHandler<long> ArticleDeletedWithinTransaction;
+    event WithinTransactionEventHandler<IArticleDatabase, long> ArticleDeletedWithinTransaction;
 
     /// <summary>
     /// Raised when an article is moved between folders. When raised, the
     /// article being moved is supplied, along with the local ID of the folder
     /// its being moved to.
     /// </summary>
-    event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)> ArticleMovedToFolderWithinTransaction;
+    event WithinTransactionEventHandler<IArticleDatabase, (DatabaseArticle Article, long DestinationLocalFolderId)> ArticleMovedToFolderWithinTransaction;
 }

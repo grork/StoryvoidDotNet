@@ -124,17 +124,17 @@ internal interface IFolderDatabaseWithTransactionEvents : IFolderDatabase
     /// raised, the folder title is supplied. Handlers need to retrieve the
     /// folder by title to perform additional mutations
     /// </summary>
-    event EventHandler<string> FolderAddedWithinTransaction;
+    event WithinTransactionEventHandler<IFolderDatabase, string> FolderAddedWithinTransaction;
 
     /// <summary>
     /// Raised immediately prior to the folder being deleted. Primarily intended
     /// to clean up database state that would cause the delete to fail (E.g., 
     /// foreign key references).
     /// </summary>
-    event EventHandler<DatabaseFolder> FolderWillBeDeletedWithinTransaction;
+    event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder> FolderWillBeDeletedWithinTransaction;
 
     /// <summary>
     /// Raised immediately after a folder has been successuflly deleted.
     /// </summary>
-    event EventHandler<DatabaseFolder> FolderDeletedWithinTransaction;
+    event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder> FolderDeletedWithinTransaction;
 }

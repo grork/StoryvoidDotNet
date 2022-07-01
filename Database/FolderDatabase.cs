@@ -7,9 +7,9 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 {
     private IDbConnection connection;
 
-    public event EventHandler<string>? FolderAddedWithinTransaction;
-    public event EventHandler<DatabaseFolder>? FolderWillBeDeletedWithinTransaction;
-    public event EventHandler<DatabaseFolder>? FolderDeletedWithinTransaction;
+    public event WithinTransactionEventHandler<IFolderDatabase, string>? FolderAddedWithinTransaction;
+    public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderWillBeDeletedWithinTransaction;
+    public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderDeletedWithinTransaction;
 
     public FolderDatabase(IDbConnection connection)
     {
@@ -147,7 +147,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         query.AddParameter("@title", title);
         query.ExecuteScalar();
 
-        eventSource.RaiseFolderAddedWithinTransaction(title);
+        eventSource.RaiseFolderAddedWithinTransaction(c, title);
 
         t?.Commit();
 
@@ -272,7 +272,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
             return;
         }
 
-        eventSource.RaiseFolderWillBeDeletedWithinTransaction(folder);
+        eventSource.RaiseFolderWillBeDeletedWithinTransaction(c, folder);
 
         // Delete any article-folder-pairs
         deleteArticleFolderPairsQuery.AddParameter("@localFolderId", localFolderId);
@@ -296,28 +296,28 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
             throw new InvalidOperationException($"Can't delete folder {localFolderId} that is pending operation. Clear its pending operations first", ex);
         }
 
-        eventSource.RaiseFolderDeletedWithinTransaction(folder);
+        eventSource.RaiseFolderDeletedWithinTransaction(c, folder);
 
         t?.Commit();
     }
 
     #region Event Helpers
-    private void RaiseFolderAddedWithinTransaction(string title)
+    private void RaiseFolderAddedWithinTransaction(IDbConnection c, string title)
     {
         var handlers = this.FolderAddedWithinTransaction;
-        handlers?.Invoke(this, title);
+        handlers?.Invoke(this, new(c, title));
     }
 
-    private void RaiseFolderWillBeDeletedWithinTransaction(DatabaseFolder toBeDeleted)
+    private void RaiseFolderWillBeDeletedWithinTransaction(IDbConnection c, DatabaseFolder toBeDeleted)
     {
         var handlers = this.FolderWillBeDeletedWithinTransaction;
-        handlers?.Invoke(this, toBeDeleted);
+        handlers?.Invoke(this, new(c, toBeDeleted));
     }
 
-    private void RaiseFolderDeletedWithinTransaction(DatabaseFolder deleted)
+    private void RaiseFolderDeletedWithinTransaction(IDbConnection c, DatabaseFolder deleted)
     {
         var handlers = this.FolderDeletedWithinTransaction;
-        handlers?.Invoke(this, deleted);
+        handlers?.Invoke(this, new(c, deleted));
     }
     #endregion
 }

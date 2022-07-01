@@ -2,9 +2,8 @@ namespace Codevoid.Storyvoid;
 
 internal class Ledger : IDisposable
 {
-    private IFolderDatabaseWithTransactionEvents folderDatabase;
+    IList<EventCleanupHelper> cleanup = new List<EventCleanupHelper>();
     private IFolderChangesDatabase folderChangesDatabase;
-    private IArticleDatabaseWithTransactionEvents articleDatabase;
     private IArticleChangesDatabase articleChangesDatabase;
 
     internal Ledger(
@@ -13,23 +12,40 @@ internal class Ledger : IDisposable
         IArticleDatabaseWithTransactionEvents articleDatabase,
         IArticleChangesDatabase articleChangesDatabase)
     {
-        this.folderDatabase = folderDatabase;
         this.folderChangesDatabase = folderChangesDatabase;
-        this.articleDatabase = articleDatabase;
         this.articleChangesDatabase = articleChangesDatabase;
 
-        this.folderDatabase.FolderAddedWithinTransaction += this.HandleFolderAdded;
-        this.folderDatabase.FolderWillBeDeletedWithinTransaction += this.HandleFolderWillBeDeleted;
-        this.folderDatabase.FolderDeletedWithinTransaction += this.HandleFolderDeleted;
-        this.articleDatabase.ArticleDeletedWithinTransaction += this.HandleArticleDeleted;
-        this.articleDatabase.ArticleLikeStatusChangedWithinTransaction += this.HandleArticleLikeStatusChanged;
-        this.articleDatabase.ArticleMovedToFolderWithinTransaction += this.HandleArticleMovedToFolder;
+        this.cleanup.Add(() =>
+        {
+            folderDatabase.FolderAddedWithinTransaction += this.HandleFolderAdded;
+            folderDatabase.FolderWillBeDeletedWithinTransaction += this.HandleFolderWillBeDeleted;
+            folderDatabase.FolderDeletedWithinTransaction += this.HandleFolderDeleted;
+        },
+        () =>
+        {
+            folderDatabase.FolderAddedWithinTransaction -= this.HandleFolderAdded;
+            folderDatabase.FolderWillBeDeletedWithinTransaction -= this.HandleFolderWillBeDeleted;
+            folderDatabase.FolderDeletedWithinTransaction -= this.HandleFolderDeleted;
+        });
+
+        this.cleanup.Add(() =>
+        {
+            articleDatabase.ArticleDeletedWithinTransaction += this.HandleArticleDeleted;
+            articleDatabase.ArticleLikeStatusChangedWithinTransaction += this.HandleArticleLikeStatusChanged;
+            articleDatabase.ArticleMovedToFolderWithinTransaction += this.HandleArticleMovedToFolder;
+        }, () =>
+        {
+            articleDatabase.ArticleDeletedWithinTransaction -= this.HandleArticleDeleted;
+            articleDatabase.ArticleLikeStatusChangedWithinTransaction -= this.HandleArticleLikeStatusChanged;
+            articleDatabase.ArticleMovedToFolderWithinTransaction -= this.HandleArticleMovedToFolder;
+        });
     }
 
-    private void HandleFolderAdded(object _, string title)
+    private void HandleFolderAdded(IFolderDatabase folderDatabase, WithinTransactionArgs<string> args)
     {
-        var added = this.folderDatabase.GetFolderByTitle(title)!;
-        
+        var title = args.Data;
+        var added = folderDatabase.GetFolderByTitle(title)!;
+
         // If we have a pending folder delete for a folder with the same title
         // as one that the service is aware of, we need to resurrect the the
         // service-side details of that item. When we created a delete for that
@@ -37,10 +53,10 @@ internal class Ledger : IDisposable
         // Note, since we had a pending delete, there is no need to create a
         // pending add.
         var pendingDelete = this.folderChangesDatabase.GetPendingFolderDeleteByTitle(title);
-        if(pendingDelete is not null)
+        if (pendingDelete is not null)
         {
             this.folderChangesDatabase.DeletePendingFolderDelete(pendingDelete.ServiceId);
-            this.folderDatabase.UpdateFolder(
+            folderDatabase.UpdateFolder(
                 added.LocalId,
                 pendingDelete.ServiceId,
                 added.Title,
@@ -54,9 +70,10 @@ internal class Ledger : IDisposable
         _ = this.folderChangesDatabase.CreatePendingFolderAdd(added.LocalId);
     }
 
-    private void HandleFolderWillBeDeleted(object _, DatabaseFolder toBeDeleted)
+    private void HandleFolderWillBeDeleted(IFolderDatabase folderDatabase, WithinTransactionArgs<DatabaseFolder> args)
     {
-        if(this.articleChangesDatabase.ListPendingArticleMovesForLocalFolderId(toBeDeleted.LocalId).Any())
+        var toBeDeleted = args.Data;
+        if (this.articleChangesDatabase.ListPendingArticleMovesForLocalFolderId(toBeDeleted.LocalId).Any())
         {
             throw new FolderHasPendingArticleMoveException(toBeDeleted.LocalId);
         }
@@ -64,15 +81,16 @@ internal class Ledger : IDisposable
         // Check for a pending folder add, and remove that pending operation
         // before we continue.
         var pendingAdd = this.folderChangesDatabase.GetPendingFolderAdd(toBeDeleted.LocalId);
-        if(pendingAdd is not null)
+        if (pendingAdd is not null)
         {
             this.folderChangesDatabase.DeletePendingFolderAdd(pendingAdd.FolderLocalId);
         }
     }
 
-    private void HandleFolderDeleted(object _, DatabaseFolder deleted)
+    private void HandleFolderDeleted(IFolderDatabase folderDatabase, WithinTransactionArgs<DatabaseFolder> args)
     {
-        if(!deleted.ServiceId.HasValue)
+        var deleted = args.Data;
+        if (!deleted.ServiceId.HasValue)
         {
             // Folders without service id's have never been seen by the service
             // so don't need to track them
@@ -84,19 +102,20 @@ internal class Ledger : IDisposable
             deleted.Title);
     }
 
-    private void HandleArticleDeleted(object _, long deletedId)
+    private void HandleArticleDeleted(IArticleDatabase articleDatabase, WithinTransactionArgs<long> args)
     {
-        _ = this.articleChangesDatabase.CreatePendingArticleDelete(deletedId);
+        _ = this.articleChangesDatabase.CreatePendingArticleDelete(args.Data);
     }
 
-    private void HandleArticleLikeStatusChanged(object _, DatabaseArticle article)
+    private void HandleArticleLikeStatusChanged(IArticleDatabase articleDatabase, WithinTransactionArgs<DatabaseArticle> args)
     {
+        var article = args.Data;
         // Get any existing like status change...
         var existingStatusChange = this.articleChangesDatabase.GetPendingArticleStateChangeByArticleId(article.Id);
-        if(existingStatusChange is not null)
+        if (existingStatusChange is not null)
         {
             // If it's opposite to our new state, we can just delete it.
-            if(article.Liked != existingStatusChange.Liked)
+            if (article.Liked != existingStatusChange.Liked)
             {
                 this.articleChangesDatabase.DeletePendingArticleStateChange(article.Id);
             }
@@ -110,12 +129,15 @@ internal class Ledger : IDisposable
         _ = this.articleChangesDatabase.CreatePendingArticleStateChange(article.Id, article.Liked);
     }
 
-    private void HandleArticleMovedToFolder(object _, (DatabaseArticle Article, long DestinationLocalFolderId) payload)
+    private void HandleArticleMovedToFolder(
+        IArticleDatabase articleDatabase,
+        WithinTransactionArgs<(DatabaseArticle Article, long DestinationLocalFolderId)> args)
     {
+        var payload = args.Data;
         // Check to see if this article was already pending a move to a folder.
         // If so, we don't need it anymore, and it'll need to be cleaned up first
         var existingMove = this.articleChangesDatabase.GetPendingArticleMove(payload.Article.Id);
-        if(existingMove is not null)
+        if (existingMove is not null)
         {
             this.articleChangesDatabase.DeletePendingArticleMove(payload.Article.Id);
         }
@@ -125,11 +147,6 @@ internal class Ledger : IDisposable
 
     public void Dispose()
     {
-        this.folderDatabase.FolderAddedWithinTransaction -= this.HandleFolderAdded;
-        this.folderDatabase.FolderWillBeDeletedWithinTransaction -= this.HandleFolderWillBeDeleted;
-        this.folderDatabase.FolderDeletedWithinTransaction -= this.HandleFolderDeleted;
-        this.articleDatabase.ArticleDeletedWithinTransaction -= this.HandleArticleDeleted;
-        this.articleDatabase.ArticleLikeStatusChangedWithinTransaction -= this.HandleArticleLikeStatusChanged;
-        this.articleDatabase.ArticleMovedToFolderWithinTransaction -= this.HandleArticleMovedToFolder;
+        this.cleanup.DetachHandlers();
     }
 }

@@ -121,7 +121,7 @@ public sealed class FolderDatabaseTests : IDisposable
     {
         string? eventPayload = null;
 
-        this.db.FolderAddedWithinTransaction += (_, addedFolder) => eventPayload = addedFolder;
+        this.db.FolderAddedWithinTransaction += (_, payload) => eventPayload = payload.Data;
 
         var addedFolder = this.db.CreateFolder("Sample");
         Assert.Equal(addedFolder.Title, eventPayload);
@@ -152,7 +152,7 @@ public sealed class FolderDatabaseTests : IDisposable
     {
         var eventPayloads = new List<string>();
 
-        this.db.FolderAddedWithinTransaction += (_, addedFolder) => eventPayloads.Add(addedFolder);
+        this.db.FolderAddedWithinTransaction += (_, payload) => eventPayloads.Add(payload.Data);
 
         var firstFolder = this.db.CreateFolder("Sample");
         var secondFolder = this.db.CreateFolder("Sample2");
@@ -179,7 +179,7 @@ public sealed class FolderDatabaseTests : IDisposable
     {
         var eventPayloads = new List<string>();
 
-        this.db.FolderAddedWithinTransaction += (_, addedFolder) => eventPayloads.Add(addedFolder);
+        this.db.FolderAddedWithinTransaction += (_, payload) => eventPayloads.Add(payload.Data);
 
         var firstFolder = this.db.CreateFolder("Sample");
         Assert.Throws<DuplicateNameException>(() => this.db.CreateFolder("Sample"));
@@ -305,7 +305,7 @@ public sealed class FolderDatabaseTests : IDisposable
         var folders = this.db.ListAllFolders();
         Assert.Equal(2, folders.Count);
     }
-    
+
     [Fact]
     public void DeletingFolderContainingArticleRemovesFolder()
     {
@@ -332,7 +332,7 @@ public sealed class FolderDatabaseTests : IDisposable
         );
 
         DatabaseFolder? folderToBeDeleted = null;
-        this.db.FolderWillBeDeletedWithinTransaction += (_, folder) => folderToBeDeleted = folder;
+        this.db.FolderWillBeDeletedWithinTransaction += (_, payload) => folderToBeDeleted = payload.Data;
 
         this.db.DeleteFolder(addedFolder.LocalId);
 
@@ -351,7 +351,7 @@ public sealed class FolderDatabaseTests : IDisposable
         );
 
         DatabaseFolder? folderDeleted = null;
-        this.db.FolderDeletedWithinTransaction += (_, folder) => folderDeleted = folder;
+        this.db.FolderDeletedWithinTransaction += (_, payload) => folderDeleted = payload.Data;
 
         this.db.DeleteFolder(addedFolder.LocalId);
 
@@ -371,8 +371,8 @@ public sealed class FolderDatabaseTests : IDisposable
 
         DatabaseFolder? folderToBeDeleted = null;
         DatabaseFolder? folderDeleted = null;
-        this.db.FolderWillBeDeletedWithinTransaction += (_, folder) => folderToBeDeleted = folder;
-        this.db.FolderDeletedWithinTransaction += (_, folder) => folderDeleted = folder;
+        this.db.FolderWillBeDeletedWithinTransaction += (_, payload) => folderToBeDeleted = payload.Data;
+        this.db.FolderDeletedWithinTransaction += (_, payload) => folderDeleted = payload.Data;
 
 
         this.db.DeleteFolder(addedFolder.LocalId);

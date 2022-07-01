@@ -2,6 +2,59 @@
 
 namespace Codevoid.Storyvoid;
 
+internal sealed class WithinTransactionArgs<TPayload> : EventArgs
+{
+    internal TPayload Data { get; private set; }
+    internal IDbConnection Connection { get; private set; }
+
+    internal WithinTransactionArgs(IDbConnection transaction, TPayload data)
+    {
+        this.Data = data;
+        this.Connection = transaction;
+    }
+}
+
+internal delegate void WithinTransactionEventHandler<TSender, TPayload>(TSender sender, WithinTransactionArgs<TPayload> e);
+
+internal struct EventCleanupHelper : IDisposable
+{
+    private Action? detach;
+    internal EventCleanupHelper(Action attach, Action detach)
+    {
+        attach();
+        this.detach = detach;
+    }
+
+    public void Dispose()
+    {
+        if (this.detach is null)
+        {
+            return;
+        }
+
+        this.detach();
+        this.detach = null;
+    }
+}
+
+internal static class EventCleanupHelperExtensions
+{
+    public static void Add(this IList<EventCleanupHelper> instance, Action attach, Action detach)
+    {
+        instance.Add(new(attach, detach));
+    }
+
+    public static void DetachHandlers(this IList<EventCleanupHelper> instance)
+    {
+        foreach (var h in instance)
+        {
+            h.Dispose();
+        }
+
+        instance.Clear();
+    }
+}
+
 internal static class InstapaperDatabase
 {
     private const int CURRENT_DB_VERSION = 1;
