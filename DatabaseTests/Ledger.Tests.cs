@@ -16,9 +16,7 @@ public sealed class FolderLedgerTests : IDisposable
         this.folders = new FolderDatabase(this.connection);
         this.folderChanges = new FolderChanges(this.connection);
         this.ledger = new((IFolderDatabaseWithTransactionEvents)this.folders,
-                          this.folderChanges,
-                          new ArticleDatabase(this.connection),
-                          new ArticleChanges(this.connection));
+                          new ArticleDatabase(this.connection));
     }
 
     public void Dispose()
@@ -53,7 +51,7 @@ public sealed class FolderLedgerTests : IDisposable
     public void DeletingKnownFolderCreatesPendingDeleteWithServiceProperties()
     {
         var folder = this.folders.AddKnownFolder("Sample", 1L, 1L, true);
-        
+
         Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
         this.folders.DeleteFolder(folder.LocalId);
 
@@ -92,7 +90,7 @@ public sealed class FolderLedgerTests : IDisposable
     public void AddingPreviouslyDeletedKnownFolderResurrectsItsServiceProperties()
     {
         var folder = this.folders.AddKnownFolder("Sample", 1L, 1L, true);
-        
+
         Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
         this.folders.DeleteFolder(folder.LocalId);
 
@@ -149,9 +147,7 @@ public sealed class ArticleLedgerTests : IDisposable
         this.CustomFolder2 = folders.CreateFolder("Sample2");
 
         this.ledger = new(folders,
-                          new FolderChanges(this.connection),
-                          (IArticleDatabaseWithTransactionEvents)this.articles,
-                          this.articleChanges);
+                          (IArticleDatabaseWithTransactionEvents)this.articles);
     }
 
     public void Dispose()
