@@ -132,24 +132,24 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 
     private static DatabaseFolder CreateFolder(IDbConnection c, string title, FolderDatabase eventSource)
     {
-        using var t = c.BeginTransaction();
+        using var query = c.CreateCommand(@"
+            INSERT INTO folders(title)
+            VALUES (@title);
+        ");
+
+        using var t = query.BeginTransactionIfNeeded();
 
         if (GetFolderByTitle(c, title) is not null)
         {
             throw new DuplicateNameException($"Folder with name '{title}' already exists");
         }
 
-        using var query = c.CreateCommand(@"
-            INSERT INTO folders(title)
-            VALUES (@title);
-        ");
-
         query.AddParameter("@title", title);
         query.ExecuteScalar();
 
         eventSource.RaiseFolderAddedWithinTransaction(title);
 
-        t.Commit();
+        t?.Commit();
 
         return GetFolderByTitle(c, title)!;
     }
@@ -162,17 +162,17 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 
     private static DatabaseFolder AddKnownFolder(IDbConnection c, string title, long serviceId, long position, bool shouldSync)
     {
-        using var t = c.BeginTransaction();
+        using var query = c.CreateCommand(@"
+            INSERT INTO folders(title, service_id, position, should_sync)
+            VALUES (@title, @serviceId, @position, @shouldSync);
+        ");
+
+        using var t = query.BeginTransactionIfNeeded();
 
         if (GetFolderByTitle(c, title) is not null)
         {
             throw new DuplicateNameException($"Folder with name '{title}' already exists");
         }
-
-        using var query = c.CreateCommand(@"
-            INSERT INTO folders(title, service_id, position, should_sync)
-            VALUES (@title, @serviceId, @position, @shouldSync);
-        ");
 
         query.AddParameter("@title", title);
         query.AddParameter("@serviceId", serviceId);
@@ -183,7 +183,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 
         var addedFolder = GetFolderByServiceId(c, serviceId)!;
 
-        t.Commit();
+        t?.Commit();
 
         return addedFolder;
     }
@@ -205,6 +205,8 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
             WHERE local_id = @localId
         ");
 
+        var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@localId", localId);
         if (serviceId != null)
         {
@@ -218,12 +220,6 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         query.AddParameter("@title", title);
         query.AddParameter("@position", position);
         query.AddParameter("@shouldSync", Convert.ToInt64(shouldSync));
-
-        var t = (query.Transaction != null) ? null : c.BeginTransaction();
-        if (t is not null)
-        {
-            query.Transaction = t;
-        }
 
         try
         {
@@ -263,7 +259,12 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 
     private static void DeleteFolder(IDbConnection c, long localFolderId, FolderDatabase eventSource)
     {
-        using var t = c.BeginTransaction();
+        using var deleteArticleFolderPairsQuery = c.CreateCommand(@"
+            DELETE FROM article_to_folder
+            WHERE local_folder_id = @localFolderId
+        ");
+
+        using var t = deleteArticleFolderPairsQuery.BeginTransactionIfNeeded();
 
         var folder = GetFolderByLocalId(c, localFolderId);
         if (folder is null)
@@ -274,11 +275,6 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         eventSource.RaiseFolderWillBeDeletedWithinTransaction(folder);
 
         // Delete any article-folder-pairs
-        using var deleteArticleFolderPairsQuery = c.CreateCommand(@"
-            DELETE FROM article_to_folder
-            WHERE local_folder_id = @localFolderId
-        ");
-
         deleteArticleFolderPairsQuery.AddParameter("@localFolderId", localFolderId);
         deleteArticleFolderPairsQuery.ExecuteNonQuery();
 
@@ -302,7 +298,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 
         eventSource.RaiseFolderDeletedWithinTransaction(folder);
 
-        t.Commit();
+        t?.Commit();
     }
 
     #region Event Helpers

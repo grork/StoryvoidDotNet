@@ -58,6 +58,8 @@ internal sealed partial class ArticleDatabase
                     @includeInMRU)
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@articleId", localOnlyArticleState.ArticleId);
         query.AddParameter("@availableLocally", localOnlyArticleState.AvailableLocally);
         query.AddParameter("@firstImageLocalPath", localOnlyArticleState.FirstImageLocalPath);
@@ -86,7 +88,10 @@ internal sealed partial class ArticleDatabase
             throw new LocalOnlyStateExistsException(localOnlyArticleState.ArticleId);
         }
 
-        return GetLocalOnlyStateByArticleId(c, localOnlyArticleState.ArticleId)!;
+        var result = GetLocalOnlyStateByArticleId(c, localOnlyArticleState.ArticleId)!;
+        t?.Commit();
+
+        return result;
     }
 
     /// <inheritdoc/>
@@ -132,6 +137,8 @@ internal sealed partial class ArticleDatabase
             WHERE article_id = @articleId
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@articleId", articleId);
         query.AddParameter("@availableLocally", updatedLocalOnlyArticleState.AvailableLocally);
         query.AddParameter("@firstImageLocalPath", updatedLocalOnlyArticleState.FirstImageLocalPath);
@@ -156,6 +163,9 @@ internal sealed partial class ArticleDatabase
         }
 
         var local = GetLocalOnlyStateByArticleId(c, articleId);
+
+        t?.Commit();
+
         return local!;
     }
 }

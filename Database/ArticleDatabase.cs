@@ -156,23 +156,26 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private static DatabaseArticle AddArticleNoFolder(IDbConnection c, ArticleRecordInformation data)
     {
-        using var t = c.BeginTransaction();
+        using var query = c.CreateCommand();
 
-        AddArticle(c, data);
+        using var t = query.BeginTransactionIfNeeded();
+
+        ConfigureAddArticleCommand(query, data);
+        query.ExecuteScalar();
 
         var addedArticle = GetArticleById(c, data.id)!;
 
-        t.Commit();
+        t?.Commit();
 
         return addedArticle;
     }
 
-    private static void AddArticle(IDbConnection connection, ArticleRecordInformation data)
+    private static void ConfigureAddArticleCommand(IDbCommand query, ArticleRecordInformation data)
     {
-        using var query = connection.CreateCommand(@"
+        query.CommandText = @"
             INSERT INTO articles(id, title, url, description, read_progress, read_progress_timestamp, hash, liked)
             VALUES (@id, @title, @url, @description, @readProgress, @readProgressTimestamp, @hash, @liked);
-        ");
+        ";
 
         query.AddParameter("@id", data.id);
         query.AddParameter("@title", data.title);
@@ -182,8 +185,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         query.AddParameter("@readProgressTimestamp", data.readProgressTimestamp);
         query.AddParameter("@hash", data.hash);
         query.AddParameter("@liked", data.liked);
-
-        query.ExecuteNonQuery();
     }
 
     /// <inheritdoc/>
@@ -197,9 +198,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private static DatabaseArticle AddArticleToFolder(IDbConnection c, ArticleRecordInformation data, long localFolderId)
     {
-        using var t = c.BeginTransaction();
-
-        AddArticle(c, data);
+        using var query = c.CreateCommand();
+        using var t = query.BeginTransactionIfNeeded();
+        ConfigureAddArticleCommand(query, data);
+        query.ExecuteScalar();
 
         using var pairWithFolderQuery = c.CreateCommand(@"
             INSERT INTO article_to_folder(local_folder_id, article_id)
@@ -222,7 +224,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         }
 
         var addedArticle = GetArticleById(c, data.id)!;
-        t.Commit();
+        t?.Commit();
 
         return addedArticle;
     }
@@ -235,8 +237,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private static DatabaseArticle UpdateArticle(IDbConnection c, ArticleRecordInformation updatedData)
     {
-        using var t = c.BeginTransaction();
-
         using var query = c.CreateCommand(@"
             UPDATE articles SET
                 url = @url,
@@ -249,6 +249,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             WHERE id = @id
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@id", updatedData.id);
         query.AddParameter("@url", updatedData.url);
         query.AddParameter("@title", updatedData.title);
@@ -258,7 +260,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         query.AddParameter("@hash", updatedData.hash);
         query.AddParameter("@liked", updatedData.liked);
 
-
         var impactedRows = query.ExecuteNonQuery();
         if (impactedRows < 1)
         {
@@ -267,7 +268,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
         var updatedArticle = GetArticleById(c, updatedData.id)!;
 
-        t.Commit();
+        t?.Commit();
 
         return updatedArticle;
     }
@@ -286,13 +287,13 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private DatabaseArticle UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked)
     {
-        using var t = c.BeginTransaction();
-
         using var query = c.CreateCommand(@"
             UPDATE articles
             SET liked = @liked
             WHERE id = @id AND liked <> @liked
         ");
+
+        using var t = query.BeginTransactionIfNeeded();
 
         query.AddParameter("@id", id);
         query.AddParameter("@liked", liked);
@@ -313,7 +314,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             this.RaiseArticleLikeStatusChangedWithinTransaction(updatedArticle!);
         }
 
-        t.Commit();
+        t?.Commit();
 
         return updatedArticle!;
     }
@@ -336,7 +337,13 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private static DatabaseArticle UpdateReadProgressForArticle(IDbConnection c, float readProgress, DateTime readProgressTimestamp, long articleId)
     {
-        using var t = c.BeginTransaction();
+        using var query = c.CreateCommand(@"
+            UPDATE articles
+            SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
+            WHERE id = @id
+        ");
+
+        using var t = query.BeginTransactionIfNeeded();
 
         // The hash field is driven by the service, and complately opaque
         // to us. The hash is also how the service determines if progress
@@ -348,12 +355,6 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         // use that as the hash.
         var r = new Random();
         var fauxHash = r.Next().ToString();
-
-        using var query = c.CreateCommand(@"
-            UPDATE articles
-            SET read_progress = @readProgress, read_progress_timestamp = @readProgressTimestamp, hash = @hash
-            WHERE id = @id
-        ");
 
         query.AddParameter("@id", articleId);
         query.AddParameter("@readProgress", readProgress);
@@ -368,7 +369,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
         var updatedArticle = GetArticleById(c, articleId)!;
 
-        t.Commit();
+        t?.Commit();
 
         return updatedArticle;
     }
@@ -381,7 +382,8 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private static void MoveArticleToFolder(IDbConnection c, long articleId, long localFolderId, ArticleDatabase eventSource)
     {
-        using var t = c.BeginTransaction();
+        using var query = c.CreateCommand();
+        using var t = query.BeginTransactionIfNeeded();
 
         if (GetArticleById(c, articleId) is null)
         {
@@ -418,10 +420,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             removeFromExistingFolder.ExecuteNonQuery();
         }
 
-        using var query = c.CreateCommand(@"
+        query.CommandText = @"
             INSERT INTO article_to_folder(article_id, local_folder_id)
             VALUES (@articleId, @localFolderId);
-        ");
+        ";
 
         query.AddParameter("@articleId", articleId);
         query.AddParameter("@localFolderId", localFolderId);
@@ -433,7 +435,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             var article = GetArticleById(c, articleId)!;
             eventSource.RaiseArticleMovedToFolderWithinTransaction(article, localFolderId);
 
-            t.Commit();
+            t?.Commit();
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
@@ -452,18 +454,20 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private static void DeleteArticle(IDbConnection c, long articleId, ArticleDatabase eventSource)
     {
-        using var t = c.BeginTransaction();
-
-        void DeleteFromFolder()
+        IDbTransaction? DeleteFromFolder()
         {
             using var query = c.CreateCommand(@"
                 DELETE FROM article_to_folder
                 WHERE article_id = @articleId
             ");
 
+            var transaction = query.BeginTransactionIfNeeded();
+
             query.AddParameter("@articleId", articleId);
 
             query.ExecuteNonQuery();
+
+            return transaction;
         }
 
         bool DeleteArticle()
@@ -480,7 +484,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             return (query.ExecuteNonQuery() > 0);
         }
 
-        DeleteFromFolder();
+        using var t = DeleteFromFolder();
 
         // Delete the local only state first, since that has a foreign
         // key relationship to the articles table. This is expected
@@ -495,7 +499,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             eventSource.RaiseArticleDeletedWithinTransaction(articleId);
         }
 
-        t.Commit();
+        t?.Commit();
     }
 
     #region Event Helpers

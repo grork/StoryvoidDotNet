@@ -141,9 +141,9 @@ internal static class DataExtensions
     /// <returns>True if the column is in the row, otherwise false.</returns>
     public static bool HasColumn(this IDataReader instance, string name)
     {
-        for (var index = 0; index < instance.FieldCount; index +=1)
+        for (var index = 0; index < instance.FieldCount; index += 1)
         {
-            if(instance.GetName(index) == name)
+            if (instance.GetName(index) == name)
             {
                 return true;
             }
@@ -262,5 +262,16 @@ internal static class DataExtensions
         parameter.Value = DBNull.Value;
 
         instance.Parameters.Add(parameter);
+    }
+
+    public static IDbTransaction? BeginTransactionIfNeeded(this IDbCommand instance)
+    {
+        var t = (instance.Transaction != null) ? null : instance.Connection.BeginTransaction();
+        if (t is not null)
+        {
+            instance.Transaction = t;
+        }
+
+        return t;
     }
 }

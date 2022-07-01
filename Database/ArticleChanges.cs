@@ -26,6 +26,8 @@ internal class ArticleChanges : IArticleChangesDatabase
             VALUES (@url, @title);
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@url", url);
         if (title is null)
         {
@@ -39,7 +41,11 @@ internal class ArticleChanges : IArticleChangesDatabase
         try
         {
             query.ExecuteScalar();
-            return GetPendingArticleAddByUrl(c, url)!;
+
+            var result = GetPendingArticleAddByUrl(c, url)!;
+            t?.Commit();
+
+            return result;
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
@@ -129,6 +135,8 @@ internal class ArticleChanges : IArticleChangesDatabase
             VALUES (@articleId)
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@articleId", articleId);
 
         try
@@ -141,6 +149,7 @@ internal class ArticleChanges : IArticleChangesDatabase
             throw new DuplicatePendingArticleDeleteException(articleId);
         }
 
+        t?.Commit();
         return articleId;
     }
 
@@ -219,13 +228,18 @@ internal class ArticleChanges : IArticleChangesDatabase
             VALUES (@articleId, @liked)
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@articleId", articleId);
         query.AddParameter("@liked", liked);
 
         try
         {
             query.ExecuteNonQuery();
-            return GetPendingArticleStateChangeByArticleId(c, articleId)!;
+            var result = GetPendingArticleStateChangeByArticleId(c, articleId)!;
+
+            t?.Commit();
+            return result;
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)
@@ -320,13 +334,17 @@ internal class ArticleChanges : IArticleChangesDatabase
             VALUES (@articleId, @destinationFolderLocalId)
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@articleId", articleId);
         query.AddParameter("@destinationFolderLocalId", destinationFolderLocalId);
 
         try
         {
             query.ExecuteNonQuery();
-            return GetPendingArticleMoveByArticleId(c, articleId)!;
+            var result = GetPendingArticleMoveByArticleId(c, articleId)!;
+            t?.Commit();
+            return result;
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY)

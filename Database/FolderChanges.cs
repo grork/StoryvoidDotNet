@@ -33,12 +33,16 @@ internal class FolderChanges : IFolderChangesDatabase
             VALUES (@localId);
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@localId", localFolderId);
 
         try
         {
             query.ExecuteScalar();
-            return GetPendingFolderAddById(c, localFolderId)!;
+            var result = GetPendingFolderAddById(c, localFolderId)!;
+            t?.Commit();
+            return result;
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_FOREIGNKEY)
@@ -143,13 +147,18 @@ internal class FolderChanges : IFolderChangesDatabase
             VALUES (@serviceId, @title);
         ");
 
+        using var t = query.BeginTransactionIfNeeded();
+
         query.AddParameter("@serviceId", serviceId);
         query.AddParameter("@title", title);
 
         try
         {
             query.ExecuteScalar();
-            return GetPendingFolderDeleteByServiceId(c, serviceId)!;
+            var result = GetPendingFolderDeleteByServiceId(c, serviceId)!;
+            t?.Commit();
+
+            return result;
         }
         catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT
                                      && (ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_PRIMARYKEY) || ex.SqliteExtendedErrorCode == SqliteErrorCodes.SQLITE_CONSTRAINT_UNIQUE)
