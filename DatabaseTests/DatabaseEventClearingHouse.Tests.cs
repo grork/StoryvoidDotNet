@@ -6,6 +6,8 @@ namespace Codevoid.Test.Storyvoid;
 
 public sealed class DatabaseEventClearingHouseTests
 {
+    private const long FOLDER_ID = 99L;
+
     private class MockReader : IDataReader
     {
         (string Name, object? Data)[] data;
@@ -134,7 +136,7 @@ public sealed class DatabaseEventClearingHouseTests
             ("should_sync", 1L),
             ("service_id", 10L),
             ("title", "Sample Folder"),
-            ("local_id", 9L),
+            ("local_id", FOLDER_ID),
             ("position", 99L)
         });
 
@@ -156,13 +158,12 @@ public sealed class DatabaseEventClearingHouseTests
     [Fact]
     public void CanRaiseFolderDeletedEvent()
     {
-        var folder = this.GetFolder();
-        DatabaseFolder? eventFolder = null;
+        long? eventFolder = null;
         this.clearingHouse.FolderDeleted += (_, deleted) => eventFolder = deleted;
-        this.clearingHouse.RaiseFolderDeleted(folder);
+        this.clearingHouse.RaiseFolderDeleted(FOLDER_ID);
 
         Assert.NotNull(eventFolder);
-        Assert.Equal(folder, eventFolder);
+        Assert.Equal(FOLDER_ID, eventFolder);
     }
 
     [Fact]
@@ -182,23 +183,25 @@ public sealed class DatabaseEventClearingHouseTests
     {
         var article = this.GetArticle();
         DatabaseArticle? eventArticle = null;
-        this.clearingHouse.ArticleAdded += (_, added) => eventArticle = added;
-        this.clearingHouse.RaiseArticleAdded(article);
+        long? folder = null;
+        this.clearingHouse.ArticleAdded += (_, added) => (eventArticle, folder) = added;
+        this.clearingHouse.RaiseArticleAdded(article, FOLDER_ID);
 
         Assert.NotNull(eventArticle);
         Assert.Equal(article, eventArticle);
+        Assert.Equal(FOLDER_ID, folder);
     }
 
     [Fact]
     public void CanRaiseArticleDeletedEvent()
     {
-        var article = this.GetArticle();
-        DatabaseArticle? eventArticle = null;
+        const long ARTICLE_ID = 42L;
+        long? eventArticle = null;
         this.clearingHouse.ArticleDeleted += (_, deleted) => eventArticle = deleted;
-        this.clearingHouse.RaiseArticleDeleted(article);
+        this.clearingHouse.RaiseArticleDeleted(ARTICLE_ID);
 
         Assert.NotNull(eventArticle);
-        Assert.Equal(article, eventArticle);
+        Assert.Equal(ARTICLE_ID, eventArticle);
     }
 
     [Fact]
@@ -216,7 +219,6 @@ public sealed class DatabaseEventClearingHouseTests
     [Fact]
     public void CanRaiseArticleMovedEvent()
     {
-        const long FOLDER_ID = 99L;
         var article = this.GetArticle();
         DatabaseArticle? eventArticle = null;
         long? eventTo = null;

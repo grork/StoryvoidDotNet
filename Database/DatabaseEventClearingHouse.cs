@@ -7,12 +7,12 @@ namespace Codevoid.Storyvoid;
 public interface IDatabaseEventSource
 {
     public event EventHandler<DatabaseFolder> FolderAdded;
-    public event EventHandler<DatabaseFolder> FolderDeleted;
+    public event EventHandler<long> FolderDeleted;
     public event EventHandler<DatabaseFolder> FolderUpdated;
 
-    public event EventHandler<DatabaseArticle> ArticleAdded;
-    public event EventHandler<DatabaseArticle> ArticleDeleted;
-    public event EventHandler<(DatabaseArticle Article, long To)> ArticleMoved;
+    public event EventHandler<(DatabaseArticle Article, long LocalFolderId)> ArticleAdded;
+    public event EventHandler<long> ArticleDeleted;
+    public event EventHandler<(DatabaseArticle Article, long LocalFolderId)> ArticleMoved;
     public event EventHandler<DatabaseArticle> ArticleUpdated;
 }
 
@@ -22,11 +22,11 @@ public interface IDatabaseEventSource
 public interface IDatabaseEventSink
 {
     public void RaiseFolderAdded(DatabaseFolder added);
-    public void RaiseFolderDeleted(DatabaseFolder deleted);
+    public void RaiseFolderDeleted(long localFolderId);
     public void RaiseFolderUpdated(DatabaseFolder updated);
 
-    public void RaiseArticleAdded(DatabaseArticle added);
-    public void RaiseArticleDeleted(DatabaseArticle deleted);
+    public void RaiseArticleAdded(DatabaseArticle added, long to);
+    public void RaiseArticleDeleted(long articleId);
     public void RaiseArticleMoved(DatabaseArticle article, long to);
     public void RaiseArticleUpdated(DatabaseArticle updated);
 }
@@ -37,11 +37,11 @@ public interface IDatabaseEventSink
 internal sealed class DatabaseEventClearingHouse : IDatabaseEventSource, IDatabaseEventSink
 {
     public event EventHandler<DatabaseFolder>? FolderAdded;
-    public event EventHandler<DatabaseFolder>? FolderDeleted;
+    public event EventHandler<long>? FolderDeleted;
     public event EventHandler<DatabaseFolder>? FolderUpdated;
-    public event EventHandler<DatabaseArticle>? ArticleAdded;
-    public event EventHandler<DatabaseArticle>? ArticleDeleted;
-    public event EventHandler<(DatabaseArticle Article, long To)>? ArticleMoved;
+    public event EventHandler<(DatabaseArticle Article, long LocalFolderId)>? ArticleAdded;
+    public event EventHandler<long>? ArticleDeleted;
+    public event EventHandler<(DatabaseArticle Article, long LocalFolderId)>? ArticleMoved;
     public event EventHandler<DatabaseArticle>? ArticleUpdated;
 
     public void RaiseFolderAdded(DatabaseFolder added)
@@ -50,10 +50,10 @@ internal sealed class DatabaseEventClearingHouse : IDatabaseEventSource, IDataba
         handler?.Invoke(this, added);
     }
 
-    public void RaiseFolderDeleted(DatabaseFolder deleted)
+    public void RaiseFolderDeleted(long localFolderId)
     {
         var handler = this.FolderDeleted;
-        handler?.Invoke(this, deleted);
+        handler?.Invoke(this, localFolderId);
     }
 
     public void RaiseFolderUpdated(DatabaseFolder updated)
@@ -62,16 +62,16 @@ internal sealed class DatabaseEventClearingHouse : IDatabaseEventSource, IDataba
         handler?.Invoke(this, updated);
     }
 
-    public void RaiseArticleAdded(DatabaseArticle added)
+    public void RaiseArticleAdded(DatabaseArticle added, long to)
     {
         var handler = this.ArticleAdded;
-        handler?.Invoke(this, added);
+        handler?.Invoke(this, (added, to));
     }
 
-    public void RaiseArticleDeleted(DatabaseArticle deleted)
+    public void RaiseArticleDeleted(long articleId)
     {
         var handler = this.ArticleDeleted;
-        handler?.Invoke(this, deleted);
+        handler?.Invoke(this, articleId);
     }
 
     public void RaiseArticleMoved(DatabaseArticle article, long to)

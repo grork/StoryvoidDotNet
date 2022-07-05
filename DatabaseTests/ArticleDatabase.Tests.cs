@@ -45,6 +45,14 @@ public sealed class ArticleDatabaseTests : IDisposable
         return article;
     }
 
+    private DatabaseEventClearingHouse SwitchToEventingDatabase()
+    {
+        var clearingHouse = new DatabaseEventClearingHouse();
+        this.db = new ArticleDatabase(this.connection, clearingHouse);
+
+        return clearingHouse;
+    }
+
     [Fact]
     public void CanListArticlesWhenEmpty()
     {
@@ -53,7 +61,7 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
-    public void CanAddArticles()
+    public void CanAddArticle()
     {
         var a = TestUtilities.GetRandomArticle();
         var result = this.db.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
@@ -67,6 +75,23 @@ public sealed class ArticleDatabaseTests : IDisposable
 
         // Don't expect local state since we have a fresh set of articles
         Assert.False(result.HasLocalState);
+    }
+
+    [Fact]
+    public void AddingArticleRasiesClearingHouseEvent()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+        DatabaseArticle? addedArticle = null;
+        long? folder = null;
+        clearingHouse.ArticleAdded += (_, payload) => (addedArticle, folder) = payload;
+
+        var a = TestUtilities.GetRandomArticle();
+        var result = this.db.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
+
+        Assert.NotNull(addedArticle);
+        Assert.Equal(result, addedArticle);
+        Assert.True(folder.HasValue);
+        Assert.Equal(WellKnownLocalFolderIds.Unread, folder);
     }
 
     [Fact]
@@ -126,6 +151,23 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void AddingArticleToSpecificFolderRasiesClearingHouseEvent()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+        DatabaseArticle? addedArticle = null;
+        long? folder = null;
+        clearingHouse.ArticleAdded += (_, payload) => (addedArticle, folder) = payload;
+
+        var a = TestUtilities.GetRandomArticle();
+        var result = this.db.AddArticleToFolder(a, this.CustomFolder1.LocalId);
+
+        Assert.NotNull(addedArticle);
+        Assert.Equal(result, addedArticle);
+        Assert.True(folder.HasValue);
+        Assert.Equal(this.CustomFolder1.LocalId, folder);
+    }
+
+    [Fact]
     public void CanListAllArticlesInAllFolders()
     {
         var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
@@ -159,9 +201,33 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void CanAddArticleWithNoFolderDoesNotRaiseAddedEvent()
+    {
+        var article = TestUtilities.GetRandomArticle();
+        var clearingHouse = this.SwitchToEventingDatabase();
+        DatabaseArticle? eventArticle = null;
+        clearingHouse.ArticleAdded += (nop, added) => (eventArticle, _) = added;
+
+        _ = this.db.AddArticleNoFolder(article);
+        Assert.Null(eventArticle);
+    }
+
+    [Fact]
     public void AddingArticleToNonExistantFolderFails()
     {
         Assert.Throws<FolderNotFoundException>(() => this.db.AddArticleToFolder(TestUtilities.GetRandomArticle(), 999L));
+    }
+
+    [Fact]
+    public void AddingArticleToNonExistantFolderDoesNotRaiseClearingHouseEvent()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        DatabaseArticle? eventArticle = null;
+        clearingHouse.ArticleAdded += (nop, payload) => (eventArticle, _) = payload;
+
+        Assert.Throws<FolderNotFoundException>(() => this.db.AddArticleToFolder(TestUtilities.GetRandomArticle(), 999L));
+        Assert.Null(eventArticle);
     }
 
     [Fact]
@@ -223,6 +289,20 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void LikingArticleThatIsUnlikedRaisesArticleUpdatedClearingHouseEvent()
+    {
+        var unlikedArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        DatabaseArticle? eventChangeArticle = null;
+        clearingHouse.ArticleUpdated += (_, payload) => eventChangeArticle = payload;
+
+        var likedArticle = this.db.LikeArticle(unlikedArticle.Id);
+        Assert.Equal(likedArticle, eventChangeArticle);
+        Assert.True(eventChangeArticle!.Liked);
+    }
+
+    [Fact]
     public void CanListOnlyLikedArticle()
     {
         var article = TestUtilities.GetRandomArticle() with { liked = true };
@@ -277,6 +357,20 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void UnlikingArticleThatIsLikedRaisesArticleUpdatedClearingHouseEvent()
+    {
+        var originalArticle = this.db.AddArticleToFolder(TestUtilities.GetRandomArticle() with { liked = true }, WellKnownLocalFolderIds.Unread);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        DatabaseArticle? eventChangeArticle = null;
+        clearingHouse.ArticleUpdated += (_, payload) => eventChangeArticle = payload;
+
+        var unlikedArticle = this.db.UnlikeArticle(originalArticle.Id);
+        Assert.Equal(unlikedArticle, eventChangeArticle);
+        Assert.False(eventChangeArticle!.Liked);
+    }
+
+    [Fact]
     public void LikingMissingArticleThrows()
     {
         Assert.Throws<ArticleNotFoundException>(() => this.db.LikeArticle(1));
@@ -292,6 +386,16 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void LikingMissingArticleDoesNotRaiseArticleUpdatedClearingHouseEvent()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+        var eventWasRaised = false;
+        clearingHouse.ArticleUpdated += (_, _) => eventWasRaised = true;
+        Assert.Throws<ArticleNotFoundException>(() => this.db.LikeArticle(1));
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
     public void UnlikingMissingArticleThrows()
     {
         Assert.Throws<ArticleNotFoundException>(() => this.db.UnlikeArticle(1));
@@ -302,6 +406,16 @@ public sealed class ArticleDatabaseTests : IDisposable
     {
         var eventWasRaised = false;
         this.db.ArticleLikeStatusChangedWithinTransaction += (_, _) => eventWasRaised = true;
+        Assert.Throws<ArticleNotFoundException>(() => this.db.UnlikeArticle(1));
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
+    public void UnlikingMissingArticleDoesNotRaiseArticleUpdatedClearingHouseEvent()
+    {
+        var eventWasRaised = false;
+        var clearingHouse = this.SwitchToEventingDatabase();
+        clearingHouse.ArticleUpdated += (_, _) => eventWasRaised = true;
         Assert.Throws<ArticleNotFoundException>(() => this.db.UnlikeArticle(1));
         Assert.False(eventWasRaised);
     }
@@ -331,6 +445,20 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void LikingArticleThatIsLikedDoesNotRaiseAritcleChangedClearingHouseEvent()
+    {
+        var a = TestUtilities.GetRandomArticle() with { liked = true };
+        var likedArticleOriginal = this.db.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        var eventWasRaised = false;
+        clearingHouse.ArticleUpdated += (_, _) => eventWasRaised = true;
+
+        _ = this.db.LikeArticle(likedArticleOriginal.Id);
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
     public void UnlikingArticleThatIsNotLikedSucceeds()
     {
         var unlikedArticleOriginal = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
@@ -341,6 +469,33 @@ public sealed class ArticleDatabaseTests : IDisposable
         Assert.False(eventWasRaised);
     }
 
+    [Fact]
+    public void UnlikingArticleThatIsUnlikedDoesNotRaiseLikeStatusChangeWithinTransactionEvent()
+    {
+        var a = TestUtilities.GetRandomArticle();
+        var likedArticleOriginal = this.db.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
+
+        var eventWasRaised = false;
+        this.db.ArticleLikeStatusChangedWithinTransaction += (_, _) => eventWasRaised = true;
+
+        _ = this.db.UnlikeArticle(likedArticleOriginal.Id);
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
+    public void UnlikingArticleThatIsUnlikedDoesNotRaiseArticleUpdatedClearingHouseEvent()
+    {
+        var a = TestUtilities.GetRandomArticle();
+        var likedArticleOriginal = this.db.AddArticleToFolder(a, WellKnownLocalFolderIds.Unread);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        var eventWasRaised = false;
+        clearingHouse.ArticleUpdated += (_, _) => eventWasRaised = true;
+
+        _ = this.db.UnlikeArticle(likedArticleOriginal.Id);
+        Assert.False(eventWasRaised);
+    }
+    
     [Fact]
     public void CanUpdateArticleProgressWithTimeStamp()
     {
@@ -353,6 +508,19 @@ public sealed class ArticleDatabaseTests : IDisposable
         Assert.Equal(progressTimestamp, updatedArticle.ReadProgressTimestamp);
         Assert.Equal(progress, updatedArticle.ReadProgress);
         Assert.NotEqual(article.Hash, updatedArticle.Hash);
+    }
+
+    [Fact]
+    public void UpdatingAnArticlesProgressRaisesArticleUpdateClearingHouseEvent()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        DatabaseArticle? eventArticle = null;
+        clearingHouse.ArticleUpdated += (_, updated) => eventArticle = updated;
+
+        DatabaseArticle updatedArticle = this.db.UpdateReadProgressForArticle(0.3F, DateTime.Now.AddMinutes(5), article.Id);
+        Assert.Equal(updatedArticle, eventArticle);
     }
 
     [Fact]
@@ -433,6 +601,23 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void MovingArticleFromUnreadRaisesArticleMovedClearingHouseEvent()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        DatabaseArticle? eventArticle = null;
+        long? folder = null;
+
+        clearingHouse.ArticleMoved += (nop, payload) => (eventArticle, folder) = payload;
+
+        this.db.MoveArticleToFolder(article.Id, this.CustomFolder1.LocalId);
+
+        Assert.Equal(article, eventArticle);
+        Assert.Equal(this.CustomFolder1.LocalId, folder);
+    }
+
+    [Fact]
     public void CanMoveOrphanedArticleToUnreadFolder()
     {
         var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
@@ -452,6 +637,23 @@ public sealed class ArticleDatabaseTests : IDisposable
 
         this.db.MoveArticleToFolder(article.Id, this.CustomFolder2.LocalId);
         Assert.Contains(article, this.db.ListArticlesForLocalFolder(this.CustomFolder2.LocalId));
+    }
+
+    [Fact]
+    public void MovingArticleFromNoFolderToUnreadRaisesArticleMovedClearingHouseEvent()
+    {
+        var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        DatabaseArticle? eventArticle = null;
+        long? folder = null;
+
+        clearingHouse.ArticleMoved += (nop, payload) => (eventArticle, folder) = payload;
+
+        this.db.MoveArticleToFolder(article.Id, this.CustomFolder1.LocalId);
+
+        Assert.Equal(article, eventArticle);
+        Assert.Equal(this.CustomFolder1.LocalId, folder);
     }
 
     [Fact]
@@ -566,12 +768,37 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void MovingArticleFromUnreadToNonExistantFolderDoesNotRaiseArticleMovedClearingHouseEvent()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        var eventWasRaised = false;
+        clearingHouse.ArticleMoved += (_, _) => eventWasRaised = true;
+        Assert.Throws<FolderNotFoundException>(() => this.db.MoveArticleToFolder(article.Id, 999));
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
     public void MovingArticleToAFolderItIsAlreadyInDoesNotRaiseFolderMoveWithinTransactionEvent()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
 
         var eventWasRaised = false;
         this.db.ArticleMovedToFolderWithinTransaction += (_, _) => eventWasRaised = true;
+        this.db.MoveArticleToFolder(article.Id, this.CustomFolder1.LocalId);
+
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
+    public void MovingArticleToAFolderItIsAlreadyInDoesNotRaiseArticleMovedClearingHouseEvent()
+    {
+        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        var eventWasRaised = false;
+        clearingHouse.ArticleMoved += (_, _) => eventWasRaised = true;
         this.db.MoveArticleToFolder(article.Id, this.CustomFolder1.LocalId);
 
         Assert.False(eventWasRaised);
@@ -630,6 +857,19 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void DeletingArticleRaisesArticleDeletedClearingHouseEvent()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        long? deletedArticle = null;
+        clearingHouse.ArticleDeleted += (_, payload) => deletedArticle = payload;
+        this.db.DeleteArticle(article.Id);
+
+        Assert.Equal(article.Id, deletedArticle);
+    }
+
+    [Fact]
     public void CanDeleteArticleInCustomFolder()
     {
         var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
@@ -650,6 +890,17 @@ public sealed class ArticleDatabaseTests : IDisposable
     {
         var eventWasRaised = false;
         this.db.ArticleDeletedWithinTransaction += (_, _) => eventWasRaised = true;
+        this.db.DeleteArticle(999);
+
+        Assert.False(eventWasRaised);
+    }
+
+    [Fact]
+    public void DeletingNonExistantArticleDoesNotRaiseArticleDeletedClearingHouseEvent()
+    {
+        var eventWasRaised = false;
+        var clearingHouse = this.SwitchToEventingDatabase();
+        clearingHouse.ArticleDeleted += (_, _) => eventWasRaised = true;
         this.db.DeleteArticle(999);
 
         Assert.False(eventWasRaised);
@@ -760,6 +1011,18 @@ public sealed class ArticleDatabaseTests : IDisposable
         this.db.DeleteArticle(article.Id);
 
         Assert.Equal(article.Id, deletedItem);
+    }
+
+    [Fact]
+    public void DeletingOrphanedArticleDoesNotRaiseArticleClearingHouseEvent()
+    {
+        var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        var wasDeleted = false;
+        clearingHouse.ArticleDeleted += (_, _) => wasDeleted = true;
+        this.db.DeleteArticle(article.Id);
+        Assert.False(wasDeleted);
     }
 
     [Fact]
