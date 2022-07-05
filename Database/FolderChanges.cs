@@ -79,8 +79,7 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public PendingFolderAdd? GetPendingFolderAdd(long localFolderId)
     {
-        var c = this.connection;
-        return GetPendingFolderAddById(c, localFolderId);
+        return GetPendingFolderAddById(this.connection, localFolderId);
     }
 
     /// <inheritdoc/>
@@ -208,8 +207,7 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public PendingFolderDelete? GetPendingFolderDelete(long serviceId)
     {
-        var c = this.connection;
-        return GetPendingFolderDeleteByServiceId(c, serviceId);
+        return GetPendingFolderDeleteByServiceId(this.connection, serviceId);
     }
 
     /// <inheritdoc/>

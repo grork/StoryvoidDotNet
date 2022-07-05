@@ -385,8 +385,7 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleMove? GetPendingArticleMove(long articleId)
     {
-        var c = this.connection;
-        return GetPendingArticleMoveByArticleId(c, articleId);
+        return GetPendingArticleMoveByArticleId(this.connection, articleId);
     }
 
     /// <inheritdoc />
