@@ -276,16 +276,16 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public DatabaseArticle LikeArticle(long id)
     {
-        return UpdateLikeStatusForArticle(this.connection, id, true);
+        return UpdateLikeStatusForArticle(this.connection, id, true, this);
     }
 
     /// <inheritdoc/>
     public DatabaseArticle UnlikeArticle(long id)
     {
-        return UpdateLikeStatusForArticle(this.connection, id, false);
+        return UpdateLikeStatusForArticle(this.connection, id, false, this);
     }
 
-    private DatabaseArticle UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked)
+    private static DatabaseArticle UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked, ArticleDatabase eventSource)
     {
         using var query = c.CreateCommand(@"
             UPDATE articles
@@ -300,7 +300,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
         var impactedRows = query.ExecuteNonQuery();
 
-        var updatedArticle = this.GetArticleById(id);
+        var updatedArticle = GetArticleById(c, id);
         if (updatedArticle is null)
         {
             // We don't need to check anything if we can't get the article back
@@ -311,7 +311,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         if (impactedRows > 0)
         {
             // Only raise the change event if the table was actually updated
-            this.RaiseArticleLikeStatusChangedWithinTransaction(c, updatedArticle!);
+            eventSource.RaiseArticleLikeStatusChangedWithinTransaction(c, updatedArticle!);
         }
 
         t?.Commit();
