@@ -12,7 +12,7 @@ public class LocalOnlyStateTests : IDisposable
     public LocalOnlyStateTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.db = new ArticleDatabase(this.connection);
+        this.db = new ArticleDatabase(this.connection.GetFactory());
         this.sampleArticles = this.PopulateDatabaseWithArticles();
     }
 

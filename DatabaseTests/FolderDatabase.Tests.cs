@@ -11,7 +11,7 @@ public sealed class FolderDatabaseTests : IDisposable
     public FolderDatabaseTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.db = new FolderDatabase(this.connection);
+        this.db = new FolderDatabase(this.connection.GetFactory());
     }
 
     public void Dispose()
@@ -309,7 +309,7 @@ public sealed class FolderDatabaseTests : IDisposable
     [Fact]
     public void DeletingFolderContainingArticleRemovesFolder()
     {
-        var articleDb = new ArticleDatabase(this.connection);
+        var articleDb = new ArticleDatabase(this.connection.GetFactory());
         var customFolder = this.db.CreateFolder("Sample");
 
         _ = articleDb.AddArticleToFolder(TestUtilities.GetRandomArticle(), customFolder.LocalId);

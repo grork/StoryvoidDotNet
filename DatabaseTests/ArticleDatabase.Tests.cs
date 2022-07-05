@@ -13,9 +13,10 @@ public sealed class ArticleDatabaseTests : IDisposable
     public ArticleDatabaseTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.db = new ArticleDatabase(this.connection);
+        var factory = this.connection.GetFactory();
+        this.db = new ArticleDatabase(factory);
 
-        var folderDb = new FolderDatabase(this.connection);
+        var folderDb = new FolderDatabase(factory);
 
         // Add sample folders
         this.CustomFolder1 = folderDb.AddKnownFolder(title: "Sample1",

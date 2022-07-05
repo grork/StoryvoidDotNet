@@ -12,11 +12,18 @@ public static class TestUtilities
 
     internal static IDbConnection GetConnection()
     {
-        var connection = new SqliteConnection("Data Source=:memory:");
+        var dbName = Guid.NewGuid().ToString();
+        var connection = new SqliteConnection($"Data Source={dbName};Mode=Memory;Cache=Shared");
         connection.Open();
         InstapaperDatabase.CreateDatabaseIfNeeded(connection);
 
         return connection;
+    }
+
+    internal static Func<IDbConnection> GetFactory(this IDbConnection instance)
+    {
+        var connectionString = instance.ConnectionString;
+        return () => new SqliteConnection(connectionString);
     }
 
     public static ArticleRecordInformation GetRandomArticle()

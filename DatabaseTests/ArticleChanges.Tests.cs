@@ -14,9 +14,10 @@ public sealed class ArticleChangesTests : IDisposable
     public ArticleChangesTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.articleChangesDb = new ArticleChanges(this.connection);
+        var factory = this.connection.GetFactory();
+        this.articleChangesDb = new ArticleChanges(factory);
 
-        var folderDb = new FolderDatabase(this.connection);
+        var folderDb = new FolderDatabase(factory);
 
         this.SampleArticles = new List<DatabaseArticle>() {
             this.AddRandomArticle(),
@@ -32,7 +33,7 @@ public sealed class ArticleChangesTests : IDisposable
 
     private DatabaseArticle AddRandomArticle()
     {
-        var articleDb = new ArticleDatabase(this.connection);
+        var articleDb = new ArticleDatabase(this.connection.GetFactory());
         var article = articleDb.AddArticleToFolder(
             TestUtilities.GetRandomArticle(),
             WellKnownLocalFolderIds.Unread
@@ -459,6 +460,6 @@ public sealed class ArticleChangesTests : IDisposable
 
         _ = this.articleChangesDb.CreatePendingArticleMove(sampleArticleId, destinationFolderLocalId);
 
-        Assert.Throws<InvalidOperationException>(() => new FolderDatabase(this.connection).DeleteFolder(destinationFolderLocalId));
+        Assert.Throws<InvalidOperationException>(() => new FolderDatabase(this.connection.GetFactory()).DeleteFolder(destinationFolderLocalId));
     }
 }

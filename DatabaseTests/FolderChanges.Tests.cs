@@ -13,8 +13,9 @@ public sealed class FolderChangesTests : IDisposable
     public FolderChangesTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.db = new FolderChanges(this.connection);
-        var folderDb = new FolderDatabase(this.connection);
+        var factory = this.connection.GetFactory();
+        this.db = new FolderChanges(factory);
+        var folderDb = new FolderDatabase(factory);
 
         this.CustomLocalFolder1 = folderDb.CreateFolder("LocalSample1");
         this.CustomLocalFolder2 = folderDb.CreateFolder("LocalSample2");
@@ -130,7 +131,7 @@ public sealed class FolderChangesTests : IDisposable
     public void DeletingLocalFolderWithPendingAddShouldFail()
     {
         _ = this.db.CreatePendingFolderAdd(this.CustomLocalFolder1.LocalId);
-        Assert.Throws<InvalidOperationException>(() => new FolderDatabase(this.connection).DeleteFolder(this.CustomLocalFolder1.LocalId));
+        Assert.Throws<InvalidOperationException>(() => new FolderDatabase(this.connection.GetFactory()).DeleteFolder(this.CustomLocalFolder1.LocalId));
     }
     #endregion
 
@@ -140,7 +141,7 @@ public sealed class FolderChangesTests : IDisposable
     {
         var f = (ServiceId: 1, Title: "Title");
         var change = this.db.CreatePendingFolderDelete(f.ServiceId,
-                                                                               f.Title);
+                                                       f.Title);
         Assert.NotEqual(0L, change.ServiceId);
         Assert.Equal(f.ServiceId, change.ServiceId);
         Assert.Equal(f.Title, change.Title);

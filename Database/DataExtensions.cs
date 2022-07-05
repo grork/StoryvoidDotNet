@@ -282,4 +282,30 @@ internal static class DataExtensions
 
         return t;
     }
+
+    /// <summary>
+    /// If the supplied connection is not open, open it and return a disposable
+    /// that will close + dispose of the connection.
+    /// 
+    /// If it was open, no-op.
+    /// </summary>
+    /// <returns>IDisposable that will clean up *if* the connection was opened</returns>
+    public static IDisposable OpenIfNotOpen(this IDbConnection instance)
+    {
+        var cleanup = () => { };
+        if(instance.State != ConnectionState.Open)
+        {
+            instance.Open();
+            cleanup = () =>
+            {
+                instance.Close();
+                instance.Dispose();
+            };
+        }
+
+        return new EventCleanupHelper(
+            () => { },
+            cleanup
+        );
+    }
 }

@@ -6,17 +6,21 @@ namespace Codevoid.Storyvoid;
 /// <inheritdoc />
 internal class ArticleChanges : IArticleChangesDatabase
 {
-    private IDbConnection connection;
+    private Func<IDbConnection> connectionFactory;
 
-    internal ArticleChanges(IDbConnection connection)
+    internal ArticleChanges(Func<IDbConnection> connectionFactory)
     {
-        this.connection = connection;
+        this.connectionFactory = connectionFactory;
     }
 
     /// <inheritdoc />
     public PendingArticleAdd CreatePendingArticleAdd(Uri url, string? title)
     {
-        return CreatePendingArticleAdd(this.connection, url, title);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return CreatePendingArticleAdd(connection, url, title);
+        }
     }
 
     private static PendingArticleAdd CreatePendingArticleAdd(IDbConnection c, Uri url, string? title)
@@ -57,13 +61,21 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleAdd? GetPendingArticleAddByUrl(Uri url)
     {
-        return GetPendingArticleAddByUrl(this.connection, url);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetPendingArticleAddByUrl(connection, url);
+        }
     }
 
     /// <inheritdoc />
     public IList<PendingArticleAdd> ListPendingArticleAdds()
     {
-        return ListPendingArticleAdds(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListPendingArticleAdds(connection);
+        }
     }
 
     private static IList<PendingArticleAdd> ListPendingArticleAdds(IDbConnection c)
@@ -87,7 +99,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public void DeletePendingArticleAdd(Uri url)
     {
-        DeletePendingArticleAdd(this.connection, url);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeletePendingArticleAdd(connection, url);
+        }
     }
 
     private static void DeletePendingArticleAdd(IDbConnection c, Uri url)
@@ -125,7 +141,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public long CreatePendingArticleDelete(long articleId)
     {
-        return CreatePendingArticleDelete(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return CreatePendingArticleDelete(connection, articleId);
+        }
     }
 
     private static long CreatePendingArticleDelete(IDbConnection c, long articleId)
@@ -156,7 +176,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public bool HasPendingArticleDelete(long articleId)
     {
-        return HasPendingArticleDelete(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return HasPendingArticleDelete(connection, articleId);
+        }
     }
 
     private static bool HasPendingArticleDelete(IDbConnection c, long articleId)
@@ -176,7 +200,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public IList<long> ListPendingArticleDeletes()
     {
-        return ListPendingArticleDeletes(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListPendingArticleDeletes(connection);
+        }
     }
 
     private static IList<long> ListPendingArticleDeletes(IDbConnection c)
@@ -200,7 +228,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public void DeletePendingArticleDelete(long articleId)
     {
-        DeletePendingArticleDelete(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeletePendingArticleDelete(connection, articleId);
+        }
     }
 
     private static void DeletePendingArticleDelete(IDbConnection c, long articleId)
@@ -218,7 +250,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleStateChange CreatePendingArticleStateChange(long articleId, bool liked)
     {
-        return CreatePendingArticleStateChange(this.connection, articleId, liked);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return CreatePendingArticleStateChange(connection, articleId, liked);
+        }
     }
 
     private static PendingArticleStateChange CreatePendingArticleStateChange(IDbConnection c, long articleId, bool liked)
@@ -256,13 +292,21 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleStateChange? GetPendingArticleStateChangeByArticleId(long articleId)
     {
-        return GetPendingArticleStateChangeByArticleId(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetPendingArticleStateChangeByArticleId(connection, articleId);
+        }
     }
 
     /// <inheritdoc />
     public IList<PendingArticleStateChange> ListPendingArticleStateChanges()
     {
-        return ListPendingArticleStateChanges(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListPendingArticleStateChanges(connection);
+        }
     }
 
     private static IList<PendingArticleStateChange> ListPendingArticleStateChanges(IDbConnection c)
@@ -286,7 +330,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public void DeletePendingArticleStateChange(long articleId)
     {
-        DeletePendingArticleStateChange(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeletePendingArticleStateChange(connection, articleId);
+        }
     }
 
     private static void DeletePendingArticleStateChange(IDbConnection c, long articleId)
@@ -324,7 +372,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleMove CreatePendingArticleMove(long articleId, long destinationFolderLocalId)
     {
-        return CreatePendingArticleMove(this.connection, articleId, destinationFolderLocalId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return CreatePendingArticleMove(connection, articleId, destinationFolderLocalId);
+        }
     }
 
     private static PendingArticleMove CreatePendingArticleMove(IDbConnection c, long articleId, long destinationFolderLocalId)
@@ -385,13 +437,21 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public PendingArticleMove? GetPendingArticleMove(long articleId)
     {
-        return GetPendingArticleMoveByArticleId(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetPendingArticleMoveByArticleId(connection, articleId);
+        }
     }
 
     /// <inheritdoc />
     public IList<PendingArticleMove> ListPendingArticleMoves()
     {
-        return ListPendingArticleMoves(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListPendingArticleMoves(connection);
+        }
     }
 
     private static IList<PendingArticleMove> ListPendingArticleMoves(IDbConnection c)
@@ -415,7 +475,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId)
     {
-        return ListPendingArticleMovesForLocalFolderId(this.connection, localFolderId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListPendingArticleMovesForLocalFolderId(connection, localFolderId);
+        }
     }
 
     private static IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(IDbConnection c, long localFolderId)
@@ -442,7 +506,11 @@ internal class ArticleChanges : IArticleChangesDatabase
     /// <inheritdoc />
     public void DeletePendingArticleMove(long articleId)
     {
-        DeletePendingArticleMove(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeletePendingArticleMove(connection, articleId);
+        }
     }
 
     private static void DeletePendingArticleMove(IDbConnection c, long articleId)

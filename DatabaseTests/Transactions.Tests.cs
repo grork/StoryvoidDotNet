@@ -12,8 +12,9 @@ public sealed class FolderTransactionTests : IDisposable
     public FolderTransactionTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.db = new FolderDatabase(this.connection);
-        this.folderChanges = new FolderChanges(this.connection);
+        var factory = this.connection.GetFactory();
+        this.db = new FolderDatabase(factory);
+        this.folderChanges = new FolderChanges(factory);
     }
 
     public void Dispose()
@@ -30,8 +31,8 @@ public sealed class FolderTransactionTests : IDisposable
         this.db.FolderAddedWithinTransaction += (_, payload) =>
         {
             var folder = payload.Data;
-            var added = this.db.GetFolderByTitle(folder)!;
-            this.folderChanges.CreatePendingFolderAdd(added.LocalId);
+            var added = new FolderDatabase(() => payload.Connection).GetFolderByTitle(folder)!;
+            (new FolderChanges(() => payload.Connection)).CreatePendingFolderAdd(added.LocalId);
             this.ThrowException();
         };
 
@@ -47,7 +48,7 @@ public sealed class FolderTransactionTests : IDisposable
         var createdFolder = this.db.AddKnownFolder("Sample", 10L, 1L, true);
         this.db.FolderWillBeDeletedWithinTransaction += (_, folder) =>
         {
-            this.folderChanges.CreatePendingFolderDelete((createdFolder).ServiceId!.Value, createdFolder.Title);
+            (new FolderChanges(() => folder.Connection)).CreatePendingFolderDelete((createdFolder).ServiceId!.Value, createdFolder.Title);
             this.ThrowException();
         };
         Assert.Throws<Exception>(() => this.db.DeleteFolder(createdFolder.LocalId));
@@ -60,7 +61,7 @@ public sealed class FolderTransactionTests : IDisposable
     public void ExceptionDuringFolderDeletedEventRollsBackEntireChange()
     {
         var createdFolder = this.db.AddKnownFolder("Sample", 10L, 1L, true);
-        this.db.FolderWillBeDeletedWithinTransaction += (_, folder) => this.folderChanges.CreatePendingFolderDelete((createdFolder).ServiceId!.Value, createdFolder.Title);
+        this.db.FolderWillBeDeletedWithinTransaction += (_, payload) => (new FolderChanges(() => payload.Connection)).CreatePendingFolderDelete((createdFolder).ServiceId!.Value, createdFolder.Title);
         this.db.FolderDeletedWithinTransaction += (_, _) => this.ThrowException();
 
         Assert.Throws<Exception>(() => this.db.DeleteFolder(createdFolder.LocalId));
@@ -80,14 +81,15 @@ public sealed class ArticleTransactionTests : IDisposable
     public ArticleTransactionTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.db = new ArticleDatabase(this.connection);
-        this.articleChanges = new ArticleChanges(this.connection);
+        var factory = this.connection.GetFactory();
+        this.db = new ArticleDatabase(factory);
+        this.articleChanges = new ArticleChanges(factory);
 
         // Add sample folders
-        this.CustomFolder1 = new FolderDatabase(this.connection).AddKnownFolder(title: "Sample1",
-                                                                                serviceId: 9L,
-                                                                                position: 1,
-                                                                                shouldSync: true);
+        this.CustomFolder1 = new FolderDatabase(factory).AddKnownFolder(title: "Sample1",
+                                                                        serviceId: 9L,
+                                                                        position: 1,
+                                                                        shouldSync: true);
     }
 
     public void Dispose()
@@ -107,7 +109,7 @@ public sealed class ArticleTransactionTests : IDisposable
         this.db.ArticleLikeStatusChangedWithinTransaction += (_, payload) =>
         {
             var article = payload.Data;
-            this.articleChanges.CreatePendingArticleStateChange(article.Id, article.Liked);
+            (new ArticleChanges(() => payload.Connection)).CreatePendingArticleStateChange(article.Id, article.Liked);
             this.ThrowException();
         };
 
@@ -128,7 +130,7 @@ public sealed class ArticleTransactionTests : IDisposable
         this.db.ArticleLikeStatusChangedWithinTransaction += (_, payload) =>
         {
             var article = payload.Data;
-            this.articleChanges.CreatePendingArticleStateChange(article.Id, article.Liked);
+            (new ArticleChanges(() => payload.Connection)).CreatePendingArticleStateChange(article.Id, article.Liked);
             this.ThrowException();
         };
 
@@ -148,7 +150,7 @@ public sealed class ArticleTransactionTests : IDisposable
         this.db.ArticleMovedToFolderWithinTransaction += (_, args) =>
         {
             var payload = args.Data;
-            this.articleChanges.CreatePendingArticleMove(payload.Article.Id, payload.DestinationLocalFolderId);
+            (new ArticleChanges(() => args.Connection)).CreatePendingArticleMove(payload.Article.Id, payload.DestinationLocalFolderId);
             this.ThrowException();
         };
 
@@ -167,7 +169,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         this.db.ArticleDeletedWithinTransaction += (_, payload) =>
         {
-            this.articleChanges.CreatePendingArticleDelete(payload.Data);
+            (new ArticleChanges(() => payload.Connection)).CreatePendingArticleDelete(payload.Data);
             this.ThrowException();
         };
 

@@ -5,21 +5,25 @@ namespace Codevoid.Storyvoid;
 
 internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 {
-    private IDbConnection connection;
+    private Func<IDbConnection> connectionFactory;
 
     public event WithinTransactionEventHandler<IFolderDatabase, string>? FolderAddedWithinTransaction;
     public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderWillBeDeletedWithinTransaction;
     public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderDeletedWithinTransaction;
 
-    public FolderDatabase(IDbConnection connection)
+    public FolderDatabase(Func<IDbConnection> connectionFactory)
     {
-        this.connection = connection;
+        this.connectionFactory = connectionFactory;
     }
 
     /// <inheritdoc/>
     public IList<DatabaseFolder> ListAllFolders()
     {
-        return ListAllFolders(this.connection);
+        var connection = this.connectionFactory();
+        using(connection.OpenIfNotOpen())
+        {
+            return ListAllFolders(connection);
+        }
     }
 
     private static IList<DatabaseFolder> ListAllFolders(IDbConnection c)
@@ -46,7 +50,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder? GetFolderByServiceId(long serviceId)
     {
-        return GetFolderByServiceId(this.connection, serviceId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetFolderByServiceId(connection, serviceId);
+        }
     }
 
     private static DatabaseFolder? GetFolderByServiceId(IDbConnection c, long serviceId)
@@ -73,7 +81,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder? GetFolderByLocalId(long localId)
     {
-        return GetFolderByLocalId(this.connection, localId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetFolderByLocalId(connection, localId);
+        }
     }
 
     private static DatabaseFolder? GetFolderByLocalId(IDbConnection c, long localId)
@@ -100,7 +112,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc />
     public DatabaseFolder? GetFolderByTitle(string title)
     {
-        return GetFolderByTitle(this.connection, title);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetFolderByTitle(connection, title);
+        }
     }
 
     private static DatabaseFolder? GetFolderByTitle(IDbConnection c, string title)
@@ -127,7 +143,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder CreateFolder(string title)
     {
-        return CreateFolder(this.connection, title, this);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return CreateFolder(connection, title, this);
+        }
     }
 
     private static DatabaseFolder CreateFolder(IDbConnection c, string title, FolderDatabase eventSource)
@@ -157,7 +177,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync)
     {
-        return AddKnownFolder(this.connection, title, serviceId, position, shouldSync);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return AddKnownFolder(connection, title, serviceId, position, shouldSync);
+        }
     }
 
     private static DatabaseFolder AddKnownFolder(IDbConnection c, string title, long serviceId, long position, bool shouldSync)
@@ -191,7 +215,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync)
     {
-        return UpdateFolder(this.connection, localId, serviceId, title, position, shouldSync);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return UpdateFolder(connection, localId, serviceId, title, position, shouldSync);
+        }
     }
 
     private static DatabaseFolder UpdateFolder(IDbConnection c, long localId, long? serviceId, string title, long position, bool shouldSync)
@@ -254,7 +282,11 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
             throw new InvalidOperationException("Deleting the Archive folder is not allowed");
         }
 
-        DeleteFolder(this.connection, localFolderId, this);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeleteFolder(connection, localFolderId, this);
+        }
     }
 
     private static void DeleteFolder(IDbConnection c, long localFolderId, FolderDatabase eventSource)

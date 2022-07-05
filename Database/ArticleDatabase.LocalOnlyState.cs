@@ -8,7 +8,11 @@ internal sealed partial class ArticleDatabase
     /// <inheritdoc/>
     public DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(long articleId)
     {
-        return GetLocalOnlyStateByArticleId(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetLocalOnlyStateByArticleId(connection, articleId);
+        }
     }
 
     private static DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(IDbConnection c, long articleId)
@@ -34,7 +38,11 @@ internal sealed partial class ArticleDatabase
     /// <inheritdoc/>
     public DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(DatabaseLocalOnlyArticleState localOnlyArticleState)
     {
-        return AddLocalOnlyStateForArticle(this.connection, localOnlyArticleState);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return AddLocalOnlyStateForArticle(connection, localOnlyArticleState);
+        }
     }
 
     private static DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(IDbConnection c, DatabaseLocalOnlyArticleState localOnlyArticleState)
@@ -97,7 +105,11 @@ internal sealed partial class ArticleDatabase
     /// <inheritdoc/>
     public void DeleteLocalOnlyArticleState(long articleId)
     {
-        DeleteLocalOnlyArticleState(this.connection, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeleteLocalOnlyArticleState(connection, articleId);
+        }
     }
 
     private static void DeleteLocalOnlyArticleState(IDbConnection c, long articleId)
@@ -118,7 +130,11 @@ internal sealed partial class ArticleDatabase
             throw new ArgumentException("Article ID must be greater than 0");
         }
 
-        return UpdateLocalOnlyArticleState(this.connection, updatedLocalOnlyArticleState);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return UpdateLocalOnlyArticleState(connection, updatedLocalOnlyArticleState);
+        }
     }
 
     private static DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(IDbConnection c, DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)

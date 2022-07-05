@@ -34,11 +34,12 @@ internal class Ledger : IDisposable
         });
     }
 
-    private void HandleFolderAdded(IFolderDatabase folderDatabase, WithinTransactionArgs<string> args)
+    private void HandleFolderAdded(IFolderDatabase fdb, WithinTransactionArgs<string> args)
     {
+        var folderDatabase = new FolderDatabase(() => args.Connection);
         var title = args.Data;
         var added = folderDatabase.GetFolderByTitle(title)!;
-        var folderChangesDatabase = new FolderChanges(args.Connection);
+        var folderChangesDatabase = new FolderChanges(() => args.Connection);
 
         // If we have a pending folder delete for a folder with the same title
         // as one that the service is aware of, we need to resurrect the the
@@ -64,11 +65,11 @@ internal class Ledger : IDisposable
         _ = folderChangesDatabase.CreatePendingFolderAdd(added.LocalId);
     }
 
-    private void HandleFolderWillBeDeleted(IFolderDatabase folderDatabase, WithinTransactionArgs<DatabaseFolder> args)
+    private void HandleFolderWillBeDeleted(IFolderDatabase fdb, WithinTransactionArgs<DatabaseFolder> args)
     {
         var toBeDeleted = args.Data;
-        var articleChangesDatabase = new ArticleChanges(args.Connection);
-        var folderChangesDatabase = new FolderChanges(args.Connection);
+        var articleChangesDatabase = new ArticleChanges(() => args.Connection);
+        var folderChangesDatabase = new FolderChanges(() => args.Connection);
 
         if (articleChangesDatabase.ListPendingArticleMovesForLocalFolderId(toBeDeleted.LocalId).Any())
         {
@@ -84,9 +85,9 @@ internal class Ledger : IDisposable
         }
     }
 
-    private void HandleFolderDeleted(IFolderDatabase folderDatabase, WithinTransactionArgs<DatabaseFolder> args)
+    private void HandleFolderDeleted(IFolderDatabase fdb, WithinTransactionArgs<DatabaseFolder> args)
     {
-        var folderChangesDatabase = new FolderChanges(args.Connection);
+        var folderChangesDatabase = new FolderChanges(() => args.Connection);
         var deleted = args.Data;
         if (!deleted.ServiceId.HasValue)
         {
@@ -100,14 +101,14 @@ internal class Ledger : IDisposable
             deleted.Title);
     }
 
-    private void HandleArticleDeleted(IArticleDatabase articleDatabase, WithinTransactionArgs<long> args)
+    private void HandleArticleDeleted(IArticleDatabase adb, WithinTransactionArgs<long> args)
     {
-        _ = new ArticleChanges(args.Connection).CreatePendingArticleDelete(args.Data);
+        _ = new ArticleChanges(() => args.Connection).CreatePendingArticleDelete(args.Data);
     }
 
-    private void HandleArticleLikeStatusChanged(IArticleDatabase articleDatabase, WithinTransactionArgs<DatabaseArticle> args)
+    private void HandleArticleLikeStatusChanged(IArticleDatabase adb, WithinTransactionArgs<DatabaseArticle> args)
     {
-        var articleChangesDatabase = new ArticleChanges(args.Connection);
+        var articleChangesDatabase = new ArticleChanges(() => args.Connection);
         var article = args.Data;
         // Get any existing like status change...
         var existingStatusChange = articleChangesDatabase.GetPendingArticleStateChangeByArticleId(article.Id);
@@ -129,10 +130,10 @@ internal class Ledger : IDisposable
     }
 
     private void HandleArticleMovedToFolder(
-        IArticleDatabase articleDatabase,
+        IArticleDatabase adb,
         WithinTransactionArgs<(DatabaseArticle Article, long DestinationLocalFolderId)> args)
     {
-        var articleChangesDatabase = new ArticleChanges(args.Connection);
+        var articleChangesDatabase = new ArticleChanges(() => args.Connection);
         var payload = args.Data;
         // Check to see if this article was already pending a move to a folder.
         // If so, we don't need it anymore, and it'll need to be cleaned up first

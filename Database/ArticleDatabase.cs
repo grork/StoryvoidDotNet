@@ -7,21 +7,25 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 {
     private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
-    private IDbConnection connection;
+    private Func<IDbConnection> connectionFactory;
 
     public event WithinTransactionEventHandler<IArticleDatabase, DatabaseArticle>? ArticleLikeStatusChangedWithinTransaction;
     public event WithinTransactionEventHandler<IArticleDatabase, long>? ArticleDeletedWithinTransaction;
     public event WithinTransactionEventHandler<IArticleDatabase, (DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMovedToFolderWithinTransaction;
 
-    internal ArticleDatabase(IDbConnection connection)
+    internal ArticleDatabase(Func<IDbConnection> connectionFactory)
     {
-        this.connection = connection;
+        this.connectionFactory = connectionFactory;
     }
 
     /// <inheritdoc/>
     public IList<DatabaseArticle> ListArticlesForLocalFolder(long localFolderId)
     {
-        return ListArticlesForLocalFolder(this.connection, localFolderId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListArticlesForLocalFolder(connection, localFolderId);
+        }
     }
 
     private static IList<DatabaseArticle> ListArticlesForLocalFolder(IDbConnection c, long localFolderId)
@@ -50,7 +54,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc />
     public IList<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder()
     {
-        return ListAllArticlesInAFolder(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListAllArticlesInAFolder(connection);
+        }
     }
 
     private static IList<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder(IDbConnection c)
@@ -78,7 +86,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc />
     public IList<DatabaseArticle> ListArticlesNotInAFolder()
     {
-        return ListArticlesNotInAFolder(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListArticlesNotInAFolder(connection);
+        }
     }
 
     private static IList<DatabaseArticle> ListArticlesNotInAFolder(IDbConnection c)
@@ -103,7 +115,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public IList<DatabaseArticle> ListLikedArticles()
     {
-        return ListLikedArticles(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListLikedArticles(connection);
+        }
     }
 
     private static IList<DatabaseArticle> ListLikedArticles(IDbConnection c)
@@ -128,7 +144,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public DatabaseArticle? GetArticleById(long id)
     {
-        return GetArticleById(this.connection, id);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetArticleById(connection, id);
+        }
     }
 
     private static DatabaseArticle? GetArticleById(IDbConnection c, long id)
@@ -155,7 +175,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc />
     public DatabaseArticle AddArticleNoFolder(ArticleRecordInformation data)
     {
-        return AddArticleNoFolder(this.connection, data);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return AddArticleNoFolder(connection, data);
+        }
     }
 
     private static DatabaseArticle AddArticleNoFolder(IDbConnection c, ArticleRecordInformation data)
@@ -197,7 +221,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         long localFolderId
     )
     {
-        return AddArticleToFolder(this.connection, data, localFolderId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return AddArticleToFolder(connection, data, localFolderId);
+        }
     }
 
     private static DatabaseArticle AddArticleToFolder(IDbConnection c, ArticleRecordInformation data, long localFolderId)
@@ -236,7 +264,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc />
     public DatabaseArticle UpdateArticle(ArticleRecordInformation updatedData)
     {
-        return UpdateArticle(this.connection, updatedData);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return UpdateArticle(connection, updatedData);
+        }
     }
 
     private static DatabaseArticle UpdateArticle(IDbConnection c, ArticleRecordInformation updatedData)
@@ -280,13 +312,21 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public DatabaseArticle LikeArticle(long id)
     {
-        return UpdateLikeStatusForArticle(this.connection, id, true, this);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return UpdateLikeStatusForArticle(connection, id, true, this);
+        }
     }
 
     /// <inheritdoc/>
     public DatabaseArticle UnlikeArticle(long id)
     {
-        return UpdateLikeStatusForArticle(this.connection, id, false, this);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return UpdateLikeStatusForArticle(connection, id, false, this);
+        }
     }
 
     private static DatabaseArticle UpdateLikeStatusForArticle(IDbConnection c, long id, bool liked, ArticleDatabase eventSource)
@@ -336,7 +376,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             throw new ArgumentOutOfRangeException(nameof(readProgressTimestamp), "Progress Timestamp must be within the Unix Epoch");
         }
 
-        return UpdateReadProgressForArticle(this.connection, readProgress, readProgressTimestamp, articleId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return UpdateReadProgressForArticle(connection, readProgress, readProgressTimestamp, articleId);
+        }
     }
 
     private static DatabaseArticle UpdateReadProgressForArticle(IDbConnection c, float readProgress, DateTime readProgressTimestamp, long articleId)
@@ -381,7 +425,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public void MoveArticleToFolder(long articleId, long localFolderId)
     {
-        MoveArticleToFolder(this.connection, articleId, localFolderId, this);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            MoveArticleToFolder(connection, articleId, localFolderId, this);
+        }
     }
 
     private static void MoveArticleToFolder(IDbConnection c, long articleId, long localFolderId, ArticleDatabase eventSource)
@@ -468,7 +516,11 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public void DeleteArticle(long articleId)
     {
-        DeleteArticle(this.connection, articleId, this);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeleteArticle(connection, articleId, this);
+        }
     }
 
     private static void DeleteArticle(IDbConnection c, long articleId, ArticleDatabase eventSource)

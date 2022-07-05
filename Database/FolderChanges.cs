@@ -6,11 +6,11 @@ namespace Codevoid.Storyvoid;
 /// <inheritdoc />
 internal class FolderChanges : IFolderChangesDatabase
 {
-    private IDbConnection connection;
+    private Func<IDbConnection> connectionFactory;
 
-    internal FolderChanges(IDbConnection connection)
+    internal FolderChanges(Func<IDbConnection> connectionFactory)
     {
-        this.connection = connection;
+        this.connectionFactory = connectionFactory;
     }
 
     #region Pending Folder Adds
@@ -23,7 +23,11 @@ internal class FolderChanges : IFolderChangesDatabase
             throw new InvalidOperationException("Can't create a folder add for wellknown folders");
         }
 
-        return CreatePendingFolderAdd(this.connection, localFolderId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return CreatePendingFolderAdd(connection, localFolderId);
+        }
     }
 
     private static PendingFolderAdd CreatePendingFolderAdd(IDbConnection c, long localFolderId)
@@ -79,13 +83,21 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public PendingFolderAdd? GetPendingFolderAdd(long localFolderId)
     {
-        return GetPendingFolderAddById(this.connection, localFolderId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetPendingFolderAddById(connection, localFolderId);
+        }
     }
 
     /// <inheritdoc/>
     public void DeletePendingFolderAdd(long localFolderId)
     {
-        DeletePendingFolderAdd(this.connection, localFolderId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeletePendingFolderAdd(connection, localFolderId);
+        }
     }
 
     private static void DeletePendingFolderAdd(IDbConnection c, long localFolderId)
@@ -103,7 +115,11 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public IList<PendingFolderAdd> ListPendingFolderAdds()
     {
-        return ListPendingFolderAdds(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListPendingFolderAdds(connection);
+        }
     }
 
     private static IList<PendingFolderAdd> ListPendingFolderAdds(IDbConnection c)
@@ -136,7 +152,11 @@ internal class FolderChanges : IFolderChangesDatabase
             throw new InvalidOperationException("Can't create pending delete for well known folders");
         }
 
-        return CreatePendingFolderDelete(this.connection, serviceId, title);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return CreatePendingFolderDelete(connection, serviceId, title);
+        }
     }
 
     private static PendingFolderDelete CreatePendingFolderDelete(IDbConnection c, long serviceId, string title)
@@ -169,7 +189,11 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public void DeletePendingFolderDelete(long serviceId)
     {
-        DeletePendingFolderDelete(this.connection, serviceId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            DeletePendingFolderDelete(connection, serviceId);
+        }
     }
 
     private static void DeletePendingFolderDelete(IDbConnection c, long serviceId)
@@ -207,13 +231,21 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public PendingFolderDelete? GetPendingFolderDelete(long serviceId)
     {
-        return GetPendingFolderDeleteByServiceId(this.connection, serviceId);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetPendingFolderDeleteByServiceId(connection, serviceId);
+        }
     }
 
     /// <inheritdoc/>
     public PendingFolderDelete? GetPendingFolderDeleteByTitle(string title)
     {
-        return GetPendingFolderDeleteByTitle(this.connection, title);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return GetPendingFolderDeleteByTitle(connection, title);
+        }
     }
 
     private static PendingFolderDelete? GetPendingFolderDeleteByTitle(IDbConnection c, string title)
@@ -239,7 +271,11 @@ internal class FolderChanges : IFolderChangesDatabase
     /// <inheritdoc/>
     public IList<PendingFolderDelete> ListPendingFolderDeletes()
     {
-        return ListPendingFolderDeletes(this.connection);
+        var connection = this.connectionFactory();
+        using (connection.OpenIfNotOpen())
+        {
+            return ListPendingFolderDeletes(connection);
+        }
     }
 
     private static IList<PendingFolderDelete> ListPendingFolderDeletes(IDbConnection c)

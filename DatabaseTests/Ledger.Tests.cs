@@ -13,10 +13,11 @@ public sealed class FolderLedgerTests : IDisposable
     public FolderLedgerTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.folders = new FolderDatabase(this.connection);
-        this.folderChanges = new FolderChanges(this.connection);
+        var factory = this.connection.GetFactory();
+        this.folders = new FolderDatabase(factory);
+        this.folderChanges = new FolderChanges(factory);
         this.ledger = new((IFolderDatabaseWithTransactionEvents)this.folders,
-                          new ArticleDatabase(this.connection));
+                          new ArticleDatabase(factory));
     }
 
     public void Dispose()
@@ -105,10 +106,10 @@ public sealed class FolderLedgerTests : IDisposable
     public void DeletingFolderThatHasPendingArticleMoveToItThrowsException()
     {
         // Move to init
-        var sampleArticle = new ArticleDatabase(this.connection).AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
+        var sampleArticle = new ArticleDatabase(this.connection.GetFactory()).AddArticleToFolder(TestUtilities.GetRandomArticle(), WellKnownLocalFolderIds.Unread);
         var destinationFolder = this.folders.AddKnownFolder("Sample", 1L, 1L, true);
 
-        _ = new ArticleChanges(this.connection).CreatePendingArticleMove(sampleArticle.Id, destinationFolder.LocalId);
+        _ = new ArticleChanges(this.connection.GetFactory()).CreatePendingArticleMove(sampleArticle.Id, destinationFolder.LocalId);
 
         Assert.Throws<FolderHasPendingArticleMoveException>(() => this.folders.DeleteFolder(destinationFolder.LocalId));
     }
@@ -139,10 +140,11 @@ public sealed class ArticleLedgerTests : IDisposable
     public ArticleLedgerTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.articles = new ArticleDatabase(this.connection);
-        this.articleChanges = new ArticleChanges(this.connection);
+        var factory = this.connection.GetFactory();
+        this.articles = new ArticleDatabase(factory);
+        this.articleChanges = new ArticleChanges(factory);
 
-        var folders = new FolderDatabase(this.connection);
+        var folders = new FolderDatabase(factory);
         this.CustomFolder1 = folders.CreateFolder("Sample1");
         this.CustomFolder2 = folders.CreateFolder("Sample2");
 
