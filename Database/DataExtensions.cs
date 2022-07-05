@@ -264,6 +264,14 @@ internal static class DataExtensions
         instance.Parameters.Add(parameter);
     }
 
+    /// <summary>
+    /// Initiates a transaction if, and only if, there is not already a
+    /// transaction in progress for the supplied command.
+    /// 
+    /// This is because you can't have > 1 transaction against the same
+    /// connection in SQLite, so we need to manage it carefully.
+    /// </summary>
+    /// <returns>The transaction *if* one was created</returns>
     public static IDbTransaction? BeginTransactionIfNeeded(this IDbCommand instance)
     {
         var t = (instance.Transaction != null) ? null : instance.Connection.BeginTransaction();
