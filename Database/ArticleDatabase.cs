@@ -8,7 +8,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
     private IDbConnection connection;
-    private IDatabaseEventSource? eventSink;
+    private IDatabaseEventSource? eventSource;
 
     public event WithinTransactionEventHandler<IArticleDatabase, DatabaseArticle>? ArticleLikeStatusChangedWithinTransaction;
     public event WithinTransactionEventHandler<IArticleDatabase, long>? ArticleDeletedWithinTransaction;
@@ -17,7 +17,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     internal ArticleDatabase(IDbConnection connection, IDatabaseEventSource? eventSink = null)
     {
         this.connection = connection;
-        this.eventSink = eventSink;
+        this.eventSource = eventSink;
     }
 
     /// <inheritdoc/>
@@ -200,7 +200,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     )
     {
         var article = AddArticleToFolder(this.connection, data, localFolderId);
-        this.eventSink?.RaiseArticleAdded(article, localFolderId);
+        this.eventSource?.RaiseArticleAdded(article, localFolderId);
         return article;
     }
 
@@ -241,7 +241,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     public DatabaseArticle UpdateArticle(ArticleRecordInformation updatedData)
     {
         var updated = UpdateArticle(this.connection, updatedData);
-        this.eventSink?.RaiseArticleUpdated(updated);
+        this.eventSource?.RaiseArticleUpdated(updated);
         return updated;
     }
 
@@ -289,7 +289,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         var (updated, stateChanged) = UpdateLikeStatusForArticle(this.connection, id, true, this);
         if (stateChanged)
         {
-            this.eventSink?.RaiseArticleUpdated(updated);
+            this.eventSource?.RaiseArticleUpdated(updated);
         }
 
         return updated;
@@ -301,7 +301,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         var (updated, stateChanged) = UpdateLikeStatusForArticle(this.connection, id, false, this);
         if (stateChanged)
         {
-            this.eventSink?.RaiseArticleUpdated(updated);
+            this.eventSource?.RaiseArticleUpdated(updated);
         }
 
         return updated;
@@ -355,7 +355,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         }
 
         var updated = UpdateReadProgressForArticle(this.connection, readProgress, readProgressTimestamp, articleId);
-        this.eventSink?.RaiseArticleUpdated(updated);
+        this.eventSource?.RaiseArticleUpdated(updated);
 
         return updated;
     }
@@ -408,7 +408,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             return;
         }
 
-        this.eventSink?.RaiseArticleMoved(article!, localFolderId);
+        this.eventSource?.RaiseArticleMoved(article!, localFolderId);
     }
 
     private static (bool, DatabaseArticle?) MoveArticleToFolder(IDbConnection c, long articleId, long localFolderId, ArticleDatabase eventSource)
@@ -501,7 +501,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         var wasDeleted = DeleteArticle(this.connection, articleId, this);
         if (wasDeleted)
         {
-            this.eventSink?.RaiseArticleDeleted(articleId);
+            this.eventSource?.RaiseArticleDeleted(articleId);
         }
     }
 

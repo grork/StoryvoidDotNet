@@ -6,7 +6,7 @@ namespace Codevoid.Storyvoid;
 internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 {
     private IDbConnection connection;
-    private IDatabaseEventSource? eventSink;
+    private IDatabaseEventSource? eventSource;
 
     public event WithinTransactionEventHandler<IFolderDatabase, string>? FolderAddedWithinTransaction;
     public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderWillBeDeletedWithinTransaction;
@@ -15,7 +15,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     public FolderDatabase(IDbConnection connection, IDatabaseEventSource? eventSink = null)
     {
         this.connection = connection;
-        this.eventSink = eventSink;
+        this.eventSource = eventSink;
     }
 
     /// <inheritdoc/>
@@ -130,7 +130,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     public DatabaseFolder CreateFolder(string title)
     {
         var folder = CreateFolder(this.connection, title, this);
-        this.eventSink?.RaiseFolderAdded(folder);
+        this.eventSource?.RaiseFolderAdded(folder);
         return folder;
     }
 
@@ -162,7 +162,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     public DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync)
     {
         var folder = AddKnownFolder(this.connection, title, serviceId, position, shouldSync);
-        this.eventSink?.RaiseFolderAdded(folder);
+        this.eventSource?.RaiseFolderAdded(folder);
         return folder;
     }
 
@@ -198,7 +198,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     public DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync)
     {
         var folder = UpdateFolder(this.connection, localId, serviceId, title, position, shouldSync);
-        this.eventSink?.RaiseFolderUpdated(folder);
+        this.eventSource?.RaiseFolderUpdated(folder);
         return folder;
     }
 
@@ -265,7 +265,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         var (wasDeleted, folder) = DeleteFolder(this.connection, localFolderId, this);
         if(wasDeleted)
         {
-            this.eventSink?.RaiseFolderDeleted(folder!);
+            this.eventSource?.RaiseFolderDeleted(folder!);
         }
     }
 
