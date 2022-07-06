@@ -55,7 +55,7 @@ internal static class EventCleanupHelperExtensions
     }
 }
 
-internal static class InstapaperDatabase
+public static class InstapaperDatabase
 {
     private const int CURRENT_DB_VERSION = 1;
 
@@ -105,5 +105,15 @@ internal static class InstapaperDatabase
                 }
             }
         }
+    }
+
+    public static IFolderDatabase GetFolderDatabase(IDbConnection connection)
+    {
+        return new FolderDatabase(connection);
+    }
+
+    public static IFolderChangesDatabase GetFolderChangesDatabase(IDbConnection connection)
+    {
+        return new FolderChanges(connection);
     }
 }

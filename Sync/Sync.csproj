@@ -9,4 +9,9 @@
     <ImplicitUsings>true</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Database\Database.csproj" />
+    <ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
+  </ItemGroup>
+
 </Project>
