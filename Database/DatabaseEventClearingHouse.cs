@@ -7,7 +7,7 @@ namespace Codevoid.Storyvoid;
 public interface IDatabaseEventSource
 {
     public event EventHandler<DatabaseFolder> FolderAdded;
-    public event EventHandler<long> FolderDeleted;
+    public event EventHandler<DatabaseFolder> FolderDeleted;
     public event EventHandler<DatabaseFolder> FolderUpdated;
 
     public event EventHandler<(DatabaseArticle Article, long LocalFolderId)> ArticleAdded;
@@ -22,7 +22,7 @@ public interface IDatabaseEventSource
 public interface IDatabaseEventSink
 {
     public void RaiseFolderAdded(DatabaseFolder added);
-    public void RaiseFolderDeleted(long localFolderId);
+    public void RaiseFolderDeleted(DatabaseFolder localFolderId);
     public void RaiseFolderUpdated(DatabaseFolder updated);
 
     public void RaiseArticleAdded(DatabaseArticle added, long to);
@@ -37,7 +37,7 @@ public interface IDatabaseEventSink
 internal sealed class DatabaseEventClearingHouse : IDatabaseEventSource, IDatabaseEventSink
 {
     public event EventHandler<DatabaseFolder>? FolderAdded;
-    public event EventHandler<long>? FolderDeleted;
+    public event EventHandler<DatabaseFolder>? FolderDeleted;
     public event EventHandler<DatabaseFolder>? FolderUpdated;
     public event EventHandler<(DatabaseArticle Article, long LocalFolderId)>? ArticleAdded;
     public event EventHandler<long>? ArticleDeleted;
@@ -50,7 +50,7 @@ internal sealed class DatabaseEventClearingHouse : IDatabaseEventSource, IDataba
         handler?.Invoke(this, added);
     }
 
-    public void RaiseFolderDeleted(long localFolderId)
+    public void RaiseFolderDeleted(DatabaseFolder localFolderId)
     {
         var handler = this.FolderDeleted;
         handler?.Invoke(this, localFolderId);

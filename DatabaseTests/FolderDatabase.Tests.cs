@@ -20,6 +20,13 @@ public sealed class FolderDatabaseTests : IDisposable
         this.connection.Dispose();
     }
 
+    private DatabaseEventClearingHouse SwitchToEventingDatabase()
+    {
+        var clearingHouse = new DatabaseEventClearingHouse();
+        this.db = new FolderDatabase(this.connection, clearingHouse);
+        return clearingHouse;
+    }
+
     [Fact]
     public void DefaultFoldersAreCreated()
     {
@@ -128,6 +135,18 @@ public sealed class FolderDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void FolderAddedClearingHouseEventRaisedForSingleFolderAdd()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+        DatabaseFolder? eventPayload = null;
+
+        clearingHouse.FolderAdded += (_, payload) => eventPayload = payload;
+
+        var addedFolder = this.db.CreateFolder("Sample");
+        Assert.Equal(addedFolder, eventPayload);
+    }
+
+    [Fact]
     public void CanAddMultipleFolders()
     {
         // Create folder; check results are returned
@@ -189,10 +208,25 @@ public sealed class FolderDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void FolderAddedClearingHouseEventNotRaisedWhenAddFails()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+        var eventPayloads = new List<DatabaseFolder>();
+
+        clearingHouse.FolderAdded += (_, payload) => eventPayloads.Add(payload);
+
+        var firstFolder = this.db.CreateFolder("Sample");
+        Assert.Throws<DuplicateNameException>(() => this.db.CreateFolder("Sample"));
+
+        Assert.Single(eventPayloads);
+        Assert.Equal(firstFolder, eventPayloads[0]);
+    }
+
+    [Fact]
     public void CanAddFolderWithAllServiceInformation()
     {
         // Create folder; check results are returned
-        DatabaseFolder addedFolder = this.db.AddKnownFolder(
+        var addedFolder = this.db.AddKnownFolder(
             title: "Sample",
             serviceId: 10L,
             position: 9L,
@@ -216,7 +250,24 @@ public sealed class FolderDatabaseTests : IDisposable
     }
 
     [Fact]
-    public void AddFlderDuplicateTitleUsingServiceInformationThrows()
+    public void FolderAddedClearingHouseEventRaisedWhenAddingKnownFolder()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+        DatabaseFolder? eventPayload = null;
+
+        clearingHouse.FolderAdded += (_, payload) => eventPayload = payload;
+
+        var addedFolder = this.db.AddKnownFolder(
+            title: "Sample",
+            serviceId: 10L,
+            position: 9L,
+            shouldSync: true);
+
+        Assert.Equal(addedFolder, eventPayload);
+    }
+
+    [Fact]
+    public void AddFolderDuplicateTitleUsingServiceInformationThrows()
     {
         // Create folder; check results are returned
         var addedFolder = this.db.AddKnownFolder(
@@ -269,6 +320,29 @@ public sealed class FolderDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void FolderUpdatedClearingHouseEventRaisedWhenUpdatingAFolder()
+    {
+        // Create local only folder
+        var folderId = this.db.CreateFolder("Sample").LocalId;
+
+        var clearingHouse = this.SwitchToEventingDatabase();
+        DatabaseFolder? eventPayload = null;
+
+        clearingHouse.FolderUpdated += (_, payload) => eventPayload = payload;
+
+        // Update the local only folder with additional data
+        var updatedFolder = db.UpdateFolder(
+            folderId,
+            serviceId: 9L,
+            title: "Sample2",
+            position: 999L,
+            shouldSync: false
+        );
+
+        Assert.Equal(updatedFolder, eventPayload);
+    }
+
+    [Fact]
     public void UpdatingFolderThatDoesntExistFails()
     {
         var preCount = this.db.ListAllFolders().Count;
@@ -286,6 +360,30 @@ public sealed class FolderDatabaseTests : IDisposable
         // Check there wasn't one created
         var postCount = this.db.ListAllFolders().Count;
         Assert.Equal(preCount, postCount);
+    }
+
+    [Fact]
+    public void FolderUpdatedClearingHouseEventNotRaisedWhenUpdatingAFolderThatDoesntExist()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+        var eventRaised = false;
+
+        clearingHouse.FolderUpdated += (_, _) => eventRaised = true;
+
+        // Update the local only folder with additional data
+        Assert.Throws<FolderNotFoundException>(() =>
+        {
+            _ = db.UpdateFolder(
+                99L,
+                serviceId: 9L,
+                title: "Sample2",
+                position: 999L,
+                shouldSync: false
+            );
+        });
+
+
+        Assert.False(eventRaised);
     }
 
     [Fact]
@@ -359,6 +457,27 @@ public sealed class FolderDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void FolderDeletedClearingHouseEventRaised()
+    {
+        // Create folder; check results are returned
+        var addedFolder = this.db.AddKnownFolder(
+            title: "Sample",
+            serviceId: 10L,
+            position: 9L,
+            shouldSync: true
+        );
+
+        var clearingHouse = this.SwitchToEventingDatabase();
+
+        DatabaseFolder? folderDeleted = null;
+        clearingHouse.FolderDeleted += (_, payload) => folderDeleted = payload;
+
+        this.db.DeleteFolder(addedFolder.LocalId);
+
+        Assert.Equal(addedFolder, folderDeleted);
+    }
+
+    [Fact]
     public void FolderWillBeAndDeletedWithinTransactionEventsRaised()
     {
         // Create folder; check results are returned
@@ -403,6 +522,17 @@ public sealed class FolderDatabaseTests : IDisposable
     {
         var wasRaised = false;
         this.db.FolderDeletedWithinTransaction += (_, _) => wasRaised = true;
+        this.db.DeleteFolder(999);
+
+        Assert.False(wasRaised);
+    }
+
+    [Fact]
+    public void FolderDeletedClearingHouseEventNotRaisedWhenNoFolderToDelete()
+    {
+        var clearingHouse = this.SwitchToEventingDatabase();
+        var wasRaised = false;
+        clearingHouse.FolderDeleted += (_, _) => wasRaised = true;
         this.db.DeleteFolder(999);
 
         Assert.False(wasRaised);

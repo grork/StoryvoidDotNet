@@ -158,12 +158,13 @@ public sealed class DatabaseEventClearingHouseTests
     [Fact]
     public void CanRaiseFolderDeletedEvent()
     {
-        long? eventFolder = null;
+        var folder = this.GetFolder();
+        DatabaseFolder? eventFolder = null;
         this.clearingHouse.FolderDeleted += (_, deleted) => eventFolder = deleted;
-        this.clearingHouse.RaiseFolderDeleted(FOLDER_ID);
+        this.clearingHouse.RaiseFolderDeleted(folder);
 
         Assert.NotNull(eventFolder);
-        Assert.Equal(FOLDER_ID, eventFolder);
+        Assert.Equal(folder, eventFolder);
     }
 
     [Fact]

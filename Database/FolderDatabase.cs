@@ -6,14 +6,16 @@ namespace Codevoid.Storyvoid;
 internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 {
     private IDbConnection connection;
+    private IDatabaseEventSink? eventSink;
 
     public event WithinTransactionEventHandler<IFolderDatabase, string>? FolderAddedWithinTransaction;
     public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderWillBeDeletedWithinTransaction;
     public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderDeletedWithinTransaction;
 
-    public FolderDatabase(IDbConnection connection)
+    public FolderDatabase(IDbConnection connection, IDatabaseEventSink? eventSink = null)
     {
         this.connection = connection;
+        this.eventSink = eventSink;
     }
 
     /// <inheritdoc/>
@@ -127,7 +129,9 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder CreateFolder(string title)
     {
-        return CreateFolder(this.connection, title, this);
+        var folder = CreateFolder(this.connection, title, this);
+        this.eventSink?.RaiseFolderAdded(folder);
+        return folder;
     }
 
     private static DatabaseFolder CreateFolder(IDbConnection c, string title, FolderDatabase eventSource)
@@ -157,7 +161,9 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder AddKnownFolder(string title, long serviceId, long position, bool shouldSync)
     {
-        return AddKnownFolder(this.connection, title, serviceId, position, shouldSync);
+        var folder = AddKnownFolder(this.connection, title, serviceId, position, shouldSync);
+        this.eventSink?.RaiseFolderAdded(folder);
+        return folder;
     }
 
     private static DatabaseFolder AddKnownFolder(IDbConnection c, string title, long serviceId, long position, bool shouldSync)
@@ -191,7 +197,9 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     /// <inheritdoc/>
     public DatabaseFolder UpdateFolder(long localId, long? serviceId, string title, long position, bool shouldSync)
     {
-        return UpdateFolder(this.connection, localId, serviceId, title, position, shouldSync);
+        var folder = UpdateFolder(this.connection, localId, serviceId, title, position, shouldSync);
+        this.eventSink?.RaiseFolderUpdated(folder);
+        return folder;
     }
 
     private static DatabaseFolder UpdateFolder(IDbConnection c, long localId, long? serviceId, string title, long position, bool shouldSync)
@@ -254,10 +262,14 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
             throw new InvalidOperationException("Deleting the Archive folder is not allowed");
         }
 
-        DeleteFolder(this.connection, localFolderId, this);
+        var (wasDeleted, folder) = DeleteFolder(this.connection, localFolderId, this);
+        if(wasDeleted)
+        {
+            this.eventSink?.RaiseFolderDeleted(folder!);
+        }
     }
 
-    private static void DeleteFolder(IDbConnection c, long localFolderId, FolderDatabase eventSource)
+    private static (bool, DatabaseFolder?) DeleteFolder(IDbConnection c, long localFolderId, FolderDatabase eventSource)
     {
         using var deleteArticleFolderPairsQuery = c.CreateCommand(@"
             DELETE FROM article_to_folder
@@ -269,7 +281,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         var folder = GetFolderByLocalId(c, localFolderId);
         if (folder is null)
         {
-            return;
+            return (false, null);
         }
 
         eventSource.RaiseFolderWillBeDeletedWithinTransaction(c, folder);
@@ -299,6 +311,8 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         eventSource.RaiseFolderDeletedWithinTransaction(c, folder);
 
         t?.Commit();
+
+        return (true, folder);
     }
 
     #region Event Helpers
