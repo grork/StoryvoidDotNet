@@ -8,13 +8,13 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     private static readonly DateTime UnixEpochStart = new DateTime(1970, 1, 1);
 
     private IDbConnection connection;
-    private IDatabaseEventSink? eventSink;
+    private IDatabaseEventSource? eventSink;
 
     public event WithinTransactionEventHandler<IArticleDatabase, DatabaseArticle>? ArticleLikeStatusChangedWithinTransaction;
     public event WithinTransactionEventHandler<IArticleDatabase, long>? ArticleDeletedWithinTransaction;
     public event WithinTransactionEventHandler<IArticleDatabase, (DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMovedToFolderWithinTransaction;
 
-    internal ArticleDatabase(IDbConnection connection, IDatabaseEventSink? eventSink = null)
+    internal ArticleDatabase(IDbConnection connection, IDatabaseEventSource? eventSink = null)
     {
         this.connection = connection;
         this.eventSink = eventSink;

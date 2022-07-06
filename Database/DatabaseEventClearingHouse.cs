@@ -4,7 +4,7 @@ namespace Codevoid.Storyvoid;
 /// Events raised from the database for consumers to react to changes in the
 /// database *after* they have completed working with the database
 /// </summary>
-public interface IDatabaseEventSource
+public interface IDatabaseEventSink
 {
     public event EventHandler<DatabaseFolder> FolderAdded;
     public event EventHandler<DatabaseFolder> FolderDeleted;
@@ -19,7 +19,7 @@ public interface IDatabaseEventSource
 /// <summary>
 /// Interface for components that need to raise the events themselves
 /// </summary>
-public interface IDatabaseEventSink
+public interface IDatabaseEventSource
 {
     public void RaiseFolderAdded(DatabaseFolder added);
     public void RaiseFolderDeleted(DatabaseFolder localFolderId);
@@ -34,7 +34,7 @@ public interface IDatabaseEventSink
 /// <summary>
 /// Utility class to hold event source + sink for database changes.
 /// </summary>
-internal sealed class DatabaseEventClearingHouse : IDatabaseEventSource, IDatabaseEventSink
+internal sealed class DatabaseEventClearingHouse : IDatabaseEventSink, IDatabaseEventSource
 {
     public event EventHandler<DatabaseFolder>? FolderAdded;
     public event EventHandler<DatabaseFolder>? FolderDeleted;

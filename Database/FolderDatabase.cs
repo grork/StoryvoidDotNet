@@ -6,13 +6,13 @@ namespace Codevoid.Storyvoid;
 internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
 {
     private IDbConnection connection;
-    private IDatabaseEventSink? eventSink;
+    private IDatabaseEventSource? eventSink;
 
     public event WithinTransactionEventHandler<IFolderDatabase, string>? FolderAddedWithinTransaction;
     public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderWillBeDeletedWithinTransaction;
     public event WithinTransactionEventHandler<IFolderDatabase, DatabaseFolder>? FolderDeletedWithinTransaction;
 
-    public FolderDatabase(IDbConnection connection, IDatabaseEventSink? eventSink = null)
+    public FolderDatabase(IDbConnection connection, IDatabaseEventSource? eventSink = null)
     {
         this.connection = connection;
         this.eventSink = eventSink;
