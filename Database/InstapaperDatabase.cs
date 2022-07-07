@@ -122,6 +122,11 @@ public static class InstapaperDatabase
         return new ArticleDatabase(connection);
     }
 
+    public static IArticleChangesDatabase GetArticleChangesDatabase(IDbConnection connection)
+    {
+        return new ArticleChanges(connection);
+    }
+
     public static IDisposable GetLedger(IFolderDatabase folderDb, IArticleDatabase articleDb)
     {
         IFolderDatabaseWithTransactionEvents? folderDbWithEvents = folderDb as IFolderDatabaseWithTransactionEvents;

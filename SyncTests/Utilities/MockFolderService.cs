@@ -4,7 +4,7 @@ using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
-internal static class MockExtensions
+internal static class MockFolderExtensions
 {
     internal static IInstapaperFolder ToInstapaperFolder(this DatabaseFolder instance)
     {
@@ -31,7 +31,7 @@ internal class MockFolder : IInstapaperFolder
     public long Id { get; init; } = 0;
 }
 
-internal class MockFolderService : IFoldersClient
+public class MockFolderService : IFoldersClient
 {
     internal IFolderDatabase FolderDB { get; init; }
 

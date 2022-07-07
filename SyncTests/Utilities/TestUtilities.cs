@@ -11,13 +11,14 @@ internal static class TestUtilities
     // 'highest plus one'; so instead of trying to account for that, just always
     // bump it up by one
     private static long nextServiceId = 100L;
+    private static readonly Uri BASE_URL = new Uri("https://www.codevoid.net");
 
     private static long GetNextServiceId()
     {
         return Interlocked.Increment(ref nextServiceId);
     }
 
-    internal static (SqliteConnection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase) GetEmptyDatabase()
+    internal static (SqliteConnection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IArticleChangesDatabase) GetEmptyDatabase()
     {
         // Setup local database
         var connection = new SqliteConnection("Data Source=:memory:");
@@ -27,18 +28,19 @@ internal static class TestUtilities
         var folderDb = InstapaperDatabase.GetFolderDatabase(connection);
         var folderChangesDb = InstapaperDatabase.GetFolderChangesDatabase(connection);
         var articleDb = InstapaperDatabase.GetArticleDatabase(connection);
+        var articleChangesDb = InstapaperDatabase.GetArticleChangesDatabase(connection);
 
-        return (connection, folderDb, folderChangesDb, articleDb);
+        return (connection, folderDb, folderChangesDb, articleDb, articleChangesDb);
     }
 
-    internal static (IDbConnection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IDbConnection, MockFolderService) GetDatabases()
+    internal static (IDbConnection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IArticleChangesDatabase, IDbConnection, MockFolderService, MockBookmarksService) GetDatabases()
     {
-        var (localConnection, folderDb, folderChangesDb, articleDb) = GetEmptyDatabase();
+        var (localConnection, folderDb, folderChangesDb, articleDb, articleChangesDb) = GetEmptyDatabase();
         PopulateDatabase(folderDb);
 
         // Create a copy of that database, which will serve as the starting
         // point for the service database.
-        var (serviceConnection, serviceFolderDb, _, _) = GetEmptyDatabase();
+        var (serviceConnection, serviceFolderDb, _, serviceArticleDb, _) = GetEmptyDatabase();
         localConnection.BackupDatabase(serviceConnection);
 
         return (
@@ -46,8 +48,10 @@ internal static class TestUtilities
             folderDb,
             folderChangesDb,
             articleDb,
+            articleChangesDb,
             serviceConnection,
-            new MockFolderService(serviceFolderDb)
+            new MockFolderService(serviceFolderDb),
+            new MockBookmarksService(serviceArticleDb, serviceFolderDb)
         );
     }
 
@@ -90,6 +94,11 @@ internal static class TestUtilities
     {
         Assert.Empty(instance.ListPendingFolderAdds());
     }
+
+    internal static Uri GetRandomUrl()
+    {
+        return new Uri(BASE_URL, GetNextServiceId().ToString());
+    }
 }
 
 internal class CompareFoldersIgnoringLocalId : IEqualityComparer<DatabaseFolder>
@@ -115,5 +124,96 @@ internal class CompareFoldersIgnoringLocalId : IEqualityComparer<DatabaseFolder>
     public int GetHashCode([DisallowNull] DatabaseFolder obj)
     {
         return obj.GetHashCode();
+    }
+}
+
+public abstract class BaseSyncTest : IDisposable
+{
+    protected const int DEFAULT_FOLDER_COUNT = 2;
+
+    protected (
+        IDbConnection Connection,
+        IFolderDatabase FolderDB,
+        IFolderChangesDatabase FolderChangesDB,
+        IArticleDatabase ArticleDB,
+        IArticleChangesDatabase ArticleChangesDB,
+        IDbConnection ServiceConnection,
+        MockFolderService MockFolderService,
+        MockBookmarksService MockBookmarksService
+    ) databases;
+    protected Sync syncEngine;
+
+    protected BaseSyncTest()
+    {
+        this.databases = TestUtilities.GetDatabases();
+        this.SetSyncEngineFromDatabases();
+    }
+
+    [MemberNotNull(nameof(syncEngine))]
+    protected void SetSyncEngineFromDatabases()
+    {
+        this.syncEngine = new Sync(
+            this.databases.FolderDB,
+            this.databases.FolderChangesDB,
+            this.databases.MockFolderService,
+            this.databases.ArticleDB,
+            this.databases.ArticleChangesDB,
+            this.databases.MockBookmarksService
+        );
+    }
+
+    protected void SwitchToEmptyLocalDatabase()
+    {
+        this.DisposeLocalDatabase();
+        var (connection, folderDb, folderChangesDb, articlDb, articleChangesDb) = TestUtilities.GetEmptyDatabase();
+        this.databases = (connection, folderDb, folderChangesDb, articlDb, articleChangesDb, this.databases.ServiceConnection, this.databases.MockFolderService, this.databases.MockBookmarksService);
+        this.SetSyncEngineFromDatabases();
+
+        // Make sure we have an empty database for this test.
+        Assert.Equal(DEFAULT_FOLDER_COUNT, this.databases.FolderDB.ListAllFolders().Count);
+    }
+
+    protected void SwitchToEmptyServiceDatabase()
+    {
+        this.DisposeServiceDatabase();
+
+        var (connection, folderDb, _, articleDb, _) = TestUtilities.GetEmptyDatabase();
+        this.databases = (
+            this.databases.Connection,
+            this.databases.FolderDB,
+            this.databases.FolderChangesDB,
+            this.databases.ArticleDB,
+            this.databases.ArticleChangesDB,
+            connection,
+            new MockFolderService(folderDb),
+            new MockBookmarksService(articleDb, folderDb)
+        );
+
+        Assert.Empty(folderDb.ListAllCompleteUserFolders());
+
+        this.SetSyncEngineFromDatabases();
+    }
+
+    protected IDisposable GetLedger()
+    {
+        return InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+    }
+
+    private void DisposeLocalDatabase()
+    {
+        this.databases.Connection.Close();
+        this.databases.Connection.Dispose();
+    }
+
+    private void DisposeServiceDatabase()
+    {
+        this.databases.ServiceConnection.Close();
+        this.databases.ServiceConnection.Dispose();
+    }
+
+    public void Dispose()
+    {
+        this.DisposeLocalDatabase();
+        this.DisposeServiceDatabase();
     }
 }

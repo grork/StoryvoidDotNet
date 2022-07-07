@@ -28,13 +28,24 @@ public class Sync
     private IFolderChangesDatabase folderChangesDb;
     private IFoldersClient foldersClient;
 
+    private IArticleDatabase articleDb;
+    private IArticleChangesDatabase articleChangesDb;
+    private IBookmarksClient bookmarksClient;
+
     public Sync(IFolderDatabase folderDb,
                 IFolderChangesDatabase folderChangesDb,
-                IFoldersClient foldersClient)
+                IFoldersClient foldersClient,
+                IArticleDatabase articleDb,
+                IArticleChangesDatabase articleChangesDb,
+                IBookmarksClient bookmarksClient)
     {
         this.folderDb = folderDb;
         this.folderChangesDb = folderChangesDb;
         this.foldersClient = foldersClient;
+
+        this.articleDb = articleDb;
+        this.articleChangesDb = articleChangesDb;
+        this.bookmarksClient = bookmarksClient;
     }
 
     public async Task SyncFolders()
@@ -139,6 +150,20 @@ public class Sync
             }
             
             this.folderChangesDb.DeletePendingFolderDelete(delete.ServiceId);
+        }
+    }
+
+    public async Task SyncBookmarks()
+    {
+        await this.SyncBookmarkAdds();
+    }
+
+    private async Task SyncBookmarkAdds()
+    {
+        var adds = this.articleChangesDb.ListPendingArticleAdds();
+        foreach(var add in adds)
+        {
+            var bookmark = await this.bookmarksClient.AddAsync(add.Url, null);
         }
     }
 }

@@ -1,91 +1,7 @@
-﻿using System.Data;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using Codevoid.Storyvoid;
+﻿namespace Codevoid.Test.Storyvoid;
 
-namespace Codevoid.Test.Storyvoid;
-
-public sealed class SyncTests : IDisposable
+public sealed class FolderSyncTests : BaseSyncTest
 {
-    private const int DEFAULT_FOLDER_COUNT = 2;
-
-    private (
-        IDbConnection Connection,
-        IFolderDatabase FolderDB,
-        IFolderChangesDatabase FolderChangesDB,
-        IArticleDatabase ArticleDB,
-        IDbConnection ServiceConnection,
-        MockFolderService MockService
-    ) databases;
-    private Sync syncEngine;
-
-    public SyncTests()
-    {
-        this.databases = TestUtilities.GetDatabases();
-        this.SetSyncEngineFromDatabases();
-    }
-
-    [MemberNotNull(nameof(syncEngine))]
-    private void SetSyncEngineFromDatabases()
-    {
-        this.syncEngine = new Sync(this.databases.FolderDB,
-                            this.databases.FolderChangesDB,
-                            this.databases.MockService);
-    }
-
-    private void SwitchToEmptyLocalDatabase()
-    {
-        this.DisposeLocalDatabase();
-        var (connection, folderDb, folderChangesDb, articlDb) = TestUtilities.GetEmptyDatabase();
-        this.databases = (connection, folderDb, folderChangesDb, articlDb, this.databases.ServiceConnection, this.databases.MockService);
-        this.SetSyncEngineFromDatabases();
-
-        // Make sure we have an empty database for this test.
-        Assert.Equal(DEFAULT_FOLDER_COUNT, this.databases.FolderDB.ListAllFolders().Count);
-    }
-
-    private void SwitchToEmptyServiceDatabase()
-    {
-        this.DisposeServiceDatabase();
-
-        var (connection, folderDb, _, _) = TestUtilities.GetEmptyDatabase();
-        this.databases = (
-            this.databases.Connection,
-            this.databases.FolderDB,
-            this.databases.FolderChangesDB,
-            this.databases.ArticleDB,
-            connection,
-            new MockFolderService(folderDb)
-        );
-
-        Assert.NotEqual(this.databases.FolderDB.ListAllCompleteUserFolders().Count, folderDb.ListAllCompleteUserFolders().Count);
-
-        this.SetSyncEngineFromDatabases();
-    }
-
-    private IDisposable GetLedger()
-    {
-        return InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
-    }
-
-    private void DisposeLocalDatabase()
-    {
-        this.databases.Connection.Close();
-        this.databases.Connection.Dispose();
-    }
-
-    private void DisposeServiceDatabase()
-    {
-        this.databases.ServiceConnection.Close();
-        this.databases.ServiceConnection.Dispose();
-    }
-
-    public void Dispose()
-    {
-        this.DisposeLocalDatabase();
-        this.DisposeServiceDatabase();
-    }
-
     [Fact]
     public async Task SyncingEmptyDatabasesCreatesEmptyState()
     {
@@ -94,7 +10,7 @@ public sealed class SyncTests : IDisposable
 
         await this.syncEngine.SyncFolders();
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
     }
 
     #region Service-only Folder changes sync
@@ -108,7 +24,7 @@ public sealed class SyncTests : IDisposable
 
         // Check that the folders match
         Assert.True(this.databases.FolderDB.ListAllCompleteUserFolders().Count > 0);
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
     }
 
     [Fact]
@@ -118,8 +34,8 @@ public sealed class SyncTests : IDisposable
         var firstLocalUserFolder = (this.databases.FolderDB.ListAllCompleteUserFolders().First())!;
 
         // Update the title on the *service*
-        var remoteFolder = (this.databases.MockService.FolderDB.GetFolderByServiceId(firstLocalUserFolder.ServiceId!.Value))!;
-        remoteFolder = this.databases.MockService.FolderDB.UpdateFolder(
+        var remoteFolder = (this.databases.MockFolderService.FolderDB.GetFolderByServiceId(firstLocalUserFolder.ServiceId!.Value))!;
+        remoteFolder = this.databases.MockFolderService.FolderDB.UpdateFolder(
             title: "New Title",
             localId: remoteFolder.LocalId,
             serviceId: remoteFolder.ServiceId,
@@ -139,8 +55,8 @@ public sealed class SyncTests : IDisposable
         var targetFolderCount = this.databases.FolderDB.ListAllCompleteUserFolders().Count - 1;
 
         // Create a folder that only exists remotely
-        var remoteToDelete = (this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First())!;
-        this.databases.MockService.FolderDB.DeleteFolder(remoteToDelete.LocalId);
+        var remoteToDelete = (this.databases.MockFolderService.FolderDB.ListAllCompleteUserFolders().First())!;
+        this.databases.MockFolderService.FolderDB.DeleteFolder(remoteToDelete.LocalId);
 
         await this.syncEngine.SyncFolders();
 
@@ -152,7 +68,7 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task FoldersAddedOnServiceAreAddedWhenLocalDatabaseIsntEmpty()
     {
-        var remoteFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+        var remoteFolder = this.databases.MockFolderService.FolderDB.AddCompleteFolderToDb();
         var localFolderCount = this.databases.FolderDB.ListAllCompleteUserFolders().Count;
 
         // Perform the sync, which should pull down remote folders
@@ -160,18 +76,18 @@ public sealed class SyncTests : IDisposable
 
         // Check that the folders match
         Assert.Equal(localFolderCount + 1, this.databases.FolderDB.ListAllCompleteUserFolders().Count());
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
     }
 
     [Fact]
     public async Task AddedAndRemovedFoldersOnServiceAreCorrectlySynced()
     {
-        var deletedRemoteFolder = (this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First())!;
-        var addedRemoteFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+        var deletedRemoteFolder = (this.databases.MockFolderService.FolderDB.ListAllCompleteUserFolders().First())!;
+        var addedRemoteFolder = this.databases.MockFolderService.FolderDB.AddCompleteFolderToDb();
 
         await this.syncEngine.SyncFolders();
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
     }
     #endregion
 
@@ -195,7 +111,7 @@ public sealed class SyncTests : IDisposable
         Assert.True(syncedNewFolder!.ServiceId.HasValue);
 
         // Check state matches, and the pending changes are gone
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
 
@@ -212,7 +128,7 @@ public sealed class SyncTests : IDisposable
         Assert.NotNull(syncedNewFolder);
         Assert.True(syncedNewFolder!.ServiceId.HasValue);
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
 
@@ -237,7 +153,7 @@ public sealed class SyncTests : IDisposable
         Assert.NotNull(secondSyncedNewFolder);
         Assert.True(secondSyncedNewFolder!.ServiceId.HasValue);
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
 
@@ -259,7 +175,7 @@ public sealed class SyncTests : IDisposable
         Assert.NotNull(syncedNewFolder);
         Assert.True(syncedNewFolder!.ServiceId.HasValue);
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
 
@@ -287,7 +203,7 @@ public sealed class SyncTests : IDisposable
         Assert.NotNull(normalSyncedFolder);
         Assert.True(normalSyncedFolder!.ServiceId.HasValue);
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
     
@@ -306,11 +222,11 @@ public sealed class SyncTests : IDisposable
         await this.syncEngine.SyncFolders();
 
         // Check we can get that same folder, and it now has a service ID
-        var nowDeletedFolder = this.databases.MockService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value);
+        var nowDeletedFolder = this.databases.MockFolderService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value);
         Assert.Null(nowDeletedFolder);
 
         // Check state matches, and the pending changes are gone
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
 
@@ -325,19 +241,19 @@ public sealed class SyncTests : IDisposable
         this.databases.FolderDB.DeleteFolder(deletedFolder.LocalId);
 
         // Delete the same folder on the service
-        var serviceFolderToDelete = this.databases.MockService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value)!;
-        this.databases.MockService.FolderDB.DeleteFolder(serviceFolderToDelete.LocalId);
+        var serviceFolderToDelete = this.databases.MockFolderService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value)!;
+        this.databases.MockFolderService.FolderDB.DeleteFolder(serviceFolderToDelete.LocalId);
 
         ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
         // Check we can get that same folder, and it now has a service ID
-        var nowDeletedFolder = this.databases.MockService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value);
+        var nowDeletedFolder = this.databases.MockFolderService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value);
         Assert.Null(nowDeletedFolder);
 
         // Check state matches, and the pending changes are gone
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
     #endregion
@@ -349,7 +265,7 @@ public sealed class SyncTests : IDisposable
         var ledger = this.GetLedger();
 
         var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
-        var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+        var newServiceFolder = this.databases.MockFolderService.FolderDB.AddCompleteFolderToDb();
 
         ledger.Dispose();
 
@@ -364,7 +280,7 @@ public sealed class SyncTests : IDisposable
         var remoteFolderAvailableLocally = this.databases.FolderDB.GetFolderByServiceId(newServiceFolder.ServiceId!.Value);
         Assert.NotNull(remoteFolderAvailableLocally);
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
 
@@ -374,12 +290,12 @@ public sealed class SyncTests : IDisposable
         var ledger = this.GetLedger();
 
         // Delete a service folder
-        var deletedServiceFolder = this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First()!;
-        this.databases.MockService.FolderDB.DeleteFolder(deletedServiceFolder.LocalId);
+        var deletedServiceFolder = this.databases.MockFolderService.FolderDB.ListAllCompleteUserFolders().First()!;
+        this.databases.MockFolderService.FolderDB.DeleteFolder(deletedServiceFolder.LocalId);
 
         // Add some folders
         var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
-        var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+        var newServiceFolder = this.databases.MockFolderService.FolderDB.AddCompleteFolderToDb();
 
         ledger.Dispose();
 
@@ -397,7 +313,7 @@ public sealed class SyncTests : IDisposable
         // Check that the deleted service folder is missing locally
         Assert.DoesNotContain(deletedServiceFolder, this.databases.FolderDB.ListAllCompleteUserFolders(), new CompareFoldersIgnoringLocalId());
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
 
@@ -412,12 +328,12 @@ public sealed class SyncTests : IDisposable
         this.databases.FolderDB.DeleteFolder(deletedLocalFolder.LocalId);
 
         // Make sure the remote delete isn't the one we just deleted locally
-        var deletedServiceFolder = this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId!.Value != deletedLocalFolder.ServiceId!.Value)!;
-        this.databases.MockService.FolderDB.DeleteFolder(deletedServiceFolder.ServiceId!.Value);
+        var deletedServiceFolder = this.databases.MockFolderService.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId!.Value != deletedLocalFolder.ServiceId!.Value)!;
+        this.databases.MockFolderService.FolderDB.DeleteFolder(deletedServiceFolder.ServiceId!.Value);
 
         // Create the additions
         var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
-        var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+        var newServiceFolder = this.databases.MockFolderService.FolderDB.AddCompleteFolderToDb();
 
         ledger.Dispose();
         
@@ -433,9 +349,9 @@ public sealed class SyncTests : IDisposable
         Assert.NotNull(remoteFolderAvailableLocally);
 
         // Check that the local delete is no longer on the service
-        Assert.DoesNotContain(deletedLocalFolder, this.databases.MockService.FolderDB.ListAllCompleteUserFolders(), new CompareFoldersIgnoringLocalId());
+        Assert.DoesNotContain(deletedLocalFolder, this.databases.MockFolderService.FolderDB.ListAllCompleteUserFolders(), new CompareFoldersIgnoringLocalId());
 
-        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockFolderService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
     #endregion
