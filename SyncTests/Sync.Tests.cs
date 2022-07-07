@@ -177,6 +177,25 @@ public sealed class SyncTests : IDisposable
         this.SwitchToEmptyServiceDatabase();
         this.SwitchToEmptyLocalDatabase();
 
+        // Create pending add on empty DB
+        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+
+        await this.syncEngine.SyncFolders();
+
+        // Check we can get that same folder, and it now has a service ID
+        var syncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(newFolderId);
+        Assert.NotNull(syncedNewFolder);
+        Assert.True(syncedNewFolder!.ServiceId.HasValue);
+
+        // Check state matches, and the pending changes are gone
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+
+    [Fact]
+    public async Task SyncingPendingAddToExistingServiceAddsRemoteFolder()
+    {
         var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
         var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
 
@@ -217,11 +236,13 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task PendingAddWithDuplicateTitleSuccessfullySyncsAndUpdatesLocalData()
     {
-        this.SwitchToEmptyLocalDatabase();
+        // Remove a folder from the service, but save it's title
+        var firstSeviceFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
+        this.databases.FolderDB.DeleteFolder(firstSeviceFolder.LocalId);
 
+        // Start the ledger, and create a pending edit
         var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
-        var firstRemoteFolderTitle = (this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First()!).Title;
-        var newFolderId = this.databases.FolderDB.CreateFolder(firstRemoteFolderTitle).LocalId;
+        var newFolderId = this.databases.FolderDB.CreateFolder(firstSeviceFolder.Title).LocalId;
 
         await this.syncEngine.SyncFolders();
 
@@ -236,19 +257,22 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task MultipleAddsWithWithOneDuplicateTitleSuccessfullySyncsAndUpdatesLocalData()
     {
-        this.SwitchToEmptyLocalDatabase();
+        var firstServiceFolder = (this.databases.FolderDB.ListAllCompleteUserFolders().First())!;
+        this.databases.FolderDB.DeleteFolder(firstServiceFolder.LocalId);
 
+        // Create the ledger, and create the pending adds (one delete, one normal)
         var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
-        var firstRemoteFolderTitle = (this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First()!).Title;
-        var duplicateTitleFolderId = this.databases.FolderDB.CreateFolder(firstRemoteFolderTitle).LocalId;
+        var duplicateTitleFolderId = this.databases.FolderDB.CreateFolder(firstServiceFolder.Title).LocalId;
         var normalAddFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
 
         await this.syncEngine.SyncFolders();
 
+        // Check duplicate-titled folder is good
         var syncedFolderWithDuplicateTitle = this.databases.FolderDB.GetFolderByLocalId(duplicateTitleFolderId);
         Assert.NotNull(syncedFolderWithDuplicateTitle);
         Assert.True(syncedFolderWithDuplicateTitle!.ServiceId.HasValue);
 
+        // Check normal folder is good
         var normalSyncedFolder = this.databases.FolderDB.GetFolderByLocalId(normalAddFolderId);
         Assert.NotNull(normalSyncedFolder);
         Assert.True(normalSyncedFolder!.ServiceId.HasValue);
@@ -265,7 +289,7 @@ public sealed class SyncTests : IDisposable
         var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
 
         var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
-        var remoteFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+        var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
 
         await this.syncEngine.SyncFolders();
 
@@ -275,8 +299,39 @@ public sealed class SyncTests : IDisposable
         Assert.True(syncedLocalFolder!.ServiceId.HasValue);
 
         // Check that the remote add is now available locally
-        var remoteFolderAvailableLocally = this.databases.FolderDB.GetFolderByServiceId(remoteFolder.ServiceId!.Value);
+        var remoteFolderAvailableLocally = this.databases.FolderDB.GetFolderByServiceId(newServiceFolder.ServiceId!.Value);
         Assert.NotNull(remoteFolderAvailableLocally);
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+
+    [Fact]
+    public async Task SyncingPendingAddAndRemoteAddAndRemoteDeleteToSyncsAllChanges()
+    {
+        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+
+        // Delete a service folder
+        var deletedServiceFolder = this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First()!;
+        this.databases.MockService.FolderDB.DeleteFolder(deletedServiceFolder.LocalId);
+
+        // Add some folders
+        var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+        var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+
+        await this.syncEngine.SyncFolders();
+
+        // Check the local Pending add round tripped
+        var syncedLocalFolder = this.databases.FolderDB.GetFolderByLocalId(newLocalFolderId);
+        Assert.NotNull(syncedLocalFolder);
+        Assert.True(syncedLocalFolder!.ServiceId.HasValue);
+
+        // Check that the remote add is now available locally
+        var remoteFolderAvailableLocally = this.databases.FolderDB.GetFolderByServiceId(newServiceFolder.ServiceId!.Value);
+        Assert.NotNull(remoteFolderAvailableLocally);
+
+        // Check that the deleted service folder is missing locally
+        Assert.DoesNotContain(deletedServiceFolder, this.databases.FolderDB.ListAllCompleteUserFolders(), new CompareFoldersIgnoringLocalId());
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
