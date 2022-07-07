@@ -42,18 +42,19 @@ internal static class TestUtilities
 
     private static void PopulateDatabase(IFolderDatabase folderDb)
     {
-        foreach (var index in Enumerable.Range(10, 20))
+        foreach (var _ in Enumerable.Range(10, 20))
         {
-            folderDb.AddSampleKnownFolder(index);
+            folderDb.AddCompleteFolderToDb();
         }
     }
 
-    internal static void AddSampleKnownFolder(this IFolderDatabase instance, int id)
+    internal static void AddCompleteFolderToDb(this IFolderDatabase instance)
     {
+        var nextId = (instance.ListAllCompleteUserFolders().Max((f) => f.ServiceId) ?? 0L) + 1;
         _ = instance.AddKnownFolder(
-            title: $"Sample Folder {id}",
-            serviceId: id,
-            position: id,
+            title: $"Sample Folder {nextId}",
+            serviceId: nextId,
+            position: nextId,
             shouldSync: true
         );
     }
