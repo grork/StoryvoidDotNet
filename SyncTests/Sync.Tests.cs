@@ -63,6 +63,11 @@ public sealed class SyncTests : IDisposable
         this.SetSyncEngineFromDatabases();
     }
 
+    private IDisposable GetLedger()
+    {
+        return InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+    }
+
     private void DisposeLocalDatabase()
     {
         this.databases.Connection.Close();
@@ -178,7 +183,7 @@ public sealed class SyncTests : IDisposable
         this.SwitchToEmptyLocalDatabase();
 
         // Create pending add on empty DB
-        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        using var ledger = this.GetLedger();
         var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
 
         await this.syncEngine.SyncFolders();
@@ -196,7 +201,7 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task SyncingPendingAddToExistingServiceAddsRemoteFolder()
     {
-        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        using var ledger = this.GetLedger();
         var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
 
         await this.syncEngine.SyncFolders();
@@ -215,7 +220,7 @@ public sealed class SyncTests : IDisposable
         this.SwitchToEmptyServiceDatabase();
         this.SwitchToEmptyLocalDatabase();
 
-        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        using var ledger = this.GetLedger();
         var firstNewFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         var secondNewFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder 2").LocalId;
 
@@ -241,7 +246,7 @@ public sealed class SyncTests : IDisposable
         this.databases.FolderDB.DeleteFolder(firstSeviceFolder.LocalId);
 
         // Start the ledger, and create a pending edit
-        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        using var ledger = this.GetLedger();
         var newFolderId = this.databases.FolderDB.CreateFolder(firstSeviceFolder.Title).LocalId;
 
         await this.syncEngine.SyncFolders();
@@ -261,7 +266,7 @@ public sealed class SyncTests : IDisposable
         this.databases.FolderDB.DeleteFolder(firstServiceFolder.LocalId);
 
         // Create the ledger, and create the pending adds (one delete, one normal)
-        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        using var ledger = this.GetLedger();
         var duplicateTitleFolderId = this.databases.FolderDB.CreateFolder(firstServiceFolder.Title).LocalId;
         var normalAddFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
 
@@ -286,7 +291,7 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task SyncingPendingAddAndRemoteAddToSyncsAllChanges()
     {
-        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        using var ledger = this.GetLedger();
 
         var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
@@ -309,7 +314,7 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task SyncingPendingAddAndRemoteAddAndRemoteDeleteToSyncsAllChanges()
     {
-        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        using var ledger = this.GetLedger();
 
         // Delete a service folder
         var deletedServiceFolder = this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First()!;
