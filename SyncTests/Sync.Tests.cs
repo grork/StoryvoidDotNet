@@ -97,7 +97,7 @@ public sealed class SyncTests : IDisposable
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
     }
 
-    #region Service-only changes sync
+    #region Service-only Folder changes sync
     [Fact]
     public async Task SyncOnEmptyDatabaseCreatesCorrectFolders()
     {
@@ -175,7 +175,7 @@ public sealed class SyncTests : IDisposable
     }
     #endregion
 
-    #region Local-Only changes sync
+    #region Local-Only Folder changes sync
     [Fact]
     public async Task SyncingPendingAddToEmptyServiceAddsRemoteFolder()
     {
