@@ -14,7 +14,7 @@ public sealed class SyncTests : IDisposable
         IFolderDatabase FolderDB,
         IFolderChangesDatabase FolderChangesDB,
         IDbConnection ServiceConnection,
-        FoldersClientOverDatabase MockService
+        MockFolderService MockService
     ) databases;
     private Sync syncEngine;
 
