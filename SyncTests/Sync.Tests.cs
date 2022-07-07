@@ -285,6 +285,52 @@ public sealed class SyncTests : IDisposable
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();
     }
+    
+    [Fact]
+    public async Task SyncingPendingDeleteRemovesFolderFromService()
+    {
+        // Create pending add on empty DB
+        using var ledger = this.GetLedger();
+
+        // Delete a local folder
+        var deletedFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
+        this.databases.FolderDB.DeleteFolder(deletedFolder.LocalId);
+
+        await this.syncEngine.SyncFolders();
+
+        // Check we can get that same folder, and it now has a service ID
+        var nowDeletedFolder = this.databases.MockService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value);
+        Assert.Null(nowDeletedFolder);
+
+        // Check state matches, and the pending changes are gone
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+
+    [Fact]
+    public async Task SyncingPendingDeleteWhenFolderDeletedOnServiceSyncs()
+    {
+        // Create pending add on empty DB
+        using var ledger = this.GetLedger();
+
+        // Delete the local folder
+        var deletedFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
+        this.databases.FolderDB.DeleteFolder(deletedFolder.LocalId);
+
+        // Delete the same folder on the service
+        var serviceFolderToDelete = this.databases.MockService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value)!;
+        this.databases.MockService.FolderDB.DeleteFolder(serviceFolderToDelete.LocalId);
+
+        await this.syncEngine.SyncFolders();
+
+        // Check we can get that same folder, and it now has a service ID
+        var nowDeletedFolder = this.databases.MockService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value);
+        Assert.Null(nowDeletedFolder);
+
+        // Check state matches, and the pending changes are gone
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
     #endregion
 
     #region Local & Remote Folder Changes
@@ -337,6 +383,42 @@ public sealed class SyncTests : IDisposable
 
         // Check that the deleted service folder is missing locally
         Assert.DoesNotContain(deletedServiceFolder, this.databases.FolderDB.ListAllCompleteUserFolders(), new CompareFoldersIgnoringLocalId());
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+
+    [Fact]
+    public async Task SyncingPendingAddAndRemoteAddAndRemoteDeleteAndLocalDeleteToSyncsAllChanges()
+    {
+        // Start the ledger
+        using var ledger = this.GetLedger();
+
+        // Create some deletes
+        var deletedLocalFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
+        this.databases.FolderDB.DeleteFolder(deletedLocalFolder.LocalId);
+
+        // Make sure the remote delete isn't the one we just deleted locally
+        var deletedServiceFolder = this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId!.Value != deletedLocalFolder.ServiceId!.Value)!;
+        this.databases.MockService.FolderDB.DeleteFolder(deletedServiceFolder.ServiceId!.Value);
+
+        // Create the additions
+        var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+        var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+
+        await this.syncEngine.SyncFolders();
+
+        // Check the local Pending add round tripped
+        var syncedLocalFolder = this.databases.FolderDB.GetFolderByLocalId(newLocalFolderId);
+        Assert.NotNull(syncedLocalFolder);
+        Assert.True(syncedLocalFolder!.ServiceId.HasValue);
+
+        // Check that the remote add is now available locally
+        var remoteFolderAvailableLocally = this.databases.FolderDB.GetFolderByServiceId(newServiceFolder.ServiceId!.Value);
+        Assert.NotNull(remoteFolderAvailableLocally);
+
+        // Check that the local delete is no longer on the service
+        Assert.DoesNotContain(deletedLocalFolder, this.databases.MockService.FolderDB.ListAllCompleteUserFolders(), new CompareFoldersIgnoringLocalId());
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
         this.databases.FolderChangesDB.AssertNoPendingAdds();

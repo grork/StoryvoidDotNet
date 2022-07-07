@@ -152,7 +152,7 @@ public sealed class BookmarksTests
     [Fact]
     public async Task UpdatingProgressForNonExistantBookmarkThrows()
     {
-        await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UpdateReadProgressAsync(1L, 0.5F, DateTime.Now));
+        await Assert.ThrowsAsync<EntityNotFoundException>(async () => await this.Client.UpdateReadProgressAsync(1L, 0.5F, DateTime.Now));
     }
 
     [Fact, Order(7)]
@@ -243,13 +243,13 @@ public sealed class BookmarksTests
     [Fact]
     public async Task LikingNonExistantBookmarkThrows()
     {
-        await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.LikeAsync(1L));
+        await Assert.ThrowsAsync<EntityNotFoundException>(async () => await this.Client.LikeAsync(1L));
     }
 
     [Fact]
     public async Task UnlikingNonExistantBookmarkThrows()
     {
-        await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UnlikeAsync(1L));
+        await Assert.ThrowsAsync<EntityNotFoundException>(async () => await this.Client.UnlikeAsync(1L));
     }
 
     [Fact, Order(12)]
@@ -305,13 +305,13 @@ public sealed class BookmarksTests
     [Fact]
     public async Task ArchivingNonExistantBookmarkThrows()
     {
-        await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.ArchiveAsync(1L));
+        await Assert.ThrowsAsync<EntityNotFoundException>(async () => await this.Client.ArchiveAsync(1L));
     }
 
     [Fact]
     public async Task UnarchiveNonExistantBookmarkThrows()
     {
-        await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.UnarchiveAsync(1L));
+        await Assert.ThrowsAsync<EntityNotFoundException>(async () => await this.Client.UnarchiveAsync(1L));
     }
 
     [Fact, Order(17)]
@@ -336,7 +336,7 @@ public sealed class BookmarksTests
     [Fact, Order(18)]
     public async Task MovingNonExistantBookmarkThrows()
     {
-        await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.MoveAsync(1L, this.SharedState.RecentlyAddedFolder!.Id));
+        await Assert.ThrowsAsync<EntityNotFoundException>(async () => await this.Client.MoveAsync(1L, this.SharedState.RecentlyAddedFolder!.Id));
     }
 
     [Fact, Order(19)]
@@ -565,6 +565,6 @@ public sealed class BookmarksTests
     [Fact]
     public async Task DeleteNonExistantBookmarkThrows()
     {
-        await Assert.ThrowsAsync<BookmarkNotFoundException>(async () => await this.Client.DeleteAsync(1L));
+        await Assert.ThrowsAsync<EntityNotFoundException>(async () => await this.Client.DeleteAsync(1L));
     }
 }

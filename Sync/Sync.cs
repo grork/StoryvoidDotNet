@@ -40,6 +40,7 @@ public class Sync
     public async Task SyncFolders()
     {
         await this.SyncPendingFolderAdds();
+        await this.SyncPendingFolderDeletes();
 
         var remoteFoldersTask = this.foldersClient.ListAsync();
         var localFolders = this.folderDb.ListAllUserFolders();
@@ -119,6 +120,25 @@ public class Sync
             );
 
             this.folderChangesDb.DeletePendingFolderAdd(add.FolderLocalId);
+        }
+    }
+
+    private async Task SyncPendingFolderDeletes()
+    {
+        var pendingDeletes = this.folderChangesDb.ListPendingFolderDeletes();
+        foreach(var delete in pendingDeletes)
+        {
+            try
+            {
+                await this.foldersClient.DeleteAsync(delete.ServiceId);
+            }
+            catch (EntityNotFoundException)
+            {
+                // It's OK to catch this; we were trying to delete it it anyway
+                // and it's already gone.
+            }
+            
+            this.folderChangesDb.DeletePendingFolderDelete(delete.ServiceId);
         }
     }
 }

@@ -80,10 +80,13 @@ internal class MockFolderService : IFoldersClient
     public Task DeleteAsync(long folderId)
     {
         var folder = this.FolderDB.GetFolderByServiceId(folderId);
-        if (folder is not null)
+        if(folder is null)
         {
-            this.FolderDB.DeleteFolder(folder.LocalId);
+            // Folder was already missing, so throw appropriate exception
+            throw new EntityNotFoundException();
         }
+
+        this.FolderDB.DeleteFolder(folder.LocalId);
         return Task.CompletedTask;
     }
 
