@@ -65,10 +65,8 @@ public sealed class SyncTests : IDisposable
         await this.syncEngine.SyncFolders();
 
         // Check that the folders match
-        var remoteFolders = this.databases.MockService.FolderDB.ListAllCompleteUserFolders().OrderBy((f) => f.ServiceId);
-        var localFolders = this.databases.FolderDB.ListAllCompleteUserFolders().OrderBy((f) => f.ServiceId);
-        Assert.True(localFolders.Count() > 0);
-        Assert.Equal(remoteFolders, localFolders);
+        Assert.True(this.databases.FolderDB.ListAllCompleteUserFolders().Count > 0);
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
     }
 
     [Fact]
@@ -107,5 +105,30 @@ public sealed class SyncTests : IDisposable
         var localFolders = this.databases.FolderDB.ListAllCompleteUserFolders();
         Assert.Equal(targetFolderCount, localFolders.Count);
         Assert.DoesNotContain(remoteToDelete, localFolders, new CompareFoldersIgnoringLocalId());
+    }
+
+    [Fact]
+    public async Task FoldersAddedOnServiceAreAddedWhenLocalDatabaseIsntEmpty()
+    {
+        var remoteFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+        var localFolderCount = this.databases.FolderDB.ListAllCompleteUserFolders().Count;
+
+        // Perform the sync, which should pull down remote folders
+        await this.syncEngine.SyncFolders();
+
+        // Check that the folders match
+        Assert.Equal(localFolderCount + 1, this.databases.FolderDB.ListAllCompleteUserFolders().Count());
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+    }
+
+    [Fact]
+    public async Task AddedAndRemovedFoldersOnServiceAreCorrectlySynced()
+    {
+        var deletedRemoteFolder = (this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First())!;
+        var addedRemoteFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+
+        await this.syncEngine.SyncFolders();
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
     }
 }

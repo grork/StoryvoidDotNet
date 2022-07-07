@@ -7,6 +7,16 @@ namespace Codevoid.Test.Storyvoid;
 
 internal static class TestUtilities
 {
+    // Because we're deleting things from databases, 'next' ID won't always be
+    // 'highest plus one'; so instead of trying to account for that, just always
+    // bump it up by one
+    private static long nextServiceId = 100L;
+
+    private static long GetNextServiceId()
+    {
+        return Interlocked.Increment(ref nextServiceId);
+    }
+
     internal static (SqliteConnection, IFolderDatabase, IFolderChangesDatabase) GetEmptyDatabase()
     {
         // Setup local database
@@ -48,13 +58,13 @@ internal static class TestUtilities
         }
     }
 
-    internal static void AddCompleteFolderToDb(this IFolderDatabase instance)
+    internal static DatabaseFolder AddCompleteFolderToDb(this IFolderDatabase instance)
     {
-        var nextId = (instance.ListAllCompleteUserFolders().Max((f) => f.ServiceId) ?? 0L) + 1;
-        _ = instance.AddKnownFolder(
-            title: $"Sample Folder {nextId}",
-            serviceId: nextId,
-            position: nextId,
+        var id = GetNextServiceId();
+        return instance.AddKnownFolder(
+            title: $"Sample Folder {id}",
+            serviceId: id,
+            position: id,
             shouldSync: true
         );
     }
@@ -66,6 +76,13 @@ internal static class TestUtilities
                            select f;
 
         return new List<DatabaseFolder>(localFolders);
+    }
+
+    internal static void AssertFoldersListsAreSame(IFolderDatabase a, IFolderDatabase b)
+    {
+        var aFolders = a.ListAllCompleteUserFolders().OrderBy((f) => f.ServiceId);
+        var bFolders = b.ListAllCompleteUserFolders().OrderBy((f) => f.ServiceId);
+        Assert.Equal(aFolders, bFolders, new CompareFoldersIgnoringLocalId());
     }
 }
 
