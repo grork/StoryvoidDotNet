@@ -116,4 +116,26 @@ public static class InstapaperDatabase
     {
         return new FolderChanges(connection);
     }
+
+    public static IArticleDatabase GetArticleDatabase(IDbConnection connection)
+    {
+        return new ArticleDatabase(connection);
+    }
+
+    public static IDisposable GetLedger(IFolderDatabase folderDb, IArticleDatabase articleDb)
+    {
+        IFolderDatabaseWithTransactionEvents? folderDbWithEvents = folderDb as IFolderDatabaseWithTransactionEvents;
+        IArticleDatabaseWithTransactionEvents? articleDbWithEvents = articleDb as IArticleDatabaseWithTransactionEvents;
+        if(folderDbWithEvents is null)
+        {
+            throw new ArgumentException("Folder database must support events to use the ledger", nameof(folderDb));
+        }
+
+        if(articleDbWithEvents is null)
+        {
+            throw new ArgumentException("Article database must support events to use the ledger", nameof(articleDb));
+        }
+
+        return new Ledger(folderDbWithEvents, articleDbWithEvents);
+    }
 }

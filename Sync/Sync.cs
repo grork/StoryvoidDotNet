@@ -39,6 +39,8 @@ public class Sync
 
     public async Task SyncFolders()
     {
+        await this.SyncPendingFolderAdds();
+
         var remoteFoldersTask = this.foldersClient.ListAsync();
         var localFolders = this.folderDb.ListAllUserFolders();
 
@@ -75,6 +77,48 @@ public class Sync
             }
 
             this.folderDb.DeleteFolder(lf.LocalId);
+        }
+    }
+
+    private async Task SyncPendingFolderAdds()
+    {
+        var pendingAdds = this.folderChangesDb.ListPendingFolderAdds();
+        foreach(var add in pendingAdds)
+        {
+            IInstapaperFolder? newServiceData = null;
+            try
+            {
+                newServiceData = await this.foldersClient.AddAsync(add.Title);
+            }
+            catch(DuplicateFolderException)
+            {
+                // Folder with this title already existed. Since there isn't a
+                // way to get the folder by title from the service, we need to
+                // list all the folders and then find it.
+                var remoteFolders = await this.foldersClient.ListAsync();
+                var folderWithTitle = remoteFolders.First((f) => f.Title == add.Title);
+                if(folderWithTitle is null)
+                {
+                    Debug.Fail("Service informed we had a duplicate title, but couldn't actually find it");
+                }
+
+                newServiceData = folderWithTitle;
+            }
+
+            if (newServiceData is null)
+            {
+                continue;
+            }
+            
+            this.folderDb.UpdateFolder(
+                localId: add.FolderLocalId,
+                title: newServiceData.Title,
+                serviceId: newServiceData.Id,
+                position: newServiceData.Position,
+                shouldSync: newServiceData.SyncToMobile
+            );
+
+            this.folderChangesDb.DeletePendingFolderAdd(add.FolderLocalId);
         }
     }
 }

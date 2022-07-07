@@ -17,36 +17,37 @@ internal static class TestUtilities
         return Interlocked.Increment(ref nextServiceId);
     }
 
-    internal static (SqliteConnection, IFolderDatabase, IFolderChangesDatabase) GetEmptyDatabase()
+    internal static (SqliteConnection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase) GetEmptyDatabase()
     {
         // Setup local database
-        var localConnection = new SqliteConnection("Data Source=:memory:");
-        localConnection.Open();
-        InstapaperDatabase.CreateDatabaseIfNeeded(localConnection);
+        var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        InstapaperDatabase.CreateDatabaseIfNeeded(connection);
 
-        var folderDb = InstapaperDatabase.GetFolderDatabase(localConnection);
-        var folderChangesDb = InstapaperDatabase.GetFolderChangesDatabase(localConnection);
+        var folderDb = InstapaperDatabase.GetFolderDatabase(connection);
+        var folderChangesDb = InstapaperDatabase.GetFolderChangesDatabase(connection);
+        var articleDb = InstapaperDatabase.GetArticleDatabase(connection);
 
-        return (localConnection, folderDb, folderChangesDb);
+        return (connection, folderDb, folderChangesDb, articleDb);
     }
 
-    internal static (IDbConnection, IFolderDatabase, IFolderChangesDatabase, IDbConnection, MockFolderService) GetDatabases()
+    internal static (IDbConnection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IDbConnection, MockFolderService) GetDatabases()
     {
-        var (localConnection, folderDb, folderChangesDb) = GetEmptyDatabase();
+        var (localConnection, folderDb, folderChangesDb, articleDb) = GetEmptyDatabase();
         PopulateDatabase(folderDb);
 
         // Create a copy of that database, which will serve as the starting
         // point for the service database.
-        var serviceConnection = new SqliteConnection("Data Source=:memory:");
-        serviceConnection.Open();
+        var (serviceConnection, serviceFolderDb, _, _) = GetEmptyDatabase();
         localConnection.BackupDatabase(serviceConnection);
 
         return (
             localConnection,
             folderDb,
-            InstapaperDatabase.GetFolderChangesDatabase(localConnection),
+            folderChangesDb,
+            articleDb,
             serviceConnection,
-            new MockFolderService(InstapaperDatabase.GetFolderDatabase(serviceConnection))
+            new MockFolderService(serviceFolderDb)
         );
     }
 
@@ -83,6 +84,11 @@ internal static class TestUtilities
         var aFolders = a.ListAllCompleteUserFolders().OrderBy((f) => f.ServiceId);
         var bFolders = b.ListAllCompleteUserFolders().OrderBy((f) => f.ServiceId);
         Assert.Equal(aFolders, bFolders, new CompareFoldersIgnoringLocalId());
+    }
+
+    internal static void AssertNoPendingAdds(this IFolderChangesDatabase instance)
+    {
+        Assert.Empty(instance.ListPendingFolderAdds());
     }
 }
 

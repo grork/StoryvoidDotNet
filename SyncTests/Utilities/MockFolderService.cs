@@ -1,3 +1,4 @@
+using System.Data;
 using Codevoid.Instapaper;
 using Codevoid.Storyvoid;
 
@@ -59,11 +60,19 @@ internal class MockFolderService : IFoldersClient
             SyncToMobile = true
         };
 
-        this.FolderDB.AddKnownFolder(
-            title: folder.Title,
-            serviceId: folder.Id,
-            position: folder.Position,
-            shouldSync: folder.SyncToMobile);
+        try
+        {
+            this.FolderDB.AddKnownFolder(
+                title: folder.Title,
+                serviceId: folder.Id,
+                position: folder.Position,
+                shouldSync: folder.SyncToMobile);
+        }
+        catch(DuplicateNameException)
+        {
+            // Map the database exception in to the same as a service exception
+            throw new DuplicateFolderException();
+        }
 
         return Task.FromResult<IInstapaperFolder>(folder);
     }

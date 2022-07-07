@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleToAttribute("InstapaperApiTests")]
+[assembly: InternalsVisibleToAttribute("SyncTests")]
 
 // Support `init` keyword properties on non-.net 5.0 targets. Compiler looks for
 // the type in the assembly, so this fakes it out. Magic.

@@ -13,6 +13,7 @@ public sealed class SyncTests : IDisposable
         IDbConnection Connection,
         IFolderDatabase FolderDB,
         IFolderChangesDatabase FolderChangesDB,
+        IArticleDatabase ArticleDB,
         IDbConnection ServiceConnection,
         MockFolderService MockService
     ) databases;
@@ -35,12 +36,31 @@ public sealed class SyncTests : IDisposable
     private void SwitchToEmptyLocalDatabase()
     {
         this.DisposeLocalDatabase();
-        var (connection, folderDb, folderChangesDb) = TestUtilities.GetEmptyDatabase();
-        this.databases = (connection, folderDb, folderChangesDb, this.databases.ServiceConnection, this.databases.MockService);
+        var (connection, folderDb, folderChangesDb, articlDb) = TestUtilities.GetEmptyDatabase();
+        this.databases = (connection, folderDb, folderChangesDb, articlDb, this.databases.ServiceConnection, this.databases.MockService);
         this.SetSyncEngineFromDatabases();
 
         // Make sure we have an empty database for this test.
         Assert.Equal(DEFAULT_FOLDER_COUNT, this.databases.FolderDB.ListAllFolders().Count);
+    }
+
+    private void SwitchToEmptyServiceDatabase()
+    {
+        this.DisposeServiceDatabase();
+
+        var (connection, folderDb, _, _) = TestUtilities.GetEmptyDatabase();
+        this.databases = (
+            this.databases.Connection,
+            this.databases.FolderDB,
+            this.databases.FolderChangesDB,
+            this.databases.ArticleDB,
+            connection,
+            new MockFolderService(folderDb)
+        );
+
+        Assert.NotEqual(this.databases.FolderDB.ListAllCompleteUserFolders().Count, folderDb.ListAllCompleteUserFolders().Count);
+
+        this.SetSyncEngineFromDatabases();
     }
 
     private void DisposeLocalDatabase()
@@ -49,13 +69,30 @@ public sealed class SyncTests : IDisposable
         this.databases.Connection.Dispose();
     }
 
-    public void Dispose()
+    private void DisposeServiceDatabase()
     {
-        this.DisposeLocalDatabase();
         this.databases.ServiceConnection.Close();
         this.databases.ServiceConnection.Dispose();
     }
 
+    public void Dispose()
+    {
+        this.DisposeLocalDatabase();
+        this.DisposeServiceDatabase();
+    }
+
+    [Fact]
+    public async Task SyncingEmptyDatabasesCreatesEmptyState()
+    {
+        this.SwitchToEmptyServiceDatabase();
+        this.SwitchToEmptyLocalDatabase();
+
+        await this.syncEngine.SyncFolders();
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+    }
+
+    #region Service-only changes sync
     [Fact]
     public async Task SyncOnEmptyDatabaseCreatesCorrectFolders()
     {
@@ -131,4 +168,118 @@ public sealed class SyncTests : IDisposable
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
     }
+    #endregion
+
+    #region Local-Only changes sync
+    [Fact]
+    public async Task SyncingPendingAddToEmptyServiceAddsRemoteFolder()
+    {
+        this.SwitchToEmptyServiceDatabase();
+        this.SwitchToEmptyLocalDatabase();
+
+        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+
+        await this.syncEngine.SyncFolders();
+
+        var syncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(newFolderId);
+        Assert.NotNull(syncedNewFolder);
+        Assert.True(syncedNewFolder!.ServiceId.HasValue);
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+
+    [Fact]
+    public async Task MultiplePendingAddsToEmptyServiceAddsAllPendingEdits()
+    {
+        this.SwitchToEmptyServiceDatabase();
+        this.SwitchToEmptyLocalDatabase();
+
+        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        var firstNewFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+        var secondNewFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder 2").LocalId;
+
+        await this.syncEngine.SyncFolders();
+
+        var firstSyncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(firstNewFolderId);
+        Assert.NotNull(firstSyncedNewFolder);
+        Assert.True(firstSyncedNewFolder!.ServiceId.HasValue);
+
+        var secondSyncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(firstNewFolderId);
+        Assert.NotNull(secondSyncedNewFolder);
+        Assert.True(secondSyncedNewFolder!.ServiceId.HasValue);
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+
+    [Fact]
+    public async Task PendingAddWithDuplicateTitleSuccessfullySyncsAndUpdatesLocalData()
+    {
+        this.SwitchToEmptyLocalDatabase();
+
+        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        var firstRemoteFolderTitle = (this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First()!).Title;
+        var newFolderId = this.databases.FolderDB.CreateFolder(firstRemoteFolderTitle).LocalId;
+
+        await this.syncEngine.SyncFolders();
+
+        var syncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(newFolderId);
+        Assert.NotNull(syncedNewFolder);
+        Assert.True(syncedNewFolder!.ServiceId.HasValue);
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+
+    [Fact]
+    public async Task MultipleAddsWithWithOneDuplicateTitleSuccessfullySyncsAndUpdatesLocalData()
+    {
+        this.SwitchToEmptyLocalDatabase();
+
+        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+        var firstRemoteFolderTitle = (this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First()!).Title;
+        var duplicateTitleFolderId = this.databases.FolderDB.CreateFolder(firstRemoteFolderTitle).LocalId;
+        var normalAddFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+
+        await this.syncEngine.SyncFolders();
+
+        var syncedFolderWithDuplicateTitle = this.databases.FolderDB.GetFolderByLocalId(duplicateTitleFolderId);
+        Assert.NotNull(syncedFolderWithDuplicateTitle);
+        Assert.True(syncedFolderWithDuplicateTitle!.ServiceId.HasValue);
+
+        var normalSyncedFolder = this.databases.FolderDB.GetFolderByLocalId(normalAddFolderId);
+        Assert.NotNull(normalSyncedFolder);
+        Assert.True(normalSyncedFolder!.ServiceId.HasValue);
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+    #endregion
+
+    #region Local & Remote Folder Changes
+    [Fact]
+    public async Task SyncingPendingAddAndRemoteAddToSyncsAllChanges()
+    {
+        var ledger = InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);
+
+        var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+        var remoteFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+
+        await this.syncEngine.SyncFolders();
+
+        // Check the local Pending add round tripped
+        var syncedLocalFolder = this.databases.FolderDB.GetFolderByLocalId(newLocalFolderId);
+        Assert.NotNull(syncedLocalFolder);
+        Assert.True(syncedLocalFolder!.ServiceId.HasValue);
+
+        // Check that the remote add is now available locally
+        var remoteFolderAvailableLocally = this.databases.FolderDB.GetFolderByServiceId(remoteFolder.ServiceId!.Value);
+        Assert.NotNull(remoteFolderAvailableLocally);
+
+        TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.databases.MockService.FolderDB);
+        this.databases.FolderChangesDB.AssertNoPendingAdds();
+    }
+    #endregion
 }
