@@ -183,8 +183,9 @@ public sealed class SyncTests : IDisposable
         this.SwitchToEmptyLocalDatabase();
 
         // Create pending add on empty DB
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
         var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -201,8 +202,9 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task SyncingPendingAddToExistingServiceAddsRemoteFolder()
     {
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
         var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -220,9 +222,10 @@ public sealed class SyncTests : IDisposable
         this.SwitchToEmptyServiceDatabase();
         this.SwitchToEmptyLocalDatabase();
 
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
         var firstNewFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         var secondNewFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder 2").LocalId;
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -246,8 +249,9 @@ public sealed class SyncTests : IDisposable
         this.databases.FolderDB.DeleteFolder(firstSeviceFolder.LocalId);
 
         // Start the ledger, and create a pending edit
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
         var newFolderId = this.databases.FolderDB.CreateFolder(firstSeviceFolder.Title).LocalId;
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -266,9 +270,10 @@ public sealed class SyncTests : IDisposable
         this.databases.FolderDB.DeleteFolder(firstServiceFolder.LocalId);
 
         // Create the ledger, and create the pending adds (one delete, one normal)
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
         var duplicateTitleFolderId = this.databases.FolderDB.CreateFolder(firstServiceFolder.Title).LocalId;
         var normalAddFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -290,11 +295,13 @@ public sealed class SyncTests : IDisposable
     public async Task SyncingPendingDeleteRemovesFolderFromService()
     {
         // Create pending add on empty DB
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
 
         // Delete a local folder
         var deletedFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
         this.databases.FolderDB.DeleteFolder(deletedFolder.LocalId);
+
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -311,7 +318,7 @@ public sealed class SyncTests : IDisposable
     public async Task SyncingPendingDeleteWhenFolderDeletedOnServiceSyncs()
     {
         // Create pending add on empty DB
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
 
         // Delete the local folder
         var deletedFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
@@ -320,6 +327,8 @@ public sealed class SyncTests : IDisposable
         // Delete the same folder on the service
         var serviceFolderToDelete = this.databases.MockService.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value)!;
         this.databases.MockService.FolderDB.DeleteFolder(serviceFolderToDelete.LocalId);
+
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -337,10 +346,12 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task SyncingPendingAddAndRemoteAddToSyncsAllChanges()
     {
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
 
         var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -360,7 +371,7 @@ public sealed class SyncTests : IDisposable
     [Fact]
     public async Task SyncingPendingAddAndRemoteAddAndRemoteDeleteToSyncsAllChanges()
     {
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
 
         // Delete a service folder
         var deletedServiceFolder = this.databases.MockService.FolderDB.ListAllCompleteUserFolders().First()!;
@@ -369,6 +380,8 @@ public sealed class SyncTests : IDisposable
         // Add some folders
         var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
+
+        ledger.Dispose();
 
         await this.syncEngine.SyncFolders();
 
@@ -392,7 +405,7 @@ public sealed class SyncTests : IDisposable
     public async Task SyncingPendingAddAndRemoteAddAndRemoteDeleteAndLocalDeleteToSyncsAllChanges()
     {
         // Start the ledger
-        using var ledger = this.GetLedger();
+        var ledger = this.GetLedger();
 
         // Create some deletes
         var deletedLocalFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
@@ -406,6 +419,8 @@ public sealed class SyncTests : IDisposable
         var newLocalFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         var newServiceFolder = this.databases.MockService.FolderDB.AddCompleteFolderToDb();
 
+        ledger.Dispose();
+        
         await this.syncEngine.SyncFolders();
 
         // Check the local Pending add round tripped
