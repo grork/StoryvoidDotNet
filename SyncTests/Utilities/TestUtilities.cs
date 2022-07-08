@@ -33,22 +33,26 @@ internal static class TestUtilities
         return (connection, folderDb, folderChangesDb, articleDb, articleChangesDb);
     }
 
-    internal static (IDbConnection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IArticleChangesDatabase, IDbConnection, MockFolderService, MockBookmarksService) GetDatabases()
+    internal static (SqliteConnection Connection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IArticleChangesDatabase) GetDatabases()
     {
         var (localConnection, folderDb, folderChangesDb, articleDb, articleChangesDb) = GetEmptyDatabase();
         PopulateDatabase(folderDb);
-
-        // Create a copy of that database, which will serve as the starting
-        // point for the service database.
-        var (serviceConnection, serviceFolderDb, _, serviceArticleDb, _) = GetEmptyDatabase();
-        localConnection.BackupDatabase(serviceConnection);
 
         return (
             localConnection,
             folderDb,
             folderChangesDb,
             articleDb,
-            articleChangesDb,
+            articleChangesDb
+        );
+    }
+
+    internal static (SqliteConnection Connection, MockFolderService, MockBookmarksService) GetService()
+    {
+        // Create a copy of that database, which will serve as the starting
+        // point for the service database.
+        var (serviceConnection, serviceFolderDb, _, serviceArticleDb, _) = GetEmptyDatabase();
+        return (
             serviceConnection,
             new MockFolderService(serviceFolderDb),
             new MockBookmarksService(serviceArticleDb, serviceFolderDb)
@@ -136,16 +140,26 @@ public abstract class BaseSyncTest : IDisposable
         IFolderDatabase FolderDB,
         IFolderChangesDatabase FolderChangesDB,
         IArticleDatabase ArticleDB,
-        IArticleChangesDatabase ArticleChangesDB,
+        IArticleChangesDatabase ArticleChangesDB
+    ) databases;
+
+    protected (
         IDbConnection ServiceConnection,
         MockFolderService MockFolderService,
         MockBookmarksService MockBookmarksService
-    ) databases;
+    ) service;
+
     protected Sync syncEngine;
 
     protected BaseSyncTest()
     {
-        this.databases = TestUtilities.GetDatabases();
+        var databases = TestUtilities.GetDatabases();
+        var service = TestUtilities.GetService();
+        databases.Connection.BackupDatabase(service.Connection);
+
+        this.databases = databases;
+        this.service = service;
+
         this.SetSyncEngineFromDatabases();
     }
 
@@ -155,18 +169,17 @@ public abstract class BaseSyncTest : IDisposable
         this.syncEngine = new Sync(
             this.databases.FolderDB,
             this.databases.FolderChangesDB,
-            this.databases.MockFolderService,
+            this.service.MockFolderService,
             this.databases.ArticleDB,
             this.databases.ArticleChangesDB,
-            this.databases.MockBookmarksService
+            this.service.MockBookmarksService
         );
     }
 
     protected void SwitchToEmptyLocalDatabase()
     {
         this.DisposeLocalDatabase();
-        var (connection, folderDb, folderChangesDb, articlDb, articleChangesDb) = TestUtilities.GetEmptyDatabase();
-        this.databases = (connection, folderDb, folderChangesDb, articlDb, articleChangesDb, this.databases.ServiceConnection, this.databases.MockFolderService, this.databases.MockBookmarksService);
+        this.databases = TestUtilities.GetEmptyDatabase();
         this.SetSyncEngineFromDatabases();
 
         // Make sure we have an empty database for this test.
@@ -177,19 +190,8 @@ public abstract class BaseSyncTest : IDisposable
     {
         this.DisposeServiceDatabase();
 
-        var (connection, folderDb, _, articleDb, _) = TestUtilities.GetEmptyDatabase();
-        this.databases = (
-            this.databases.Connection,
-            this.databases.FolderDB,
-            this.databases.FolderChangesDB,
-            this.databases.ArticleDB,
-            this.databases.ArticleChangesDB,
-            connection,
-            new MockFolderService(folderDb),
-            new MockBookmarksService(articleDb, folderDb)
-        );
-
-        Assert.Empty(folderDb.ListAllCompleteUserFolders());
+        this.service = TestUtilities.GetService();
+        Assert.Empty(service.MockFolderService.FolderDB.ListAllCompleteUserFolders());
 
         this.SetSyncEngineFromDatabases();
     }
@@ -207,8 +209,8 @@ public abstract class BaseSyncTest : IDisposable
 
     private void DisposeServiceDatabase()
     {
-        this.databases.ServiceConnection.Close();
-        this.databases.ServiceConnection.Dispose();
+        this.service.ServiceConnection.Close();
+        this.service.ServiceConnection.Dispose();
     }
 
     public void Dispose()

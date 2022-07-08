@@ -15,7 +15,7 @@ public class ArticleSyncTests : BaseSyncTest
 
         await this.syncEngine.SyncBookmarks();
 
-        var serviceArticles = this.databases.MockBookmarksService.ArticleDB.ListAllArticlesInAFolder();
+        var serviceArticles = this.service.MockBookmarksService.ArticleDB.ListAllArticlesInAFolder();
         Assert.Single(serviceArticles);
         Assert.Equal(addedUrl, serviceArticles[0]!.Article.Url);
     }
