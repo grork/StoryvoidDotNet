@@ -96,7 +96,8 @@ public class MockBookmarksService : IBookmarksClient
 
     public Task DeleteAsync(long bookmark_id)
     {
-        throw new NotImplementedException();
+        this.ArticleDB.DeleteArticle(bookmark_id);
+        return Task.CompletedTask;
     }
 
     public Task<string> GetTextAsync(long bookmark_id)

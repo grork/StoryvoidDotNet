@@ -36,7 +36,7 @@ internal static class TestUtilities
     internal static (SqliteConnection Connection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IArticleChangesDatabase) GetDatabases()
     {
         var (localConnection, folderDb, folderChangesDb, articleDb, articleChangesDb) = GetEmptyDatabase();
-        PopulateDatabase(folderDb);
+        PopulateDatabase(folderDb, articleDb);
 
         return (
             localConnection,
@@ -59,12 +59,25 @@ internal static class TestUtilities
         );
     }
 
-    private static void PopulateDatabase(IFolderDatabase folderDb)
+    private static void PopulateDatabase(IFolderDatabase folderDb, IArticleDatabase articleDb)
     {
+        // Create some random folders
         foreach (var _ in Enumerable.Range(10, 20))
         {
-            folderDb.AddCompleteFolderToDb();
+            var folder = folderDb.AddCompleteFolderToDb();
+
+            // Put a random folder in it
+            articleDb.AddRandomArticleToDb(folder.LocalId);
         }
+
+        // Add some articles to the unread folder
+        articleDb.AddRandomArticleToDb();
+        articleDb.AddRandomArticleToDb();
+
+        // Add some articles to the archive folder
+        articleDb.AddRandomArticleToDb(WellKnownLocalFolderIds.Archive);
+        articleDb.AddRandomArticleToDb(WellKnownLocalFolderIds.Archive);
+
     }
 
     internal static DatabaseFolder AddCompleteFolderToDb(this IFolderDatabase instance)
@@ -76,6 +89,21 @@ internal static class TestUtilities
             position: id,
             shouldSync: true
         );
+    }
+
+    internal static DatabaseArticle AddRandomArticleToDb(this IArticleDatabase instance, long folder = WellKnownLocalFolderIds.Unread)
+    {
+        var id = GetNextServiceId();
+        return instance.AddArticleToFolder(new (
+            id: id,
+            title: $"Title {id}",
+            url: GetRandomUrl(),
+            description: String.Empty,
+            readProgress: 0.0f,
+            readProgressTimestamp: DateTime.Now,
+            hash: "1234",
+            liked: false
+        ), folder);
     }
 
     internal static IList<DatabaseFolder> ListAllCompleteUserFolders(this IFolderDatabase instance)

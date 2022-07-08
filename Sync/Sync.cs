@@ -156,6 +156,7 @@ public class Sync
     public async Task SyncBookmarks()
     {
         await this.SyncBookmarkAdds();
+        await this.SyncBookmarkDeletes();
     }
 
     private async Task SyncBookmarkAdds()
@@ -165,6 +166,16 @@ public class Sync
         {
             _ = await this.bookmarksClient.AddAsync(add.Url, null);
             this.articleChangesDb.DeletePendingArticleAdd(add.Url);
+        }
+    }
+
+    private async Task SyncBookmarkDeletes()
+    {
+        var deletes = this.articleChangesDb.ListPendingArticleDeletes();
+        foreach(var delete in deletes)
+        {
+            await this.bookmarksClient.DeleteAsync(delete);
+            this.articleChangesDb.DeletePendingArticleDelete(delete);
         }
     }
 }
