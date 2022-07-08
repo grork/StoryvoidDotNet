@@ -94,9 +94,18 @@ internal static class TestUtilities
         Assert.Equal(aFolders, bFolders, new CompareFoldersIgnoringLocalId());
     }
 
-    internal static void AssertNoPendingAdds(this IFolderChangesDatabase instance)
+    internal static void AssertNoPendingEdits(this IFolderChangesDatabase instance)
     {
         Assert.Empty(instance.ListPendingFolderAdds());
+        Assert.Empty(instance.ListPendingFolderDeletes());
+    }
+
+    internal static void AssertNoPendingEdits(this IArticleChangesDatabase instance)
+    {
+        Assert.Empty(instance.ListPendingArticleAdds());
+        Assert.Empty(instance.ListPendingArticleDeletes());
+        Assert.Empty(instance.ListPendingArticleMoves());
+        Assert.Empty(instance.ListPendingArticleStateChanges());
     }
 
     internal static Uri GetRandomUrl()

@@ -163,7 +163,8 @@ public class Sync
         var adds = this.articleChangesDb.ListPendingArticleAdds();
         foreach(var add in adds)
         {
-            var bookmark = await this.bookmarksClient.AddAsync(add.Url, null);
+            _ = await this.bookmarksClient.AddAsync(add.Url, null);
+            this.articleChangesDb.DeletePendingArticleAdd(add.Url);
         }
     }
 }

@@ -18,5 +18,6 @@ public class ArticleSyncTests : BaseSyncTest
         var serviceArticles = this.service.MockBookmarksService.ArticleDB.ListAllArticlesInAFolder();
         Assert.Single(serviceArticles);
         Assert.Equal(addedUrl, serviceArticles[0]!.Article.Url);
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 }

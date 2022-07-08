@@ -112,7 +112,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         // Check state matches, and the pending changes are gone
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         Assert.True(syncedNewFolder!.ServiceId.HasValue);
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         Assert.True(secondSyncedNewFolder!.ServiceId.HasValue);
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         Assert.True(syncedNewFolder!.ServiceId.HasValue);
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         Assert.True(normalSyncedFolder!.ServiceId.HasValue);
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
     
     [Fact]
@@ -227,7 +227,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         // Check state matches, and the pending changes are gone
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
@@ -254,7 +254,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         // Check state matches, and the pending changes are gone
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
     #endregion
 
@@ -281,7 +281,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         Assert.NotNull(remoteFolderAvailableLocally);
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         Assert.DoesNotContain(deletedServiceFolder, this.databases.FolderDB.ListAllCompleteUserFolders(), new CompareFoldersIgnoringLocalId());
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
@@ -352,7 +352,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         Assert.DoesNotContain(deletedLocalFolder, this.service.MockFolderService.FolderDB.ListAllCompleteUserFolders(), new CompareFoldersIgnoringLocalId());
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.MockFolderService.FolderDB);
-        this.databases.FolderChangesDB.AssertNoPendingAdds();
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
     #endregion
 }
