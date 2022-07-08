@@ -3,7 +3,16 @@ namespace Codevoid.Storyvoid;
 /// <summary>
 /// Record for adding or updating articles to the database
 /// </summary>
-public record ArticleRecordInformation(long id, string title, Uri url, string description, float readProgress, DateTime readProgressTimestamp, string hash, bool liked);
+public record ArticleRecordInformation(
+    long id,
+    string title,
+    Uri url,
+    string description,
+    float readProgress,
+    DateTime readProgressTimestamp,
+    string hash,
+    bool liked
+);
 
 /// <summary>
 /// Manage articles in the local Instapaper Database
