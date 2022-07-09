@@ -185,6 +185,33 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
+    public async void PendingArticleMoveFromCustomFolderToUnreadButArticleMissingCompletesWithArticleInUnreadFolder()
+    {
+        // Delete a known article
+        var firstFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
+        var firstArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId).First()!;
+        
+        using(var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.MoveArticleToFolder(firstArticle.Id, WellKnownLocalFolderIds.Unread);
+        }
+
+        this.service.MockBookmarksService.ArticleDB.DeleteArticle(firstArticle.Id);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is not in a folder, for later clean up
+        var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
+        Assert.Empty(orphanedArticles);
+
+        var unreadArticles = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        Assert.Contains(unreadArticles, (a) => a.Url == firstArticle.Url);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
     public async void PendingArticleMoveFromUnreadToArchiveHandledAsAnArchive()
     {
         // Delete a known article
@@ -206,6 +233,29 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
+    public async void PendingArticleMoveFromUnreadToArchiveButArticleMissingCompletes()
+    {
+        // Delete a known article
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
+        
+        using(var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.MoveArticleToFolder(firstUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
+        }
+
+        this.service.MockBookmarksService.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is not in a folder, for later clean up
+        var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
+        Assert.Contains(firstUnreadArticle, orphanedArticles);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
     public async void PendingArticleMoveFromArchiveToUnreadHandledAsAMove()
     {
         var firstArchiveArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First()!;
@@ -222,6 +272,51 @@ public class ArticleSyncTests : BaseSyncTest
         // Check in the new folder
         var articlesInFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
         Assert.Contains(firstArchiveArticle, articlesInFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async void PendingArticleMoveFromCustomToArchiveHandledAsAnArchive()
+    {
+        var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        var firstArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId).First()!;
+
+        // Move article to a custom folder
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.MoveArticleToFolder(firstArticle.Id, WellKnownLocalFolderIds.Archive);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check in the new folder
+        var articlesInFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
+        Assert.Contains(firstArticle, articlesInFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async void PendingArticleMoveFromArchiveGoesSomewhereSensible()
+    {
+        var firstArchivedArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First()!;
+        var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+
+        // Move article to a custom folder
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.MoveArticleToFolder(firstArchivedArticle.Id, firstFolder.LocalId);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check in the new folder
+        var articlesInFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
+        Assert.Contains(firstArchivedArticle, articlesInFolder);
+
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
     #endregion

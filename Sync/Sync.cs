@@ -232,7 +232,7 @@ public class Sync
                         
                         // It shouldn't be possible for the article to be
                         // missing *locall*, due to the foreign-key relationship
-                        Debug.Assert(existingArticle is not null, "Article to move to unread was missing in the local database  ");
+                        Debug.Assert(existingArticle is not null, "Article to move to unread was missing in the local database");
                         if (existingArticle is not null)
                         {
                             updatedBookmark = await this.bookmarksClient.AddAsync(existingArticle.Url);
@@ -252,16 +252,45 @@ public class Sync
             {
                 // Either the folder, or article is missing. If it's the
                 // folder, maybe the article will show up else where. If it
-                // has been deleted, then it will eventually become orphaned
-                // So, lets not do anything
+                // has been deleted, then it will eventually become orphaned.
+                // But, since it's not able to go where we thought it should go
+                // lets orphan it locally -- future sync's will move it
+                // somewhere safe if it's meant to be somewhere safe
+                this.articleDb.RemoveArticleFromAnyFolder(move.ArticleId);
             }
 
+            // Clean up the pending change, since we're complete making service
+            // changes
+            this.articleChangesDb.DeletePendingArticleMove(move.ArticleId);
+
+            // If we were successul in getting updated information from the
+            // service, we need to apply those changes locally.
             if(updatedBookmark is not null)
             {
-                this.articleDb.UpdateArticle(updatedBookmark.ToArticleRecordInformation());
+                if (updatedBookmark.Id == move.ArticleId)
+                {
+                    this.articleDb.UpdateArticle(updatedBookmark.ToArticleRecordInformation());
+                }
+                else
+                {
+                    // A corner case of having a *local* move-to-unread, when
+                    // the article has been deleted *remotely* creates a
+                    // scenario where the article is forcefully re-added,
+                    // resulting in a different article ID.
+                    //
+                    // This is because move-to-unread isn't handled by a *move*
+                    // on the service, but in fact an add. This means if it had
+                    // been deleted on the service *we don't know about it* and
+                    // just end up adding it anyway. But this is ultimately a
+                    // different article. So, we gotta delete the one we thought
+                    // we were moving, and instead add a brand knew one.
+                    this.articleDb.DeleteArticle(move.ArticleId);
+                    this.articleDb.AddArticleToFolder(
+                        updatedBookmark.ToArticleRecordInformation(),
+                        move.DestinationFolderLocalId
+                    );
+                }
             }
-
-            this.articleChangesDb.DeletePendingArticleMove(move.ArticleId);
         }
     }
 }
