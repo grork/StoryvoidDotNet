@@ -108,6 +108,14 @@ public interface IArticleDatabase
     void MoveArticleToFolder(long articleId, long localFolderId);
 
     /// <summary>
+    /// Removes an article from any folder it might be in. The folder will no
+    /// longer appear in any folder, and will eventually be removed if not
+    /// placed into another folder
+    /// </summary>
+    /// <param name="articleId">Article to remove from a folder</param>
+    void RemoveArticleFromAnyFolder(long articleId);
+
+    /// <summary>
     /// Delete a article with the specified ID
     /// </summary>
     /// <param name="articleId">Article to delete</param>

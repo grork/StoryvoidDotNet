@@ -691,7 +691,6 @@ public sealed class ArticleDatabaseTests : IDisposable
         Assert.DoesNotContain(articles, (c2) => c2.Article.Id == customArticle2.Id);
     }
 
-
     [Fact]
     public void ListingAllArticlesNotInFolderReturnsOrphanedArticle()
     {
@@ -717,6 +716,36 @@ public sealed class ArticleDatabaseTests : IDisposable
         Assert.Contains(customArticle3, articles);
         Assert.DoesNotContain(unreadArticle, articles);
         Assert.DoesNotContain(customArticle1, articles);
+    }
+
+    [Fact]
+    public void CanRemoveArticleFromUnreadFolder()
+    {
+        var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        this.db.RemoveArticleFromAnyFolder(unreadArticle.Id);
+
+        Assert.Empty(this.db.ListAllArticlesInAFolder());
+        Assert.Contains(unreadArticle, this.db.ListArticlesNotInAFolder());
+    }
+
+    [Fact]
+    public void CanRemoveArticleFromArchiveFolder()
+    {
+        var unreadArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Archive);
+        this.db.RemoveArticleFromAnyFolder(unreadArticle.Id);
+
+        Assert.Empty(this.db.ListAllArticlesInAFolder());
+        Assert.Contains(unreadArticle, this.db.ListArticlesNotInAFolder());
+    }
+
+    [Fact]
+    public void CanRemoveArticleFromCustomFolder()
+    {
+        var unreadArticle = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
+        this.db.RemoveArticleFromAnyFolder(unreadArticle.Id);
+
+        Assert.Empty(this.db.ListAllArticlesInAFolder());
+        Assert.Contains(unreadArticle, this.db.ListArticlesNotInAFolder());
     }
 
     [Fact]

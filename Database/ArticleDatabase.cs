@@ -410,15 +410,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         // If there *is* a folder reference, we need to delete it first, so we
         // we can have a single path for placing in a folder (e.g. no UPDATE vs
         // INSERT dance).
-
-        using (var removeFromExistingFolder = c.CreateCommand(@"
-            DELETE FROM article_to_folder
-            WHERE article_id = @articleId
-        "))
-        {
-            removeFromExistingFolder.AddParameter("@articleId", articleId);
-            removeFromExistingFolder.ExecuteNonQuery();
-        }
+        RemoveArticleFromAnyFolder(c, articleId);
 
         query.CommandText = @"
             INSERT INTO article_to_folder(article_id, local_folder_id)
@@ -447,6 +439,29 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     }
 
     /// <inheritdoc/>
+    public void RemoveArticleFromAnyFolder(long articleId)
+    {
+        _ = RemoveArticleFromAnyFolder(this.connection, articleId);
+    }
+
+    private static bool RemoveArticleFromAnyFolder(IDbConnection c, long articleId)
+    {
+        using var query = c.CreateCommand(@"
+            DELETE FROM article_to_folder
+            WHERE article_id = @articleId
+        ");
+        using var t = query.BeginTransactionIfNeeded();
+        
+        query.AddParameter("@articleId", articleId);
+
+        var didRemove = (query.ExecuteNonQuery() > 0);
+
+        t?.Commit();
+
+        return didRemove;
+    }
+
+    /// <inheritdoc/>
     public void DeleteArticle(long articleId)
     {
         DeleteArticle(this.connection, articleId, this);
@@ -454,45 +469,27 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
     private static void DeleteArticle(IDbConnection c, long articleId, ArticleDatabase eventSource)
     {
-        IDbTransaction? DeleteFromFolder()
-        {
-            using var query = c.CreateCommand(@"
-                DELETE FROM article_to_folder
-                WHERE article_id = @articleId
-            ");
+        // Create the delete command early, so we can do the transaction dance
+        // before we start doing any work
+        using var query = c.CreateCommand(@"
+            DELETE FROM articles
+            WHERE id = @id
+        ");
+        query.AddParameter("@id", articleId);
 
-            var transaction = query.BeginTransactionIfNeeded();
-
-            query.AddParameter("@articleId", articleId);
-
-            query.ExecuteNonQuery();
-
-            return transaction;
-        }
-
-        bool DeleteArticle()
-        {
-            // Now that we've deleted the local state, we can delete the
-            // article itself.
-            using var query = c.CreateCommand(@"
-                DELETE FROM articles
-                WHERE id = @id
-            ");
-
-            query.AddParameter("@id", articleId);
-
-            return (query.ExecuteNonQuery() > 0);
-        }
-
-        using var t = DeleteFromFolder();
+        // Transaction Dance
+        using var t = query.BeginTransactionIfNeeded();
 
         // Delete the local only state first, since that has a foreign
         // key relationship to the articles table. This is expected
         // to not throw an error if there is no local state associated
         // with the article being deleted.
         DeleteLocalOnlyArticleState(c, articleId);
-        var wasDeleted = DeleteArticle();
 
+        // Now we can remove it from a folder
+        RemoveArticleFromAnyFolder(c, articleId);
+
+        var wasDeleted = (query.ExecuteNonQuery() > 0);
         if (wasDeleted)
         {
             // Only raise the event if we actually deleted something
