@@ -475,7 +475,13 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     /// <inheritdoc/>
     public void RemoveArticleFromAnyFolder(long articleId)
     {
-        _ = RemoveArticleFromAnyFolder(this.connection, articleId);
+        var wasRemoved = RemoveArticleFromAnyFolder(this.connection, articleId);
+        if(!wasRemoved)
+        {
+            return;
+        }
+
+        this.eventSource?.RaiseArticleDeleted(articleId);
     }
 
     private static bool RemoveArticleFromAnyFolder(IDbConnection c, long articleId)

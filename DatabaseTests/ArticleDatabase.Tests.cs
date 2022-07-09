@@ -1026,6 +1026,20 @@ public sealed class ArticleDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void RemovingArticleFromAFolderRaisesArticleDeletedClearingHouseEvent()
+    {
+        var unreadArticle = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
+
+        var clearingHouse = this.SwitchToEventingDatabase();
+        var deletedArticleId = 0L;
+        clearingHouse.ArticleDeleted += (_, payload) => deletedArticleId = payload;
+
+        this.db.RemoveArticleFromAnyFolder(unreadArticle.Id);
+
+        Assert.Equal(unreadArticle.Id, deletedArticleId);
+    }
+
+    [Fact]
     public void CanGetOrphanedArticle()
     {
         var article = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());

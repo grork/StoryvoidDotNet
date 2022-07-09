@@ -38,9 +38,9 @@ public interface IDatabaseEventSink
     event EventHandler<(DatabaseArticle Article, long LocalFolderId)> ArticleAdded;
 
     /// <summary>
-    /// Raised when an article is removed from the database -- either because of
-    /// user action, or because of a system operation. Includes only the article
-    /// ID that was deleted, and no other information.
+    /// Raised when an article is removed from the database or a folder --
+    /// either because of user action, or because of a system operation.
+    /// Includes only the article ID that was deleted, and no other information.
     /// </summary>
     event EventHandler<long> ArticleDeleted;
 
