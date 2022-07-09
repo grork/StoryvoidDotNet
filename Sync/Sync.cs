@@ -22,6 +22,23 @@ internal static class FolderDatabaseExtensions
     }
 }
 
+internal static class ArticleDatabaseExtensions
+{
+    internal static ArticleRecordInformation ToArticleRecordInformation(this IInstapaperBookmark instance)
+    {
+        return new ArticleRecordInformation(
+            id: instance.Id,
+            title: instance.Title,
+            url: instance.Url,
+            description: instance.Description,
+            readProgress: instance.Progress,
+            readProgressTimestamp: instance.ProgressTimestamp,
+            hash: instance.Hash,
+            liked: instance.Liked
+        );
+    }
+}
+
 public class Sync
 {
     private IFolderDatabase folderDb;
@@ -157,6 +174,7 @@ public class Sync
     {
         await this.SyncBookmarkAdds();
         await this.SyncBookmarkDeletes();
+        await this.SyncBookmarkMoves();
     }
 
     private async Task SyncBookmarkAdds()
@@ -176,6 +194,74 @@ public class Sync
         {
             await this.bookmarksClient.DeleteAsync(delete);
             this.articleChangesDb.DeletePendingArticleDelete(delete);
+        }
+    }
+
+    private async Task SyncBookmarkMoves()
+    {
+        var moves = this.articleChangesDb.ListPendingArticleMoves();
+        foreach(var move in moves)
+        {
+            var destinationFolder = this.folderDb.GetFolderByLocalId(move.DestinationFolderLocalId);
+            
+            if(destinationFolder is null)
+            {
+                // If we don't find the target folder (Shouldn't be possible due
+                // to foreign-key relationships), lets delete the pending move
+                // and just assume it'll get tidied up in some other location
+                Debug.Fail("Destination folder of move is not in the database");
+                this.articleChangesDb.DeletePendingArticleMove(move.ArticleId);
+                continue;
+            }
+
+            if(!destinationFolder.ServiceId.HasValue)
+            {
+                // If the target folder hasn't been sync'd yet, we can't do
+                // anything with it, so we're going to just move onto the next
+                // move, and catch it at somepoint in the future
+                continue;
+            }
+
+            IInstapaperBookmark? updatedBookmark = null;
+            try
+            {
+                switch (destinationFolder.ServiceId)
+                {
+                    case WellKnownServiceFolderIds.Unread:
+                        var existingArticle = this.articleDb.GetArticleById(move.ArticleId);
+                        
+                        // It shouldn't be possible for the article to be
+                        // missing *locall*, due to the foreign-key relationship
+                        Debug.Assert(existingArticle is not null, "Article to move to unread was missing in the local database  ");
+                        if (existingArticle is not null)
+                        {
+                            updatedBookmark = await this.bookmarksClient.AddAsync(existingArticle.Url);
+                        }
+                        break;
+
+                    case WellKnownServiceFolderIds.Archive:
+                        updatedBookmark = await this.bookmarksClient.ArchiveAsync(move.ArticleId);
+                        break;
+
+                    default:
+                        updatedBookmark = await this.bookmarksClient.MoveAsync(move.ArticleId, destinationFolder.ServiceId.Value);
+                        break;
+                }
+            }
+            catch (EntityNotFoundException)
+            {
+                // Either the folder, or article is missing. If it's the
+                // folder, maybe the article will show up else where. If it
+                // has been deleted, then it will eventually become orphaned
+                // So, lets not do anything
+            }
+
+            if(updatedBookmark is not null)
+            {
+                this.articleDb.UpdateArticle(updatedBookmark.ToArticleRecordInformation());
+            }
+
+            this.articleChangesDb.DeletePendingArticleMove(move.ArticleId);
         }
     }
 }

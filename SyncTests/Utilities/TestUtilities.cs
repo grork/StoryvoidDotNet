@@ -115,6 +115,11 @@ internal static class TestUtilities
         return new List<DatabaseFolder>(localFolders);
     }
 
+    internal static DatabaseFolder FirstCompleteUserFolder(this IFolderDatabase instance)
+    {
+        return instance.ListAllCompleteUserFolders().First()!;
+    }
+
     internal static void AssertFoldersListsAreSame(IFolderDatabase a, IFolderDatabase b)
     {
         var aFolders = a.ListAllCompleteUserFolders().OrderBy((f) => f.ServiceId);

@@ -20,6 +20,15 @@ internal static class MockBookmarkExtensions
             Hash = instance.Hash
         };
     }
+
+    internal static IList<DatabaseArticle> ListAllArticles(this IArticleDatabase instance)
+    {
+        var allArticles = new List<DatabaseArticle>();
+        allArticles.AddRange(instance.ListAllArticlesInAFolder().Select((a) => a.Article));
+        allArticles.AddRange(instance.ListArticlesNotInAFolder());
+
+        return allArticles;
+    }
 }
 
 internal class MockBookmark : IInstapaperBookmark
@@ -45,9 +54,7 @@ public class MockBookmarksService : IBookmarksClient
         this.ArticleDB = articleDb;
         this.folderDb = folderDb;
 
-        var allArticles = new List<DatabaseArticle>();
-        allArticles.AddRange(this.ArticleDB.ListAllArticlesInAFolder().Select((a) => a.Article));
-        allArticles.AddRange(this.ArticleDB.ListArticlesNotInAFolder());
+        var allArticles = articleDb.ListAllArticles();
 
         if (allArticles.Count > 0)
         {
@@ -64,6 +71,17 @@ public class MockBookmarksService : IBookmarksClient
 
     public Task<IInstapaperBookmark> AddAsync(Uri bookmarkUrl, AddBookmarkOptions? options)
     {
+        // Handle the special case of an article *moving* to unread. The service
+        // handles this by making us add it again, which implicitly moves it to
+        // the unread folder. So, detect if we already have that URL, and then
+        // move it to unread.
+        var existingArticle = this.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == bookmarkUrl);
+        if(existingArticle is not null)
+        {
+            this.ArticleDB.MoveArticleToFolder(existingArticle.Id, WellKnownLocalFolderIds.Unread);
+            return Task.FromResult(existingArticle.ToInstapaperBookmark());
+        }
+
         var nextId = GetNextServiceId();
         var localFolderId = WellKnownLocalFolderIds.Unread;
 
@@ -91,7 +109,14 @@ public class MockBookmarksService : IBookmarksClient
 
     public Task<IInstapaperBookmark> ArchiveAsync(long bookmark_id)
     {
-        throw new NotImplementedException();
+        var existingBookmark = this.ArticleDB.GetArticleById(bookmark_id);
+        if(existingBookmark is null)
+        {
+            throw new EntityNotFoundException();
+        }
+        
+        this.ArticleDB.MoveArticleToFolder(bookmark_id, WellKnownLocalFolderIds.Archive);
+        return Task.FromResult(existingBookmark.ToInstapaperBookmark());
     }
 
     public Task DeleteAsync(long bookmark_id)
@@ -122,7 +147,16 @@ public class MockBookmarksService : IBookmarksClient
 
     public Task<IInstapaperBookmark> MoveAsync(long bookmark_id, long folder_id)
     {
-        throw new NotImplementedException();
+        var destinationFolder = this.folderDb.GetFolderByServiceId(folder_id);
+        var article = this.ArticleDB.GetArticleById(bookmark_id);
+        if(destinationFolder is null || article is null)
+        {
+            throw new EntityNotFoundException();
+        }
+
+        this.ArticleDB.MoveArticleToFolder(bookmark_id, destinationFolder.LocalId);
+
+        return Task.FromResult(article.ToInstapaperBookmark());
     }
 
     public Task<IInstapaperBookmark> UnarchiveAsync(long bookmark_id)
