@@ -175,6 +175,8 @@ public class Sync
         await this.SyncBookmarkAdds();
         await this.SyncBookmarkDeletes();
         await this.SyncBookmarkMoves();
+
+        await this.SyncBookmarkLikeStatusChanges();
     }
 
     private async Task SyncBookmarkAdds()
@@ -290,6 +292,39 @@ public class Sync
                         move.DestinationFolderLocalId
                     );
                 }
+            }
+        }
+    }
+
+    private async Task SyncBookmarkLikeStatusChanges()
+    {
+        var statusChanges = this.articleChangesDb.ListPendingArticleStateChanges();
+        foreach(var stateChange in statusChanges)
+        {
+            IInstapaperBookmark? updatedBookmark = null;
+            try
+            {
+                if (stateChange.Liked)
+                {
+                    updatedBookmark = await this.bookmarksClient.LikeAsync(stateChange.ArticleId);
+                }
+                else
+                {
+                    updatedBookmark = await this.bookmarksClient.UnlikeAsync(stateChange.ArticleId);
+                }
+            }
+            catch(EntityNotFoundException)
+            {
+                // Bookmark wasn't on the service, so we can't do anything. We
+                // assume that some other part of the sync process will
+                // eventually clean up the item up, so for now, drop it.
+            }
+
+            this.articleChangesDb.DeletePendingArticleStateChange(stateChange.ArticleId);
+
+            if(updatedBookmark is not null)
+            {
+                this.articleDb.UpdateArticle(updatedBookmark.ToArticleRecordInformation());
             }
         }
     }

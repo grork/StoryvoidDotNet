@@ -323,5 +323,145 @@ public class ArticleSyncTests : BaseSyncTest
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
     #endregion
+
+    #region Liking
+    [Fact]
+    public async Task PendingArticleLikeSyncsToService()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+
+        // Like the article
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is liked
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.True(serviceArticle.Liked);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task PendingArticleLikeButAlreadyLikedOnService()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+        _ = this.service.MockBookmarksService.ArticleDB.LikeArticle(firstUnreadArticle.Id);
+
+        // Like the article
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is liked
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.True(serviceArticle.Liked);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task PendingArticleLikeMissingArticleDoesntAddArticle()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+        this.service.MockBookmarksService.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
+
+        // Like the article
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is liked
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == firstUnreadArticle.Url);
+        Assert.Null(serviceArticle);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task PendingArticleUnlikeSyncsToService()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+
+        // Make sure the article starts out liked
+        firstUnreadArticle = this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id);
+        this.service.MockBookmarksService.ArticleDB.LikeArticle(firstUnreadArticle.Id);
+
+        // Unlike the article
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.UnlikeArticle(firstUnreadArticle.Id);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is unliked
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.False(serviceArticle.Liked);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task PendingArticleUnlikeButAlreadyUnlikedOnService()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+        firstUnreadArticle = this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id); // Make sure its liked so we generate a pending edit
+        
+
+        // Unlike the article
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.UnlikeArticle(firstUnreadArticle.Id);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is unliked
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.False(serviceArticle.Liked);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task PendingArticleUnlikeMissingArticleDoesntAddArticle()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+        firstUnreadArticle = this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id); // Make sure its liked so we generate a pending edit
+
+        this.service.MockBookmarksService.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
+
+        // Unlike the article
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.UnlikeArticle(firstUnreadArticle.Id);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is not re-added
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == firstUnreadArticle.Url);
+        Assert.Null(serviceArticle);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+    #endregion
+
     #endregion
 }

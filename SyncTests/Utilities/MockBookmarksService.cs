@@ -132,7 +132,16 @@ public class MockBookmarksService : IBookmarksClient
 
     public Task<IInstapaperBookmark> LikeAsync(long bookmark_id)
     {
-        throw new NotImplementedException();
+        try
+        {
+            this.ArticleDB.LikeArticle(bookmark_id);
+            var bookmark = this.ArticleDB.GetArticleById(bookmark_id)!.ToInstapaperBookmark();
+            return Task.FromResult(bookmark);
+        }
+        catch(ArticleNotFoundException)
+        {
+            throw new EntityNotFoundException();
+        }
     }
 
     public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
@@ -166,7 +175,16 @@ public class MockBookmarksService : IBookmarksClient
 
     public Task<IInstapaperBookmark> UnlikeAsync(long bookmark_id)
     {
-        throw new NotImplementedException();
+        try
+        {
+            this.ArticleDB.UnlikeArticle(bookmark_id);
+            var bookmark = this.ArticleDB.GetArticleById(bookmark_id)!.ToInstapaperBookmark();
+            return Task.FromResult(bookmark);
+        }
+        catch(ArticleNotFoundException)
+        {
+            throw new EntityNotFoundException();
+        }
     }
 
     public Task<IInstapaperBookmark> UpdateReadProgressAsync(long bookmark_id, float progress, DateTime progress_timestamp)
