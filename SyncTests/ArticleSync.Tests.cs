@@ -6,7 +6,7 @@ public class ArticleSyncTests : BaseSyncTest
 {
     #region Local-Only Article Pending Changes
     [Fact]
-    public async void PendingArticleAddIsAddedToTheService()
+    public async Task PendingArticleAddIsAddedToTheService()
     {
         this.SwitchToEmptyLocalDatabase();
         this.SwitchToEmptyServiceDatabase();
@@ -27,8 +27,9 @@ public class ArticleSyncTests : BaseSyncTest
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
+    #region Deletes
     [Fact]
-    public async void PendingArticleDeletesInUnreadFolderAreRemovedFromTheService()
+    public async Task PendingArticleDeletesInUnreadFolderAreRemovedFromTheService()
     {
         // Delete a known article
         var ledger = this.GetLedger();
@@ -46,7 +47,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleDeletesInUnreadFolderAreCompletedEvenIfArticleMissingOnService()
+    public async Task PendingArticleDeletesInUnreadFolderAreCompletedEvenIfArticleMissingOnService()
     {
         // Delete a known article
         var ledger = this.GetLedger();
@@ -69,7 +70,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleDeletesInCustomFolderAreRemovedFromTheService()
+    public async Task PendingArticleDeletesInCustomFolderAreRemovedFromTheService()
     {
         // Folder we'll add to
         var firstUserFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
@@ -88,9 +89,11 @@ public class ArticleSyncTests : BaseSyncTest
         Assert.Null(articleFromService);
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
+    #endregion
 
+    #region Moves
     [Fact]
-    public async void PendingArticleMoveFromUnreadFolderToCustomFolder()
+    public async Task PendingArticleMoveFromUnreadFolderToCustomFolder()
     {
         var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -112,7 +115,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromUnreadFolderToCustomFolderButArticleMissingOnService()
+    public async Task PendingArticleMoveFromUnreadFolderToCustomFolderButArticleMissingOnService()
     {
         var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -137,7 +140,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromUnreadFolderToCustomFolderButFolderIsMissingOnTheService()
+    public async Task PendingArticleMoveFromUnreadFolderToCustomFolderButFolderIsMissingOnTheService()
     {
         var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -163,7 +166,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromCustomFolderToUnread()
+    public async Task PendingArticleMoveFromCustomFolderToUnread()
     {
         // Delete a known article
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -185,7 +188,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromCustomFolderToUnreadButArticleMissingCompletesWithArticleInUnreadFolder()
+    public async Task PendingArticleMoveFromCustomFolderToUnreadButArticleMissingCompletesWithArticleInUnreadFolder()
     {
         // Delete a known article
         var firstFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
@@ -212,7 +215,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromUnreadToArchiveHandledAsAnArchive()
+    public async Task PendingArticleMoveFromUnreadToArchiveHandledAsAnArchive()
     {
         // Delete a known article
         var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
@@ -233,7 +236,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromUnreadToArchiveButArticleMissingCompletes()
+    public async Task PendingArticleMoveFromUnreadToArchiveButArticleMissingCompletes()
     {
         // Delete a known article
         var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
@@ -256,7 +259,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromArchiveToUnreadHandledAsAMove()
+    public async Task PendingArticleMoveFromArchiveToUnreadHandledAsAMove()
     {
         var firstArchiveArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First()!;
 
@@ -277,7 +280,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromCustomToArchiveHandledAsAnArchive()
+    public async Task PendingArticleMoveFromCustomToArchiveHandledAsAnArchive()
     {
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
         var firstArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId).First()!;
@@ -299,7 +302,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async void PendingArticleMoveFromArchiveGoesSomewhereSensible()
+    public async Task PendingArticleMoveFromArchiveGoesSomewhereSensible()
     {
         var firstArchivedArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First()!;
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -319,5 +322,6 @@ public class ArticleSyncTests : BaseSyncTest
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
+    #endregion
     #endregion
 }
