@@ -114,41 +114,48 @@ public class Sync
         var pendingAdds = this.folderChangesDb.ListPendingFolderAdds();
         foreach(var add in pendingAdds)
         {
-            IInstapaperFolder? newServiceData = null;
-            try
-            {
-                newServiceData = await this.foldersClient.AddAsync(add.Title);
-            }
-            catch(DuplicateFolderException)
-            {
-                // Folder with this title already existed. Since there isn't a
-                // way to get the folder by title from the service, we need to
-                // list all the folders and then find it.
-                var remoteFolders = await this.foldersClient.ListAsync();
-                var folderWithTitle = remoteFolders.First((f) => f.Title == add.Title);
-                if(folderWithTitle is null)
-                {
-                    Debug.Fail("Service informed we had a duplicate title, but couldn't actually find it");
-                }
-
-                newServiceData = folderWithTitle;
-            }
-
-            if (newServiceData is null)
-            {
-                continue;
-            }
-            
-            this.folderDb.UpdateFolder(
-                localId: add.FolderLocalId,
-                title: newServiceData.Title,
-                serviceId: newServiceData.Id,
-                position: newServiceData.Position,
-                shouldSync: newServiceData.SyncToMobile
-            );
-
-            this.folderChangesDb.DeletePendingFolderAdd(add.FolderLocalId);
+            await this.SyncSingleFolderAdd(add);
         }
+    }
+
+    private async Task<DatabaseFolder?> SyncSingleFolderAdd(PendingFolderAdd add)
+    {
+        IInstapaperFolder? newServiceData = null;
+        try
+        {
+            newServiceData = await this.foldersClient.AddAsync(add.Title);
+        }
+        catch (DuplicateFolderException)
+        {
+            // Folder with this title already existed. Since there isn't a
+            // way to get the folder by title from the service, we need to
+            // list all the folders and then find it.
+            var remoteFolders = await this.foldersClient.ListAsync();
+            var folderWithTitle = remoteFolders.First((f) => f.Title == add.Title);
+            if (folderWithTitle is null)
+            {
+                Debug.Fail("Service informed we had a duplicate title, but couldn't actually find it");
+            }
+
+            newServiceData = folderWithTitle;
+        }
+
+        if (newServiceData is null)
+        {
+            return null;
+        }
+
+        var result = this.folderDb.UpdateFolder(
+            localId: add.FolderLocalId,
+            title: newServiceData.Title,
+            serviceId: newServiceData.Id,
+            position: newServiceData.Position,
+            shouldSync: newServiceData.SyncToMobile
+        );
+
+        this.folderChangesDb.DeletePendingFolderAdd(add.FolderLocalId);
+
+        return result;
     }
 
     private async Task SyncPendingFolderDeletes()
@@ -219,9 +226,26 @@ public class Sync
             if(!destinationFolder.ServiceId.HasValue)
             {
                 // If the target folder hasn't been sync'd yet, we can't do
-                // anything with it, so we're going to just move onto the next
-                // move, and catch it at somepoint in the future
-                continue;
+                // anything with it directly, but we *can* sync that single 
+                // add. First, find the add:
+                var pendingFolderAdd = this.folderChangesDb.GetPendingFolderAdd(destinationFolder.LocalId);
+                if(pendingFolderAdd is null)
+                {
+                    // If it's null, something has gone very bad; lets just sync
+                    // ignore it, and hope it gets sorted out elsewhere
+                    Debug.Fail("A pending folder add was not found for a folder without a service ID");
+                    continue;
+                }
+
+                var demandSyncedFolder = await this.SyncSingleFolderAdd(pendingFolderAdd);
+                if(demandSyncedFolder is null)
+                {
+                    // Something went weirdly wrong, and we couldn't add the
+                    // folder. So, give up on this move for now
+                    continue;
+                }
+
+                destinationFolder = demandSyncedFolder;
             }
 
             IInstapaperBookmark? updatedBookmark = null;
@@ -246,7 +270,7 @@ public class Sync
                         break;
 
                     default:
-                        updatedBookmark = await this.bookmarksClient.MoveAsync(move.ArticleId, destinationFolder.ServiceId.Value);
+                        updatedBookmark = await this.bookmarksClient.MoveAsync(move.ArticleId, destinationFolder.ServiceId!.Value);
                         break;
                 }
             }

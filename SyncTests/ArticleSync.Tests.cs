@@ -322,6 +322,37 @@ public class ArticleSyncTests : BaseSyncTest
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
+    
+    [Fact]
+    public async Task PendingArticleMoveToUnsyncedFolderForceSyncsTheIndividualFolder()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
+        DatabaseFolder? unsyncedNewFolder = null;
+
+        // Move article to a brand new, sync'd folder
+        using (var ledger = this.GetLedger())
+        {
+            unsyncedNewFolder = this.databases.FolderDB.CreateFolder("A new Folder");
+            this.databases.ArticleDB.MoveArticleToFolder(firstUnreadArticle.Id, unsyncedNewFolder.LocalId);
+        }
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check article still on service
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+        Assert.NotNull(serviceArticle);
+
+        // Get the new folder from the service
+        var serviceFolder = this.service.MockFolderService.FolderDB.GetFolderByTitle(unsyncedNewFolder.Title);
+        Assert.NotNull(serviceFolder);
+
+        // Check the article is actually in the folder now
+        var serviceFolderContents = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(serviceFolder!.LocalId);
+        Assert.Contains(serviceArticle, serviceFolderContents);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
     #endregion
 
     #region Liking
