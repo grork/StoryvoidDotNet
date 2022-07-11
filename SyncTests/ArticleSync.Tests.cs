@@ -188,21 +188,24 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async Task PendingArticleMoveFromCustomFolderToUnreadButArticleMissingCompletesWithArticleInUnreadFolder()
+    public async Task PendingArticleMoveFromCustomFolderToUnreadButArticleMissingCompletesWithArticleInUnreadFolderLocally()
     {
-        // Delete a known article
+        // Select an article to move
         var firstFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
         var firstArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId).First()!;
         
+        // Move it
         using(var ledger = this.GetLedger())
         {
             this.databases.ArticleDB.MoveArticleToFolder(firstArticle.Id, WellKnownLocalFolderIds.Unread);
         }
 
+        // Delete it from the service, so it will fail when we try to apply the
+        // move on the service.
         this.service.MockBookmarksService.ArticleDB.DeleteArticle(firstArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncBookmarks();
+        await this.syncEngine.SyncBookmarkMoves();
 
         // Check the article is not in a folder, for later clean up
         var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
@@ -620,11 +623,11 @@ public class ArticleSyncTests : BaseSyncTest
         {
             ReadProgress = 0.5F,
             ReadProgressTimestamp = DateTime.Now,
-            Hash = "NEWHASH",
+            Hash = DateTime.Now.ToString(),
         }));
 
         // Sync
-        await this.syncEngine.SyncBookmarks();
+        await this.syncEngine.SyncBookmarkLikeStatusChanges();
 
         // Check the article is liked
         var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
@@ -646,5 +649,55 @@ public class ArticleSyncTests : BaseSyncTest
     }
     #endregion
 
+    #endregion
+
+    #region Service-Only Article Changes
+    [Fact]
+    public async Task ServiceArticleAddedToUnreadIsAddedLocally()
+    {
+        var addedArticle = this.service.MockBookmarksService.ArticleDB.AddRandomArticleToDb();
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is available now
+        var localArticle = this.databases.ArticleDB.GetArticleById(addedArticle.Id);
+        Assert.NotNull(localArticle);
+        Assert.Equal(addedArticle, localArticle);
+
+        // Check that service & local agree on unread contents
+        var localUnread = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        var serviceUnread = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Equal(serviceUnread, localUnread);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task ServiceArticleDeletedFromUnreadIsRemovedLocally()
+    {
+        var firstUnreadArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
+        this.service.MockBookmarksService.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is missing
+        var localArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+        if(localArticle is not null)
+        {
+            // If the article has been deleted, thats OK. But if it hasn't, we
+            // need to check it hasn't been placed in a folder
+            var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
+            Assert.Contains(localArticle, orphanedArticles);
+        }        
+
+        // Check that service & local agree on unread contents
+        var localUnread = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        var serviceUnread = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Equal(serviceUnread, localUnread);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
     #endregion
 }

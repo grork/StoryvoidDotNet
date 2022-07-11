@@ -20,6 +20,21 @@ internal static class FolderDatabaseExtensions
             position: toAdd.Position,
             shouldSync: toAdd.SyncToMobile);
     }
+
+    internal static string GetServiceCompatibleFolderId(this DatabaseFolder instance)
+    {
+        switch (instance.ServiceId)
+        {
+            case WellKnownServiceFolderIds.Unread:
+                return WellKnownFolderIds.Unread;
+
+            case WellKnownServiceFolderIds.Archive:
+                return WellKnownFolderIds.Archived;
+
+            default:
+                return instance.ServiceId.ToString();
+        }
+    }
 }
 
 internal static class ArticleDatabaseExtensions
@@ -183,6 +198,8 @@ public class Sync
         await this.SyncBookmarkDeletes();
         await this.SyncBookmarkMoves();
 
+        await this.SyncBookmarksByFolder();
+
         await this.SyncBookmarkLikeStatusChanges();
     }
 
@@ -206,7 +223,7 @@ public class Sync
         }
     }
 
-    private async Task SyncBookmarkMoves()
+    internal async Task SyncBookmarkMoves()
     {
         var moves = this.articleChangesDb.ListPendingArticleMoves();
         foreach(var move in moves)
@@ -320,7 +337,7 @@ public class Sync
         }
     }
 
-    private async Task SyncBookmarkLikeStatusChanges()
+    internal async Task SyncBookmarkLikeStatusChanges()
     {
         var statusChanges = this.articleChangesDb.ListPendingArticleStateChanges();
         foreach(var stateChange in statusChanges)
@@ -350,6 +367,65 @@ public class Sync
             {
                 this.articleDb.UpdateArticle(updatedBookmark.ToArticleRecordInformation());
             }
+        }
+    }
+
+    private async Task SyncBookmarksByFolder()
+    {
+        // For ever service-sync'd folder, perform a sync
+        var localFolders = this.folderDb.ListAllFolders();
+        foreach(var folder in localFolders)
+        {
+            if(!folder.ServiceId.HasValue)
+            {
+                // We assume that folder sync or pending move sync will handle
+                // new-to-the-service folders
+                continue;
+            }
+
+            await this.SyncBookmarksForFolder(folder);
+        }
+    }
+
+    private async Task SyncBookmarksForFolder(DatabaseFolder folder)
+    {
+        Debug.Assert(folder.ServiceId.HasValue, "We can't sync folders that don't have a service ID");
+
+        // Get the articles, and then generate the have information based on our
+        // current known local state 
+        var articlesInFolder = this.articleDb.ListArticlesForLocalFolder(folder.LocalId);
+        var haveForArticles = articlesInFolder.Select((a) => new HaveStatus(a.Id, a.Hash, a.ReadProgress, a.ReadProgressTimestamp));
+        
+        // The service folder IDs are strings, but some are words (e.g. unread)
+        // while user folders are just the numeric ID as a string. We need to
+        // convert before talking to the service.
+        var folderServiceId = folder.GetServiceCompatibleFolderId();
+
+        var (updates, deletes) = await this.bookmarksClient.ListAsync(folderServiceId, haveForArticles);
+        
+        foreach(var delete in deletes)
+        {
+            // We don't delete the artical yet, because it might be *moved* to
+            // another location. At some point, 'orphaned' articles will be
+            // deleted
+            this.articleDb.RemoveArticleFromAnyFolder(delete);
+        }
+
+        // These are the articles that had changes, so we need to imply them. At
+        // this point, if it wasn't in 'deletes' and it isn't in 'updates', the
+        // articles status is unchanged
+        foreach(var update in updates)
+        {
+            // Articles that weren't in the have list are included, and either
+            // need to be added (they're net new), or updated + moved
+            if(this.articleDb.GetArticleById(update.Id) is null)
+            {
+                this.articleDb.AddArticleToFolder(update.ToArticleRecordInformation(), folder.LocalId);
+                continue;
+            }
+
+            this.articleDb.MoveArticleToFolder(update.Id, folder.LocalId);
+            this.articleDb.UpdateArticle(update.ToArticleRecordInformation());   
         }
     }
 }

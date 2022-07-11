@@ -29,6 +29,17 @@ internal static class MockBookmarkExtensions
 
         return allArticles;
     }
+
+    internal static IDictionary<long, HaveStatus> ToDictionary(this IEnumerable<HaveStatus> instance)
+    {
+        var result = new Dictionary<long, HaveStatus>();
+        foreach(var status in instance)
+        {
+            result.Add(status.Id, status);
+        }
+
+        return result;
+    }
 }
 
 internal class MockBookmark : IInstapaperBookmark
@@ -67,6 +78,21 @@ public class MockBookmarksService : IBookmarksClient
     private long GetNextServiceId()
     {
         return Interlocked.Increment(ref this.nextServiceId);
+    }
+
+    private long ServiceFolderIdToLocalFolderId(string folderId)
+    {
+        switch (folderId)
+        {
+            case WellKnownFolderIds.Unread:
+                return WellKnownLocalFolderIds.Unread;
+
+            case WellKnownFolderIds.Archived:
+                return WellKnownLocalFolderIds.Archive;
+
+            default:
+                return Int64.Parse(folderId);
+        }
     }
 
     public Task<IInstapaperBookmark> AddAsync(Uri bookmarkUrl, AddBookmarkOptions? options)
@@ -146,12 +172,90 @@ public class MockBookmarksService : IBookmarksClient
 
     public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
-        throw new NotImplementedException();
+        var localFolderId = ServiceFolderIdToLocalFolderId(folderId);
+        var articles = this.ArticleDB.ListArticlesForLocalFolder(localFolderId);
+        IList<IInstapaperBookmark> result = new List<IInstapaperBookmark>();
+        IList<long> deletes = new List<long>();
+
+        if(haveInformation is null)
+        {
+            // If there was no have information, we should just return the
+            // contents of the folder
+            return Task.FromResult<(IList<IInstapaperBookmark>, IList<long>)>(
+                (new List<IInstapaperBookmark>(articles.Select((a) => a.ToInstapaperBookmark())), deletes)
+            );
+        }
+
+        var havesMap = haveInformation.ToDictionary();
+
+        // Check for any that we're aware of
+        foreach(var article in articles)
+        {
+            // If the article from the DB didn't have, uhh, have information
+            // in the request then it must be new to the client, so included
+            // it in the response. No more processing needed.
+            if(!havesMap.ContainsKey(article.Id))
+            {
+                result.Add(article.ToInstapaperBookmark());
+                continue;
+            }
+
+            var have = havesMap[article.Id];
+
+            // We've processed this have now, so remove it. Any left over will
+            // be deletes
+            havesMap.Remove(article.Id);
+
+            if(String.IsNullOrWhiteSpace(have.Hash))
+            {
+                // If we don't have a hash, but did have the ID in the have, we
+                // can only do included/excluded decisions. Since it *was* known
+                // to the client, we don't include it
+                continue;
+            }
+
+            // Same hash implies no change
+            if(article.Hash == have.Hash)
+            {
+                continue;
+            }
+
+            // Hash is different so we need to include the article. But we also
+            // need to update the hash if we're updating our own information
+            var updatedArticle = article;
+            if(article.ReadProgressTimestamp > have.ProgressLastChanged)
+            {
+                updatedArticle = updatedArticle with
+                {
+                    ReadProgressTimestamp = have.ProgressLastChanged!.Value,
+                    ReadProgress = have.ReadProgress!.Value,
+                    Hash = have.ProgressLastChanged!.Value.ToString()
+                };
+            }
+
+            // Update the database with the information
+            updatedArticle = this.ArticleDB.UpdateArticle(new ArticleRecordInformation(
+                id: updatedArticle.Id,
+                title: updatedArticle.Title,
+                url: updatedArticle.Url,
+                description: updatedArticle.Description,
+                readProgress: updatedArticle.ReadProgress,
+                readProgressTimestamp: updatedArticle.ReadProgressTimestamp,
+                hash: updatedArticle.Hash,
+                liked: updatedArticle.Liked
+            ));
+
+            result.Add(updatedArticle.ToInstapaperBookmark());
+        }
+
+        deletes = new List<long>(havesMap.Select((kvp) => kvp.Key));
+
+        return Task.FromResult((result, deletes));
     }
 
     public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
-        throw new NotImplementedException();
+        return this.ListAsync(folderId.ToString(), haveInformation, resultLimit);
     }
 
     public Task<IInstapaperBookmark> MoveAsync(long bookmark_id, long folder_id)
