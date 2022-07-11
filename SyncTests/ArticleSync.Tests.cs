@@ -353,6 +353,117 @@ public class ArticleSyncTests : BaseSyncTest
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
+    
+    [Fact]
+    public async Task PendingArticleMoveFromUnreadSyncingAlsoAppliesServiceArticlePropertyChanges()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
+        var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+
+        // Move article to a custom folder
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.MoveArticleToFolder(firstUnreadArticle.Id, firstFolder.LocalId);
+        }
+
+        // Make additional changes to that article on the service
+        var updatedArticle = this.service.MockBookmarksService.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        {
+            ReadProgress = 0.5F,
+            ReadProgressTimestamp = DateTime.Now,
+            Liked = true,
+            Hash = "NEWHASH",
+        }));
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check it's in the new folder
+        var articlesInFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
+        Assert.Contains(updatedArticle, articlesInFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+
+        // Get the article locally again
+        firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+
+        // Check that all the status changes have now being synced
+        Assert.Equal(updatedArticle, firstUnreadArticle);
+    }
+    
+    [Fact]
+    public async Task PendingArticleMoveToUnreadSyncingAlsoAppliesServiceArticlePropertyChanges()
+    {
+        var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId).First()!;
+
+        // Move article to unread folder
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.MoveArticleToFolder(firstUnreadArticle.Id, WellKnownLocalFolderIds.Unread);
+        }
+
+        // Make additional changes to that article on the service
+        var updatedArticle = this.service.MockBookmarksService.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        {
+            ReadProgress = 0.5F,
+            ReadProgressTimestamp = DateTime.Now,
+            Liked = true,
+            Hash = "NEWHASH",
+        }));
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check it's in the new folder
+        var articlesInFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        Assert.Contains(updatedArticle, articlesInFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+
+        // Get the article locally again
+        firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+
+        // Check that all the status changes have now being synced
+        Assert.Equal(updatedArticle, firstUnreadArticle);
+    }
+
+    [Fact]
+    public async Task PendingArticleMoveToArchiveSyncingAlsoAppliesServiceArticlePropertyChanges()
+    {
+        var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId).First()!;
+
+        // Move article to unread folder
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.MoveArticleToFolder(firstUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
+        }
+
+        // Make additional changes to that article on the service
+        var updatedArticle = this.service.MockBookmarksService.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        {
+            ReadProgress = 0.5F,
+            ReadProgressTimestamp = DateTime.Now,
+            Liked = true,
+            Hash = "NEWHASH",
+        }));
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check it's in the new folder
+        var articlesInFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
+        Assert.Contains(updatedArticle, articlesInFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+
+        // Get the article locally again
+        firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+
+        // Check that all the status changes have now being synced
+        Assert.Equal(updatedArticle, firstUnreadArticle);
+    }
     #endregion
 
     #region Liking
@@ -491,6 +602,47 @@ public class ArticleSyncTests : BaseSyncTest
         Assert.Null(serviceArticle);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task PendingArticleLikeSyncPicksUpOtherPropertyChangesFromService()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+
+        // Like the article
+        using (var ledger = this.GetLedger())
+        {
+            this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id);
+        }
+
+        // Make additional changes to that article on the service
+        var updatedArticle = this.service.MockBookmarksService.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        {
+            ReadProgress = 0.5F,
+            ReadProgressTimestamp = DateTime.Now,
+            Hash = "NEWHASH",
+        }));
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is liked
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.True(serviceArticle.Liked);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+
+        firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+        
+        // Update the reference article to be liked. We don't want to get it
+        // from the service again incase state got stomped, and this preserves
+        // the actual expectation
+        updatedArticle = updatedArticle with
+        {
+            Liked = true
+        };
+        
+        Assert.Equal(updatedArticle, firstUnreadArticle);
     }
     #endregion
 

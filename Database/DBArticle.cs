@@ -105,4 +105,24 @@ public sealed record DatabaseArticle
 
         return article;
     }
+
+    /// <summary>
+    /// Converts an existing <see cref="DatabaseArticle">DatabaseArticle</see>
+    /// to an article record information for updating
+    /// </summary>
+    /// <param name="article">Instance to convert</param>
+    /// <returns>Converted instance</returns>
+    public static ArticleRecordInformation ToArticleRecordInformation(DatabaseArticle article)
+    {
+        return new ArticleRecordInformation(
+            id: article.Id,
+            title: article.Title,
+            url: article.Url,
+            description: article.Description,
+            readProgress: article.ReadProgress,
+            readProgressTimestamp: article.ReadProgressTimestamp,
+            hash: article.Hash,
+            liked: article.Liked
+        );
+    }
 }
