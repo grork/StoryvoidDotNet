@@ -91,7 +91,14 @@ public class MockBookmarksService : IBookmarksClient
                 return WellKnownLocalFolderIds.Archive;
 
             default:
-                return Int64.Parse(folderId);
+                var serviceId = Int64.Parse(folderId);
+                var folder = this.folderDb.GetFolderByServiceId(serviceId);
+                if(folder is null)
+                {
+                    throw new EntityNotFoundException();
+                }
+                
+                return folder.LocalId;
         }
     }
 
