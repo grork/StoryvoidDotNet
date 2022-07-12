@@ -991,4 +991,140 @@ public class ArticleSyncTests : BaseSyncTest
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
     #endregion
+
+    #region List API-based property updates
+    [Fact]
+    public async Task LocalProgressChangeInUnreadNewerThanServiceIsAppliedToService()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
+        var newProgress = firstUnreadArticle.ReadProgress + 0.5F;
+        var newProgressTimestamp = DateTime.Now;
+        firstUnreadArticle = this.databases.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        {
+            ReadProgress = newProgress,
+            ReadProgressTimestamp = newProgressTimestamp,
+            Hash = "NEWHASH"
+        }));
+
+        await this.syncEngine.SyncBookmarks();
+
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.Equal(newProgress, firstUnreadArticle.ReadProgress);
+        Assert.Equal(newProgressTimestamp, firstUnreadArticle.ReadProgressTimestamp);
+        Assert.Equal(firstUnreadArticle, serviceArticle);
+    }
+
+    [Fact]
+    public async Task LocalProgressChangeInUnreadOlderThanServiceIsAppliedLocally()
+    {
+        var firstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
+        var newProgress = firstUnreadArticle.ReadProgress + 0.5F;
+        var newProgressTimestamp = DateTime.Now.Subtract(TimeSpan.FromDays(10));
+        firstUnreadArticle = this.databases.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        {
+            ReadProgress = newProgress,
+            ReadProgressTimestamp = newProgressTimestamp,
+            Hash = "NEWHASH"
+        }));
+
+        await this.syncEngine.SyncBookmarks();
+
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.NotEqual(newProgress, firstUnreadArticle.ReadProgress);
+        Assert.NotEqual(newProgressTimestamp, firstUnreadArticle.ReadProgressTimestamp);
+        Assert.Equal(firstUnreadArticle, serviceArticle);
+    }
+
+    [Fact]
+    public async Task LocalProgressChangeInArchiveNewerThanServiceIsAppliedToService()
+    {
+        var firstArchiveArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First()!;
+        var newProgress = firstArchiveArticle.ReadProgress + 0.5F;
+        var newProgressTimestamp = DateTime.Now;
+        firstArchiveArticle = this.databases.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstArchiveArticle with
+        {
+            ReadProgress = newProgress,
+            ReadProgressTimestamp = newProgressTimestamp,
+            Hash = "NEWHASH"
+        }));
+
+        await this.syncEngine.SyncBookmarks();
+
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        Assert.Equal(newProgress, firstArchiveArticle.ReadProgress);
+        Assert.Equal(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
+        Assert.Equal(firstArchiveArticle, serviceArticle);
+    }
+
+    [Fact]
+    public async Task LocalProgressChangeInArchiveOlderThanServiceIsAppliedLocally()
+    {
+        var firstArchiveArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First()!;
+        var newProgress = firstArchiveArticle.ReadProgress + 0.5F;
+        var newProgressTimestamp = DateTime.Now.Subtract(TimeSpan.FromDays(10));
+        firstArchiveArticle = this.databases.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstArchiveArticle with
+        {
+            ReadProgress = newProgress,
+            ReadProgressTimestamp = newProgressTimestamp,
+            Hash = "NEWHASH"
+        }));
+
+        await this.syncEngine.SyncBookmarks();
+
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        Assert.NotEqual(newProgress, firstArchiveArticle.ReadProgress);
+        Assert.NotEqual(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
+        Assert.Equal(firstArchiveArticle, serviceArticle);
+    }
+
+    [Fact]
+    public async Task LocalProgressChangeInUserFolderNewerThanServiceIsAppliedToService()
+    {
+        var firstFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
+        var firstArchiveArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId).First()!;
+        var newProgress = firstArchiveArticle.ReadProgress + 0.5F;
+        var newProgressTimestamp = DateTime.Now;
+        firstArchiveArticle = this.databases.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstArchiveArticle with
+        {
+            ReadProgress = newProgress,
+            ReadProgressTimestamp = newProgressTimestamp,
+            Hash = "NEWHASH"
+        }));
+
+        await this.syncEngine.SyncBookmarks();
+
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        Assert.Equal(newProgress, firstArchiveArticle.ReadProgress);
+        Assert.Equal(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
+        Assert.Equal(firstArchiveArticle, serviceArticle);
+    }
+
+    [Fact]
+    public async Task LocalProgressChangeInUserFolderOlderThanServiceIsAppliedLocally()
+    {
+        var firstFolder = this.databases.FolderDB.ListAllCompleteUserFolders().First()!;
+        var firstArchiveArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId).First()!;
+        var newProgress = firstArchiveArticle.ReadProgress + 0.5F;
+        var newProgressTimestamp = DateTime.Now.Subtract(TimeSpan.FromDays(10));
+        firstArchiveArticle = this.databases.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstArchiveArticle with
+        {
+            ReadProgress = newProgress,
+            ReadProgressTimestamp = newProgressTimestamp,
+            Hash = "NEWHASH"
+        }));
+
+        await this.syncEngine.SyncBookmarks();
+
+        var serviceArticle = this.service.MockBookmarksService.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        Assert.NotEqual(newProgress, firstArchiveArticle.ReadProgress);
+        Assert.NotEqual(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
+        Assert.Equal(firstArchiveArticle, serviceArticle);
+    }
+    #endregion
 }

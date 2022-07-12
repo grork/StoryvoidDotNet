@@ -180,7 +180,7 @@ public class MockBookmarksService : IBookmarksClient
     public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
         var localFolderId = ServiceFolderIdToLocalFolderId(folderId);
-        var articles = this.ArticleDB.ListArticlesForLocalFolder(localFolderId);
+        var serviceArticles = this.ArticleDB.ListArticlesForLocalFolder(localFolderId);
         IList<IInstapaperBookmark> result = new List<IInstapaperBookmark>();
         IList<long> deletes = new List<long>();
 
@@ -189,29 +189,29 @@ public class MockBookmarksService : IBookmarksClient
             // If there was no have information, we should just return the
             // contents of the folder
             return Task.FromResult<(IList<IInstapaperBookmark>, IList<long>)>(
-                (new List<IInstapaperBookmark>(articles.Select((a) => a.ToInstapaperBookmark())), deletes)
+                (new List<IInstapaperBookmark>(serviceArticles.Select((a) => a.ToInstapaperBookmark())), deletes)
             );
         }
 
         var havesMap = haveInformation.ToDictionary();
 
         // Check for any that we're aware of
-        foreach(var article in articles)
+        foreach(var serviceArticle in serviceArticles)
         {
             // If the article from the DB didn't have, uhh, have information
             // in the request then it must be new to the client, so included
             // it in the response. No more processing needed.
-            if(!havesMap.ContainsKey(article.Id))
+            if(!havesMap.ContainsKey(serviceArticle.Id))
             {
-                result.Add(article.ToInstapaperBookmark());
+                result.Add(serviceArticle.ToInstapaperBookmark());
                 continue;
             }
 
-            var have = havesMap[article.Id];
+            var have = havesMap[serviceArticle.Id];
 
             // We've processed this have now, so remove it. Any left over will
             // be deletes
-            havesMap.Remove(article.Id);
+            havesMap.Remove(serviceArticle.Id);
 
             if(String.IsNullOrWhiteSpace(have.Hash))
             {
@@ -222,15 +222,15 @@ public class MockBookmarksService : IBookmarksClient
             }
 
             // Same hash implies no change
-            if(article.Hash == have.Hash)
+            if(serviceArticle.Hash == have.Hash)
             {
                 continue;
             }
 
             // Hash is different so we need to include the article. But we also
             // need to update the hash if we're updating our own information
-            var updatedArticle = article;
-            if(article.ReadProgressTimestamp > have.ProgressLastChanged)
+            var updatedArticle = serviceArticle;
+            if(serviceArticle.ReadProgressTimestamp < have.ProgressLastChanged)
             {
                 updatedArticle = updatedArticle with
                 {
@@ -238,19 +238,19 @@ public class MockBookmarksService : IBookmarksClient
                     ReadProgress = have.ReadProgress!.Value,
                     Hash = have.ProgressLastChanged!.Value.ToString()
                 };
-            }
 
-            // Update the database with the information
-            updatedArticle = this.ArticleDB.UpdateArticle(new ArticleRecordInformation(
-                id: updatedArticle.Id,
-                title: updatedArticle.Title,
-                url: updatedArticle.Url,
-                description: updatedArticle.Description,
-                readProgress: updatedArticle.ReadProgress,
-                readProgressTimestamp: updatedArticle.ReadProgressTimestamp,
-                hash: updatedArticle.Hash,
-                liked: updatedArticle.Liked
-            ));
+                // Update the database with the information
+                updatedArticle = this.ArticleDB.UpdateArticle(new ArticleRecordInformation(
+                    id: updatedArticle.Id,
+                    title: updatedArticle.Title,
+                    url: updatedArticle.Url,
+                    description: updatedArticle.Description,
+                    readProgress: updatedArticle.ReadProgress,
+                    readProgressTimestamp: updatedArticle.ReadProgressTimestamp,
+                    hash: updatedArticle.Hash,
+                    liked: updatedArticle.Liked
+                ));
+            }
 
             result.Add(updatedArticle.ToInstapaperBookmark());
         }
