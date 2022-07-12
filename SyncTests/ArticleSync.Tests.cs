@@ -799,5 +799,196 @@ public class ArticleSyncTests : BaseSyncTest
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
+
+    [Fact]
+    public async Task ServiceArticleMovedFromUnreadToUserFolderIsMovedLocally()
+    {
+        var serviceFirstUserFolder = this.service.MockFolderService.FolderDB.ListAllCompleteUserFolders().First()!;
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
+        var serviceUnreadArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
+        this.service.MockBookmarksService.ArticleDB.MoveArticleToFolder(serviceUnreadArticle.Id, serviceFirstUserFolder.LocalId);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is available
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUnreadArticle.Id);
+        Assert.NotNull(localArticle);
+        Assert.Equal(serviceUnreadArticle, localArticle);
+
+        // Check that service & local agree on custom folder contents
+        var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Contains(localArticle, localFolder);
+        
+        var serviceFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Equal(serviceFolder, localFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task ServiceArticleMovedFromUnreadToArchiveIsMovedLocally()
+    {
+        var serviceUnreadArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First()!;
+        this.service.MockBookmarksService.ArticleDB.MoveArticleToFolder(serviceUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is available
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUnreadArticle.Id);
+        Assert.NotNull(localArticle);
+        Assert.Equal(serviceUnreadArticle, localArticle);
+
+        // Check that service & local agree on Archive contents
+        var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
+        Assert.Contains(localArticle, localFolder);
+        
+        var serviceFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
+        Assert.Equal(serviceFolder, localFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task ServiceArticleMovedFromUserFolderToUnreadIsMovedLocally()
+    {
+        // Select a folder to move from
+        var serviceFirstUserFolder = this.service.MockFolderService.FolderDB.ListAllCompleteUserFolders().First()!;
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
+
+        // Move the first article in that folder to unread
+        var serviceUserArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).First()!;
+        this.service.MockBookmarksService.ArticleDB.MoveArticleToFolder(serviceUserArticle.Id, WellKnownLocalFolderIds.Unread);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is available
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUserArticle.Id);
+        Assert.NotNull(localArticle);
+        Assert.Equal(serviceUserArticle, localArticle);
+
+        // Check that service & local agree on unread contents
+        var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Contains(localArticle, localFolder);
+        
+        var serviceFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Equal(serviceFolder, localFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task ServiceArticleMovedFromUserFolderToArchiveIsMovedLocally()
+    {
+        // Select a folder to move from
+        var serviceFirstUserFolder = this.service.MockFolderService.FolderDB.ListAllCompleteUserFolders().First()!;
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
+
+        // Move the first article in that folder to archive
+        var serviceUserArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).First()!;
+        this.service.MockBookmarksService.ArticleDB.MoveArticleToFolder(serviceUserArticle.Id, WellKnownLocalFolderIds.Archive);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is available
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUserArticle.Id);
+        Assert.NotNull(localArticle);
+        Assert.Equal(serviceUserArticle, localArticle);
+
+        // Check that service & local agree on unread contents
+        var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
+        Assert.Contains(localArticle, localFolder);
+        
+        var serviceFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
+        Assert.Equal(serviceFolder, localFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task ServiceArticleMovedFromUserFolderToUserFolderIsMovedLocally()
+    {
+        // Select a folder to move from
+        var serviceFirstUserFolder = this.service.MockFolderService.FolderDB.ListAllCompleteUserFolders().First()!;
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
+
+        // Select a folder to move to
+        var serviceSecondUserFolder = this.service.MockFolderService.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId != serviceFirstUserFolder.ServiceId);
+        var localSecondUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceSecondUserFolder.ServiceId!.Value)!;
+
+        // Move the first article in that folder to the second folder
+        var serviceUserArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).First()!;
+        this.service.MockBookmarksService.ArticleDB.MoveArticleToFolder(serviceUserArticle.Id, serviceSecondUserFolder.LocalId);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is available
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUserArticle.Id);
+        Assert.NotNull(localArticle);
+        Assert.Equal(serviceUserArticle, localArticle);
+
+        // Check that service & local agree on second folder contents contents
+        var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localSecondUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Contains(localArticle, localFolder);
+        
+        var serviceFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(serviceSecondUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Equal(serviceFolder, localFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task ServiceArticleMovedFromArchiveToUserFolderIsMovedLocally()
+    {
+        var serviceFirstUserFolder = this.service.MockFolderService.FolderDB.ListAllCompleteUserFolders().First()!;
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
+        var serviceArchiveArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First()!;
+        this.service.MockBookmarksService.ArticleDB.MoveArticleToFolder(serviceArchiveArticle.Id, serviceFirstUserFolder.LocalId);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is available
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceArchiveArticle.Id);
+        Assert.NotNull(localArticle);
+        Assert.Equal(serviceArchiveArticle, localArticle);
+
+        // Check that service & local agree on custom folder contents
+        var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Contains(localArticle, localFolder);
+        
+        var serviceFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Equal(serviceFolder, localFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
+
+    [Fact]
+    public async Task ServiceArticleMovedFromArchiveToUnreadIsMovedLocally()
+    {
+        var serviceArchiveArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First()!;
+        this.service.MockBookmarksService.ArticleDB.MoveArticleToFolder(serviceArchiveArticle.Id, WellKnownLocalFolderIds.Unread);
+
+        // Sync
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the article is available
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceArchiveArticle.Id);
+        Assert.NotNull(localArticle);
+        Assert.Equal(serviceArchiveArticle, localArticle);
+
+        // Check that service & local agree on Archive contents
+        var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Contains(localArticle, localFolder);
+        
+        var serviceFolder = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Equal(serviceFolder, localFolder);
+
+        this.databases.ArticleChangesDB.AssertNoPendingEdits();
+    }
     #endregion
 }
