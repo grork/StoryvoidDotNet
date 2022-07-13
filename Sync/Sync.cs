@@ -410,8 +410,21 @@ public class Sync
 
     private async Task SyncBookmarksForFolder(IEnumerable<DatabaseArticle> articlesInFolder, string folderServiceId, long localFolderId)
     {
-        var (updates, deletes) = await this.bookmarksClient.ListAsync(folderServiceId, articlesInFolder.HavesForArticles());
-        
+        IList<IInstapaperBookmark> updates = new List<IInstapaperBookmark>();
+        IList<long> deletes = new List<long>();
+
+        try
+        {
+            (updates, deletes) = await this.bookmarksClient.ListAsync(folderServiceId, articlesInFolder.HavesForArticles());
+        }
+        catch(EntityNotFoundException)
+        {
+            // The folder we were trying to sync has gone AWOL. It's deletion
+            // will be processed by other parts of sync, so for now, just ignore
+            // this specific folder
+            return;
+        }
+
         foreach(var delete in deletes)
         {
             // We don't delete the artical yet, because it might be *moved* to

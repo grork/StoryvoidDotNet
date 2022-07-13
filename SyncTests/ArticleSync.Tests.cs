@@ -1158,5 +1158,42 @@ public class ArticleSyncTests : BaseSyncTest
         var likedArticles = this.databases.ArticleDB.ListLikedArticles();
         Assert.DoesNotContain(localArticle, likedArticles);
     }
+
+    [Fact]
+    public async Task SyncingWithAServiceDeletedFolderCompletes()
+    {
+        // Get the service folder to delete, and all it's articles.
+        var serviceUserFolder = this.service.MockFolderService.FolderDB.ListAllCompleteUserFolders().First()!;
+        foreach(var serviceArticle in this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(serviceUserFolder.LocalId))
+        {
+            this.service.MockBookmarksService.ArticleDB.DeleteArticle(serviceArticle.Id);
+        }
+
+        var localFolderThatWasDeletedContents =
+            this.databases.ArticleDB.ListArticlesForLocalFolder(
+                this.databases.FolderDB.GetFolderByServiceId(serviceUserFolder.ServiceId!.Value)!.LocalId
+            );
+
+        this.service.MockFolderService.FolderDB.DeleteFolder(serviceUserFolder.LocalId);
+
+        // Make some changes in another folder to make sure the changes sync
+        var localUserFolderThatIsntTheDeletedOne = this.databases.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId!.Value != serviceUserFolder.ServiceId!.Value);
+        var localFirstArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(localUserFolderThatIsntTheDeletedOne.LocalId).First()!;
+        localFirstArticle = this.databases.ArticleDB.UpdateReadProgressForArticle(localFirstArticle.ReadProgress + 0.5F, DateTime.Now, localFirstArticle.Id);
+
+        await this.syncEngine.SyncBookmarks();
+
+        // Check the deleted folder wasn't deleted locally, and that it's contents match
+        var localFolderThatWasDeletedPostSync = this.databases.FolderDB.GetFolderByServiceId(serviceUserFolder.ServiceId!.Value)!;
+        Assert.NotNull(localFolderThatWasDeletedPostSync);
+
+        var localFolderThatWasDeletedContentsPostSync = this.databases.ArticleDB.ListArticlesForLocalFolder(localFolderThatWasDeletedPostSync.LocalId);
+        Assert.Equal(localFolderThatWasDeletedContents, localFolderThatWasDeletedContentsPostSync);
+
+        // Check the article that we changed the progress of was updated
+        var localFirstArticlePostSync = this.databases.ArticleDB.GetArticleById(localFirstArticle.Id)!;
+        Assert.Equal(localFirstArticle.ReadProgress, localFirstArticlePostSync.ReadProgress);
+        Assert.Equal(localFirstArticle.ReadProgressTimestamp, localFirstArticlePostSync.ReadProgressTimestamp);
+    }
     #endregion
 }
