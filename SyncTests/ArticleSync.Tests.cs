@@ -156,7 +156,7 @@ public class ArticleSyncTests : BaseSyncTest
         this.service.FoldersClient.FolderDB.DeleteFolder(remoteFirstFolder.LocalId);
 
         // Sync
-        await this.syncEngine.SyncBookmarkMoves();
+        await this.syncEngine.SyncPendingBookmarkMoves();
 
         // Check it's gone
         var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
@@ -205,7 +205,7 @@ public class ArticleSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.DeleteArticle(firstArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncBookmarkMoves();
+        await this.syncEngine.SyncPendingBookmarkMoves();
 
         // Check the article is not in a folder, for later clean up
         var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
@@ -627,7 +627,7 @@ public class ArticleSyncTests : BaseSyncTest
         }));
 
         // Sync
-        await this.syncEngine.SyncBookmarkLikeStatusChanges();
+        await this.syncEngine.SyncBookmarkLikeStatuses();
 
         // Check the article is liked
         var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;

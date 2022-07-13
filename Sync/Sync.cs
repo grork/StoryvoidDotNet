@@ -3,8 +3,19 @@ using System.Diagnostics;
 
 namespace Codevoid.Storyvoid;
 
+/// <summary>
+/// Extensions to simplify working with the folders database in sync scenarios.
+/// 
+/// Most of these are contained here because sync is the interface between the
+/// two worlds of the service, and the database.
+/// </summary>
 internal static class FolderDatabaseExtensions
 {
+    /// <summary>
+    /// Locaate all the folders in the database that were created by a user (e.g
+    /// not unread or archive)
+    /// </summary>
+    /// <returns>All the folders that are not the unread or archive folder</returns>
     internal static IList<DatabaseFolder> ListAllUserFolders(this IFolderDatabase instance)
     {
         return new List<DatabaseFolder>(from f in instance.ListAllFolders()
@@ -12,6 +23,12 @@ internal static class FolderDatabaseExtensions
                                         select f);
     }
 
+    /// <summary>
+    /// Creates a folder in the database with the server information. These are
+    /// fully known folders, so have all information available.
+    /// </summary>
+    /// <param name="toAdd">Folder to add</param>
+    /// <returns>Created <see cref="DatabaseFolder">folder</see></returns>
     internal static DatabaseFolder AddKnownFolder(this IFolderDatabase instance, IInstapaperFolder toAdd)
     {
         return instance.AddKnownFolder(
@@ -21,6 +38,14 @@ internal static class FolderDatabaseExtensions
             shouldSync: toAdd.SyncToMobile);
     }
 
+    /// <summary>
+    /// Get a service-facing folder ID (E.g. a string) from the database folder.
+    /// 
+    /// The service doesn't use numeric IDs for all folders -- unread, archive,
+    /// and liked use alphanumeric IDs (aka "unread"), so we need to handle
+    /// those cases differently, rather than a blind "ToString" on the ServiceId
+    /// </summary>
+    /// <returns>A service-compatible ID for the folder requested</returns>
     internal static string GetServiceCompatibleFolderId(this DatabaseFolder instance)
     {
         switch (instance.ServiceId)
@@ -37,8 +62,19 @@ internal static class FolderDatabaseExtensions
     }
 }
 
+/// <summary>
+/// Extensions to simplify working with the articles database in sync scenarios.
+/// 
+/// Most of these are contained here because sync is the interface between the
+/// two worlds of the service, and the database.
+/// </summary>
 internal static class ArticleDatabaseExtensions
 {
+    /// <summary>
+    /// Converts a <see cref="IInstapaperBookmark">IInstapaperBookmark</see> to
+    /// the data required for insertion into the database.
+    /// </summary>
+    /// <returns>Article information representation of the bookmark</returns>
     internal static ArticleRecordInformation ToArticleRecordInformation(this IInstapaperBookmark instance)
     {
         return new ArticleRecordInformation(
@@ -53,6 +89,13 @@ internal static class ArticleDatabaseExtensions
         );
     }
 
+    /// <summary>
+    /// Conviencence method to convert a collection of <see cref="DatabaseArticle">
+    /// DatabaseArticle</see> into <see cref="HaveStatus">HaveStatus</see> used
+    /// when listing folder contents.
+    /// </summary>
+    /// <param name="instance"></param>
+    /// <returns>Collection of HaveStatus for the articles supplied</returns>
     internal static IEnumerable<HaveStatus> HavesForArticles(this IEnumerable<DatabaseArticle> instance)
     {
         // Generate the have information based on the supplied articles
@@ -61,6 +104,12 @@ internal static class ArticleDatabaseExtensions
     }
 }
 
+/// <summary>
+/// Synchronizes the data in the supplied databases to the supplied Instapaper
+/// service instances. This will extra pending changes, applying them to the
+/// service, as well as enumerating service changes that need to be applied
+/// locally.
+/// </summary>
 public class Sync
 {
     private IFolderDatabase folderDb;
@@ -87,6 +136,10 @@ public class Sync
         this.bookmarksClient = bookmarksClient;
     }
 
+    /// <summary>
+    /// Synchronises the folder information with the service. Pending adds &
+    /// deletes are applied first before a 'mop up' of all folder information
+    /// </summary>
     public async Task SyncFolders()
     {
         await this.SyncPendingFolderAdds();
@@ -136,11 +189,21 @@ public class Sync
         var pendingAdds = this.folderChangesDb.ListPendingFolderAdds();
         foreach(var add in pendingAdds)
         {
-            await this.SyncSingleFolderAdd(add);
+            await this.SyncSinglePendingFolderAdd(add);
         }
     }
 
-    private async Task<DatabaseFolder?> SyncSingleFolderAdd(PendingFolderAdd add)
+    /// <summary>
+    /// Syncs a single pending folder add to the service, and ensures the local
+    /// database is updated with the now-available service information for that
+    /// folder.
+    /// 
+    /// If a folder with the same title already exists on the service, the
+    /// information for that folder will be applied locally.
+    /// </summary>
+    /// <param name="add">Information for the folder to add</param>
+    /// <returns>Database folder if it was able to successfully sync</returns>
+    private async Task<DatabaseFolder?> SyncSinglePendingFolderAdd(PendingFolderAdd add)
     {
         IInstapaperFolder? newServiceData = null;
         try
@@ -199,18 +262,24 @@ public class Sync
         }
     }
 
+    /// <summary>
+    /// Syncs all information related to bookmarks to the service - pending add,
+    /// delete, moves, and like status changes - as well as pulling service
+    /// updates locally.
+    /// 
+    /// It is expected - but not required - that <see cref="SyncFolders">
+    /// SyncFolders</see> will be executed before this.
+    /// </summary>
     public async Task SyncBookmarks()
     {
-        await this.SyncBookmarkAdds();
-        await this.SyncBookmarkDeletes();
-        await this.SyncBookmarkMoves();
-
-        await this.SyncBookmarksByFolder();
-
-        await this.SyncBookmarkLikeStatusChanges();
+        await this.SyncPendingBookmarkAdds();
+        await this.SyncPendingBookmarkDeletes();
+        await this.SyncPendingBookmarkMoves();
+        await this.SyncBookmarkStateByFolder();
+        await this.SyncBookmarkLikeStatuses();
     }
 
-    private async Task SyncBookmarkAdds()
+    private async Task SyncPendingBookmarkAdds()
     {
         var adds = this.articleChangesDb.ListPendingArticleAdds();
         foreach(var add in adds)
@@ -220,7 +289,7 @@ public class Sync
         }
     }
 
-    private async Task SyncBookmarkDeletes()
+    private async Task SyncPendingBookmarkDeletes()
     {
         var deletes = this.articleChangesDb.ListPendingArticleDeletes();
         foreach(var delete in deletes)
@@ -230,13 +299,24 @@ public class Sync
         }
     }
 
-    internal async Task SyncBookmarkMoves()
+    /// <summary>
+    /// Applies all pending bookmark moves between folders we have locally to
+    /// the service. If there is a move to a folder that has not been synced to
+    /// the server (E.g. local folder add), that will be explicitly sync'd first.
+    ///
+    /// This does *not* discover/sync moves that have happened on the service,
+    /// which happens in <see
+    /// cref="SyncBookmarkStateByFolder>SyncBookmarkStateByFolder</see>.
+    /// </summary>
+    internal async Task SyncPendingBookmarkMoves()
     {
         var moves = this.articleChangesDb.ListPendingArticleMoves();
         foreach(var move in moves)
         {
             var destinationFolder = this.folderDb.GetFolderByLocalId(move.DestinationFolderLocalId);
             
+            // Get our folder ducks in a row -- which may require us to sync a
+            // pending folder add 'manually'.
             if(destinationFolder is null)
             {
                 // If we don't find the target folder (Shouldn't be possible due
@@ -261,7 +341,7 @@ public class Sync
                     continue;
                 }
 
-                var demandSyncedFolder = await this.SyncSingleFolderAdd(pendingFolderAdd);
+                var demandSyncedFolder = await this.SyncSinglePendingFolderAdd(pendingFolderAdd);
                 if(demandSyncedFolder is null)
                 {
                     // Something went weirdly wrong, and we couldn't add the
@@ -272,6 +352,10 @@ public class Sync
                 destinationFolder = demandSyncedFolder;
             }
 
+            // Perform the 'move' in the right way for the destination folders.
+            // For 'unread', and 'archive', you can't 'move' an article into
+            // that folder with a Move request -- it has to be 'added' (unread)
+            // or 'archived' (archive) requests.
             IInstapaperBookmark? updatedBookmark = null;
             try
             {
@@ -281,7 +365,7 @@ public class Sync
                         var existingArticle = this.articleDb.GetArticleById(move.ArticleId);
                         
                         // It shouldn't be possible for the article to be
-                        // missing *locall*, due to the foreign-key relationship
+                        // missing *locally*, due to the foreign-key relationship
                         Debug.Assert(existingArticle is not null, "Article to move to unread was missing in the local database");
                         if (existingArticle is not null)
                         {
@@ -313,10 +397,11 @@ public class Sync
             // changes
             this.articleChangesDb.DeletePendingArticleMove(move.ArticleId);
 
-            // If we were successul in getting updated information from the
+            // If we were successful in getting updated information from the
             // service, we need to apply those changes locally.
             if(updatedBookmark is not null)
             {
+                // IDs the same mean we can just update the the local store
                 if (updatedBookmark.Id == move.ArticleId)
                 {
                     this.articleDb.UpdateArticle(updatedBookmark.ToArticleRecordInformation());
@@ -344,10 +429,37 @@ public class Sync
         }
     }
 
-    internal async Task SyncBookmarkLikeStatusChanges()
+    internal async Task SyncBookmarkLikeStatuses()
+    {
+        await SyncPendingBookmarkLikeStatusChanges();
+        await SyncBookmarkLikedArticlesWithService();
+    }
+
+    /// <summary>
+    /// Mops up any like status changes that happened on the service, which are
+    /// blind to us. We need to list all the likes (with a List request), and
+    /// apply locally. This is very similar to syncing the contents of a folder,
+    /// but simplified in the handling of the results.
+    /// </summary>
+    private async Task SyncBookmarkLikedArticlesWithService()
+    {
+        var currentLikes = this.articleDb.ListLikedArticles();
+        var (addedLikes, removedLiked) = await this.bookmarksClient.ListAsync(WellKnownFolderIds.Liked, currentLikes.HavesForArticles());
+        foreach (var unliked in removedLiked)
+        {
+            this.articleDb.UnlikeArticle(unliked);
+        }
+
+        foreach (var liked in addedLikes)
+        {
+            this.articleDb.LikeArticle(liked.Id);
+        }
+    }
+
+    private async Task SyncPendingBookmarkLikeStatusChanges()
     {
         var statusChanges = this.articleChangesDb.ListPendingArticleStateChanges();
-        foreach(var stateChange in statusChanges)
+        foreach (var stateChange in statusChanges)
         {
             IInstapaperBookmark? updatedBookmark = null;
             try
@@ -361,7 +473,7 @@ public class Sync
                     updatedBookmark = await this.bookmarksClient.UnlikeAsync(stateChange.ArticleId);
                 }
             }
-            catch(EntityNotFoundException)
+            catch (EntityNotFoundException)
             {
                 // Bookmark wasn't on the service, so we can't do anything. We
                 // assume that some other part of the sync process will
@@ -370,27 +482,21 @@ public class Sync
 
             this.articleChangesDb.DeletePendingArticleStateChange(stateChange.ArticleId);
 
-            if(updatedBookmark is not null)
+            // If the article was missing remotely, we don't be able to update
+            // it locally. It's assumed that the orphan clean up process will
+            // appropriately clean this up
+            if (updatedBookmark is not null)
             {
                 this.articleDb.UpdateArticle(updatedBookmark.ToArticleRecordInformation());
             }
         }
-
-        // Mop up any other like state changes that we might have missed
-        var currentLikes = this.articleDb.ListLikedArticles();
-        var (addedLikes, removedLiked) = await this.bookmarksClient.ListAsync(WellKnownFolderIds.Liked, currentLikes.HavesForArticles());
-        foreach(var unliked in removedLiked)
-        {
-            this.articleDb.UnlikeArticle(unliked);
-        }
-
-        foreach(var liked in addedLikes)
-        {
-            this.articleDb.LikeArticle(liked.Id);
-        }
     }
 
-    private async Task SyncBookmarksByFolder()
+    /// <summary>
+    /// Folder-by-folder, ask the service to tell us what is different, and
+    /// apply those changes locally.
+    /// </summary>
+    private async Task SyncBookmarkStateByFolder()
     {
         // For ever service-sync'd folder, perform a sync
         var localFolders = this.folderDb.ListAllFolders();
@@ -408,8 +514,16 @@ public class Sync
         }
     }
 
+    /// <summary>
+    /// For the supplied list of articles in a folder, sync with the service
+    /// so it can tell us whats changed about whats in, out, and changed.
+    /// </summary>
+    /// <param name="articlesInFolder">List of articles we think are in the folder</param>
+    /// <param name="folderServiceId">Folder Service ID to sync for (e.g. unread, archive, service ID)</param>
+    /// <param name="localFolderId">Folder ID in the local database for that folder</param>
     private async Task SyncBookmarksForFolder(IEnumerable<DatabaseArticle> articlesInFolder, string folderServiceId, long localFolderId)
     {
+        // Default to something so we don't have to check for nulls
         IList<IInstapaperBookmark> updates = new List<IInstapaperBookmark>();
         IList<long> deletes = new List<long>();
 
@@ -429,11 +543,11 @@ public class Sync
         {
             // We don't delete the artical yet, because it might be *moved* to
             // another location. At some point, 'orphaned' articles will be
-            // deleted
+            // cleaned up; but thats not our concern here.
             this.articleDb.RemoveArticleFromAnyFolder(delete);
         }
 
-        // These are the articles that had changes, so we need to imply them. At
+        // These are the articles that had changes, so we need to apply them. At
         // this point, if it wasn't in 'deletes' and it isn't in 'updates', the
         // articles status is unchanged
         foreach(var update in updates)
@@ -446,7 +560,10 @@ public class Sync
                 continue;
             }
 
+            // Just assume that move is a no-op if it's already in the folder
             this.articleDb.MoveArticleToFolder(update.Id, localFolderId);
+
+            // Update the database information for the article
             this.articleDb.UpdateArticle(update.ToArticleRecordInformation());
         }
     }
