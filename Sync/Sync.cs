@@ -52,6 +52,13 @@ internal static class ArticleDatabaseExtensions
             liked: instance.Liked
         );
     }
+
+    internal static IEnumerable<HaveStatus> HavesForArticles(this IEnumerable<DatabaseArticle> instance)
+    {
+        // Generate the have information based on the supplied articles
+        var haveForArticles = instance.Select((a) => new HaveStatus(a.Id, a.Hash, a.ReadProgress, a.ReadProgressTimestamp));
+        return haveForArticles;
+    }
 }
 
 public class Sync
@@ -368,6 +375,19 @@ public class Sync
                 this.articleDb.UpdateArticle(updatedBookmark.ToArticleRecordInformation());
             }
         }
+
+        // Mop up any other like state changes that we might have missed
+        var currentLikes = this.articleDb.ListLikedArticles();
+        var (addedLikes, removedLiked) = await this.bookmarksClient.ListAsync(WellKnownFolderIds.Liked, currentLikes.HavesForArticles());
+        foreach(var unliked in removedLiked)
+        {
+            this.articleDb.UnlikeArticle(unliked);
+        }
+
+        foreach(var liked in addedLikes)
+        {
+            this.articleDb.LikeArticle(liked.Id);
+        }
     }
 
     private async Task SyncBookmarksByFolder()
@@ -383,25 +403,14 @@ public class Sync
                 continue;
             }
 
-            await this.SyncBookmarksForFolder(folder);
+            var articles = this.articleDb.ListArticlesForLocalFolder(folder.LocalId);
+            await this.SyncBookmarksForFolder(articles, folder.GetServiceCompatibleFolderId(), folder.LocalId);
         }
     }
 
-    private async Task SyncBookmarksForFolder(DatabaseFolder folder)
+    private async Task SyncBookmarksForFolder(IEnumerable<DatabaseArticle> articlesInFolder, string folderServiceId, long localFolderId)
     {
-        Debug.Assert(folder.ServiceId.HasValue, "We can't sync folders that don't have a service ID");
-
-        // Get the articles, and then generate the have information based on our
-        // current known local state 
-        var articlesInFolder = this.articleDb.ListArticlesForLocalFolder(folder.LocalId);
-        var haveForArticles = articlesInFolder.Select((a) => new HaveStatus(a.Id, a.Hash, a.ReadProgress, a.ReadProgressTimestamp));
-        
-        // The service folder IDs are strings, but some are words (e.g. unread)
-        // while user folders are just the numeric ID as a string. We need to
-        // convert before talking to the service.
-        var folderServiceId = folder.GetServiceCompatibleFolderId();
-
-        var (updates, deletes) = await this.bookmarksClient.ListAsync(folderServiceId, haveForArticles);
+        var (updates, deletes) = await this.bookmarksClient.ListAsync(folderServiceId, articlesInFolder.HavesForArticles());
         
         foreach(var delete in deletes)
         {
@@ -420,12 +429,12 @@ public class Sync
             // need to be added (they're net new), or updated + moved
             if(this.articleDb.GetArticleById(update.Id) is null)
             {
-                this.articleDb.AddArticleToFolder(update.ToArticleRecordInformation(), folder.LocalId);
+                this.articleDb.AddArticleToFolder(update.ToArticleRecordInformation(), localFolderId);
                 continue;
             }
 
-            this.articleDb.MoveArticleToFolder(update.Id, folder.LocalId);
-            this.articleDb.UpdateArticle(update.ToArticleRecordInformation());   
+            this.articleDb.MoveArticleToFolder(update.Id, localFolderId);
+            this.articleDb.UpdateArticle(update.ToArticleRecordInformation());
         }
     }
 }

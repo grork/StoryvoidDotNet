@@ -177,10 +177,19 @@ public class MockBookmarksService : IBookmarksClient
         }
     }
 
-    public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
+    public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderServiceId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
-        var localFolderId = ServiceFolderIdToLocalFolderId(folderId);
-        var serviceArticles = this.ArticleDB.ListArticlesForLocalFolder(localFolderId);
+        IList<DatabaseArticle> serviceArticles = new List<DatabaseArticle>();
+        if (folderServiceId == WellKnownFolderIds.Liked)
+        {
+            serviceArticles = this.ArticleDB.ListLikedArticles();
+        }
+        else
+        {
+            var localFolderId = ServiceFolderIdToLocalFolderId(folderServiceId);
+            serviceArticles = this.ArticleDB.ListArticlesForLocalFolder(localFolderId);
+        }
+
         IList<IInstapaperBookmark> result = new List<IInstapaperBookmark>();
         IList<long> deletes = new List<long>();
 

@@ -1126,5 +1126,37 @@ public class ArticleSyncTests : BaseSyncTest
         Assert.NotEqual(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
         Assert.Equal(firstArchiveArticle, serviceArticle);
     }
+
+    [Fact]
+    public async Task LikedServiceArticleIsLikedLocallyAfterSync()
+    {
+        var serviceFirstUnreadArticle = this.service.MockBookmarksService.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+        serviceFirstUnreadArticle = this.service.MockBookmarksService.ArticleDB.LikeArticle(serviceFirstUnreadArticle.Id);
+
+        await this.syncEngine.SyncBookmarks();
+
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceFirstUnreadArticle.Id)!;
+        Assert.True(localArticle.Liked);
+        Assert.Equal(serviceFirstUnreadArticle, localArticle);
+
+        var likedArticles = this.databases.ArticleDB.ListLikedArticles();
+        Assert.Contains(localArticle, likedArticles);
+    }
+
+    [Fact]
+    public async Task UnlikedServiceArticleIsThatIsLikedLocallyBecomesUnlikedAfterSync()
+    {
+        var localFirstUnreadArticle = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => !a.Liked)!;
+        this.databases.ArticleDB.LikeArticle(localFirstUnreadArticle.Id);
+
+        await this.syncEngine.SyncBookmarks();
+
+        var localArticle = this.databases.ArticleDB.GetArticleById(localFirstUnreadArticle.Id)!;
+        Assert.False(localArticle.Liked);
+        Assert.Equal(localFirstUnreadArticle, localArticle);
+
+        var likedArticles = this.databases.ArticleDB.ListLikedArticles();
+        Assert.DoesNotContain(localArticle, likedArticles);
+    }
     #endregion
 }
