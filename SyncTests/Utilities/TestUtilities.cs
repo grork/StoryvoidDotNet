@@ -18,7 +18,11 @@ internal static class TestUtilities
         return Interlocked.Increment(ref nextServiceId);
     }
 
-    internal static (SqliteConnection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IArticleChangesDatabase) GetEmptyDatabase()
+    internal static (SqliteConnection Connection,
+                     IFolderDatabase FolderDB,
+                     IFolderChangesDatabase FolderChangeDB,
+                     IArticleDatabase ArticleDB,
+                     IArticleChangesDatabase ArticleChangeDB) GetEmptyDatabase()
     {
         // Setup local database
         var connection = new SqliteConnection("Data Source=:memory:");
@@ -33,7 +37,11 @@ internal static class TestUtilities
         return (connection, folderDb, folderChangesDb, articleDb, articleChangesDb);
     }
 
-    internal static (SqliteConnection Connection, IFolderDatabase, IFolderChangesDatabase, IArticleDatabase, IArticleChangesDatabase) GetDatabases()
+    internal static (SqliteConnection Connection,
+                    IFolderDatabase FolderDB,
+                    IFolderChangesDatabase FolderChangeDB,
+                    IArticleDatabase ArticleDB,
+                    IArticleChangesDatabase ArticleChangeDB) GetDatabases()
     {
         var (localConnection, folderDb, folderChangesDb, articleDb, articleChangesDb) = GetEmptyDatabase();
         PopulateDatabase(folderDb, articleDb);
@@ -47,7 +55,9 @@ internal static class TestUtilities
         );
     }
 
-    internal static (SqliteConnection Connection, MockFolderService, MockBookmarksService) GetService()
+    internal static (SqliteConnection Connection,
+                     MockFolderService Folders,
+                     MockBookmarksService Bookmarks) GetService()
     {
         // Create a copy of that database, which will serve as the starting
         // point for the service database.
@@ -120,6 +130,16 @@ internal static class TestUtilities
         return instance.ListAllCompleteUserFolders().First()!;
     }
 
+    internal static DatabaseArticle FirstArticleInFolder(this IArticleDatabase instance, long localFolderId)
+    {
+        return instance.ListArticlesForLocalFolder(localFolderId).First()!;
+    }
+
+    internal static DatabaseArticle FirstUnlikedArticleInfolder(this IArticleDatabase instance, long localFolderId)
+    {
+        return instance.ListArticlesForLocalFolder(localFolderId).First((a) => !a.Liked)!;
+    }
+
     internal static void AssertFoldersListsAreSame(IFolderDatabase a, IFolderDatabase b)
     {
         var aFolders = a.ListAllCompleteUserFolders().OrderBy((f) => f.ServiceId);
@@ -176,9 +196,10 @@ internal class CompareFoldersIgnoringLocalId : IEqualityComparer<DatabaseFolder>
 public abstract class BaseSyncTest : IDisposable
 {
     protected const int DEFAULT_FOLDER_COUNT = 2;
+    private IDbConnection connection;
+    private IDbConnection serviceConnection;
 
     protected (
-        IDbConnection Connection,
         IFolderDatabase FolderDB,
         IFolderChangesDatabase FolderChangesDB,
         IArticleDatabase ArticleDB,
@@ -186,9 +207,8 @@ public abstract class BaseSyncTest : IDisposable
     ) databases;
 
     protected (
-        IDbConnection ServiceConnection,
-        MockFolderService MockFolderService,
-        MockBookmarksService MockBookmarksService
+        MockFolderService FoldersClient,
+        MockBookmarksService BookmarksClient
     ) service;
 
     protected Sync syncEngine;
@@ -199,8 +219,11 @@ public abstract class BaseSyncTest : IDisposable
         var service = TestUtilities.GetService();
         databases.Connection.BackupDatabase(service.Connection);
 
-        this.databases = databases;
-        this.service = service;
+        this.connection = databases.Connection;
+        this.databases = (databases.FolderDB, databases.FolderChangeDB, databases.ArticleDB, databases.ArticleChangeDB);
+
+        this.serviceConnection = service.Connection;
+        this.service = (service.Folders, service.Bookmarks);
 
         this.SetSyncEngineFromDatabases();
     }
@@ -211,17 +234,19 @@ public abstract class BaseSyncTest : IDisposable
         this.syncEngine = new Sync(
             this.databases.FolderDB,
             this.databases.FolderChangesDB,
-            this.service.MockFolderService,
+            this.service.FoldersClient,
             this.databases.ArticleDB,
             this.databases.ArticleChangesDB,
-            this.service.MockBookmarksService
+            this.service.BookmarksClient
         );
     }
 
     protected void SwitchToEmptyLocalDatabase()
     {
         this.DisposeLocalDatabase();
-        this.databases = TestUtilities.GetEmptyDatabase();
+        var databases = TestUtilities.GetEmptyDatabase();
+        this.connection = databases.Connection;
+        this.databases = (databases.FolderDB, databases.FolderChangeDB, databases.ArticleDB, databases.ArticleChangeDB);
         this.SetSyncEngineFromDatabases();
 
         // Make sure we have an empty database for this test.
@@ -232,8 +257,10 @@ public abstract class BaseSyncTest : IDisposable
     {
         this.DisposeServiceDatabase();
 
-        this.service = TestUtilities.GetService();
-        Assert.Empty(service.MockFolderService.FolderDB.ListAllCompleteUserFolders());
+        var service = TestUtilities.GetService();
+        this.serviceConnection = service.Connection;
+        this.service = (service.Folders, service.Bookmarks);
+        Assert.Empty(service.Folders.FolderDB.ListAllCompleteUserFolders());
 
         this.SetSyncEngineFromDatabases();
     }
@@ -245,14 +272,14 @@ public abstract class BaseSyncTest : IDisposable
 
     private void DisposeLocalDatabase()
     {
-        this.databases.Connection.Close();
-        this.databases.Connection.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     private void DisposeServiceDatabase()
     {
-        this.service.ServiceConnection.Close();
-        this.service.ServiceConnection.Dispose();
+        this.serviceConnection.Close();
+        this.serviceConnection.Dispose();
     }
 
     public void Dispose()
