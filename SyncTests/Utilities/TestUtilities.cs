@@ -78,6 +78,7 @@ internal static class TestUtilities
 
             // Put a random folder in it
             articleDb.AddRandomArticleToDb(folder.LocalId);
+            articleDb.AddRandomArticleToDb(folder.LocalId);
         }
 
         // Add some articles to the unread folder

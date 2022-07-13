@@ -241,7 +241,7 @@ public class ArticleSyncTests : BaseSyncTest
     [Fact]
     public async Task PendingArticleMoveFromUnreadToArchiveButArticleMissingCompletes()
     {
-        // Delete a known article
+        // Move an article to a folder...
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         
         using(var ledger = this.GetLedger())
@@ -249,6 +249,7 @@ public class ArticleSyncTests : BaseSyncTest
             this.databases.ArticleDB.MoveArticleToFolder(firstUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
         }
 
+        // ... delete that article
         this.service.BookmarksClient.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
 
         // Sync
@@ -1194,6 +1195,60 @@ public class ArticleSyncTests : BaseSyncTest
         var localFirstArticlePostSync = this.databases.ArticleDB.GetArticleById(localFirstArticle.Id)!;
         Assert.Equal(localFirstArticle.ReadProgress, localFirstArticlePostSync.ReadProgress);
         Assert.Equal(localFirstArticle.ReadProgressTimestamp, localFirstArticlePostSync.ReadProgressTimestamp);
+    }
+    #endregion
+
+    #region List-Limits
+    [Fact]
+    public async Task ArticlesOutsideThePerFolderLimitAreDeletedLocally()
+    {
+        var preSyncArticleCount = this.databases.ArticleDB.ListAllArticlesInAFolder().Count;
+
+        this.syncEngine.ArticlesPerFolderToSync = 1;
+
+        await this.syncEngine.SyncBookmarks();
+
+        var postSyncArticleCount = this.databases.ArticleDB.ListAllArticlesInAFolder().Count;
+        Assert.True(postSyncArticleCount < preSyncArticleCount);
+    }
+
+    [Fact]
+    public async Task LikedArticlesOutsidePerFolderLimitAreStillAvailableLocallyAfterSync()
+    {
+        var serviceLikedArticle = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).Last()!;
+        serviceLikedArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceLikedArticle.Id);
+
+        this.syncEngine.ArticlesPerFolderToSync = 1;
+
+        await this.syncEngine.SyncBookmarks();
+        this.syncEngine.CleanupOrphanedArticles();
+
+        // Check the article is no longer in the folder
+        var localUnreadArticles = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        Assert.DoesNotContain(serviceLikedArticle, localUnreadArticles);
+
+        // Check that the article is still in the liked list
+        var localLikedArticles = this.databases.ArticleDB.ListLikedArticles();
+        Assert.Contains(serviceLikedArticle, localLikedArticles);
+    }
+
+    [Fact]
+    public async Task ArticlesThatAreOrphanedAreDeletedWhenCleanedup()
+    {
+        var preSyncArticles = this.databases.ArticleDB.ListAllArticlesInAFolder();
+
+        this.syncEngine.ArticlesPerFolderToSync = 1;
+
+        await this.syncEngine.SyncBookmarks();
+        this.syncEngine.CleanupOrphanedArticles();
+
+        var postSyncArticle = this.databases.ArticleDB.ListAllArticlesInAFolder();
+        Assert.True(postSyncArticle.Count < preSyncArticles.Count);
+
+        foreach(var unreachable in preSyncArticles.Except(postSyncArticle))
+        {
+            Assert.Null(this.databases.ArticleDB.GetArticleById(unreachable.Article.Id));
+        }
     }
     #endregion
 }

@@ -179,6 +179,7 @@ public class MockBookmarksService : IBookmarksClient
 
     public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderServiceId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
+        var limit = Convert.ToInt32(resultLimit);
         IList<DatabaseArticle> serviceArticles = new List<DatabaseArticle>();
         if (folderServiceId == WellKnownFolderIds.Liked)
         {
@@ -190,6 +191,8 @@ public class MockBookmarksService : IBookmarksClient
             serviceArticles = this.ArticleDB.ListArticlesForLocalFolder(localFolderId);
         }
 
+        serviceArticles = serviceArticles.OrderBy((a) => a.Id).Take(limit).ToList();
+
         IList<IInstapaperBookmark> result = new List<IInstapaperBookmark>();
         IList<long> deletes = new List<long>();
 
@@ -198,7 +201,7 @@ public class MockBookmarksService : IBookmarksClient
             // If there was no have information, we should just return the
             // contents of the folder
             return Task.FromResult<(IList<IInstapaperBookmark>, IList<long>)>(
-                (new List<IInstapaperBookmark>(serviceArticles.Select((a) => a.ToInstapaperBookmark())), deletes)
+                (serviceArticles.Select((a) => a.ToInstapaperBookmark()).Take(limit).ToList(), deletes)
             );
         }
 
@@ -265,7 +268,6 @@ public class MockBookmarksService : IBookmarksClient
         }
 
         deletes = new List<long>(havesMap.Select((kvp) => kvp.Key));
-
         return Task.FromResult((result, deletes));
     }
 

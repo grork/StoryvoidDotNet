@@ -112,6 +112,13 @@ internal static class ArticleDatabaseExtensions
 /// </summary>
 public class Sync
 {
+    /// <summary>
+    /// The number of articles per folder to sync. This will limit the total
+    /// articles in each folder. Liked articles that are outside the containing
+    /// folders limit may still be sync'd as part of the liked article syncing.
+    /// </summary>
+    public uint ArticlesPerFolderToSync { get; set; } = 25;
+
     private IFolderDatabase folderDb;
     private IFolderChangesDatabase folderChangesDb;
     private IFoldersClient foldersClient;
@@ -444,7 +451,12 @@ public class Sync
     private async Task SyncBookmarkLikedArticlesWithService()
     {
         var currentLikes = this.articleDb.ListLikedArticles();
-        var (addedLikes, removedLiked) = await this.bookmarksClient.ListAsync(WellKnownFolderIds.Liked, currentLikes.HavesForArticles());
+        var (addedLikes, removedLiked) = await this.bookmarksClient.ListAsync(
+            WellKnownFolderIds.Liked,
+            currentLikes.HavesForArticles(),
+            this.ArticlesPerFolderToSync
+        );
+
         foreach (var unliked in removedLiked)
         {
             this.articleDb.UnlikeArticle(unliked);
@@ -529,7 +541,7 @@ public class Sync
 
         try
         {
-            (updates, deletes) = await this.bookmarksClient.ListAsync(folderServiceId, articlesInFolder.HavesForArticles());
+            (updates, deletes) = await this.bookmarksClient.ListAsync(folderServiceId, articlesInFolder.HavesForArticles(), this.ArticlesPerFolderToSync);
         }
         catch(EntityNotFoundException)
         {
@@ -565,6 +577,21 @@ public class Sync
 
             // Update the database information for the article
             this.articleDb.UpdateArticle(update.ToArticleRecordInformation());
+        }
+    }
+
+    public void CleanupOrphanedArticles()
+    {
+        // Get all our local liked articles, and if they're within the limit of
+        // the per-folder sync, we'll remove them from the articles that aren't
+        // in a folder. This will give us a list of articles that are no
+        // referenced anywhere.
+        var likedArticles = new HashSet<long>(this.articleDb.ListLikedArticles().Take(Convert.ToInt32(this.ArticlesPerFolderToSync)).Select((a) => a.Id));
+        var articlesNotInAFolder = this.articleDb.ListArticlesNotInAFolder().Where((a) => !likedArticles.Contains(a.Id));
+
+        foreach(var article in articlesNotInAFolder)
+        {
+            this.articleDb.DeleteArticle(article.Id);
         }
     }
 }
