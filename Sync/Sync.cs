@@ -155,13 +155,17 @@ public class Sync
         var remoteFoldersTask = this.foldersClient.ListAsync();
         var localFolders = this.folderDb.ListAllUserFolders();
 
-        var remoteFolders = await remoteFoldersTask;
+        // Filter out folders that are not set to sync -- we won't add any that
+        // aren't supposed to sync. If they were seen in an earlier sync and are
+        // now set not to sync, they'll be cleaned up as not being available.
+        var remoteFolders = (await remoteFoldersTask).Where((f) => f.SyncToMobile);
 
         // Check which remote folders need to be added or updated locally
         foreach (var rf in remoteFolders)
         {
             // See if we have it locally by ID
             var lf = this.folderDb.GetFolderByServiceId(rf.Id);
+
             if (lf is null)
             {
                 // We don't have this folder locally, so we should just add it

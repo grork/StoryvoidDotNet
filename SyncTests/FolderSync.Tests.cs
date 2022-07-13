@@ -89,6 +89,24 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.FoldersClient.FolderDB);
     }
+    
+    [Fact]
+    public async Task FoldersThatAreSetNotToSyncAreRemovedDuringSync()
+    {
+        var serviceFolderSetToNotSync = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        serviceFolderSetToNotSync = this.service.FoldersClient.FolderDB.UpdateFolder(
+            localId: serviceFolderSetToNotSync.LocalId,
+            serviceId: serviceFolderSetToNotSync.ServiceId,
+            title: serviceFolderSetToNotSync.Title,
+            position: serviceFolderSetToNotSync.Position,
+            shouldSync: false
+        );
+
+        await this.syncEngine.SyncFolders();
+
+        var localFolders = this.databases.FolderDB.ListAllCompleteUserFolders();
+        Assert.DoesNotContain(serviceFolderSetToNotSync, localFolders, new CompareFoldersIgnoringLocalId());
+    }
     #endregion
 
     #region Local-Only Folder changes sync
