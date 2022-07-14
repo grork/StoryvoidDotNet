@@ -107,24 +107,24 @@ public static class InstapaperDatabase
         }
     }
 
-    public static IFolderDatabase GetFolderDatabase(IDbConnection connection)
+    public static IFolderDatabase GetFolderDatabase(Func<IDbConnection> connectionFactory)
     {
-        return new FolderDatabase(connection);
+        return new FolderDatabase(connectionFactory);
     }
 
-    public static IFolderChangesDatabase GetFolderChangesDatabase(IDbConnection connection)
+    public static IFolderChangesDatabase GetFolderChangesDatabase(Func<IDbConnection> connectionFactory)
     {
-        return new FolderChanges(connection);
+        return new FolderChanges(connectionFactory);
     }
 
-    public static IArticleDatabase GetArticleDatabase(IDbConnection connection)
+    public static IArticleDatabase GetArticleDatabase(Func<IDbConnection> connectionFactory)
     {
-        return new ArticleDatabase(connection);
+        return new ArticleDatabase(connectionFactory);
     }
 
-    public static IArticleChangesDatabase GetArticleChangesDatabase(IDbConnection connection)
+    public static IArticleChangesDatabase GetArticleChangesDatabase(Func<IDbConnection> connectionFactory)
     {
-        return new ArticleChanges(connection);
+        return new ArticleChanges(connectionFactory);
     }
 
     public static IDisposable GetLedger(IFolderDatabase folderDb, IArticleDatabase articleDb)

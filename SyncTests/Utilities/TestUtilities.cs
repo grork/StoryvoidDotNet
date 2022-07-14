@@ -25,14 +25,14 @@ internal static class TestUtilities
                      IArticleChangesDatabase ArticleChangeDB) GetEmptyDatabase()
     {
         // Setup local database
-        var connection = new SqliteConnection("Data Source=:memory:");
+        var connection = new SqliteConnection($"Data Source=:memory:");
         connection.Open();
         InstapaperDatabase.CreateDatabaseIfNeeded(connection);
 
-        var folderDb = InstapaperDatabase.GetFolderDatabase(connection);
-        var folderChangesDb = InstapaperDatabase.GetFolderChangesDatabase(connection);
-        var articleDb = InstapaperDatabase.GetArticleDatabase(connection);
-        var articleChangesDb = InstapaperDatabase.GetArticleChangesDatabase(connection);
+        var folderDb = InstapaperDatabase.GetFolderDatabase(connection.GetFactory());
+        var folderChangesDb = InstapaperDatabase.GetFolderChangesDatabase(connection.GetFactory());
+        var articleDb = InstapaperDatabase.GetArticleDatabase(connection.GetFactory());
+        var articleChangesDb = InstapaperDatabase.GetArticleChangesDatabase(connection.GetFactory());
 
         return (connection, folderDb, folderChangesDb, articleDb, articleChangesDb);
     }
@@ -67,6 +67,11 @@ internal static class TestUtilities
             new MockFolderService(serviceFolderDb, serviceArticleDb),
             new MockBookmarksService(serviceArticleDb, serviceFolderDb)
         );
+    }
+
+    internal static Func<IDbConnection> GetFactory(this IDbConnection instance)
+    {
+        return () => instance;
     }
 
     private static void PopulateDatabase(IFolderDatabase folderDb, IArticleDatabase articleDb)
