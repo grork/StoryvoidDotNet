@@ -143,11 +143,18 @@ public class Sync
         this.bookmarksClient = bookmarksClient;
     }
 
+    public async Task SyncEverything()
+    {
+        await this.SyncFolders();
+        await this.SyncBookmarks();
+        this.CleanupOrphanedArticles();
+    }
+
     /// <summary>
     /// Synchronises the folder information with the service. Pending adds &
     /// deletes are applied first before a 'mop up' of all folder information
     /// </summary>
-    public async Task SyncFolders()
+    internal async Task SyncFolders()
     {
         await this.SyncPendingFolderAdds();
         await this.SyncPendingFolderDeletes();
@@ -281,7 +288,7 @@ public class Sync
     /// It is expected - but not required - that <see cref="SyncFolders">
     /// SyncFolders</see> will be executed before this.
     /// </summary>
-    public async Task SyncBookmarks()
+    internal async Task SyncBookmarks()
     {
         await this.SyncPendingBookmarkAdds();
         await this.SyncPendingBookmarkDeletes();
@@ -584,7 +591,7 @@ public class Sync
         }
     }
 
-    public void CleanupOrphanedArticles()
+    internal void CleanupOrphanedArticles()
     {
         // Get all our local liked articles, and if they're within the limit of
         // the per-folder sync, we'll remove them from the articles that aren't

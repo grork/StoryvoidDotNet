@@ -1163,8 +1163,19 @@ public class ArticleSyncTests : BaseSyncTest
     [Fact]
     public async Task SyncingWithAServiceDeletedFolderCompletes()
     {
+        // Makes sure liked articles don't confuse this test. This test expects
+        // the article state to remain the same, but because *like* syncing will
+        // see the article is no longer liked -- but the general sync due to the
+        // missing folder won't delete it -- and unlike it. and thus we have
+        // in consistent state. In a more realistic scenario, the deleted folder
+        // would have been cleaned up, and the articles would be deleted. But,
+        // we're testing a pathological case, so we'll make this exception.
+        this.UnlikeEverything();
+
         // Get the service folder to delete, and all it's articles.
         var serviceUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        var serviceArticles = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceUserFolder.LocalId);
+
         foreach(var serviceArticle in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceUserFolder.LocalId))
         {
             this.service.BookmarksClient.ArticleDB.DeleteArticle(serviceArticle.Id);
@@ -1174,6 +1185,9 @@ public class ArticleSyncTests : BaseSyncTest
             this.databases.ArticleDB.ListArticlesForLocalFolder(
                 this.databases.FolderDB.GetFolderByServiceId(serviceUserFolder.ServiceId!.Value)!.LocalId
             );
+
+
+        Assert.Equal(localFolderThatWasDeletedContents, serviceArticles);
 
         this.service.FoldersClient.FolderDB.DeleteFolder(serviceUserFolder.LocalId);
 
@@ -1212,9 +1226,24 @@ public class ArticleSyncTests : BaseSyncTest
         Assert.True(postSyncArticleCount < preSyncArticleCount);
     }
 
+    private void UnlikeEverything()
+    {
+        foreach(var article in this.databases.ArticleDB.ListLikedArticles())
+        {
+            this.databases.ArticleDB.UnlikeArticle(article.Id);
+        }
+
+        foreach(var article in this.service.BookmarksClient.ArticleDB.ListLikedArticles())
+        {
+            this.service.BookmarksClient.ArticleDB.UnlikeArticle(article.Id);
+        }
+    }
+
     [Fact]
     public async Task LikedArticlesOutsidePerFolderLimitAreStillAvailableLocallyAfterSync()
     {
+        this.UnlikeEverything();
+
         var serviceLikedArticle = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).Last()!;
         serviceLikedArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceLikedArticle.Id);
 
@@ -1235,6 +1264,7 @@ public class ArticleSyncTests : BaseSyncTest
     [Fact]
     public async Task ArticlesThatAreOrphanedAreDeletedWhenCleanedup()
     {
+        this.UnlikeEverything();
         var preSyncArticles = this.databases.ArticleDB.ListAllArticlesInAFolder();
 
         this.syncEngine.ArticlesPerFolderToSync = 1;

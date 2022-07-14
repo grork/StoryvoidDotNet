@@ -32,6 +32,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             INNER JOIN articles_with_local_only_state a
                 ON article_to_folder.article_id = a.id
             WHERE article_to_folder.local_folder_id = @localFolderId
+            ORDER BY a.id
         ");
 
         query.AddParameter("@localFolderId", localFolderId);
@@ -59,6 +60,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             FROM article_to_folder
             INNER JOIN articles_with_local_only_state a
                 ON article_to_folder.article_id = a.id
+            ORDER BY a.id
         ");
 
         var results = new List<(DatabaseArticle, long)>();
@@ -85,6 +87,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
             SELECT *
             FROM articles
             WHERE id NOT IN (SELECT article_id FROM article_to_folder)
+            ORDER BY id
         ");
 
         var results = new List<DatabaseArticle>();
@@ -107,8 +110,9 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     {
         using var query = c.CreateCommand(@"
             SELECT *
-            FROM articles_with_local_only_state
+            FROM articles
             WHERE liked = true
+            ORDER BY id
         ");
 
         var results = new List<DatabaseArticle>();

@@ -34,10 +34,12 @@ internal class MockFolder : IInstapaperFolder
 public class MockFolderService : IFoldersClient
 {
     internal IFolderDatabase FolderDB { get; init; }
+    private IArticleDatabase ArticleDB { get; init; }
 
-    internal MockFolderService(IFolderDatabase folderDb)
+    internal MockFolderService(IFolderDatabase folderDb, IArticleDatabase articleDb)
     {
         this.FolderDB = folderDb;
+        this.ArticleDB = articleDb;
     }
 
     private long NextServiceId()
@@ -84,6 +86,12 @@ public class MockFolderService : IFoldersClient
         {
             // Folder was already missing, so throw appropriate exception
             throw new EntityNotFoundException();
+        }
+
+        // We need to deleted contained articles first, to mimic what the service does
+        foreach(var articleInFolder in this.ArticleDB.ListArticlesForLocalFolder(folder.LocalId))
+        {
+            this.ArticleDB.DeleteArticle(articleInFolder.Id);
         }
 
         this.FolderDB.DeleteFolder(folder.LocalId);

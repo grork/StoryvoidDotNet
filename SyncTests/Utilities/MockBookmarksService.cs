@@ -27,6 +27,11 @@ internal static class MockBookmarkExtensions
         allArticles.AddRange(instance.ListAllArticlesInAFolder().Select((a) => a.Article));
         allArticles.AddRange(instance.ListArticlesNotInAFolder());
 
+        allArticles.Sort((first, second) =>
+        {
+            return Convert.ToInt32(first.Id - second.Id);
+        });
+
         return allArticles;
     }
 

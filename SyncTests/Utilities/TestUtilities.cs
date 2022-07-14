@@ -64,7 +64,7 @@ internal static class TestUtilities
         var (serviceConnection, serviceFolderDb, _, serviceArticleDb, _) = GetEmptyDatabase();
         return (
             serviceConnection,
-            new MockFolderService(serviceFolderDb),
+            new MockFolderService(serviceFolderDb, serviceArticleDb),
             new MockBookmarksService(serviceArticleDb, serviceFolderDb)
         );
     }
@@ -78,12 +78,15 @@ internal static class TestUtilities
 
             // Put a random folder in it
             articleDb.AddRandomArticleToDb(folder.LocalId);
-            articleDb.AddRandomArticleToDb(folder.LocalId);
+            var articleToLike = articleDb.AddRandomArticleToDb(folder.LocalId);
+            articleDb.LikeArticle(articleToLike.Id);
+
         }
 
         // Add some articles to the unread folder
         articleDb.AddRandomArticleToDb();
-        articleDb.AddRandomArticleToDb();
+        var articleWithProgress = articleDb.AddRandomArticleToDb();
+        articleDb.UpdateReadProgressForArticle(0.2F, DateTime.Now, articleWithProgress.Id);
 
         // Add some articles to the archive folder
         articleDb.AddRandomArticleToDb(WellKnownLocalFolderIds.Archive);
