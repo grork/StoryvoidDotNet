@@ -269,6 +269,11 @@ public abstract class BaseSyncTest : IDisposable
         this.SetSyncEngineFromDatabases();
     }
 
+    protected IDbTransaction StartTransactionForLocalDatabase()
+    {
+        return this.connection.BeginTransaction();
+    }
+
     protected IDisposable GetLedger()
     {
         return InstapaperDatabase.GetLedger(this.databases.FolderDB, this.databases.ArticleDB);

@@ -94,4 +94,22 @@ public class EverythingSyncTests : BaseSyncTest
 
         this.AssertServerAndClientMatch();
     }
+
+    [Fact]
+    public async Task MegaTransactionCanRollBackLocalDatabaseIfFailureObserved()
+    {
+        this.SwitchToEmptyServiceDatabase();
+
+        var transaction = this.StartTransactionForLocalDatabase();
+
+        await this.syncEngine.SyncEverything();
+
+        this.AssertServerAndClientMatch();
+
+        transaction.Rollback();
+        transaction.Dispose();
+
+        Assert.NotEmpty(this.databases.FolderDB.ListAllCompleteUserFolders());
+        Assert.NotEmpty(this.databases.ArticleDB.ListAllArticles());
+    }
 }
