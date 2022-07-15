@@ -1,7 +1,7 @@
 ﻿using Codevoid.Instapaper;
 using System.Diagnostics;
 
-namespace Codevoid.Storyvoid;
+namespace Codevoid.Storyvoid.Sync;
 
 /// <summary>
 /// Extensions to simplify working with the folders database in sync scenarios.

@@ -1,5 +1,6 @@
 using System.Data;
 using Codevoid.Storyvoid;
+using Codevoid.Storyvoid.Sync;
 using Microsoft.Data.Sqlite;
 using System.Diagnostics.CodeAnalysis;
 
