@@ -244,7 +244,7 @@ public abstract class BaseSyncTest : IDisposable
     }
 
     [MemberNotNull(nameof(syncEngine))]
-    protected void SetSyncEngineFromDatabases()
+    internal void SetSyncEngineFromDatabases(IContentSyncEventSource? clearingHouse = null)
     {
         this.syncEngine = new InstapaperSync(
             this.databases.FolderDB,
@@ -252,7 +252,8 @@ public abstract class BaseSyncTest : IDisposable
             this.service.FoldersClient,
             this.databases.ArticleDB,
             this.databases.ArticleChangesDB,
-            this.service.BookmarksClient
+            this.service.BookmarksClient,
+            clearingHouse
         );
     }
 

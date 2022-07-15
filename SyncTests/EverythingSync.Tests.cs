@@ -36,7 +36,41 @@ public class EverythingSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async Task EmptyRemoteEmptiesTheLocalDatabase()
+    public async Task AllClearingHouseEventsAreRaisedDuringSync()
+    {
+        this.SwitchToEmptyLocalDatabase();
+
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+
+        (
+            bool SyncStarted,
+            bool FoldersStarted,
+            bool FoldersEnded,
+            bool ArticlesStarted,
+            bool ArticlesEnded,
+            bool SyncEnded
+        ) raisedEvents = (false, false, false, false, false, false);
+
+        clearingHouse.SyncStarted += (_, _) => raisedEvents.SyncStarted = true;
+        clearingHouse.FoldersStarted += (_, _) => raisedEvents.FoldersStarted = true;
+        clearingHouse.FoldersEnded += (_, _) => raisedEvents.FoldersEnded = true;
+        clearingHouse.ArticlesStarted += (_, _) => raisedEvents.ArticlesStarted = true;
+        clearingHouse.ArticlesEnded += (_, _) => raisedEvents.ArticlesEnded = true;
+        clearingHouse.SyncEnded += (_, _) => raisedEvents.SyncEnded = true;
+
+        await this.syncEngine.SyncEverything();
+
+        Assert.True(raisedEvents.SyncStarted);
+        Assert.True(raisedEvents.FoldersStarted);
+        Assert.True(raisedEvents.FoldersEnded);
+        Assert.True(raisedEvents.ArticlesStarted);
+        Assert.True(raisedEvents.ArticlesEnded);
+        Assert.True(raisedEvents.SyncEnded);
+    }
+
+    [Fact]
+    public async Task EmptyServiceEmptiesTheLocalDatabase()
     {
         this.SwitchToEmptyServiceDatabase();
 

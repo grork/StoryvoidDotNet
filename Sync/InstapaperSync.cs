@@ -126,13 +126,15 @@ public class InstapaperSync
     private IArticleDatabase articleDb;
     private IArticleChangesDatabase articleChangesDb;
     private IBookmarksClient bookmarksClient;
+    private IContentSyncEventSource? clearingHouse;
 
     public InstapaperSync(IFolderDatabase folderDb,
-                IFolderChangesDatabase folderChangesDb,
-                IFoldersClient foldersClient,
-                IArticleDatabase articleDb,
-                IArticleChangesDatabase articleChangesDb,
-                IBookmarksClient bookmarksClient)
+                          IFolderChangesDatabase folderChangesDb,
+                          IFoldersClient foldersClient,
+                          IArticleDatabase articleDb,
+                          IArticleChangesDatabase articleChangesDb,
+                          IBookmarksClient bookmarksClient,
+                          IContentSyncEventSource? clearingHouse = null)
     {
         this.folderDb = folderDb;
         this.folderChangesDb = folderChangesDb;
@@ -141,13 +143,22 @@ public class InstapaperSync
         this.articleDb = articleDb;
         this.articleChangesDb = articleChangesDb;
         this.bookmarksClient = bookmarksClient;
+        this.clearingHouse = clearingHouse;
     }
 
     public async Task SyncEverything()
     {
-        await this.SyncFolders();
-        await this.SyncBookmarks();
-        this.CleanupOrphanedArticles();
+        try
+        {
+            this.clearingHouse?.RaiseSyncStarted();
+            await this.SyncFolders();
+            await this.SyncBookmarks();
+            this.CleanupOrphanedArticles();
+        }
+        finally
+        {
+            this.clearingHouse?.RaiseSyncEnded();
+        }
     }
 
     /// <summary>
@@ -156,49 +167,57 @@ public class InstapaperSync
     /// </summary>
     internal async Task SyncFolders()
     {
-        await this.SyncPendingFolderAdds();
-        await this.SyncPendingFolderDeletes();
-
-        var remoteFoldersTask = this.foldersClient.ListAsync();
-        var localFolders = this.folderDb.ListAllUserFolders();
-
-        // Filter out folders that are not set to sync -- we won't add any that
-        // aren't supposed to sync. If they were seen in an earlier sync and are
-        // now set not to sync, they'll be cleaned up as not being available.
-        var remoteFolders = (await remoteFoldersTask).Where((f) => f.SyncToMobile);
-
-        // Check which remote folders need to be added or updated locally
-        foreach (var rf in remoteFolders)
+        try
         {
-            // See if we have it locally by ID
-            var lf = this.folderDb.GetFolderByServiceId(rf.Id);
+            this.clearingHouse?.RaiseFoldersStarted();
+            await this.SyncPendingFolderAdds();
+            await this.SyncPendingFolderDeletes();
 
-            if (lf is null)
+            var remoteFoldersTask = this.foldersClient.ListAsync();
+            var localFolders = this.folderDb.ListAllUserFolders();
+
+            // Filter out folders that are not set to sync -- we won't add any that
+            // aren't supposed to sync. If they were seen in an earlier sync and are
+            // now set not to sync, they'll be cleaned up as not being available.
+            var remoteFolders = (await remoteFoldersTask).Where((f) => f.SyncToMobile);
+
+            // Check which remote folders need to be added or updated locally
+            foreach (var rf in remoteFolders)
             {
-                // We don't have this folder locally, so we should just add it
-                _ = this.folderDb.AddKnownFolder(rf);
-                continue;
+                // See if we have it locally by ID
+                var lf = this.folderDb.GetFolderByServiceId(rf.Id);
+
+                if (lf is null)
+                {
+                    // We don't have this folder locally, so we should just add it
+                    _ = this.folderDb.AddKnownFolder(rf);
+                    continue;
+                }
+
+                if (rf.Title != lf.Title || rf.Position != lf.Position || rf.SyncToMobile != lf.ShouldSync)
+                {
+                    // We *do* have the folder. We need to update the folder
+                    _ = this.folderDb.UpdateFolder(lf.LocalId, lf.ServiceId, rf.Title, rf.Position, rf.SyncToMobile);
+                    continue;
+                }
             }
 
-            if (rf.Title != lf.Title || rf.Position != lf.Position || rf.SyncToMobile != lf.ShouldSync)
+            // Check for any local folders that are no longer present so we can delete them
+            foreach (var lf in localFolders)
             {
-                // We *do* have the folder. We need to update the folder
-                _ = this.folderDb.UpdateFolder(lf.LocalId, lf.ServiceId, rf.Title, rf.Position, rf.SyncToMobile);
-                continue;
+                Debug.Assert(lf.ServiceId.HasValue, "Expected all pending folders to be uploaded");
+                if (remoteFolders.Any((rf) => lf.ServiceId == rf.Id))
+                {
+                    // This folder is present in the remote folders, nothing to do
+                    continue;
+                }
+
+                this.folderDb.DeleteFolder(lf.LocalId);
             }
         }
-
-        // Check for any local folders that are no longer present so we can delete them
-        foreach(var lf in localFolders)
+        finally
         {
-            Debug.Assert(lf.ServiceId.HasValue, "Expected all pending folders to be uploaded");
-            if(remoteFolders.Any((rf) => lf.ServiceId == rf.Id))
-            {
-                // This folder is present in the remote folders, nothing to do
-                continue;
-            }
-
-            this.folderDb.DeleteFolder(lf.LocalId);
+            this.clearingHouse?.RaiseFoldersEnded();
         }
     }
 
@@ -290,11 +309,19 @@ public class InstapaperSync
     /// </summary>
     internal async Task SyncBookmarks()
     {
-        await this.SyncPendingBookmarkAdds();
-        await this.SyncPendingBookmarkDeletes();
-        await this.SyncPendingBookmarkMoves();
-        await this.SyncBookmarkStateByFolder();
-        await this.SyncBookmarkLikeStatuses();
+        try
+        {
+            this.clearingHouse?.RaiseArticlesStarted();
+            await this.SyncPendingBookmarkAdds();
+            await this.SyncPendingBookmarkDeletes();
+            await this.SyncPendingBookmarkMoves();
+            await this.SyncBookmarkStateByFolder();
+            await this.SyncBookmarkLikeStatuses();
+        }
+        finally
+        {
+            this.clearingHouse?.RaiseArticlesEnded();
+        }
     }
 
     private async Task SyncPendingBookmarkAdds()
