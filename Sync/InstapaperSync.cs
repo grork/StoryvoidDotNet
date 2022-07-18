@@ -110,7 +110,7 @@ internal static class ArticleDatabaseExtensions
 /// service, as well as enumerating service changes that need to be applied
 /// locally.
 /// </summary>
-public class Sync
+public class InstapaperSync
 {
     /// <summary>
     /// The number of articles per folder to sync. This will limit the total
@@ -127,7 +127,7 @@ public class Sync
     private IArticleChangesDatabase articleChangesDb;
     private IBookmarksClient bookmarksClient;
 
-    public Sync(IFolderDatabase folderDb,
+    public InstapaperSync(IFolderDatabase folderDb,
                 IFolderChangesDatabase folderChangesDb,
                 IFoldersClient foldersClient,
                 IArticleDatabase articleDb,

@@ -1,9 +1,9 @@
 using Codevoid.Instapaper;
 using Codevoid.Storyvoid;
+using Codevoid.Storyvoid.Sync;
+
 using CurrentServiceStateFixture = Codevoid.Test.Instapaper.CurrentServiceStateFixture;
 using Codevoid.Test.Storyvoid;
-
-using SyncEngine = Codevoid.Storyvoid.Sync.Sync;
 using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Test.ServiceIntegration;
@@ -172,14 +172,14 @@ public sealed class ServiceSyncTests : IAsyncLifetime
         return InstapaperDatabase.GetLedger(folderDB, articleDB);
     }
 
-    private async Task<(SyncEngine SyncEngine, (SqliteConnection Connection,
+    private async Task<(InstapaperSync SyncEngine, (SqliteConnection Connection,
                      IFolderDatabase FolderDB,
                      IFolderChangesDatabase FolderChangeDB,
                      IArticleDatabase ArticleDB,
                      IArticleChangesDatabase ArticleChangeDB) LocalDatabase)> SyncAndVerifyInitialServiceState()
     {
         var localDatabase = TestUtilities.GetEmptyDatabase();
-        var syncEngine = new SyncEngine(localDatabase.FolderDB,
+        var syncEngine = new InstapaperSync(localDatabase.FolderDB,
                                                           localDatabase.FolderChangeDB,
                                                           this.SharedState.FoldersClient,
                                                           localDatabase.ArticleDB,

@@ -226,7 +226,7 @@ public abstract class BaseSyncTest : IDisposable
         MockBookmarksService BookmarksClient
     ) service;
 
-    protected Sync syncEngine;
+    protected InstapaperSync syncEngine;
 
     protected BaseSyncTest()
     {
@@ -246,7 +246,7 @@ public abstract class BaseSyncTest : IDisposable
     [MemberNotNull(nameof(syncEngine))]
     protected void SetSyncEngineFromDatabases()
     {
-        this.syncEngine = new Sync(
+        this.syncEngine = new InstapaperSync(
             this.databases.FolderDB,
             this.databases.FolderChangesDB,
             this.service.FoldersClient,
