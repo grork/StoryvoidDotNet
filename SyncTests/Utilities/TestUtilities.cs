@@ -244,7 +244,7 @@ public abstract class BaseSyncTest : IDisposable
     }
 
     [MemberNotNull(nameof(syncEngine))]
-    internal void SetSyncEngineFromDatabases(IContentSyncEventSource? clearingHouse = null)
+    internal void SetSyncEngineFromDatabases(IDatabaseSyncEventSource? clearingHouse = null)
     {
         this.syncEngine = new InstapaperSync(
             this.databases.FolderDB,

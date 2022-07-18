@@ -126,7 +126,7 @@ public class InstapaperSync
     private IArticleDatabase articleDb;
     private IArticleChangesDatabase articleChangesDb;
     private IBookmarksClient bookmarksClient;
-    private IContentSyncEventSource? clearingHouse;
+    private IDatabaseSyncEventSource? clearingHouse;
 
     public InstapaperSync(IFolderDatabase folderDb,
                           IFolderChangesDatabase folderChangesDb,
@@ -134,7 +134,7 @@ public class InstapaperSync
                           IArticleDatabase articleDb,
                           IArticleChangesDatabase articleChangesDb,
                           IBookmarksClient bookmarksClient,
-                          IContentSyncEventSource? clearingHouse = null)
+                          IDatabaseSyncEventSource? clearingHouse = null)
     {
         this.folderDb = folderDb;
         this.folderChangesDb = folderChangesDb;

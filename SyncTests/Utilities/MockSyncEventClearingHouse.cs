@@ -1,32 +1,8 @@
-namespace Codevoid.Storyvoid;
+using Codevoid.Storyvoid.Sync;
 
-public interface IContentSyncEventSink
-{
-    event EventHandler SyncStarted;
+namespace Codevoid.Test.Storyvoid;
 
-    event EventHandler FoldersStarted;
-    event EventHandler FoldersEnded;
-
-    event EventHandler ArticlesStarted;
-    event EventHandler ArticlesEnded;
-
-    event EventHandler SyncEnded;
-}
-
-public interface IContentSyncEventSource
-{
-    void RaiseSyncStarted();
-
-    void RaiseFoldersStarted();
-    void RaiseFoldersEnded();
-
-    void RaiseArticlesStarted();
-    void RaiseArticlesEnded();
-
-    void RaiseSyncEnded();
-}
-
-internal sealed class SyncEventClearingHouse : IContentSyncEventSink, IContentSyncEventSource
+internal sealed class SyncEventClearingHouse : IDatabaseSyncEventSink, IDatabaseSyncEventSource
 {
     /// <inheritdoc />
     public event EventHandler? SyncStarted;
