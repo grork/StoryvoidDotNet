@@ -93,6 +93,16 @@ internal static class TestUtilities
         articleDb.AddRandomArticleToDb(WellKnownLocalFolderIds.Archive);
         articleDb.AddRandomArticleToDb(WellKnownLocalFolderIds.Archive);
 
+        // Add one more article to unread, but then *orphan it* to reproduce the
+        // service side bug where when deleting a folder that contains articles
+        // the articles effectively become 'orphaned'. The documentation says
+        // they should be moved to the archive folder, but they aren't placed
+        // anywhere (the bug). This introduces a scenario where liked articles
+        // now *only* appear in the liked 'virtual' folder. Since this has been
+        // happening for ~3 years, we should mimick the bug in our local testing
+        var orphanedLikedArticle = articleDb.AddRandomArticleToDb();
+        orphanedLikedArticle = articleDb.LikeArticle(orphanedLikedArticle.Id);
+        articleDb.RemoveArticleFromAnyFolder(orphanedLikedArticle.Id);
     }
 
     internal static DatabaseFolder AddCompleteFolderToDb(this IFolderDatabase instance)

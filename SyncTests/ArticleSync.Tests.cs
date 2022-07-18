@@ -209,7 +209,7 @@ public class ArticleSyncTests : BaseSyncTest
 
         // Check the article is not in a folder, for later clean up
         var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
-        Assert.Empty(orphanedArticles);
+        Assert.DoesNotContain(firstArticle, orphanedArticles);
 
         var unreadArticles = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
         Assert.Contains(unreadArticles, (a) => a.Url == firstArticle.Url);
@@ -1142,6 +1142,66 @@ public class ArticleSyncTests : BaseSyncTest
 
         var likedArticles = this.databases.ArticleDB.ListLikedArticles();
         Assert.Contains(localArticle, likedArticles);
+    }
+
+    [Fact]
+    public async Task LikedServiceArticleThatIsNotInAFolderIsCorrectlySynced()
+    {
+        // Find a service article, and like it
+        var serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
+        serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceFirstUnreadArticle.Id);
+
+        // Create a *liked* article that is no longer in any folder. The
+        // documentation says articles in folders should be moved to the archive
+        // folder when the containing folder is deleted. But, they aren't placed
+        // anywhere (the bug). This introduces a scenario where liked articles
+        // now *only* appear in the liked 'virtual' folder. Since this has been
+        // happening for ~3 years, we should mimick the bug in our local testing
+        this.service.BookmarksClient.ArticleDB.RemoveArticleFromAnyFolder(serviceFirstUnreadArticle.Id);
+
+        await this.syncEngine.SyncBookmarks();
+
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceFirstUnreadArticle.Id)!;
+        Assert.True(localArticle.Liked);
+        Assert.Equal(serviceFirstUnreadArticle, localArticle);
+
+        var likedArticles = this.databases.ArticleDB.ListLikedArticles();
+        Assert.Contains(localArticle, likedArticles);
+
+        // Check that article isn't in the unread Folder
+        var unreadArticles = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        Assert.DoesNotContain(localArticle, unreadArticles);
+    }
+
+    [Fact]
+    public async Task LikedServiceArticleThatIsNotInAFolderIsCorrectlySyncedWithEmptyLocalDatabase()
+    {
+        this.SwitchToEmptyLocalDatabase();
+
+        // Find a service article, and like it
+        var serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
+        serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceFirstUnreadArticle.Id);
+
+        // Create a *liked* article that is no longer in any folder. The
+        // documentation says articles in folders should be moved to the archive
+        // folder when the containing folder is deleted. But, they aren't placed
+        // anywhere (the bug). This introduces a scenario where liked articles
+        // now *only* appear in the liked 'virtual' folder. Since this has been
+        // happening for ~3 years, we should mimick the bug in our local testing
+        this.service.BookmarksClient.ArticleDB.RemoveArticleFromAnyFolder(serviceFirstUnreadArticle.Id);
+
+        await this.syncEngine.SyncBookmarks();
+
+        var localArticle = this.databases.ArticleDB.GetArticleById(serviceFirstUnreadArticle.Id)!;
+        Assert.True(localArticle.Liked);
+        Assert.Equal(serviceFirstUnreadArticle, localArticle);
+
+        var likedArticles = this.databases.ArticleDB.ListLikedArticles();
+        Assert.Contains(localArticle, likedArticles);
+
+        // Check that article isn't in the unread Folder
+        var unreadArticles = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        Assert.DoesNotContain(localArticle, unreadArticles);
     }
 
     [Fact]

@@ -470,12 +470,34 @@ public class Sync
 
         foreach (var unliked in removedLiked)
         {
-            this.articleDb.UnlikeArticle(unliked);
+            // If an article not liked any more, we can only toggle it's state
+            // if it's present. Since we don't know if the article is *supposed*
+            // to be in another folder, we need to allow other processes & parts
+            // of sync to clean it up (e.g. delete it) if it's truly gone
+            var existingArticle = this.articleDb.GetArticleById(unliked);
+            if (existingArticle is not null)
+            {
+                this.articleDb.UnlikeArticle(unliked);
+            }
         }
 
         foreach (var liked in addedLikes)
         {
-            this.articleDb.LikeArticle(liked.Id);
+            var existingArticle = this.articleDb.GetArticleById(liked.Id);
+            if (existingArticle is not null)
+            {
+                this.articleDb.LikeArticle(liked.Id);
+            }
+            else
+            {
+                // Article was liked, but we didn't have it. This might mean
+                // it's in the window of 'not in a folder, but in the liked sync
+                // limit', and we need to add it to the database. But we don't
+                // know where it's going to go -- we just have a like, no folder
+                // association -- so we're just going to slap it in no-folder
+                // land and let the clean up process decide if it should be kept
+                this.articleDb.AddArticleNoFolder(liked.ToArticleRecordInformation());
+            }
         }
     }
 

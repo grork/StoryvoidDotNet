@@ -23,6 +23,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Sync\Sync.csproj" />
     <ProjectReference Include="..\Database\Database.csproj" />
+    <ProjectReference Include="..\InstapaperAPI\InstapaperAPI.csproj" />
+    <ProjectReference Include="..\OAuthLibrary\OAuthLibrary.csproj" />
+    <ProjectReference Include="..\InstapaperAPITests\InstapaperAPITests.csproj" />
   </ItemGroup>
 
   <ItemGroup>

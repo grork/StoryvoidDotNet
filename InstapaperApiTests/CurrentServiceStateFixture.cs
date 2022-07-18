@@ -99,6 +99,18 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             LogMessage($"Found {folders.Count} folders");
             foreach (var id in folders)
             {
+                // Since Instapaper has a bug today that instead of following
+                // the API documentation of 'a deleted folder moves its contents
+                // to the archive folder', we'll move things to archive
+                // ourselves. We can't move to 'unread' directly because that
+                // costs an 'add'.
+                LogMessage($"Listing articles in folder {id}");
+                var bookmarks = await this.ListBookmarks(id.ToString());
+                foreach(var bookmark in bookmarks)
+                {
+                    await this.Archive(bookmark.id);
+                }
+
                 LogMessage($"Deleting folder {id}");
                 await this.DeleteFolder(id);
             }
@@ -151,6 +163,16 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             LogMessage($"Found {bookmarks.Count} bookmarks");
 
             return bookmarks;
+        }
+
+        private async Task Archive(ulong bookmarkId)
+        {
+            var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
+            {
+                { "bookmark_id", bookmarkId.ToString() }
+            });
+
+            _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Star, content);
         }
 
         private async Task Unarchive(ulong bookmarkId)
@@ -223,6 +245,16 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
 
             return uris;
         }
+        
+        internal async Task UnlikeAllLikedArticles()
+        {
+            var likedArticles = await this.ListBookmarks(WellKnownFolderIds.Liked);
+            foreach(var article in likedArticles)
+            {
+                LogMessage($"Unliking {article.id}");
+                await this.Unlike(article.id);
+            }
+        }
         #endregion
     }
 
@@ -240,6 +272,14 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
         internal readonly static Uri TestPage6 = new Uri(BaseTestUri, "_TestPage6.html");
         internal readonly static Uri TestPage7 = new Uri(BaseTestUri, "_TestPage7.html");
         internal readonly static Uri TestPage8 = new Uri(BaseTestUri, "_TestPage8.html");
+        internal readonly static Uri TestPage9 = new Uri(BaseTestUri, "_TestPage9.html");
+        internal readonly static Uri TestPage10 = new Uri(BaseTestUri, "_TestPage10.html");
+        internal readonly static Uri TestPage11 = new Uri(BaseTestUri, "_TestPage11.html");
+        internal readonly static Uri TestPage12 = new Uri(BaseTestUri, "_TestPage12.html");
+        internal readonly static Uri TestPage13 = new Uri(BaseTestUri, "_TestPage13.html");
+        internal readonly static Uri TestPage14 = new Uri(BaseTestUri, "_TestPage14.html");
+        internal readonly static Uri TestPage15 = new Uri(BaseTestUri, "_TestPage15.html");
+        internal readonly static Uri TestPage16 = new Uri(BaseTestUri, "_TestPage16.html");
         internal readonly static Uri TestPageWithImages = new Uri(BaseTestUri, "TestPageWithImage.html");
 
         // This page should always 404
@@ -261,14 +301,14 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
     private IMessageSink logger;
     private void LogMessage(string message) => this.logger.OnMessage(new DiagnosticMessage(message));
 
-    async Task IAsyncLifetime.DisposeAsync()
+    public async Task DisposeAsync()
     {
         LogMessage("Starting Cleanup");
         await Task.CompletedTask;
         LogMessage("Completing Cleanup");
     }
 
-    async Task IAsyncLifetime.InitializeAsync()
+    public async Task InitializeAsync()
     {
         LogMessage("Starting Init");
         var apiHelper = new SimpleInstapaperApi(this.logger);
@@ -276,7 +316,10 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
         LogMessage("Cleaning up Folders");
         await apiHelper.DeleteAllFolders();
 
-        LogMessage("Cleaningup Bookmarks");
+        LogMessage("Cleaning up liked Articles");
+        await apiHelper.UnlikeAllLikedArticles();
+
+        LogMessage("Cleaning up Bookmarks");
         await apiHelper.MoveArchivedBookmarksToUnread();
         var remoteBookmarks = await apiHelper.ResetAllUnreadItems();
 
