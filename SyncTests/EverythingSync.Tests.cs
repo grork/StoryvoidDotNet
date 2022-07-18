@@ -7,21 +7,21 @@ public class EverythingSyncTests : BaseSyncTest
     private void AssertServerAndClientMatch()
     {
         // Check folders match
-        var serviceFolders = this.service.FoldersClient.FolderDB.ListAllFolders();
+        var remoteFolders = this.service.FoldersClient.FolderDB.ListAllFolders();
         var localFolders = this.databases.FolderDB.ListAllFolders();
-        Assert.Equal(serviceFolders, localFolders, new CompareFoldersIgnoringLocalId());
+        Assert.Equal(remoteFolders, localFolders, new CompareFoldersIgnoringLocalId());
 
         // Check Articles match
         Assert.Equal(this.service.BookmarksClient.ArticleDB.ListAllArticles(), this.databases.ArticleDB.ListAllArticles());
         Assert.Equal(this.service.BookmarksClient.ArticleDB.ListLikedArticles(), this.databases.ArticleDB.ListLikedArticles());
 
         // Check those articles are in the right folders
-        foreach (var serviceFolder in serviceFolders)
+        foreach (var remoteFolder in remoteFolders)
         {
-            var localFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFolder.ServiceId!.Value)!;
-            var serviceArticles = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceFolder.LocalId);
+            var localFolder = this.databases.FolderDB.GetFolderByServiceId(remoteFolder.ServiceId!.Value)!;
+            var remoteArticles = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFolder.LocalId);
             var localArticles = this.databases.ArticleDB.ListArticlesForLocalFolder(localFolder.LocalId);
-            Assert.Equal(serviceArticles, localArticles);
+            Assert.Equal(remoteArticles, localArticles);
         }
     }
 
@@ -36,7 +36,7 @@ public class EverythingSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async Task EmptyServiceEmptiesTheLocalDatabase()
+    public async Task EmptyRemoteEmptiesTheLocalDatabase()
     {
         this.SwitchToEmptyServiceDatabase();
 
@@ -46,7 +46,7 @@ public class EverythingSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async Task LocalAndServiceChangesReconcileDuringAFullSync()
+    public async Task LocalAndRemoteChangesReconcileDuringAFullSync()
     {
         // Local folder to delete
         var localFolderToDelete = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -54,33 +54,33 @@ public class EverythingSyncTests : BaseSyncTest
         // Local article to update
         var localArticleToUpdate = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
 
-        // Service article that will be updated
-        var serviceArticleToUpdate = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => a.Id != localArticleToUpdate.Id)!;
+        // Remote article that will be updated
+        var remoteArticleToUpdate = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).First((a) => a.Id != localArticleToUpdate.Id)!;
 
-        // Service Folder (and it's local verison) to move an article to
-        var serviceFolderToMoveTo = this.service.FoldersClient.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId != localFolderToDelete.ServiceId)!;
-        var localFolderToMoveTo = this.databases.FolderDB.GetFolderByServiceId(serviceFolderToMoveTo.ServiceId!.Value)!;
+        // Remote Folder (and it's local verison) to move an article to
+        var remoteFolderToMoveTo = this.service.FoldersClient.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId != localFolderToDelete.ServiceId)!;
+        var localFolderToMoveTo = this.databases.FolderDB.GetFolderByServiceId(remoteFolderToMoveTo.ServiceId!.Value)!;
 
-        // Article to move into a service folder
-        var serviceArticleToMove = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
+        // Article to move into a remote folder
+        var remoteArticleToMove = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
 
-        // Service folder to be deleted
-        var serviceFolderToDelete = this.service.FoldersClient.FolderDB.ListAllCompleteUserFolders().First((f) =>
+        // Remote folder to be deleted
+        var remoteFolderToDelete = this.service.FoldersClient.FolderDB.ListAllCompleteUserFolders().First((f) =>
         {
-            return (f.ServiceId != localFolderToDelete.ServiceId) && (f.ServiceId != serviceFolderToMoveTo.ServiceId);
+            return (f.ServiceId != localFolderToDelete.ServiceId) && (f.ServiceId != remoteFolderToMoveTo.ServiceId);
         })!;
 
-        // Perform service changes
-        serviceArticleToUpdate = this.service.BookmarksClient.ArticleDB.UpdateReadProgressForArticle(serviceArticleToUpdate.ReadProgress + 0.4F, DateTime.Now, serviceArticleToUpdate.Id);
-        serviceArticleToUpdate = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceArticleToUpdate.Id);
-        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(serviceArticleToMove.Id, serviceFolderToMoveTo.LocalId);
+        // Perform remote changes
+        remoteArticleToUpdate = this.service.BookmarksClient.ArticleDB.UpdateReadProgressForArticle(remoteArticleToUpdate.ReadProgress + 0.4F, DateTime.Now, remoteArticleToUpdate.Id);
+        remoteArticleToUpdate = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteArticleToUpdate.Id);
+        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteArticleToMove.Id, remoteFolderToMoveTo.LocalId);
         
-        foreach(var serviceToDelete in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceFolderToDelete.LocalId))
+        foreach(var remoteArticleToDelete in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFolderToDelete.LocalId))
         {
-            this.service.BookmarksClient.ArticleDB.DeleteArticle(serviceToDelete.Id);
+            this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteArticleToDelete.Id);
         }
 
-        this.service.FoldersClient.FolderDB.DeleteFolder(serviceFolderToDelete.LocalId);
+        this.service.FoldersClient.FolderDB.DeleteFolder(remoteFolderToDelete.LocalId);
 
         // Perform local changes
         using(this.GetLedger())

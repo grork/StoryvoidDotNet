@@ -126,7 +126,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
         Assert.Equal(2, unreadBookmarks.Bookmarks.Count);
     }
 
-    private async static Task AssertDatabaseAndServiceMatch((IFolderDatabase Folders, IArticleDatabase Articles) database, (IFoldersClient Folders, IBookmarksClient Bookmarks) service)
+    private async static Task AssertDatabaseAndRemoteMatch((IFolderDatabase Folders, IArticleDatabase Articles) database, (IFoldersClient Folders, IBookmarksClient Bookmarks) service)
     {
         // Check folders
         var remoteFoldersTask = service.Folders.ListAsync();
@@ -176,7 +176,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
                      IFolderDatabase FolderDB,
                      IFolderChangesDatabase FolderChangeDB,
                      IArticleDatabase ArticleDB,
-                     IArticleChangesDatabase ArticleChangeDB) LocalDatabase)> SyncAndVerifyInitialServiceState()
+                     IArticleChangesDatabase ArticleChangeDB) LocalDatabase)> SyncAndVerifyInitialRemoteState()
     {
         var localDatabase = TestUtilities.GetEmptyDatabase();
         var syncEngine = new InstapaperSync(localDatabase.FolderDB,
@@ -188,27 +188,27 @@ public sealed class ServiceSyncTests : IAsyncLifetime
 
         await syncEngine.SyncEverything();
 
-        await AssertDatabaseAndServiceMatch((localDatabase.FolderDB, localDatabase.ArticleDB), (this.SharedState.FoldersClient, this.SharedState.BookmarksClient));
+        await AssertDatabaseAndRemoteMatch((localDatabase.FolderDB, localDatabase.ArticleDB), (this.SharedState.FoldersClient, this.SharedState.BookmarksClient));
 
         return (syncEngine, localDatabase);
     }
 
     [Fact]
-    public async Task ServiceStateCorrectlySyncsToEmptyLocalDatabase()
+    public async Task RemoteStateCorrectlySyncsToEmptyLocalDatabase()
     {
-        var state = await this.SyncAndVerifyInitialServiceState();
+        var state = await this.SyncAndVerifyInitialRemoteState();
         state.LocalDatabase.Connection.Close();
         state.LocalDatabase.Connection.Dispose();
     }
 
     [Fact]
-    public async Task PendingAndServiceUpdatesAreAppliedLocallyAndOnTheService()
+    public async Task PendingAndRemoteUpdatesAreAppliedLocallyAndRemotely()
     {
-        var (syncEngine, localDatabase) = await SyncAndVerifyInitialServiceState();
+        var (syncEngine, localDatabase) = await SyncAndVerifyInitialRemoteState();
         
         try
         {
-            // List service unread articles so we can fiddle with them
+            // List remote unread articles so we can fiddle with them
             var remoteUnreadBookmarksTask = this.SharedState.BookmarksClient.ListAsync(WellKnownFolderIds.Unread);
 
             // Get a local unread article, and some other folder
@@ -236,7 +236,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
 
             await syncEngine.SyncEverything();
 
-            await AssertDatabaseAndServiceMatch((localDatabase.FolderDB, localDatabase.ArticleDB), (this.SharedState.FoldersClient, this.SharedState.BookmarksClient));
+            await AssertDatabaseAndRemoteMatch((localDatabase.FolderDB, localDatabase.ArticleDB), (this.SharedState.FoldersClient, this.SharedState.BookmarksClient));
         }
         finally
         {

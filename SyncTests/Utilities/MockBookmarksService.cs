@@ -185,18 +185,18 @@ public class MockBookmarksService : IBookmarksClient
     public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderServiceId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
         var limit = Convert.ToInt32(resultLimit);
-        IList<DatabaseArticle> serviceArticles = new List<DatabaseArticle>();
+        IList<DatabaseArticle> remoteArticles = new List<DatabaseArticle>();
         if (folderServiceId == WellKnownFolderIds.Liked)
         {
-            serviceArticles = this.ArticleDB.ListLikedArticles();
+            remoteArticles = this.ArticleDB.ListLikedArticles();
         }
         else
         {
             var localFolderId = ServiceFolderIdToLocalFolderId(folderServiceId);
-            serviceArticles = this.ArticleDB.ListArticlesForLocalFolder(localFolderId);
+            remoteArticles = this.ArticleDB.ListArticlesForLocalFolder(localFolderId);
         }
 
-        serviceArticles = serviceArticles.OrderBy((a) => a.Id).Take(limit).ToList();
+        remoteArticles = remoteArticles.OrderBy((a) => a.Id).Take(limit).ToList();
 
         IList<IInstapaperBookmark> result = new List<IInstapaperBookmark>();
         IList<long> deletes = new List<long>();
@@ -206,29 +206,29 @@ public class MockBookmarksService : IBookmarksClient
             // If there was no have information, we should just return the
             // contents of the folder
             return Task.FromResult<(IList<IInstapaperBookmark>, IList<long>)>(
-                (serviceArticles.Select((a) => a.ToInstapaperBookmark()).Take(limit).ToList(), deletes)
+                (remoteArticles.Select((a) => a.ToInstapaperBookmark()).Take(limit).ToList(), deletes)
             );
         }
 
         var havesMap = haveInformation.ToDictionary();
 
         // Check for any that we're aware of
-        foreach(var serviceArticle in serviceArticles)
+        foreach(var remoteArticle in remoteArticles)
         {
             // If the article from the DB didn't have, uhh, have information
             // in the request then it must be new to the client, so included
             // it in the response. No more processing needed.
-            if(!havesMap.ContainsKey(serviceArticle.Id))
+            if(!havesMap.ContainsKey(remoteArticle.Id))
             {
-                result.Add(serviceArticle.ToInstapaperBookmark());
+                result.Add(remoteArticle.ToInstapaperBookmark());
                 continue;
             }
 
-            var have = havesMap[serviceArticle.Id];
+            var have = havesMap[remoteArticle.Id];
 
             // We've processed this have now, so remove it. Any left over will
             // be deletes
-            havesMap.Remove(serviceArticle.Id);
+            havesMap.Remove(remoteArticle.Id);
 
             if(String.IsNullOrWhiteSpace(have.Hash))
             {
@@ -239,15 +239,15 @@ public class MockBookmarksService : IBookmarksClient
             }
 
             // Same hash implies no change
-            if(serviceArticle.Hash == have.Hash)
+            if(remoteArticle.Hash == have.Hash)
             {
                 continue;
             }
 
             // Hash is different so we need to include the article. But we also
             // need to update the hash if we're updating our own information
-            var updatedArticle = serviceArticle;
-            if(serviceArticle.ReadProgressTimestamp < have.ProgressLastChanged)
+            var updatedArticle = remoteArticle;
+            if(remoteArticle.ReadProgressTimestamp < have.ProgressLastChanged)
             {
                 updatedArticle = updatedArticle with
                 {

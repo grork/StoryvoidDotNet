@@ -6,7 +6,7 @@ public class ArticleSyncTests : BaseSyncTest
 {
     #region Local-Only Article Pending Changes
     [Fact]
-    public async Task PendingArticleAddIsAddedToTheService()
+    public async Task PendingArticleAddIsAddedRemote()
     {
         this.SwitchToEmptyLocalDatabase();
         this.SwitchToEmptyServiceDatabase();
@@ -21,15 +21,15 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Make sure we can see it on the service
-        var serviceArticles = this.service.BookmarksClient.ArticleDB.ListAllArticlesInAFolder();
-        Assert.Single(serviceArticles);
-        Assert.Equal(addedUrl, serviceArticles[0]!.Article.Url);
+        var remoteArticles = this.service.BookmarksClient.ArticleDB.ListAllArticlesInAFolder();
+        Assert.Single(remoteArticles);
+        Assert.Equal(addedUrl, remoteArticles[0]!.Article.Url);
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     #region Deletes
     [Fact]
-    public async Task PendingArticleDeletesInUnreadFolderAreRemovedFromTheService()
+    public async Task PendingArticleDeletesInUnreadFolderAreRemovedRemotely()
     {
         // Delete a known article
         var ledger = this.GetLedger();
@@ -41,13 +41,13 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check it's gone
-        var articleFromService = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
-        Assert.Null(articleFromService);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+        Assert.Null(remoteArticle);
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleDeletesInUnreadFolderAreCompletedEvenIfArticleMissingOnService()
+    public async Task PendingArticleDeletesInUnreadFolderAreCompletedEvenIfArticleMissingRemotely()
     {
         // Delete a known article
         var ledger = this.GetLedger();
@@ -62,15 +62,15 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check it's really gone from the service
-        var articleFromService = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
-        Assert.Null(articleFromService);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+        Assert.Null(remoteArticle);
 
         // Make suer pending edits are cleaned up
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleDeletesInCustomFolderAreRemovedFromTheService()
+    public async Task PendingArticleDeletesInCustomFolderAreRemovedRemotely()
     {
         // Folder we'll add to
         var firstUserFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -85,8 +85,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check it's gone
-        var articleFromService = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
-        Assert.Null(articleFromService);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+        Assert.Null(remoteArticle);
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
     #endregion
@@ -108,14 +108,14 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check in the new folder
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
-        Assert.Contains(firstUnreadArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
+        Assert.Contains(firstUnreadArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleMoveFromUnreadFolderToCustomFolderButArticleMissingOnService()
+    public async Task PendingArticleMoveFromUnreadFolderToCustomFolderButArticleMissingRemotely()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -133,14 +133,14 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check it's gone
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
-        Assert.DoesNotContain(firstUnreadArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
+        Assert.DoesNotContain(firstUnreadArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleMoveFromUnreadFolderToCustomFolderButFolderIsMissingOnTheService()
+    public async Task PendingArticleMoveFromUnreadFolderToCustomFolderButFolderIsMissingRemotely()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -159,8 +159,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncPendingBookmarkMoves();
 
         // Check it's gone
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
-        Assert.DoesNotContain(firstUnreadArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
+        Assert.DoesNotContain(firstUnreadArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
@@ -181,14 +181,14 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check in the unread folder
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Contains(firstArticleInCustomFolder, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        Assert.Contains(firstArticleInCustomFolder, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleMoveFromCustomFolderToUnreadButArticleMissingCompletesWithArticleInUnreadFolderLocally()
+    public async Task PendingArticleMoveFromCustomFolderToUnreadButArticleMissingRemotelyCompletesWithArticleInUnreadFolderLocally()
     {
         // Select an article to move
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -232,8 +232,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check in the archive folder folder
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
-        Assert.Contains(firstUnreadArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
+        Assert.Contains(firstUnreadArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
@@ -277,8 +277,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check in the new folder
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Contains(firstArchiveArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        Assert.Contains(firstArchiveArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
@@ -321,8 +321,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check in the new folder
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
-        Assert.Contains(firstArchivedArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
+        Assert.Contains(firstArchivedArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
@@ -343,23 +343,23 @@ public class ArticleSyncTests : BaseSyncTest
         // Sync
         await this.syncEngine.SyncBookmarks();
 
-        // Check article still on service
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
-        Assert.NotNull(serviceArticle);
+        // Check article still available remotely
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+        Assert.NotNull(remoteArticle);
 
-        // Get the new folder from the service
-        var serviceFolder = this.service.FoldersClient.FolderDB.GetFolderByTitle(unsyncedNewFolder.Title);
-        Assert.NotNull(serviceFolder);
+        // Get the new folder from remote
+        var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByTitle(unsyncedNewFolder.Title);
+        Assert.NotNull(remoteFolder);
 
         // Check the article is actually in the folder now
-        var serviceFolderContents = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceFolder!.LocalId);
-        Assert.Contains(serviceArticle, serviceFolderContents);
+        var removeFolderContents = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFolder!.LocalId);
+        Assert.Contains(remoteArticle, removeFolderContents);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
     
     [Fact]
-    public async Task PendingArticleMoveFromUnreadSyncingAlsoAppliesServiceArticlePropertyChanges()
+    public async Task PendingArticleMoveFromUnreadSyncingAlsoAppliesRemoteArticlePropertyChanges()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
@@ -371,7 +371,7 @@ public class ArticleSyncTests : BaseSyncTest
         }
 
         // Make additional changes to that article on the service
-        var updatedArticle = this.service.BookmarksClient.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        var remoteUpdatedArticle = this.service.BookmarksClient.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
         {
             ReadProgress = 0.5F,
             ReadProgressTimestamp = DateTime.Now,
@@ -383,8 +383,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check it's in the new folder
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
-        Assert.Contains(updatedArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
+        Assert.Contains(remoteUpdatedArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
 
@@ -392,11 +392,11 @@ public class ArticleSyncTests : BaseSyncTest
         firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
 
         // Check that all the status changes have now being synced
-        Assert.Equal(updatedArticle, firstUnreadArticle);
+        Assert.Equal(remoteUpdatedArticle, firstUnreadArticle);
     }
     
     [Fact]
-    public async Task PendingArticleMoveToUnreadSyncingAlsoAppliesServiceArticlePropertyChanges()
+    public async Task PendingArticleMoveToUnreadSyncingAlsoAppliesRemoteArticlePropertyChanges()
     {
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(firstFolder.LocalId);
@@ -408,7 +408,7 @@ public class ArticleSyncTests : BaseSyncTest
         }
 
         // Make additional changes to that article on the service
-        var updatedArticle = this.service.BookmarksClient.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        var remoteUpdatedArticle = this.service.BookmarksClient.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
         {
             ReadProgress = 0.5F,
             ReadProgressTimestamp = DateTime.Now,
@@ -420,8 +420,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check it's in the new folder
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Contains(updatedArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
+        Assert.Contains(remoteUpdatedArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
 
@@ -429,11 +429,11 @@ public class ArticleSyncTests : BaseSyncTest
         firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
 
         // Check that all the status changes have now being synced
-        Assert.Equal(updatedArticle, firstUnreadArticle);
+        Assert.Equal(remoteUpdatedArticle, firstUnreadArticle);
     }
 
     [Fact]
-    public async Task PendingArticleMoveToArchiveSyncingAlsoAppliesServiceArticlePropertyChanges()
+    public async Task PendingArticleMoveToArchiveSyncingAlsoAppliesRemoteArticlePropertyChanges()
     {
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(firstFolder.LocalId);
@@ -445,7 +445,7 @@ public class ArticleSyncTests : BaseSyncTest
         }
 
         // Make additional changes to that article on the service
-        var updatedArticle = this.service.BookmarksClient.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
+        var remoteUpdatedArticle = this.service.BookmarksClient.ArticleDB.UpdateArticle(DatabaseArticle.ToArticleRecordInformation(firstUnreadArticle with
         {
             ReadProgress = 0.5F,
             ReadProgressTimestamp = DateTime.Now,
@@ -457,8 +457,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check it's in the new folder
-        var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
-        Assert.Contains(updatedArticle, articlesInFolder);
+        var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
+        Assert.Contains(remoteUpdatedArticle, remoteArticlesInFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
 
@@ -466,13 +466,13 @@ public class ArticleSyncTests : BaseSyncTest
         firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
 
         // Check that all the status changes have now being synced
-        Assert.Equal(updatedArticle, firstUnreadArticle);
+        Assert.Equal(remoteUpdatedArticle, firstUnreadArticle);
     }
     #endregion
 
     #region Liking
     [Fact]
-    public async Task PendingArticleLikeSyncsToService()
+    public async Task PendingArticleLikeSyncsToRemote()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
 
@@ -486,14 +486,14 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is liked
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
-        Assert.True(serviceArticle.Liked);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.True(remoteArticle.Liked);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleLikeButAlreadyLikedOnService()
+    public async Task PendingArticleLikeButAlreadyLikedRemotely()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         _ = this.service.BookmarksClient.ArticleDB.LikeArticle(firstUnreadArticle.Id);
@@ -508,8 +508,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is liked
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
-        Assert.True(serviceArticle.Liked);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.True(remoteArticle.Liked);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
@@ -530,14 +530,14 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is liked
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == firstUnreadArticle.Url);
-        Assert.Null(serviceArticle);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == firstUnreadArticle.Url);
+        Assert.Null(remoteArticle);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleUnlikeSyncsToService()
+    public async Task PendingArticleUnlikeSyncsRemotely()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
 
@@ -555,14 +555,14 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is unliked
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
-        Assert.False(serviceArticle.Liked);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.False(remoteArticle.Liked);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleUnlikeButAlreadyUnlikedOnService()
+    public async Task PendingArticleUnlikeButAlreadyUnlikedRemotely()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         firstUnreadArticle = this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id); // Make sure its liked so we generate a pending edit
@@ -578,14 +578,14 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is unliked
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
-        Assert.False(serviceArticle.Liked);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.False(remoteArticle.Liked);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleUnlikeMissingArticleDoesntAddArticle()
+    public async Task PendingArticleUnlikeMissingArticleDoesntAddArticleRemotely()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         firstUnreadArticle = this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id); // Make sure its liked so we generate a pending edit
@@ -602,14 +602,14 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is not re-added
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == firstUnreadArticle.Url);
-        Assert.Null(serviceArticle);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == firstUnreadArticle.Url);
+        Assert.Null(remoteArticle);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task PendingArticleLikeSyncPicksUpOtherPropertyChangesFromService()
+    public async Task PendingArticleLikeSyncPicksUpOtherPropertyChangesRemotely()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
 
@@ -631,8 +631,8 @@ public class ArticleSyncTests : BaseSyncTest
         await this.syncEngine.SyncBookmarkLikeStatuses();
 
         // Check the article is liked
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
-        Assert.True(serviceArticle.Liked);
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        Assert.True(remoteArticle.Liked);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
 
@@ -652,9 +652,9 @@ public class ArticleSyncTests : BaseSyncTest
 
     #endregion
 
-    #region Service-Only Article Changes
+    #region Remote-Only Article Changes
     [Fact]
-    public async Task ServiceArticleAddedToUnreadIsAddedLocally()
+    public async Task RemoteArticleAddedToUnreadIsAddedLocally()
     {
         var addedArticle = this.service.BookmarksClient.ArticleDB.AddRandomArticleToDb();
 
@@ -668,23 +668,23 @@ public class ArticleSyncTests : BaseSyncTest
 
         // Check that service & local agree on unread contents
         var localUnread = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
-        var serviceUnread = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
-        Assert.Equal(serviceUnread, localUnread);
+        var remoteUnread = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Equal(remoteUnread, localUnread);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleDeletedFromUnreadIsRemovedLocally()
+    public async Task RemoteArticleDeletedFromUnreadIsRemovedLocally()
     {
-        var firstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
-        this.service.BookmarksClient.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
+        var remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteFirstUnreadArticle.Id);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is missing
-        var localArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id);
         if(localArticle is not null)
         {
             // If the article has been deleted, thats OK. But if it hasn't, we
@@ -693,46 +693,46 @@ public class ArticleSyncTests : BaseSyncTest
             Assert.Contains(localArticle, orphanedArticles);
         }        
 
-        // Check that service & local agree on unread contents
+        // Check that remote & local agree on unread contents
         var localUnread = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
-        var serviceUnread = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
-        Assert.Equal(serviceUnread, localUnread);
+        var remoteUnread = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Equal(remoteUnread, localUnread);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleAddedToArchiveIsAddedLocally()
+    public async Task RemoteArticleAddedToArchiveIsAddedLocally()
     {
-        var addedArticle = this.service.BookmarksClient.ArticleDB.AddRandomArticleToDb(WellKnownLocalFolderIds.Archive);
+        var remoteAddedArticle = this.service.BookmarksClient.ArticleDB.AddRandomArticleToDb(WellKnownLocalFolderIds.Archive);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available now
-        var localArticle = this.databases.ArticleDB.GetArticleById(addedArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteAddedArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(addedArticle, localArticle);
+        Assert.Equal(remoteAddedArticle, localArticle);
 
-        // Check that service & local agree on unread contents
+        // Check that remote & local agree on unread contents
         var localArchive = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
-        var serviceArchive = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
-        Assert.Equal(serviceArchive, localArchive);
+        var remoteArchive = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
+        Assert.Equal(remoteArchive, localArchive);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleDeletedFromArchiveIsRemovedLocally()
+    public async Task RemoteArticleDeletedFromArchiveIsRemovedLocally()
     {
-        var firstArchiveArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
-        this.service.BookmarksClient.ArticleDB.DeleteArticle(firstArchiveArticle.Id);
+        var remoteFirstArchiveArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
+        this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteFirstArchiveArticle.Id);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is missing
-        var localArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstArchiveArticle.Id);
         if(localArticle is not null)
         {
             // If the article has been deleted, thats OK. But if it hasn't, we
@@ -741,50 +741,50 @@ public class ArticleSyncTests : BaseSyncTest
             Assert.Contains(localArticle, orphanedArticles);
         }        
 
-        // Check that service & local agree on unread contents
+        // Check that remote & local agree on unread contents
         var localArchive = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
-        var serviceArchive = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
-        Assert.Equal(serviceArchive, localArchive);
+        var remoteArchive = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
+        Assert.Equal(remoteArchive, localArchive);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleAddedToUserFolderIsAddedLocally()
+    public async Task RemoteArticleAddedToUserFolderIsAddedLocally()
     {
-        var serviceFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
-        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
-        var addedArticle = this.service.BookmarksClient.ArticleDB.AddRandomArticleToDb(serviceFirstUserFolder.LocalId);
+        var remoteFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(remoteFirstUserFolder.ServiceId!.Value)!;
+        var remoteAddedArticle = this.service.BookmarksClient.ArticleDB.AddRandomArticleToDb(remoteFirstUserFolder.LocalId);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available now
-        var localArticle = this.databases.ArticleDB.GetArticleById(addedArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteAddedArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(addedArticle, localArticle);
+        Assert.Equal(remoteAddedArticle, localArticle);
 
-        // Check that service & local agree on unread contents
+        // Check that remote & local agree on unread contents
         var localUnread = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
-        var serviceUnread = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).OrderBy((a) => a.Id);
-        Assert.Equal(serviceUnread, localUnread);
+        var remoteUnread = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFirstUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Equal(remoteUnread, localUnread);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleDeletedFromUserFolderIsRemovedLocally()
+    public async Task RemoteArticleDeletedFromUserFolderIsRemovedLocally()
     {
-        var serviceFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
-        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(serviceFirstUserFolder.LocalId);
-        this.service.BookmarksClient.ArticleDB.DeleteArticle(serviceArticle.Id);
+        var remoteFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(remoteFirstUserFolder.ServiceId!.Value)!;
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(remoteFirstUserFolder.LocalId);
+        this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteArticle.Id);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is missing
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteArticle.Id);
         if(localArticle is not null)
         {
             // If the article has been deleted, thats OK. But if it hasn't, we
@@ -793,201 +793,201 @@ public class ArticleSyncTests : BaseSyncTest
             Assert.Contains(localArticle, orphanedArticles);
         }        
 
-        // Check that service & local agree on unread contents
+        // Check that remote & local agree on unread contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
-        var serviceFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).OrderBy((a) => a.Id);
-        Assert.Equal(serviceFolder, localFolder);
+        var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFirstUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Equal(remoteFolder, localFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleMovedFromUnreadToUserFolderIsMovedLocally()
+    public async Task RemoteArticleMovedFromUnreadToUserFolderIsMovedLocally()
     {
-        var serviceFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
-        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
-        var serviceUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
-        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(serviceUnreadArticle.Id, serviceFirstUserFolder.LocalId);
+        var remoteFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(remoteFirstUserFolder.ServiceId!.Value)!;
+        var remoteUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUnreadArticle.Id, remoteFirstUserFolder.LocalId);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUnreadArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteUnreadArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(serviceUnreadArticle, localArticle);
+        Assert.Equal(remoteUnreadArticle, localArticle);
 
-        // Check that service & local agree on custom folder contents
+        // Check that remote & local agree on custom folder contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
         
-        var serviceFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).OrderBy((a) => a.Id);
-        Assert.Equal(serviceFolder, localFolder);
+        var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFirstUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Equal(remoteFolder, localFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleMovedFromUnreadToArchiveIsMovedLocally()
+    public async Task RemoteArticleMovedFromUnreadToArchiveIsMovedLocally()
     {
-        var serviceUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
-        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(serviceUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
+        var remoteUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUnreadArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteUnreadArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(serviceUnreadArticle, localArticle);
+        Assert.Equal(remoteUnreadArticle, localArticle);
 
-        // Check that service & local agree on Archive contents
+        // Check that remote & local agree on Archive contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
         
-        var serviceFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
-        Assert.Equal(serviceFolder, localFolder);
+        var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
+        Assert.Equal(remoteFolder, localFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleMovedFromUserFolderToUnreadIsMovedLocally()
+    public async Task RemoteArticleMovedFromUserFolderToUnreadIsMovedLocally()
     {
         // Select a folder to move from
         var serviceFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
         var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
 
         // Move the first article in that folder to unread
-        var serviceUserArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(serviceFirstUserFolder.LocalId);
-        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(serviceUserArticle.Id, WellKnownLocalFolderIds.Unread);
+        var remoteUserArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(serviceFirstUserFolder.LocalId);
+        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUserArticle.Id, WellKnownLocalFolderIds.Unread);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUserArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteUserArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(serviceUserArticle, localArticle);
+        Assert.Equal(remoteUserArticle, localArticle);
 
-        // Check that service & local agree on unread contents
+        // Check that remote & local agree on unread contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
         
-        var serviceFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
-        Assert.Equal(serviceFolder, localFolder);
+        var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Equal(remoteFolder, localFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleMovedFromUserFolderToArchiveIsMovedLocally()
+    public async Task RemoteArticleMovedFromUserFolderToArchiveIsMovedLocally()
     {
         // Select a folder to move from
-        var serviceFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
-        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
+        var remoteFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(remoteFirstUserFolder.ServiceId!.Value)!;
 
         // Move the first article in that folder to archive
-        var serviceUserArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(serviceFirstUserFolder.LocalId);
-        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(serviceUserArticle.Id, WellKnownLocalFolderIds.Archive);
+        var remoteUserArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(remoteFirstUserFolder.LocalId);
+        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUserArticle.Id, WellKnownLocalFolderIds.Archive);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUserArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteUserArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(serviceUserArticle, localArticle);
+        Assert.Equal(remoteUserArticle, localArticle);
 
-        // Check that service & local agree on unread contents
+        // Check that remote & local agree on unread contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
         
-        var serviceFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
-        Assert.Equal(serviceFolder, localFolder);
+        var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
+        Assert.Equal(remoteFolder, localFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleMovedFromUserFolderToUserFolderIsMovedLocally()
+    public async Task RemoteArticleMovedFromUserFolderToUserFolderIsMovedLocally()
     {
         // Select a folder to move from
-        var serviceFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
-        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
+        var remoteFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(remoteFirstUserFolder.ServiceId!.Value)!;
 
         // Select a folder to move to
-        var serviceSecondUserFolder = this.service.FoldersClient.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId != serviceFirstUserFolder.ServiceId);
-        var localSecondUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceSecondUserFolder.ServiceId!.Value)!;
+        var remoteSecondUserFolder = this.service.FoldersClient.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId != remoteFirstUserFolder.ServiceId);
+        var localSecondUserFolder = this.databases.FolderDB.GetFolderByServiceId(remoteSecondUserFolder.ServiceId!.Value)!;
 
         // Move the first article in that folder to the second folder
-        var serviceUserArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(serviceFirstUserFolder.LocalId);
-        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(serviceUserArticle.Id, serviceSecondUserFolder.LocalId);
+        var remoteUserArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(remoteFirstUserFolder.LocalId);
+        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUserArticle.Id, remoteSecondUserFolder.LocalId);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceUserArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteUserArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(serviceUserArticle, localArticle);
+        Assert.Equal(remoteUserArticle, localArticle);
 
-        // Check that service & local agree on second folder contents contents
+        // Check that remote & local agree on second folder contents contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localSecondUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
         
-        var serviceFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceSecondUserFolder.LocalId).OrderBy((a) => a.Id);
-        Assert.Equal(serviceFolder, localFolder);
+        var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteSecondUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Equal(remoteFolder, localFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleMovedFromArchiveToUserFolderIsMovedLocally()
+    public async Task RemoteArticleMovedFromArchiveToUserFolderIsMovedLocally()
     {
-        var serviceFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
-        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(serviceFirstUserFolder.ServiceId!.Value)!;
-        var serviceArchiveArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
-        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(serviceArchiveArticle.Id, serviceFirstUserFolder.LocalId);
+        var remoteFirstUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        var localFirstUserFolder = this.databases.FolderDB.GetFolderByServiceId(remoteFirstUserFolder.ServiceId!.Value)!;
+        var remoteArchiveArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
+        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteArchiveArticle.Id, remoteFirstUserFolder.LocalId);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceArchiveArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteArchiveArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(serviceArchiveArticle, localArticle);
+        Assert.Equal(remoteArchiveArticle, localArticle);
 
-        // Check that service & local agree on custom folder contents
+        // Check that remote & local agree on custom folder contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
         
-        var serviceFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceFirstUserFolder.LocalId).OrderBy((a) => a.Id);
-        Assert.Equal(serviceFolder, localFolder);
+        var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFirstUserFolder.LocalId).OrderBy((a) => a.Id);
+        Assert.Equal(remoteFolder, localFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 
     [Fact]
-    public async Task ServiceArticleMovedFromArchiveToUnreadIsMovedLocally()
+    public async Task RemoteArticleMovedFromArchiveToUnreadIsMovedLocally()
     {
-        var serviceArchiveArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
-        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(serviceArchiveArticle.Id, WellKnownLocalFolderIds.Unread);
+        var remoteArchiveArticle = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
+        this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteArchiveArticle.Id, WellKnownLocalFolderIds.Unread);
 
         // Sync
         await this.syncEngine.SyncBookmarks();
 
         // Check the article is available
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceArchiveArticle.Id);
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteArchiveArticle.Id);
         Assert.NotNull(localArticle);
-        Assert.Equal(serviceArchiveArticle, localArticle);
+        Assert.Equal(remoteArchiveArticle, localArticle);
 
-        // Check that service & local agree on Archive contents
+        // Check that remote & local agree on Archive contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
         
-        var serviceFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
-        Assert.Equal(serviceFolder, localFolder);
+        var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
+        Assert.Equal(remoteFolder, localFolder);
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
@@ -995,7 +995,7 @@ public class ArticleSyncTests : BaseSyncTest
 
     #region List API-based property updates
     [Fact]
-    public async Task LocalProgressChangeInUnreadNewerThanServiceIsAppliedToService()
+    public async Task LocalProgressChangeInUnreadNewerThanRemoteIsAppliedRemotely()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         var newProgress = firstUnreadArticle.ReadProgress + 0.5F;
@@ -1009,15 +1009,15 @@ public class ArticleSyncTests : BaseSyncTest
 
         await this.syncEngine.SyncBookmarks();
 
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
         firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
         Assert.Equal(newProgress, firstUnreadArticle.ReadProgress);
         Assert.Equal(newProgressTimestamp, firstUnreadArticle.ReadProgressTimestamp);
-        Assert.Equal(firstUnreadArticle, serviceArticle);
+        Assert.Equal(firstUnreadArticle, remoteArticle);
     }
 
     [Fact]
-    public async Task LocalProgressChangeInUnreadOlderThanServiceIsAppliedLocally()
+    public async Task LocalProgressChangeInUnreadOlderThanRemoteIsAppliedLocally()
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         var newProgress = firstUnreadArticle.ReadProgress + 0.5F;
@@ -1031,15 +1031,15 @@ public class ArticleSyncTests : BaseSyncTest
 
         await this.syncEngine.SyncBookmarks();
 
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
         firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
         Assert.NotEqual(newProgress, firstUnreadArticle.ReadProgress);
         Assert.NotEqual(newProgressTimestamp, firstUnreadArticle.ReadProgressTimestamp);
-        Assert.Equal(firstUnreadArticle, serviceArticle);
+        Assert.Equal(firstUnreadArticle, remoteArticle);
     }
 
     [Fact]
-    public async Task LocalProgressChangeInArchiveNewerThanServiceIsAppliedToService()
+    public async Task LocalProgressChangeInArchiveNewerThanRemoteIsAppliedToRemotely()
     {
         var firstArchiveArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
         var newProgress = firstArchiveArticle.ReadProgress + 0.5F;
@@ -1053,15 +1053,15 @@ public class ArticleSyncTests : BaseSyncTest
 
         await this.syncEngine.SyncBookmarks();
 
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         Assert.Equal(newProgress, firstArchiveArticle.ReadProgress);
         Assert.Equal(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
-        Assert.Equal(firstArchiveArticle, serviceArticle);
+        Assert.Equal(firstArchiveArticle, remoteArticle);
     }
 
     [Fact]
-    public async Task LocalProgressChangeInArchiveOlderThanServiceIsAppliedLocally()
+    public async Task LocalProgressChangeInArchiveOlderThanRemoteIsAppliedLocally()
     {
         var firstArchiveArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Archive);
         var newProgress = firstArchiveArticle.ReadProgress + 0.5F;
@@ -1075,15 +1075,15 @@ public class ArticleSyncTests : BaseSyncTest
 
         await this.syncEngine.SyncBookmarks();
 
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         Assert.NotEqual(newProgress, firstArchiveArticle.ReadProgress);
         Assert.NotEqual(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
-        Assert.Equal(firstArchiveArticle, serviceArticle);
+        Assert.Equal(firstArchiveArticle, remoteArticle);
     }
 
     [Fact]
-    public async Task LocalProgressChangeInUserFolderNewerThanServiceIsAppliedToService()
+    public async Task LocalProgressChangeInUserFolderNewerThanRemoteIsAppliedRemotely()
     {
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
         var firstArchiveArticle = this.databases.ArticleDB.FirstArticleInFolder(firstFolder.LocalId);
@@ -1098,15 +1098,15 @@ public class ArticleSyncTests : BaseSyncTest
 
         await this.syncEngine.SyncBookmarks();
 
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         Assert.Equal(newProgress, firstArchiveArticle.ReadProgress);
         Assert.Equal(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
-        Assert.Equal(firstArchiveArticle, serviceArticle);
+        Assert.Equal(firstArchiveArticle, remoteArticle);
     }
 
     [Fact]
-    public async Task LocalProgressChangeInUserFolderOlderThanServiceIsAppliedLocally()
+    public async Task LocalProgressChangeInUserFolderOlderThanRemoteIsAppliedLocally()
     {
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
         var firstArchiveArticle = this.databases.ArticleDB.FirstArticleInFolder(firstFolder.LocalId);
@@ -1121,35 +1121,35 @@ public class ArticleSyncTests : BaseSyncTest
 
         await this.syncEngine.SyncBookmarks();
 
-        var serviceArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
+        var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         Assert.NotEqual(newProgress, firstArchiveArticle.ReadProgress);
         Assert.NotEqual(newProgressTimestamp, firstArchiveArticle.ReadProgressTimestamp);
-        Assert.Equal(firstArchiveArticle, serviceArticle);
+        Assert.Equal(firstArchiveArticle, remoteArticle);
     }
 
     [Fact]
-    public async Task LikedServiceArticleIsLikedLocallyAfterSync()
+    public async Task LikedRemoteArticleIsLikedLocallyAfterSync()
     {
-        var serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
-        serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceFirstUnreadArticle.Id);
+        var remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
+        remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteFirstUnreadArticle.Id);
 
         await this.syncEngine.SyncBookmarks();
 
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceFirstUnreadArticle.Id)!;
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id)!;
         Assert.True(localArticle.Liked);
-        Assert.Equal(serviceFirstUnreadArticle, localArticle);
+        Assert.Equal(remoteFirstUnreadArticle, localArticle);
 
         var likedArticles = this.databases.ArticleDB.ListLikedArticles();
         Assert.Contains(localArticle, likedArticles);
     }
 
     [Fact]
-    public async Task LikedServiceArticleThatIsNotInAFolderIsCorrectlySynced()
+    public async Task LikedRemoteArticleThatIsNotInAFolderIsCorrectlySynced()
     {
-        // Find a service article, and like it
-        var serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
-        serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceFirstUnreadArticle.Id);
+        // Find a remote article, and like it
+        var remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
+        remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteFirstUnreadArticle.Id);
 
         // Create a *liked* article that is no longer in any folder. The
         // documentation says articles in folders should be moved to the archive
@@ -1157,13 +1157,13 @@ public class ArticleSyncTests : BaseSyncTest
         // anywhere (the bug). This introduces a scenario where liked articles
         // now *only* appear in the liked 'virtual' folder. Since this has been
         // happening for ~3 years, we should mimick the bug in our local testing
-        this.service.BookmarksClient.ArticleDB.RemoveArticleFromAnyFolder(serviceFirstUnreadArticle.Id);
+        this.service.BookmarksClient.ArticleDB.RemoveArticleFromAnyFolder(remoteFirstUnreadArticle.Id);
 
         await this.syncEngine.SyncBookmarks();
 
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceFirstUnreadArticle.Id)!;
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id)!;
         Assert.True(localArticle.Liked);
-        Assert.Equal(serviceFirstUnreadArticle, localArticle);
+        Assert.Equal(remoteFirstUnreadArticle, localArticle);
 
         var likedArticles = this.databases.ArticleDB.ListLikedArticles();
         Assert.Contains(localArticle, likedArticles);
@@ -1174,13 +1174,13 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async Task LikedServiceArticleThatIsNotInAFolderIsCorrectlySyncedWithEmptyLocalDatabase()
+    public async Task LikedRemoteArticleThatIsNotInAFolderIsCorrectlySyncedWithEmptyLocalDatabase()
     {
         this.SwitchToEmptyLocalDatabase();
 
-        // Find a service article, and like it
-        var serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
-        serviceFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceFirstUnreadArticle.Id);
+        // Find a remote article, and like it
+        var remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
+        remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteFirstUnreadArticle.Id);
 
         // Create a *liked* article that is no longer in any folder. The
         // documentation says articles in folders should be moved to the archive
@@ -1188,13 +1188,13 @@ public class ArticleSyncTests : BaseSyncTest
         // anywhere (the bug). This introduces a scenario where liked articles
         // now *only* appear in the liked 'virtual' folder. Since this has been
         // happening for ~3 years, we should mimick the bug in our local testing
-        this.service.BookmarksClient.ArticleDB.RemoveArticleFromAnyFolder(serviceFirstUnreadArticle.Id);
+        this.service.BookmarksClient.ArticleDB.RemoveArticleFromAnyFolder(remoteFirstUnreadArticle.Id);
 
         await this.syncEngine.SyncBookmarks();
 
-        var localArticle = this.databases.ArticleDB.GetArticleById(serviceFirstUnreadArticle.Id)!;
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id)!;
         Assert.True(localArticle.Liked);
-        Assert.Equal(serviceFirstUnreadArticle, localArticle);
+        Assert.Equal(remoteFirstUnreadArticle, localArticle);
 
         var likedArticles = this.databases.ArticleDB.ListLikedArticles();
         Assert.Contains(localArticle, likedArticles);
@@ -1205,7 +1205,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async Task UnlikedServiceArticleIsThatIsLikedLocallyBecomesUnlikedAfterSync()
+    public async Task UnlikedRemoteArticleIsThatIsLikedLocallyBecomesUnlikedAfterSync()
     {
         var localFirstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         this.databases.ArticleDB.LikeArticle(localFirstUnreadArticle.Id);
@@ -1221,7 +1221,7 @@ public class ArticleSyncTests : BaseSyncTest
     }
 
     [Fact]
-    public async Task SyncingWithAServiceDeletedFolderCompletes()
+    public async Task SyncingWithARemoteDeletedFolderCompletes()
     {
         // Makes sure liked articles don't confuse this test. This test expects
         // the article state to remain the same, but because *like* syncing will
@@ -1232,34 +1232,34 @@ public class ArticleSyncTests : BaseSyncTest
         // we're testing a pathological case, so we'll make this exception.
         this.UnlikeEverything();
 
-        // Get the service folder to delete, and all it's articles.
-        var serviceUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
-        var serviceArticles = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceUserFolder.LocalId);
+        // Get the remote folder to delete, and all it's articles.
+        var remoteUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
+        var remoteArticles = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteUserFolder.LocalId);
 
-        foreach(var serviceArticle in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(serviceUserFolder.LocalId))
+        foreach(var remoteArticle in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteUserFolder.LocalId))
         {
-            this.service.BookmarksClient.ArticleDB.DeleteArticle(serviceArticle.Id);
+            this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteArticle.Id);
         }
 
         var localFolderThatWasDeletedContents =
             this.databases.ArticleDB.ListArticlesForLocalFolder(
-                this.databases.FolderDB.GetFolderByServiceId(serviceUserFolder.ServiceId!.Value)!.LocalId
+                this.databases.FolderDB.GetFolderByServiceId(remoteUserFolder.ServiceId!.Value)!.LocalId
             );
 
 
-        Assert.Equal(localFolderThatWasDeletedContents, serviceArticles);
+        Assert.Equal(localFolderThatWasDeletedContents, remoteArticles);
 
-        this.service.FoldersClient.FolderDB.DeleteFolder(serviceUserFolder.LocalId);
+        this.service.FoldersClient.FolderDB.DeleteFolder(remoteUserFolder.LocalId);
 
         // Make some changes in another folder to make sure the changes sync
-        var localUserFolderThatIsntTheDeletedOne = this.databases.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId!.Value != serviceUserFolder.ServiceId!.Value);
+        var localUserFolderThatIsntTheDeletedOne = this.databases.FolderDB.ListAllCompleteUserFolders().First((f) => f.ServiceId!.Value != remoteUserFolder.ServiceId!.Value);
         var localFirstArticle = this.databases.ArticleDB.FirstArticleInFolder(localUserFolderThatIsntTheDeletedOne.LocalId);
         localFirstArticle = this.databases.ArticleDB.UpdateReadProgressForArticle(localFirstArticle.ReadProgress + 0.5F, DateTime.Now, localFirstArticle.Id);
 
         await this.syncEngine.SyncBookmarks();
 
         // Check the deleted folder wasn't deleted locally, and that it's contents match
-        var localFolderThatWasDeletedPostSync = this.databases.FolderDB.GetFolderByServiceId(serviceUserFolder.ServiceId!.Value)!;
+        var localFolderThatWasDeletedPostSync = this.databases.FolderDB.GetFolderByServiceId(remoteUserFolder.ServiceId!.Value)!;
         Assert.NotNull(localFolderThatWasDeletedPostSync);
 
         var localFolderThatWasDeletedContentsPostSync = this.databases.ArticleDB.ListArticlesForLocalFolder(localFolderThatWasDeletedPostSync.LocalId);
@@ -1304,8 +1304,8 @@ public class ArticleSyncTests : BaseSyncTest
     {
         this.UnlikeEverything();
 
-        var serviceLikedArticle = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).Last()!;
-        serviceLikedArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(serviceLikedArticle.Id);
+        var remoteLikedArticle = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).Last()!;
+        remoteLikedArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteLikedArticle.Id);
 
         this.syncEngine.ArticlesPerFolderToSync = 1;
 
@@ -1314,11 +1314,11 @@ public class ArticleSyncTests : BaseSyncTest
 
         // Check the article is no longer in the folder
         var localUnreadArticles = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.DoesNotContain(serviceLikedArticle, localUnreadArticles);
+        Assert.DoesNotContain(remoteLikedArticle, localUnreadArticles);
 
         // Check that the article is still in the liked list
         var localLikedArticles = this.databases.ArticleDB.ListLikedArticles();
-        Assert.Contains(serviceLikedArticle, localLikedArticles);
+        Assert.Contains(remoteLikedArticle, localLikedArticles);
     }
 
     [Fact]
