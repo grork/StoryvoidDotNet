@@ -14,7 +14,7 @@ public static class TestUtilities
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         connection.Open();
-        InstapaperDatabase.CreateDatabaseIfNeeded(connection);
+        connection.CreateDatabaseIfNeeded();
 
         return connection;
     }

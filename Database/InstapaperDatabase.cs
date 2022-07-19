@@ -70,7 +70,7 @@ public static class InstapaperDatabase
         return (CURRENT_DB_VERSION == version);
     }
 
-    public static void CreateDatabaseIfNeeded(IDbConnection connection)
+    public static void CreateDatabaseIfNeeded(this IDbConnection connection)
     {
         if (connection.State != ConnectionState.Open)
         {
@@ -107,22 +107,22 @@ public static class InstapaperDatabase
         }
     }
 
-    public static IFolderDatabase GetFolderDatabase(IDbConnection connection)
+    public static IFolderDatabase GetFolderDatabase(this IDbConnection connection)
     {
         return new FolderDatabase(connection);
     }
 
-    public static IFolderChangesDatabase GetFolderChangesDatabase(IDbConnection connection)
+    public static IFolderChangesDatabase GetFolderChangesDatabase(this IDbConnection connection)
     {
         return new FolderChanges(connection);
     }
 
-    public static IArticleDatabase GetArticleDatabase(IDbConnection connection)
+    public static IArticleDatabase GetArticleDatabase(this IDbConnection connection)
     {
         return new ArticleDatabase(connection);
     }
 
-    public static IArticleChangesDatabase GetArticleChangesDatabase(IDbConnection connection)
+    public static IArticleChangesDatabase GetArticleChangesDatabase(this IDbConnection connection)
     {
         return new ArticleChanges(connection);
     }

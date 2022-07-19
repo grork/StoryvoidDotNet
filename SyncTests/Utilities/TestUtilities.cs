@@ -28,12 +28,12 @@ internal static class TestUtilities
         // Setup local database
         var connection = new SqliteConnection("Data Source=:memory:");
         connection.Open();
-        InstapaperDatabase.CreateDatabaseIfNeeded(connection);
+        connection.CreateDatabaseIfNeeded();
 
-        var folderDb = InstapaperDatabase.GetFolderDatabase(connection);
-        var folderChangesDb = InstapaperDatabase.GetFolderChangesDatabase(connection);
-        var articleDb = InstapaperDatabase.GetArticleDatabase(connection);
-        var articleChangesDb = InstapaperDatabase.GetArticleChangesDatabase(connection);
+        var folderDb = connection.GetFolderDatabase();
+        var folderChangesDb = connection.GetFolderChangesDatabase();
+        var articleDb = connection.GetArticleDatabase();
+        var articleChangesDb = connection.GetArticleChangesDatabase();
 
         return (connection, folderDb, folderChangesDb, articleDb, articleChangesDb);
     }
