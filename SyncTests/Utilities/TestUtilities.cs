@@ -133,7 +133,7 @@ internal static class TestUtilities
 
     internal static IList<DatabaseFolder> ListAllCompleteUserFolders(this IFolderDatabase instance)
     {
-        var localFolders = from f in instance.ListAllFolders()
+        var localFolders = from f in instance.ListAllUserFolders()
                            where f.ServiceId.HasValue && f.LocalId != WellKnownLocalFolderIds.Unread && f.LocalId != WellKnownLocalFolderIds.Archive
                            select f;
 

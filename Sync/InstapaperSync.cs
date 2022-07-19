@@ -12,18 +12,6 @@ namespace Codevoid.Storyvoid.Sync;
 internal static class FolderDatabaseExtensions
 {
     /// <summary>
-    /// Locaate all the folders in the database that were created by a user (e.g
-    /// not unread or archive)
-    /// </summary>
-    /// <returns>All the folders that are not the unread or archive folder</returns>
-    internal static IList<DatabaseFolder> ListAllUserFolders(this IFolderDatabase instance)
-    {
-        return new List<DatabaseFolder>(from f in instance.ListAllFolders()
-                                        where f.LocalId != WellKnownLocalFolderIds.Unread && f.LocalId != WellKnownLocalFolderIds.Archive
-                                        select f);
-    }
-
-    /// <summary>
     /// Creates a folder in the database with the server information. These are
     /// fully known folders, so have all information available.
     /// </summary>

@@ -56,6 +56,13 @@ public sealed class FolderDatabaseTests : IDisposable
     }
 
     [Fact]
+    public void DefaultFoldersAreNotReturnedWithUserFoldersWhenNoUserFolders()
+    {
+        var allFolders = this.db.ListAllUserFolders();
+        Assert.Empty(allFolders);
+    }
+
+    [Fact]
     public void CanGetSingleDefaultFolderByServiceId()
     {
         var folder = this.db.GetFolderByServiceId(WellKnownServiceFolderIds.Unread);
@@ -121,6 +128,18 @@ public sealed class FolderDatabaseTests : IDisposable
         // Request the folder explicitily, check it's data
         DatabaseFolder folder = this.db.GetFolderByTitle("Sample")!;
         Assert.Equal(addedFolder.LocalId, folder.LocalId);
+    }
+
+    [Fact]
+    public void ListingUserFoldersDoesNotIncludeDefaultFolders()
+    {
+        // Create folder; check results are returned
+        var addedFolder = this.db.CreateFolder("Sample");
+        
+        // Check it comes back when listing all folders
+        var allFolders = this.db.ListAllUserFolders();
+        Assert.Contains(addedFolder, allFolders);
+        Assert.Equal(1, allFolders.Count);
     }
 
     [Fact]

@@ -48,6 +48,13 @@ public interface IFolderDatabase
     IList<DatabaseFolder> ListAllFolders();
 
     /// <summary>
+    /// Gets all locally known folders that were created by the user (E.g. not
+    /// unread, archive or liked)
+    /// </summary>
+    /// <returns></returns>
+    IList<DatabaseFolder> ListAllUserFolders();
+
+    /// <summary>
     /// Gets a specific folder using it's service ID
     /// </summary>
     /// <param name="serviceId">Service ID of the folder</param>

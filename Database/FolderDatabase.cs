@@ -45,6 +45,36 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         return result;
     }
 
+    public IList<DatabaseFolder> ListAllUserFolders()
+    {
+        return ListAllUserFolders(this.connection);
+    }
+
+    private static IList<DatabaseFolder> ListAllUserFolders(IDbConnection c)
+    {
+        using var query = c.CreateCommand(@"
+            SELECT *
+            FROM folders
+            WHERE local_id <> @unreadId AND local_id <> @archiveId
+            ORDER BY position ASC
+        ");
+
+        query.AddParameter("@unreadId", WellKnownLocalFolderIds.Unread);
+        query.AddParameter("archiveId", WellKnownLocalFolderIds.Archive);
+
+        using var folders = query.ExecuteReader();
+
+        var result = new List<DatabaseFolder>();
+
+        while (folders.Read())
+        {
+            var f = DatabaseFolder.FromRow(folders);
+            result.Add(f);
+        }
+
+        return result;
+    }
+
     /// <inheritdoc/>
     public DatabaseFolder? GetFolderByServiceId(long serviceId)
     {
