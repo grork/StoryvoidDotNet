@@ -2,7 +2,7 @@ using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
 
-public class ArticleSyncTests : BaseSyncTest
+public class BookmarkSyncTests : BaseSyncTest
 {
     #region Local-Only Article Pending Changes
     [Fact]
@@ -172,7 +172,7 @@ public class ArticleSyncTests : BaseSyncTest
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
         var firstArticleInCustomFolder = this.databases.ArticleDB.FirstArticleInFolder(firstFolder.LocalId);
 
-        using(var ledger = this.GetLedger())
+        using (var ledger = this.GetLedger())
         {
             this.databases.ArticleDB.MoveArticleToFolder(firstArticleInCustomFolder.Id, WellKnownLocalFolderIds.Unread);
         }
@@ -193,9 +193,9 @@ public class ArticleSyncTests : BaseSyncTest
         // Select an article to move
         var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
         var firstArticle = this.databases.ArticleDB.FirstArticleInFolder(firstFolder.LocalId);
-        
+
         // Move it
-        using(var ledger = this.GetLedger())
+        using (var ledger = this.GetLedger())
         {
             this.databases.ArticleDB.MoveArticleToFolder(firstArticle.Id, WellKnownLocalFolderIds.Unread);
         }
@@ -222,8 +222,8 @@ public class ArticleSyncTests : BaseSyncTest
     {
         // Delete a known article
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
-        
-        using(var ledger = this.GetLedger())
+
+        using (var ledger = this.GetLedger())
         {
             this.databases.ArticleDB.MoveArticleToFolder(firstUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
         }
@@ -243,8 +243,8 @@ public class ArticleSyncTests : BaseSyncTest
     {
         // Move an article to a folder...
         var firstUnreadArticle = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
-        
-        using(var ledger = this.GetLedger())
+
+        using (var ledger = this.GetLedger())
         {
             this.databases.ArticleDB.MoveArticleToFolder(firstUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
         }
@@ -326,7 +326,7 @@ public class ArticleSyncTests : BaseSyncTest
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
-    
+
     [Fact]
     public async Task PendingArticleMoveToUnsyncedFolderForceSyncsTheIndividualFolder()
     {
@@ -357,7 +357,7 @@ public class ArticleSyncTests : BaseSyncTest
 
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
-    
+
     [Fact]
     public async Task PendingArticleMoveFromUnreadSyncingAlsoAppliesRemoteArticlePropertyChanges()
     {
@@ -394,7 +394,7 @@ public class ArticleSyncTests : BaseSyncTest
         // Check that all the status changes have now being synced
         Assert.Equal(remoteUpdatedArticle, firstUnreadArticle);
     }
-    
+
     [Fact]
     public async Task PendingArticleMoveToUnreadSyncingAlsoAppliesRemoteArticlePropertyChanges()
     {
@@ -566,7 +566,7 @@ public class ArticleSyncTests : BaseSyncTest
     {
         var firstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         firstUnreadArticle = this.databases.ArticleDB.LikeArticle(firstUnreadArticle.Id); // Make sure its liked so we generate a pending edit
-        
+
 
         // Unlike the article
         using (var ledger = this.GetLedger())
@@ -637,7 +637,7 @@ public class ArticleSyncTests : BaseSyncTest
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
 
         firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id);
-        
+
         // Update the reference article to be liked. We don't want to get it
         // from the service again incase state got stomped, and this preserves
         // the actual expectation
@@ -645,7 +645,7 @@ public class ArticleSyncTests : BaseSyncTest
         {
             Liked = true
         };
-        
+
         Assert.Equal(updatedArticle, firstUnreadArticle);
     }
     #endregion
@@ -685,13 +685,13 @@ public class ArticleSyncTests : BaseSyncTest
 
         // Check the article is missing
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id);
-        if(localArticle is not null)
+        if (localArticle is not null)
         {
             // If the article has been deleted, thats OK. But if it hasn't, we
             // need to check it hasn't been placed in a folder
             var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
             Assert.Contains(localArticle, orphanedArticles);
-        }        
+        }
 
         // Check that remote & local agree on unread contents
         var localUnread = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
@@ -733,13 +733,13 @@ public class ArticleSyncTests : BaseSyncTest
 
         // Check the article is missing
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstArchiveArticle.Id);
-        if(localArticle is not null)
+        if (localArticle is not null)
         {
             // If the article has been deleted, thats OK. But if it hasn't, we
             // need to check it hasn't been placed in a folder
             var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
             Assert.Contains(localArticle, orphanedArticles);
-        }        
+        }
 
         // Check that remote & local agree on unread contents
         var localArchive = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
@@ -785,13 +785,13 @@ public class ArticleSyncTests : BaseSyncTest
 
         // Check the article is missing
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteArticle.Id);
-        if(localArticle is not null)
+        if (localArticle is not null)
         {
             // If the article has been deleted, thats OK. But if it hasn't, we
             // need to check it hasn't been placed in a folder
             var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
             Assert.Contains(localArticle, orphanedArticles);
-        }        
+        }
 
         // Check that remote & local agree on unread contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
@@ -820,7 +820,7 @@ public class ArticleSyncTests : BaseSyncTest
         // Check that remote & local agree on custom folder contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
-        
+
         var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFirstUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Equal(remoteFolder, localFolder);
 
@@ -844,7 +844,7 @@ public class ArticleSyncTests : BaseSyncTest
         // Check that remote & local agree on Archive contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
-        
+
         var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
         Assert.Equal(remoteFolder, localFolder);
 
@@ -873,7 +873,7 @@ public class ArticleSyncTests : BaseSyncTest
         // Check that remote & local agree on unread contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
-        
+
         var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
         Assert.Equal(remoteFolder, localFolder);
 
@@ -902,7 +902,7 @@ public class ArticleSyncTests : BaseSyncTest
         // Check that remote & local agree on unread contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
-        
+
         var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).OrderBy((a) => a.Id);
         Assert.Equal(remoteFolder, localFolder);
 
@@ -935,7 +935,7 @@ public class ArticleSyncTests : BaseSyncTest
         // Check that remote & local agree on second folder contents contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localSecondUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
-        
+
         var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteSecondUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Equal(remoteFolder, localFolder);
 
@@ -961,7 +961,7 @@ public class ArticleSyncTests : BaseSyncTest
         // Check that remote & local agree on custom folder contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(localFirstUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
-        
+
         var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFirstUserFolder.LocalId).OrderBy((a) => a.Id);
         Assert.Equal(remoteFolder, localFolder);
 
@@ -985,7 +985,7 @@ public class ArticleSyncTests : BaseSyncTest
         // Check that remote & local agree on Archive contents
         var localFolder = this.databases.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
         Assert.Contains(localArticle, localFolder);
-        
+
         var remoteFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).OrderBy((a) => a.Id);
         Assert.Equal(remoteFolder, localFolder);
 
@@ -1236,7 +1236,7 @@ public class ArticleSyncTests : BaseSyncTest
         var remoteUserFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
         var remoteArticles = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteUserFolder.LocalId);
 
-        foreach(var remoteArticle in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteUserFolder.LocalId))
+        foreach (var remoteArticle in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteUserFolder.LocalId))
         {
             this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteArticle.Id);
         }
@@ -1288,12 +1288,12 @@ public class ArticleSyncTests : BaseSyncTest
 
     private void UnlikeEverything()
     {
-        foreach(var article in this.databases.ArticleDB.ListLikedArticles())
+        foreach (var article in this.databases.ArticleDB.ListLikedArticles())
         {
             this.databases.ArticleDB.UnlikeArticle(article.Id);
         }
 
-        foreach(var article in this.service.BookmarksClient.ArticleDB.ListLikedArticles())
+        foreach (var article in this.service.BookmarksClient.ArticleDB.ListLikedArticles())
         {
             this.service.BookmarksClient.ArticleDB.UnlikeArticle(article.Id);
         }
@@ -1335,7 +1335,7 @@ public class ArticleSyncTests : BaseSyncTest
         var postSyncArticle = this.databases.ArticleDB.ListAllArticlesInAFolder();
         Assert.True(postSyncArticle.Count < preSyncArticles.Count);
 
-        foreach(var unreachable in preSyncArticles.Except(postSyncArticle))
+        foreach (var unreachable in preSyncArticles.Except(postSyncArticle))
         {
             Assert.Null(this.databases.ArticleDB.GetArticleById(unreachable.Article.Id));
         }
