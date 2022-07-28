@@ -38,7 +38,7 @@ internal static class MockBookmarkExtensions
     internal static IDictionary<long, HaveStatus> ToDictionary(this IEnumerable<HaveStatus> instance)
     {
         var result = new Dictionary<long, HaveStatus>();
-        foreach(var status in instance)
+        foreach (var status in instance)
         {
             result.Add(status.Id, status);
         }
@@ -98,11 +98,11 @@ public class MockBookmarksService : IBookmarksClient
             default:
                 var serviceId = Int64.Parse(folderId);
                 var folder = this.folderDb.GetFolderByServiceId(serviceId);
-                if(folder is null)
+                if (folder is null)
                 {
                     throw new EntityNotFoundException();
                 }
-                
+
                 return folder.LocalId;
         }
     }
@@ -114,7 +114,7 @@ public class MockBookmarksService : IBookmarksClient
         // the unread folder. So, detect if we already have that URL, and then
         // move it to unread.
         var existingArticle = this.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == bookmarkUrl);
-        if(existingArticle is not null)
+        if (existingArticle is not null)
         {
             this.ArticleDB.MoveArticleToFolder(existingArticle.Id, WellKnownLocalFolderIds.Unread);
             return Task.FromResult(existingArticle.ToInstapaperBookmark());
@@ -125,13 +125,13 @@ public class MockBookmarksService : IBookmarksClient
 
         // If there was a specific folder we want to add to, we need to look it
         // up by the service ID first.
-        if(options?.DestinationFolderId > 0L)
+        if (options?.DestinationFolderId > 0L)
         {
             var folder = this.folderDb.GetFolderByServiceId(options.DestinationFolderId)!;
             localFolderId = folder.LocalId;
         }
 
-        var article = this.ArticleDB.AddArticleToFolder(new (
+        var article = this.ArticleDB.AddArticleToFolder(new(
             nextId,
             title: (options is not null) ? options.Title : nextId.ToString(),
             url: bookmarkUrl,
@@ -148,11 +148,11 @@ public class MockBookmarksService : IBookmarksClient
     public Task<IInstapaperBookmark> ArchiveAsync(long bookmark_id)
     {
         var existingBookmark = this.ArticleDB.GetArticleById(bookmark_id);
-        if(existingBookmark is null)
+        if (existingBookmark is null)
         {
             throw new EntityNotFoundException();
         }
-        
+
         this.ArticleDB.MoveArticleToFolder(bookmark_id, WellKnownLocalFolderIds.Archive);
         return Task.FromResult(existingBookmark.ToInstapaperBookmark());
     }
@@ -176,7 +176,7 @@ public class MockBookmarksService : IBookmarksClient
             var bookmark = this.ArticleDB.GetArticleById(bookmark_id)!.ToInstapaperBookmark();
             return Task.FromResult(bookmark);
         }
-        catch(ArticleNotFoundException)
+        catch (ArticleNotFoundException)
         {
             throw new EntityNotFoundException();
         }
@@ -201,7 +201,7 @@ public class MockBookmarksService : IBookmarksClient
         IList<IInstapaperBookmark> result = new List<IInstapaperBookmark>();
         IList<long> deletes = new List<long>();
 
-        if(haveInformation is null)
+        if (haveInformation is null)
         {
             // If there was no have information, we should just return the
             // contents of the folder
@@ -213,12 +213,12 @@ public class MockBookmarksService : IBookmarksClient
         var havesMap = haveInformation.ToDictionary();
 
         // Check for any that we're aware of
-        foreach(var remoteArticle in remoteArticles)
+        foreach (var remoteArticle in remoteArticles)
         {
             // If the article from the DB didn't have, uhh, have information
             // in the request then it must be new to the client, so included
             // it in the response. No more processing needed.
-            if(!havesMap.ContainsKey(remoteArticle.Id))
+            if (!havesMap.ContainsKey(remoteArticle.Id))
             {
                 result.Add(remoteArticle.ToInstapaperBookmark());
                 continue;
@@ -230,7 +230,7 @@ public class MockBookmarksService : IBookmarksClient
             // be deletes
             havesMap.Remove(remoteArticle.Id);
 
-            if(String.IsNullOrWhiteSpace(have.Hash))
+            if (String.IsNullOrWhiteSpace(have.Hash))
             {
                 // If we don't have a hash, but did have the ID in the have, we
                 // can only do included/excluded decisions. Since it *was* known
@@ -239,7 +239,7 @@ public class MockBookmarksService : IBookmarksClient
             }
 
             // Same hash implies no change
-            if(remoteArticle.Hash == have.Hash)
+            if (remoteArticle.Hash == have.Hash)
             {
                 continue;
             }
@@ -247,7 +247,7 @@ public class MockBookmarksService : IBookmarksClient
             // Hash is different so we need to include the article. But we also
             // need to update the hash if we're updating our own information
             var updatedArticle = remoteArticle;
-            if(remoteArticle.ReadProgressTimestamp < have.ProgressLastChanged)
+            if (remoteArticle.ReadProgressTimestamp < have.ProgressLastChanged)
             {
                 updatedArticle = updatedArticle with
                 {
@@ -285,7 +285,7 @@ public class MockBookmarksService : IBookmarksClient
     {
         var destinationFolder = this.folderDb.GetFolderByServiceId(folder_id);
         var article = this.ArticleDB.GetArticleById(bookmark_id);
-        if(destinationFolder is null || article is null)
+        if (destinationFolder is null || article is null)
         {
             throw new EntityNotFoundException();
         }
@@ -308,7 +308,7 @@ public class MockBookmarksService : IBookmarksClient
             var bookmark = this.ArticleDB.GetArticleById(bookmark_id)!.ToInstapaperBookmark();
             return Task.FromResult(bookmark);
         }
-        catch(ArticleNotFoundException)
+        catch (ArticleNotFoundException)
         {
             throw new EntityNotFoundException();
         }
@@ -317,5 +317,38 @@ public class MockBookmarksService : IBookmarksClient
     public Task<IInstapaperBookmark> UpdateReadProgressAsync(long bookmark_id, float progress, DateTime progress_timestamp)
     {
         throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Only implements GetTextAsync
+/// </summary>
+public class MockBookmarkServiceWithOnlyGetText : IBookmarksClient
+{
+    private IDictionary<long, string> articleFileMap;
+    public MockBookmarkServiceWithOnlyGetText(IDictionary<long, string> articleFileMap)
+    {
+        this.articleFileMap = articleFileMap;
+    }
+
+    public Task<IInstapaperBookmark> AddAsync(Uri bookmarkUrl, AddBookmarkOptions? options) => throw new NotImplementedException();
+    public Task<IInstapaperBookmark> ArchiveAsync(long bookmark_id) => throw new NotImplementedException();
+    public Task DeleteAsync(long bookmark_id) => throw new NotImplementedException();
+    public Task<IInstapaperBookmark> LikeAsync(long bookmark_id) => throw new NotImplementedException();
+    public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit) => throw new NotImplementedException();
+    public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit) => throw new NotImplementedException();
+    public Task<IInstapaperBookmark> MoveAsync(long bookmark_id, long folder_id) => throw new NotImplementedException();
+    public Task<IInstapaperBookmark> UnarchiveAsync(long bookmark_id) => throw new NotImplementedException();
+    public Task<IInstapaperBookmark> UnlikeAsync(long bookmark_id) => throw new NotImplementedException();
+    public Task<IInstapaperBookmark> UpdateReadProgressAsync(long bookmark_id, float progress, DateTime progress_timestamp) => throw new NotImplementedException();
+
+    public Task<string> GetTextAsync(long bookmark_id)
+    {
+        if (this.articleFileMap.TryGetValue(bookmark_id, out var mockFilePath))
+        {
+            return File.ReadAllTextAsync(mockFilePath);
+        }
+
+        throw new ArticleNotFoundException(bookmark_id);
     }
 }

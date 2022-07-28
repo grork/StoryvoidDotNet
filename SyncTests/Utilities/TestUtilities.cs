@@ -12,7 +12,7 @@ internal static class TestUtilities
     // 'highest plus one'; so instead of trying to account for that, just always
     // bump it up by one
     private static long nextServiceId = 100L;
-    private static readonly Uri BASE_URL = new Uri("https://www.codevoid.net");
+    internal static readonly Uri BASE_URL = new Uri("https://www.codevoid.net");
 
     private static long GetNextServiceId()
     {
@@ -119,7 +119,7 @@ internal static class TestUtilities
     internal static DatabaseArticle AddRandomArticleToDb(this IArticleDatabase instance, long folder = WellKnownLocalFolderIds.Unread)
     {
         var id = GetNextServiceId();
-        return instance.AddArticleToFolder(new (
+        return instance.AddArticleToFolder(new(
             id: id,
             title: $"Title {id}",
             url: GetRandomUrl(),
@@ -191,7 +191,7 @@ internal class CompareFoldersIgnoringLocalId : IEqualityComparer<DatabaseFolder>
             return true;
         }
 
-        if((x is not null) && (y is not null))
+        if ((x is not null) && (y is not null))
         {
             return (x.Title == y.Title)
                 && (x.ServiceId == y.ServiceId)
