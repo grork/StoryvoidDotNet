@@ -133,16 +133,28 @@ public class SampleDataDownloadingHelper
             "LargeArticleNoImage.html",
             "ArticleWithImages.html",
             "ArticleWithInlineDataImages.html",
-            "ArticleWithFirstImageLessThan150px.html"
+            "ArticleWithFirstImageLessThan150px.html",
+            "ArticleWithAnimatedGIFFirstImage.html",
+            "ArticleWithAnimatedPNGFirstImage.html",
+            "ArticleWithJPGFirstImage.html",
+            "ArticleWithPNGFirstImage.html",
+            "ArticleWithStaticGIFFirstImage.html",
+            "ArticleWithSVGFirstImage.html",
+            "ArticleWithWebPFirstImage.html"
         };
 
         foreach (var fileName in samplePages)
         {
             var bookmarkUri = new Uri(SAMPLE_BASE_URI, fileName);
             var bookmarkInfo = await bookmarksClient.AddAsync(bookmarkUri);
-            var bookmarkBody = await bookmarksClient.GetTextAsync(bookmarkInfo.Id);
-            var outputFile = Path.Join(outputDirectory.FullName, fileName);
-            File.WriteAllText(outputFile, bookmarkBody);
+            try
+            {
+                var bookmarkBody = await bookmarksClient.GetTextAsync(bookmarkInfo.Id);
+                var outputFile = Path.Join(outputDirectory.FullName, fileName);
+                File.WriteAllText(outputFile, bookmarkBody);
+            } catch(BookmarkContentsUnavailableException) {
+                Assert.False(true, $"Couldn't download: {bookmarkUri.ToString()}");
+            }
         }
 
         // Vimeo
