@@ -15,10 +15,12 @@ public class ArticleDownloaderTests : IDisposable
     private readonly string sampleFilesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
 
     #region Mock Article IDs
+    private const long MISSING_ARTICLE = 9L;
     private const long BASIC_ARTICLE_NO_IMAGES = 10L;
+    private const long UNAVAILABLE_ARTICLE = 11L;
     #endregion
 
-    private static ArticleRecordInformation GetInfoFor(long id, string title)
+    private static ArticleRecordInformation GetRecordInfoFor(long id, string title)
     {
         return new(
             id: id,
@@ -53,8 +55,13 @@ public class ArticleDownloaderTests : IDisposable
     {
         IDictionary<long, string> articleFileMap = new Dictionary<long, string>();
 
+        // Unavailable article
+        var unavailableArticle = GetRecordInfoFor(UNAVAILABLE_ARTICLE, "Article with no content available");
+        this.articleDatabase.AddArticleToFolder(unavailableArticle, WellKnownLocalFolderIds.Unread);
+        articleFileMap.Add(UNAVAILABLE_ARTICLE, String.Empty);
+
         // Article without images
-        var basicArticleNoImages = GetInfoFor(BASIC_ARTICLE_NO_IMAGES, "Basic Article Without Images");
+        var basicArticleNoImages = GetRecordInfoFor(BASIC_ARTICLE_NO_IMAGES, "Basic Article Without Images");
         this.articleDatabase.AddArticleToFolder(basicArticleNoImages, WellKnownLocalFolderIds.Unread);
         articleFileMap.Add(basicArticleNoImages.id, Path.Join(this.sampleFilesFolder, "BasicArticleNoImage.html"));
 
@@ -63,7 +70,7 @@ public class ArticleDownloaderTests : IDisposable
 
     private Uri GetRelativeUriForDownloadedArticle(long articleId)
     {
-        return new Uri(ArticleDownloader.ROOT_URI, Path.Join(articleId.ToString(), $"{articleId}.html"));
+        return new Uri(ArticleDownloader.ROOT_URI, $"{articleId}.html");
     }
 
     public void Dispose()
@@ -83,6 +90,25 @@ public class ArticleDownloaderTests : IDisposable
     {
         var localState = await this.articleDownloader.DownloadBookmark(BASIC_ARTICLE_NO_IMAGES);
         Assert.Equal(this.GetRelativeUriForDownloadedArticle(localState.ArticleId), localState.LocalPath);
+        Assert.True(localState.AvailableLocally);
+        Assert.False(localState.ArticleUnavailable);
+    }
+
+    [Fact]
+    public async Task DownloadingUnavailableArticleMarksArticleAsUnavailable()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(UNAVAILABLE_ARTICLE);
+        Assert.Null(localState.LocalPath);
+        Assert.False(localState.AvailableLocally);
+        Assert.True(localState.ArticleUnavailable);
+    }
+
+    [Fact]
+    public async Task DownloadingArticleThatIsntOnTheServiceFails()
+    {
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => this.articleDownloader.DownloadBookmark(MISSING_ARTICLE));
+        var localState = this.articleDatabase.GetLocalOnlyStateByArticleId(MISSING_ARTICLE);
+        Assert.Null(localState);
     }
 }
 

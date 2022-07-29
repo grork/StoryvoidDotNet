@@ -25,7 +25,9 @@ public sealed record DatabaseLocalOnlyArticleState
     public Uri? FirstImageLocalPath { get; init; }
 
     /// <summary>
-    /// Remote URL of the first image referenced in the article
+    /// Remote URL of the first image referenced in the article. Used when
+    /// information about this article is shared externally. We save it so we
+    /// don't have to load & process the article again, just to extract the image
     /// </summary>
     public Uri? FirstImageRemoteUri { get; init; }
 
@@ -55,7 +57,7 @@ public sealed record DatabaseLocalOnlyArticleState
     /// <summary>
     /// Does this article have an image available
     /// </summary>
-    public bool HasImages => FirstImageRemoteUri != null;
+    public bool HasImages => FirstImageLocalPath != null;
 
     /// <summary>
     /// Converts a raw database row into a hydrated instance of local-only

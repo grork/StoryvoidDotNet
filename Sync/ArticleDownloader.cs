@@ -23,17 +23,32 @@ public class ArticleDownloader
 
     public async Task<DatabaseLocalOnlyArticleState> DownloadBookmark(long bookmarkId)
     {
-        var body = await this.bookmarksClient.GetTextAsync(bookmarkId);
-        var bookmarkDirectory = Directory.CreateDirectory(Path.Combine(workingRoot, bookmarkId.ToString()));
-        var bookmarkRelativePath = Path.Combine(bookmarkDirectory.Name, $"{bookmarkId}.html");
-        var bookmarkAbsoluteFilePath = Path.Combine(workingRoot, bookmarkRelativePath);
-        File.WriteAllText(bookmarkAbsoluteFilePath, body, Encoding.UTF8);
+        var bookmarkFileName = $"{bookmarkId}.html";
+        var bookmarkAbsoluteFilePath = Path.Combine(workingRoot, bookmarkFileName);
+        var articleDownloaded = true;
+        var contentsUnavailable = false;
+        Uri? localPath = null;
 
-        return articleDatabase.AddLocalOnlyStateForArticle(new DatabaseLocalOnlyArticleState()
+        try
+        {
+            var body = await this.bookmarksClient.GetTextAsync(bookmarkId);
+            File.WriteAllText(bookmarkAbsoluteFilePath, body, Encoding.UTF8);
+            articleDownloaded = true;
+            localPath = new Uri(ROOT_URI, bookmarkFileName);
+        }
+        catch (BookmarkContentsUnavailableException)
+        {
+            // Contents weren't available, so we should mark it as a failure
+            articleDownloaded = false;
+            contentsUnavailable = true;
+        }
+
+        return articleDatabase.AddLocalOnlyStateForArticle(new()
         {
             ArticleId = bookmarkId,
-            AvailableLocally = true,
-            LocalPath = new Uri(ROOT_URI, bookmarkRelativePath),
+            AvailableLocally = articleDownloaded,
+            ArticleUnavailable = contentsUnavailable,
+            LocalPath = localPath,
         });
     }
 }

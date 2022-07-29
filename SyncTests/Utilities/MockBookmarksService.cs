@@ -346,9 +346,16 @@ public class MockBookmarkServiceWithOnlyGetText : IBookmarksClient
     {
         if (this.articleFileMap.TryGetValue(bookmark_id, out var mockFilePath))
         {
+            if (String.IsNullOrWhiteSpace(mockFilePath))
+            {
+                // No file path implies it's an 'unavailable' article
+                throw new BookmarkContentsUnavailableException();
+            }
+
             return File.ReadAllTextAsync(mockFilePath);
         }
 
-        throw new ArticleNotFoundException(bookmark_id);
+        // When the ID isn't found at all, that means it's an unknown article
+        throw new EntityNotFoundException();
     }
 }
