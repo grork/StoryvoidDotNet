@@ -1,0 +1,1499 @@
+<body>
+
+  <header>
+    
+    <hgroup>
+      <h1>HTML</h1>
+      <h2>Living Standard — Last Updated <span>22 July
+          2022</span></h2>
+    </hgroup>
+
+
+
+
+  </header>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <nav>Table of Contents — <a href="https://www.codevoid.net/storyvoidtest/infrastructure.html">2 Common infrastructure →</a></nav>
+  <ol>
+    <li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#introduction"><span>1</span> Introduction</a>
+      <ol>
+        <li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#abstract"><span>1.1</span> Where does this specification fit?</a>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#is-this-html5?"><span>1.2</span> Is this HTML5?</a>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#background"><span>1.3</span> Background</a>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#audience"><span>1.4</span> Audience</a>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#scope"><span>1.5</span> Scope</a>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#history-2"><span>1.6</span> History</a>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#design-notes"><span>1.7</span> Design notes</a>
+          <ol>
+            <li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#serialisability-of-script-execution"><span>1.7.1</span>
+                Serializability of script execution</a>
+            </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#compliance-with-other-specifications"><span>1.7.2</span> Compliance
+                with other specifications</a>
+            </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#extensibility"><span>1.7.3</span> Extensibility</a>
+          </li></ol>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#html-vs-xhtml"><span>1.8</span> HTML vs XML syntax</a>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#structure-of-this-specification"><span>1.9</span> Structure of this
+            specification</a>
+          <ol>
+            <li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#how-to-read-this-specification"><span>1.9.1</span> How to read this
+                specification</a>
+            </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#typographic-conventions"><span>1.9.2</span> Typographic
+                conventions</a>
+          </li></ol>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#a-quick-introduction-to-html"><span>1.10</span> A quick introduction to
+            HTML</a>
+          <ol>
+            <li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#writing-secure-applications-with-html"><span>1.10.1</span> Writing
+                secure applications with HTML</a>
+            </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#common-pitfalls-to-avoid-when-using-the-scripting-apis"><span>1.10.2</span> Common pitfalls to avoid when using the scripting APIs</a>
+            </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#how-to-catch-mistakes-when-writing-html:-validators-and-conformance-checkers"><span>1.10.3</span> How to catch mistakes when writing HTML: validators and conformance
+                checkers</a>
+          </li></ol>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#conformance-requirements-for-authors"><span>1.11</span> Conformance
+            requirements for authors</a>
+          <ol>
+            <li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#presentational-markup"><span>1.11.1</span> Presentational
+                markup</a>
+            </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#syntax-errors"><span>1.11.2</span> Syntax errors</a>
+            </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#restrictions-on-content-models-and-on-attribute-values"><span>1.11.3</span> Restrictions on content models and on attribute values</a>
+          </li></ol>
+        </li><li><a href="https://www.codevoid.net/storyvoidtest/introduction.html#suggested-reading"><span>1.12</span> Suggested reading</a>
+      </li></ol>
+  </li></ol>
+  <h2><span>1</span> Introduction</h2>
+
+
+
+  <h3><span>1.1</span> Where does this specification fit?
+  </h3>
+
+  <p>This specification defines a big part of the web platform, in lots of detail. Its place in the
+    web platform specification stack relative to other specifications can be best summed up as
+    follows:</p>
+
+  
+
+
+
+
+  <h3><span>1.2</span> Is this HTML5?</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>In short: Yes.</p>
+
+  <p>In more length: the term "HTML5" is widely used as a buzzword to refer to modern web
+    technologies, many of which (though by no means all) are developed at the WHATWG. This document is
+    one such; others are available from the WHATWG Standards
+    overview.</p>
+
+
+  <h3><span>1.3</span> Background</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>HTML is the World Wide Web's core markup language. Originally, HTML was primarily designed as a
+    language for semantically describing scientific documents. Its general design, however, has
+    enabled it to be adapted, over the subsequent years, to describe a number of other types of
+    documents and even applications.</p>
+
+
+  <h3><span>1.4</span> Audience</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>This specification is intended for authors of documents and scripts that use the features
+    defined in this specification, implementers of tools that operate on pages that
+    use the features defined in this specification, and individuals wishing to establish the
+    correctness of documents or implementations with respect to the requirements of this
+    specification.</p>
+
+  <p>This document is probably not suited to readers who do not already have at least a passing
+    familiarity with web technologies, as in places it sacrifices clarity for precision, and brevity
+    for completeness. More approachable tutorials and authoring guides can provide a gentler
+    introduction to the topic.</p>
+
+  <p>In particular, familiarity with the basics of DOM is necessary for a complete understanding of
+    some of the more technical parts of this specification. An understanding of Web IDL, HTTP, XML,
+    Unicode, character encodings, JavaScript, and CSS will also be helpful in places but is not
+    essential.</p>
+
+
+  <h3><span>1.5</span> Scope</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>This specification is limited to providing a semantic-level markup language and associated
+    semantic-level scripting APIs for authoring accessible pages on the web ranging from static
+    documents to dynamic applications.</p>
+
+  <p>The scope of this specification does not include providing mechanisms for media-specific
+    customization of presentation (although default rendering rules for web browsers are included at
+    the end of this specification, and several mechanisms for hooking into CSS are provided as part of
+    the language).</p>
+
+  <p>The scope of this specification is not to describe an entire operating system. In particular,
+    hardware configuration software, image manipulation tools, and applications that users would be
+    expected to use with high-end workstations on a daily basis are out of scope. In terms of
+    applications, this specification is targeted specifically at applications that would be expected
+    to be used by users on an occasional basis, or regularly but from disparate locations, with low
+    CPU requirements. Examples of such applications include online purchasing systems, searching
+    systems, games (especially multiplayer online games), public telephone books or address books,
+    communications software (email clients, instant messaging clients, discussion software), document
+    editing software, etc.</p>
+
+
+  <h3><span>1.6</span> History</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>For its first five years (1990-1995), HTML went through a number of revisions and experienced a
+    number of extensions, primarily hosted first at CERN, and then at the IETF.</p>
+
+  <p>With the creation of the W3C, HTML's development changed venue again. A first abortive attempt
+    at extending HTML in 1995 known as HTML 3.0 then made way to a more pragmatic approach known as
+    HTML 3.2, which was completed in 1997. HTML4 quickly followed later that same year.</p>
+
+  <p>The following year, the W3C membership decided to stop evolving HTML and instead begin work on
+    an XML-based equivalent, called XHTML. This
+    effort started with a reformulation of HTML4 in XML, known as XHTML 1.0, which added no new
+    features except the new serialization, and which was completed in 2000. After XHTML 1.0, the W3C's
+    focus turned to making it easier for other working groups to extend XHTML, under the banner of
+    XHTML Modularization. In parallel with this, the W3C also worked on a new language that was not
+    compatible with the earlier HTML and XHTML languages, calling it XHTML2.</p>
+
+  <p>Around the time that HTML's evolution was stopped in 1998, parts of the API for HTML developed
+    by browser vendors were specified and published under the name DOM Level 1 (in 1998) and DOM Level
+    2 Core and DOM Level 2 HTML (starting in 2000 and culminating in 2003). These efforts then petered
+    out, with some DOM Level 3 specifications published in 2004 but the working group being closed
+    before all the Level 3 drafts were completed.</p>
+
+  <p>In 2003, the publication of XForms, a technology which was positioned as the next generation of
+    web forms, sparked a renewed interest in evolving HTML itself, rather than finding replacements
+    for it. This interest was borne from the realization that XML's deployment as a web technology was
+    limited to entirely new technologies (like RSS and later Atom), rather than as a replacement for
+    existing deployed technologies (like HTML).</p>
+
+  <p>A proof of concept to show that it was possible to extend HTML4's forms to provide many of the
+    features that XForms 1.0 introduced, without requiring browsers to implement rendering engines
+    that were incompatible with existing HTML web pages, was the first result of this renewed
+    interest. At this early stage, while the draft was already publicly available, and input was
+    already being solicited from all sources, the specification was only under Opera Software's
+    copyright.</p>
+
+  <p>The idea that HTML's evolution should be reopened was tested at a W3C workshop in 2004, where
+    some of the principles that underlie the HTML5 work (described below), as well as the
+    aforementioned early draft proposal covering just forms-related features, were presented to the
+    W3C jointly by Mozilla and Opera. The proposal was rejected on the grounds that the proposal
+    conflicted with the previously chosen direction for the web's evolution; the W3C staff and
+    membership voted to continue developing XML-based replacements instead.</p>
+
+  <p>Shortly thereafter, Apple, Mozilla, and Opera jointly announced their intent to continue
+    working on the effort under the umbrella of a new venue called the WHATWG. A public mailing list
+    was created, and the draft was moved to the WHATWG site. The copyright was subsequently amended to
+    be jointly owned by all three vendors, and to allow reuse of the specification.</p>
+
+  <p>The WHATWG was based on several core principles, in particular that technologies need to be
+    backwards compatible, that specifications and implementations need to match even if this means
+    changing the specification rather than the implementations, and that specifications need to be
+    detailed enough that implementations can achieve complete interoperability without
+    reverse-engineering each other.</p>
+
+  <p>The latter requirement in particular required that the scope of the HTML5 specification include
+    what had previously been specified in three separate documents: HTML4, XHTML1, and DOM2 HTML. It
+    also meant including significantly more detail than had previously been considered the norm.</p>
+
+  <p>In 2006, the W3C indicated an interest to participate in the development of HTML5 after all,
+    and in 2007 formed a working group chartered to work with the WHATWG on the development of the
+    HTML5 specification. Apple, Mozilla, and Opera allowed the W3C to publish the specification under
+    the W3C copyright, while keeping a version with the less restrictive license on the WHATWG
+    site.</p>
+
+  <p>For a number of years, both groups then worked together. In 2011, however, the groups came to
+    the conclusion that they had different goals: the W3C wanted to publish a "finished" version of
+    "HTML5", while the WHATWG wanted to continue working on a Living Standard for HTML, continuously
+    maintaining the specification rather than freezing it in a state with known problems, and adding
+    new features as needed to evolve the platform.</p>
+
+  <p>In 2019, the WHATWG and W3C <a href="https://www.w3.org/blog/news/archives/7753">signed an
+      agreement</a> to collaborate on a single version of HTML going forward: this document.</p>
+
+
+
+  <h3><span>1.7</span> Design notes</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>It must be admitted that many aspects of HTML appear at first glance to be nonsensical and
+    inconsistent.</p>
+
+  <p>HTML, its supporting DOM APIs, as well as many of its supporting technologies, have been
+    developed over a period of several decades by a wide array of people with different priorities
+    who, in many cases, did not know of each other's existence.</p>
+
+  <p>Features have thus arisen from many sources, and have not always been designed in especially
+    consistent ways. Furthermore, because of the unique characteristics of the web, implementation
+    bugs have often become de-facto, and now de-jure, standards, as content is often unintentionally
+    written in ways that rely on them before they can be fixed.</p>
+
+  <p>Despite all this, efforts have been made to adhere to certain design goals. These are described
+    in the next few subsections.</p>
+
+
+
+
+  <h4><span>1.7.1</span> Serializability of script execution</h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>To avoid exposing web authors to the complexities of multithreading, the HTML and DOM APIs are
+    designed such that no script can ever detect the simultaneous execution of other scripts. Even
+    with <a href="https://www.codevoid.net/storyvoidtest/workers.html#worker">workers</a>, the intent is that the
+    behavior of implementations can
+    be thought of as completely serializing the execution of all scripts in all <a href="https://www.codevoid.net/storyvoidtest/browsers.html#browsing-context">browsing contexts</a>.</p>
+
+  <p>The exception to this general design principle is the JavaScript <code><a href="https://tc39.es/ecma262/#sec-sharedarraybuffer-objects">SharedArrayBuffer</a></code>
+    class. Using <code><a href="https://tc39.es/ecma262/#sec-sharedarraybuffer-objects">SharedArrayBuffer</a></code>
+    objects, it can in fact be observed that scripts in
+    other <a href="https://tc39.es/ecma262/#sec-agents">agents</a> are executing simultaneously. Furthermore, due to the
+    JavaScript memory model, there are situations which not only are un-representable via serialized
+    <em>script</em> execution, but also un-representable via serialized <em>statement</em> execution
+    among those scripts.
+  </p>
+
+
+
+
+
+  <h4><span>1.7.2</span> Compliance with other specifications</h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>This specification interacts with and relies on a wide variety of other specifications. In
+    certain circumstances, unfortunately, conflicting needs have led to this specification violating
+    the requirements of these other specifications. Whenever this has occurred, the transgressions
+    have each been noted as a "<dfn>willful violation</dfn>", and the reason for the violation has
+    been noted.</p>
+
+
+
+  <h4><span>1.7.3</span> Extensibility</h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>HTML has a wide array of extensibility mechanisms that can be used for adding semantics in a
+    safe manner:</p>
+
+  <ul>
+    <li>
+      <p>Authors can use the <code><a href="https://www.codevoid.net/storyvoidtest/dom.html#classes">class</a></code> attribute to
+        extend elements,
+        effectively creating their own elements, while using the most applicable existing "real" HTML
+        element, so that browsers and other tools that don't know of the extension can still support it
+        somewhat well. This is the tack used by microformats, for example.
+    </p></li><li>
+      <p>Authors can include data for inline client-side scripts or server-side site-wide scripts
+        to process using the <code><a href="https://www.codevoid.net/storyvoidtest/dom.html#attr-data-*">data-*=""</a></code>
+        attributes. These are guaranteed
+        to never be touched by browsers, and allow scripts to include data on HTML elements that scripts
+        can then look for and process.
+    </p></li><li>
+      <p>Authors can use the <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-meta-element">&lt;meta name="" content=""&gt;</a></code>
+        mechanism to
+        include page-wide metadata.
+    </p></li><li>
+      <p>Authors can use the <code><a href="https://www.codevoid.net/storyvoidtest/links.html#attr-hyperlink-rel">rel=""</a></code> mechanism to
+        annotate
+        links with specific meanings by registering <a href="https://www.codevoid.net/storyvoidtest/links.html#concept-rel-extensions">extensions to
+          the predefined set of link types</a>. This is also used by microformats.
+    </p></li><li>
+      <p>Authors can embed raw data using the <code><a href="https://www.codevoid.net/storyvoidtest/scripting.html#the-script-element">&lt;script type=""&gt;</a></code>
+        mechanism with a custom type, for further handling by inline or server-side scripts.
+    </p></li><li>
+      <p>Authors can extend APIs using the JavaScript prototyping mechanism. This is widely used by
+        script libraries, for instance.
+    </p></li><li>
+      <p>Authors can use the microdata feature (the <code><a href="https://www.codevoid.net/storyvoidtest/microdata.html#attr-itemscope">itemscope=""</a></code> and <code><a href="https://www.codevoid.net/storyvoidtest/microdata.html#names:-the-itemprop-attribute">itemprop=""</a></code>
+        attributes) to embed nested name-value pairs of data to be shared with other applications and
+        sites.
+  </p></li></ul>
+
+
+
+
+  <h3><span>1.8</span> HTML vs XML syntax</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>This specification defines an abstract language for describing documents and applications, and
+    some APIs for interacting with in-memory representations of resources that use this language.</p>
+
+  <p>The in-memory representation is known as "DOM HTML", or "the DOM" for short.</p>
+
+  <p>There are various concrete syntaxes that can be used to transmit resources that use this
+    abstract language, two of which are defined in this specification.</p>
+
+  <p>The first such concrete syntax is the HTML syntax. This is the format suggested for most
+    authors. It is compatible with most legacy web browsers. If a document is transmitted with the
+    <code><a href="https://www.codevoid.net/storyvoidtest/iana.html#text/html">text/html</a></code> <a href="https://mimesniff.spec.whatwg.org/#mime-type">MIME type</a>, then it will be
+    processed as an HTML document by
+    web browsers. This specification defines the latest HTML syntax, known simply as "HTML".
+  </p>
+
+  <p>The second concrete syntax is XML. When a document is transmitted with an <a href="https://mimesniff.spec.whatwg.org/#xml-mime-type">XML MIME
+      type</a>, such as <code><a href="https://www.codevoid.net/storyvoidtest/iana.html#application/xhtml+xml">application/xhtml+xml</a></code>,
+    then it is treated as an XML document by
+    web browsers, to be parsed by an XML processor. Authors are reminded that the processing for XML
+    and HTML differs; in particular, even minor syntax errors will prevent a document labeled as XML
+    from being rendered fully, whereas they would be ignored in the HTML syntax.</p>
+
+  <p>The XML syntax for HTML was formerly referred to as "XHTML", but this
+    specification does not use that term (among other reasons, because no such term is used for the
+    HTML syntaxes of MathML and SVG).</p>
+
+  <p>The DOM, the HTML syntax, and the XML syntax cannot all represent the same content. For
+    example, namespaces cannot be represented using the HTML syntax, but they are supported in the DOM
+    and in the XML syntax. Similarly, documents that use the <code><a href="https://www.codevoid.net/storyvoidtest/scripting.html#the-noscript-element">noscript</a></code> feature can
+    be
+    represented using the HTML syntax, but cannot be represented with the DOM or in the XML syntax.
+    Comments that contain the string "<code>--&gt;</code>" can only be represented in the
+    DOM, not in the HTML and XML syntaxes.</p>
+
+
+  <h3><span>1.9</span> Structure of this specification</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>This specification is divided into the following major sections:</p>
+
+  <dl>
+    <dt>
+    </dt><dd>Non-normative materials providing a context for the HTML standard.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/infrastructure.html#infrastructure">Common infrastructure</a>
+    </dt><dd>The conformance classes, algorithms, definitions, and the common underpinnings of the rest of
+      the specification.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/dom.html#dom">Semantics, structure, and APIs of HTML documents</a>
+    </dt><dd>Documents are built from elements. These elements form a tree using the DOM. This section
+      defines the features of this DOM, as well as introducing the features common to all elements, and
+      the concepts used in defining elements.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/semantics.html#semantics">The elements of HTML</a>
+    </dt><dd>Each element has a predefined meaning, which is explained in this section. Rules for authors
+      on how to use the element, along with user agent requirements for how to
+      handle each element, are also given. This includes large signature features of HTML such
+      as video playback and subtitles, form controls and form submission, and a 2D graphics API known
+      as the HTML canvas.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/microdata.html#microdata">Microdata</a>
+    </dt><dd>This specification introduces a mechanism for adding machine-readable annotations to
+      documents, so that tools can extract trees of name-value pairs from the document. This section
+      describes this mechanism and some algorithms that can be used to convert HTML
+      documents into other formats. This section also defines some sample Microdata vocabularies
+      for contact information, calendar events, and licensing works.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/interaction.html#editing">User interaction</a>
+    </dt><dd>HTML documents can provide a number of mechanisms for users to interact with and modify
+      content, which are described in this section, such as how focus works, and drag-and-drop.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/browsers.html#browsers">Loading web pages</a>
+    </dt><dd>HTML documents do not exist in a vacuum — this section defines many of the features
+      that affect environments that deal with multiple pages, such as web browsers.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/webappapis.html#webappapis">Web application APIs</a>
+    </dt><dd>This section introduces basic features for scripting of applications in HTML.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/workers.html#workers">Web workers</a>
+    </dt><dd>This section defines an API for background threads in JavaScript.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/worklets.html#worklets">Worklets</a>
+    </dt><dd>This section defines infrastructure for APIs that need to run JavaScript separately from the
+      main JavaScript execution environment.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/comms.html#comms">The communication APIs</a>
+    </dt><dd>This section describes some mechanisms that applications written in HTML can use to
+      communicate with other applications from different domains running on the same client. It also
+      introduces a server-push event stream mechanism known as Server Sent Events or
+      <code><a href="https://www.codevoid.net/storyvoidtest/server-sent-events.html#eventsource">EventSource</a></code>,
+      and a two-way full-duplex socket protocol for scripts known as Web
+      Sockets.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/webstorage.html#webstorage">Web storage</a>
+    </dt><dd>This section defines a client-side storage mechanism based on name-value pairs.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/syntax.html#syntax">The HTML syntax</a>
+    <dt><a href="https://www.codevoid.net/storyvoidtest/xhtml.html#xhtml">The XML syntax</a>
+    </dt></dt><dd>All of these features would be for naught if they couldn't be represented in a serialized
+      form and sent to other people, and so these sections define the syntaxes of HTML and XML, along with rules for how
+      to parse content using those syntaxes.
+    </dd><dt><a href="https://www.codevoid.net/storyvoidtest/rendering.html#rendering">Rendering</a>
+    </dt><dd>This section defines the default rendering rules for web browsers.
+  </dd></dl>
+
+  <p>There are also some appendices, listing <a href="https://www.codevoid.net/storyvoidtest/obsolete.html#obsolete">obsolete features</a> and <a href="https://www.codevoid.net/storyvoidtest/iana.html#iana">IANA considerations</a>, and several indices.</p>
+
+
+
+
+  <h4><span>1.9.1</span> How to read this specification</h4>
+
+  <p>This specification should be read like all other specifications. First, it should be read
+    cover-to-cover, multiple times. Then, it should be read backwards at least once. Then it should be
+    read by picking random sections from the contents list and following all the cross-references.</p>
+
+  <p>As described in the conformance requirements section below, this specification describes
+    conformance criteria for a variety of conformance classes. In particular, there are conformance
+    requirements that apply to <em>producers</em>, for example authors and the documents they create,
+    and there are conformance requirements that apply to <em>consumers</em>, for example web browsers.
+    They can be distinguished by what they are requiring: a requirement on a producer states what is
+    allowed, while a requirement on a consumer states how software is to act.</p>
+
+  <div>
+
+    <p>For example, "the <code>foo</code> attribute's value must be a <a href="https://www.codevoid.net/storyvoidtest/common-microsyntaxes.html#valid-integer">valid
+        integer</a>" is a requirement on producers, as it lays out the allowed values; in contrast,
+      the requirement "the <code>foo</code> attribute's value must be parsed using the
+      <a href="https://www.codevoid.net/storyvoidtest/common-microsyntaxes.html#rules-for-parsing-integers">rules for parsing integers</a>" is a requirement on
+      consumers, as it describes how to
+      process the content.
+    </p>
+
+  </div>
+
+  <p><strong>Requirements on producers have no bearing whatsoever on consumers.</strong></p>
+
+  <div>
+
+    <p>Continuing the above example, a requirement stating that a particular attribute's value is
+      constrained to being a <a href="https://www.codevoid.net/storyvoidtest/common-microsyntaxes.html#valid-integer">valid integer</a> emphatically does <em>not</em> imply anything
+      about the requirements on consumers. It might be that the consumers are in fact required to treat
+      the attribute as an opaque string, completely unaffected by whether the value conforms to the
+      requirements or not. It might be (as in the previous example) that the consumers are required to
+      parse the value using specific rules that define how invalid (non-numeric in this case) values
+      are to be processed.</p>
+
+  </div>
+
+
+
+
+
+  <h4><span>1.9.2</span> Typographic conventions</h4>
+
+  <p>This is a definition, requirement, or explanation.</p>
+
+  <p>This is a note.</p>
+
+  <p>This is an example.</p>
+
+  <p>This is an open issue.</p>
+
+  <p>This is a warning.</p>
+
+  <pre><code>[<c->Exposed</c->=<c->Window</c->]
+<c->interface</c-> <dfn><c->Example</c-></dfn> {
+  // this is an IDL definition
+};</code></pre>
+
+  <dl>
+    <dt>
+      <code><var>variable</var> = <var>object</var>.([<var>optionalArgument</var>])</code>
+    </dt><dd>
+      <p>This is a note to authors describing the usage of an interface.
+  </p></dd></dl>
+
+  <pre><code><c->/* this is a CSS fragment */</c-></code></pre>
+
+  <p>The defining instance of a term is marked up like <dfn>this</dfn>. Uses of that
+    term are marked up like  or like .</p>
+
+  <p>The defining instance of an element, attribute, or API is marked up like <dfn><code>this</code></dfn>.
+    References to that element, attribute, or API are marked up
+    like .</p>
+
+  <p>Other code fragments are marked up <code>like this</code>.</p>
+
+  <p>Variables are marked up like <var>this</var>.</p>
+
+  <p>In an algorithm, steps in <a href="https://www.codevoid.net/storyvoidtest/webappapis.html#synchronous-section">synchronous
+      sections</a> are marked with ⌛.</p>
+
+  <p>In some cases, requirements are given in the form of lists with conditions and corresponding
+    requirements. In such cases, the requirements that apply to a condition are always the first set
+    of requirements that follow the condition, even in the case of there being multiple sets of
+    conditions for those requirements. Such cases are presented as follows:</p>
+
+  <dl>
+    <dt>This is a condition
+    <dt>This is another condition
+    </dt></dt><dd>This is the requirement that applies to the conditions above.
+
+    </dd><dt>This is a third condition
+    </dt><dd>This is the requirement that applies to the third condition.
+  </dd></dl>
+
+
+
+
+  <h3><span>1.10</span> A quick introduction to HTML</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>A basic HTML document looks like this:</p>
+
+  <pre><code><c->&lt;!DOCTYPE html&gt;</c->
+<c->&lt;</c-><c->html</c-> <c->lang</c-><c->=</c-><c->"en"</c-><c->&gt;</c->
+ <c->&lt;</c-><c->head</c-><c->&gt;</c->
+  <c->&lt;</c-><c->title</c-><c->&gt;</c->Sample page<c->&lt;/</c-><c->title</c-><c->&gt;</c->
+ <c->&lt;/</c-><c->head</c-><c->&gt;</c->
+ <c->&lt;</c-><c->body</c-><c->&gt;</c->
+  <c->&lt;</c-><c->h1</c-><c->&gt;</c->Sample page<c->&lt;/</c-><c->h1</c-><c->&gt;</c->
+  <c->&lt;</c-><c->p</c-><c->&gt;</c->This is a <c->&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"demo.html"</c-><c->&gt;</c->simple<c->&lt;/</c-><c->a</c-><c->&gt;</c-> sample.<c->&lt;/</c-><c->p</c-><c->&gt;</c->
+  <c->&lt;!-- this is a comment --&gt;</c->
+ <c->&lt;/</c-><c->body</c-><c->&gt;</c->
+<c->&lt;/</c-><c->html</c-><c->&gt;</c-></code></pre>
+
+  <p>HTML documents consist of a tree of elements and text. Each element is denoted in the source by
+    a <a href="https://www.codevoid.net/storyvoidtest/syntax.html#syntax-start-tag">start tag</a>, such as
+    "<code>&lt;body&gt;</code>", and
+    an <a href="https://www.codevoid.net/storyvoidtest/syntax.html#syntax-end-tag">end tag</a>, such as
+    "<code>&lt;/body&gt;</code>".
+    (Certain start tags and end tags can in certain cases be <a href="https://www.codevoid.net/storyvoidtest/syntax.html#syntax-tag-omission">omitted</a> and are implied by other tags.)</p>
+
+  <p>Tags have to be nested such that elements are all completely within each other, without
+    overlapping:</p>
+
+  <pre><code><c->&lt;</c-><c->p</c-><c->&gt;</c->This is <c->&lt;</c-><c->em</c-><c->&gt;</c->very <c->&lt;</c-><c->strong</c-><c->&gt;</c->wrong<c->&lt;/</c-><c->em</c-><c->&gt;</c->!<c->&lt;/</c-><c->strong</c-><c->&gt;&lt;/</c-><c->p</c-><c->&gt;</c-></code></pre>
+  <pre><code><c->&lt;</c-><c->p</c-><c->&gt;</c->This <c->&lt;</c-><c->em</c-><c->&gt;</c->is <c->&lt;</c-><c->strong</c-><c->&gt;</c->correct<c->&lt;/</c-><c->strong</c-><c->&gt;</c->.<c->&lt;/</c-><c->em</c-><c->&gt;&lt;/</c-><c->p</c-><c->&gt;</c-></code></pre>
+
+  <p>This specification defines a set of elements that can be used in HTML, along with rules about
+    the ways in which the elements can be nested.</p>
+
+  <p>Elements can have attributes, which control how the elements work. In the example below, there
+    is a <a href="https://www.codevoid.net/storyvoidtest/links.html#hyperlink">hyperlink</a>, formed using the <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-a-element">a</a></code> element
+    and its <code><a href="https://www.codevoid.net/storyvoidtest/links.html#attr-hyperlink-href">href</a></code>
+    attribute:</p>
+
+  <pre><code><c->&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"demo.html"</c-><c->&gt;</c->simple<c->&lt;/</c-><c->a</c-><c->&gt;</c-></code></pre>
+
+  <p><a href="https://www.codevoid.net/storyvoidtest/syntax.html#syntax-attributes">Attributes</a> are placed
+    inside the start tag, and consist
+    of a <a href="https://www.codevoid.net/storyvoidtest/syntax.html#syntax-attribute-name">name</a> and a
+    <a href="https://www.codevoid.net/storyvoidtest/syntax.html#syntax-attribute-value">value</a>,
+    separated by an "<code>=</code>" character.
+    The attribute value can remain <a href="https://www.codevoid.net/storyvoidtest/syntax.html#unquoted">unquoted</a> if it doesn't contain <a href="https://infra.spec.whatwg.org/#ascii-whitespace">ASCII
+      whitespace</a> or any of <code>"</code> <code>'</code> <code>`</code> <code>=</code> <code>&lt;</code> or
+    <code>&gt;</code>. Otherwise, it has to be quoted using either single or double quotes. The
+    value, along with the "<code>=</code>" character, can be omitted altogether if the value
+    is the empty string.</p>
+
+  <pre><code><c->&lt;!-- empty attributes --&gt;</c->
+<c->&lt;</c-><c->input</c-> <c->name</c-><c->=</c-><c->address</c-> <c->disabled</c-><c->&gt;</c->
+<c->&lt;</c-><c->input</c-> <c->name</c-><c->=</c-><c->address</c-> <c->disabled</c-><c->=</c-><c->""</c-><c->&gt;</c->
+
+<c->&lt;!-- attributes with a value --&gt;</c->
+<c->&lt;</c-><c->input</c-> <c->name</c-><c->=</c-><c->address</c-> <c->maxlength</c-><c->=</c-><c->200</c-><c->&gt;</c->
+<c->&lt;</c-><c->input</c-> <c->name</c-><c->=</c-><c->address</c-> <c->maxlength</c-><c->=</c-><c->'200'</c-><c->&gt;</c->
+<c->&lt;</c-><c->input</c-> <c->name</c-><c->=</c-><c->address</c-> <c->maxlength</c-><c->=</c-><c->"200"</c-><c->&gt;</c-></code></pre>
+
+  <p>HTML user agents (e.g., web browsers) then <i>parse</i> this markup, turning it into a DOM
+    (Document Object Model) tree. A DOM tree is an in-memory representation of a document.</p>
+
+  <p>DOM trees contain several kinds of nodes, in particular a <code><a href="https://dom.spec.whatwg.org/#interface-documenttype">DocumentType</a></code>
+    node,
+    <code><a href="https://dom.spec.whatwg.org/#interface-element">Element</a></code>
+    nodes, <code><a href="https://dom.spec.whatwg.org/#interface-text">Text</a></code>
+    nodes, 
+    nodes, and in some cases
+    <code><a href="https://dom.spec.whatwg.org/#interface-processinginstruction">ProcessingInstruction</a></code>
+    nodes.
+  </p>
+
+  <p>The  would be
+    turned into the following DOM tree:</p>
+
+  <ul>
+    <li>DOCTYPE: <code>html</code>
+    </li><li><code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-html-element">html</a></code> <span><code><a href="https://www.codevoid.net/storyvoidtest/dom.html#attr-lang">lang</a></code>="<code>en</code>"</span>
+      <ul>
+        <li><code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-head-element">head</a></code>
+          <ul>
+            <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+              <span>⏎␣␣</span>
+            </li><li><code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-title-element">title</a></code>
+              <ul>
+                <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                  <span>Sample page</span>
+              </li></ul>
+            </li><li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+              <span>⏎␣</span>
+          </li></ul>
+        </li><li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+          <span>⏎␣</span>
+        </li><li><code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-body-element">body</a></code>
+          <ul>
+            <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+              <span>⏎␣␣</span>
+            </li><li><code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements">h1</a></code>
+              <ul>
+                <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                  <span>Sample page</span>
+              </li></ul>
+            </li><li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+              <span>⏎␣␣</span>
+            </li><li><code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-p-element">p</a></code>
+              <ul>
+                <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                  <span>This is a </span>
+                </li><li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-a-element">a</a></code>
+                  <span><code><a href="https://www.codevoid.net/storyvoidtest/links.html#attr-hyperlink-href">href</a></code>="<code>demo.html</code>"</span>
+                  <ul>
+                    <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                      <span>simple</span>
+                  </li></ul>
+                </li><li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                  <span> sample.</span>
+              </li></ul>
+            </li><li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+              <span>⏎␣␣</span>
+            </li><li><code><a href="https://dom.spec.whatwg.org/#interface-comment">#comment</a></code>:
+              <span> this is a comment </span>
+            </li><li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+              <span>⏎␣⏎</span>
+          </li></ul>
+      </li></ul>
+  </li></ul>
+
+  <p>The <a href="https://dom.spec.whatwg.org/#document-element">document element</a> of this tree is the <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-html-element">html</a></code>
+    element, which is the
+    element always found in that position in HTML documents. It contains two elements,
+    <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-head-element">head</a></code> and
+    <code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-body-element">body</a></code>, as
+    well as a <code><a href="https://dom.spec.whatwg.org/#interface-text">Text</a></code>
+    node between them.
+  </p>
+
+  <p>There are many more <code><a href="https://dom.spec.whatwg.org/#interface-text">Text</a></code>
+    nodes in the DOM tree than one would initially expect,
+    because the source contains a number of spaces (represented here by "␣") and line breaks
+    ("⏎") that all end up as <code><a href="https://dom.spec.whatwg.org/#interface-text">Text</a></code>
+    nodes in the DOM. However, for historical
+    reasons not all of the spaces and line breaks in the original markup appear in the DOM. In
+    particular, all the whitespace before <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-head-element">head</a></code> start
+    tag ends up being dropped silently,
+    and all the whitespace after the <code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-body-element">body</a></code> end tag
+    ends up placed at the end of the
+    <code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-body-element">body</a></code>.
+  </p>
+
+  <p>The <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-head-element">head</a></code> element
+    contains a <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-title-element">title</a></code>
+    element, which itself contains a
+    <code><a href="https://dom.spec.whatwg.org/#interface-text">Text</a></code>
+    node with the text "Sample page". Similarly, the <code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-body-element">body</a></code> element
+    contains an <code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements">h1</a></code>
+    element, a <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-p-element">p</a></code> element,
+    and a comment.
+  </p>
+
+  
+
+  <p>This DOM tree can be manipulated from scripts in the page. Scripts (typically in JavaScript)
+    are small programs that can be embedded using the <code><a href="https://www.codevoid.net/storyvoidtest/scripting.html#the-script-element">script</a></code>
+    element or using <a href="https://www.codevoid.net/storyvoidtest/webappapis.html#event-handler-content-attributes">event
+      handler content attributes</a>. For example, here is a form with a script that sets the value
+    of the form's <code><a href="https://www.codevoid.net/storyvoidtest/form-elements.html#the-output-element">output</a></code>
+    element to say "Hello World":</p>
+
+  <pre><code><c->&lt;</c-><a href="https://www.codevoid.net/storyvoidtest/forms.html#the-form-element"><c->form</c-></a> <a href="https://www.codevoid.net/storyvoidtest/forms.html#attr-form-name"><c->name</c-></a><c->=</c-><c->"main"</c-><c->&gt;</c->
+ Result: <c->&lt;</c-><a href="https://www.codevoid.net/storyvoidtest/form-elements.html#the-output-element"><c->output</c-></a> <a href="https://www.codevoid.net/storyvoidtest/form-control-infrastructure.html#attr-fe-name"><c->name</c-></a><c->=</c-><c->"result"</c-><c->&gt;&lt;/</c-><c->output</c-><c->&gt;</c->
+ <c->&lt;</c-><a href="https://www.codevoid.net/storyvoidtest/scripting.html#the-script-element"><c->script</c-></a><c->&gt;</c->
+  <a href="https://www.codevoid.net/storyvoidtest/dom.html#document">document</a><c->.</c-><a href="https://www.codevoid.net/storyvoidtest/dom.html#dom-document-forms">forms</a><c->.</c->main<c->.</c-><a href="https://www.codevoid.net/storyvoidtest/forms.html#dom-form-elements">elements</a><c->.</c->result<c->.</c-><a href="https://www.codevoid.net/storyvoidtest/form-elements.html#dom-output-value">value</a> <c->=</c-> <c->'Hello World'</c-><c->;</c->
+ <c->&lt;/</c-><c->script</c-><c->&gt;</c->
+<c->&lt;/</c-><c->form</c-><c->&gt;</c-></code></pre>
+
+  <p>Each element in the DOM tree is represented by an object, and these objects have APIs so that
+    they can be manipulated. For instance, a link (e.g. the <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-a-element">a</a></code>
+    element in the tree above)
+    can have its "<code><a href="https://www.codevoid.net/storyvoidtest/links.html#attr-hyperlink-href">href</a></code>"
+    attribute changed in several
+    ways:</p>
+
+  <pre><code><c->var</c-> a <c->=</c-> <a href="https://www.codevoid.net/storyvoidtest/dom.html#document">document</a><c->.</c-><a href="https://www.codevoid.net/storyvoidtest/dom.html#dom-document-links">links</a><c->[</c-><c->0</c-><c->];</c-> <c->// obtain the first link in the document</c->
+a<c->.</c-><a href="https://www.codevoid.net/storyvoidtest/links.html#dom-hyperlink-href">href</a> <c->=</c-> <c->'sample.html'</c-><c->;</c-> <c->// change the destination URL of the link</c->
+a<c->.</c-><a href="https://www.codevoid.net/storyvoidtest/links.html#dom-hyperlink-protocol">protocol</a> <c->=</c-> <c->'https'</c-><c->;</c-> <c->// change just the scheme part of the URL</c->
+a<c->.</c->setAttribute<c->(</c-><c->'href'</c-><c->,</c-> <c->'https://example.com/'</c-><c->);</c-> <c->// change the content attribute directly</c-></code></pre>
+
+  <p>Since DOM trees are used as the way to represent HTML documents when they are processed and
+    presented by implementations (especially interactive implementations like web browsers), this
+    specification is mostly phrased in terms of DOM trees, instead of the markup described above.</p>
+
+  
+
+  <p>HTML documents represent a media-independent description of interactive content. HTML documents
+    might be rendered to a screen, or through a speech synthesizer, or on a braille display. To
+    influence exactly how such rendering takes place, authors can use a styling language such as
+    CSS.</p>
+
+  <p>In the following example, the page has been made yellow-on-blue using CSS.</p>
+
+  <pre><code><c->&lt;!DOCTYPE html&gt;</c->
+<c->&lt;</c-><c->html</c-> <c->lang</c-><c->=</c-><c->"en"</c-><c->&gt;</c->
+ <c->&lt;</c-><c->head</c-><c->&gt;</c->
+  <c->&lt;</c-><c->title</c-><c->&gt;</c->Sample styled page<c->&lt;/</c-><c->title</c-><c->&gt;</c->
+  <c->&lt;</c-><c->style</c-><c->&gt;</c->
+   <c->body</c-> <c->{</c-> <c->background</c-><c->:</c-> <c->navy</c-><c->;</c-> <c->color</c-><c->:</c-> <c->yellow</c-><c->;</c-> <c->}</c->
+  <c->&lt;/</c-><c->style</c-><c->&gt;</c->
+ <c->&lt;/</c-><c->head</c-><c->&gt;</c->
+ <c->&lt;</c-><c->body</c-><c->&gt;</c->
+  <c->&lt;</c-><c->h1</c-><c->&gt;</c->Sample styled page<c->&lt;/</c-><c->h1</c-><c->&gt;</c->
+  <c->&lt;</c-><c->p</c-><c->&gt;</c->This page is just a demo.<c->&lt;/</c-><c->p</c-><c->&gt;</c->
+ <c->&lt;/</c-><c->body</c-><c->&gt;</c->
+<c->&lt;/</c-><c->html</c-><c->&gt;</c-></code></pre>
+
+  <p>For more details on how to use HTML, authors are encouraged to consult tutorials and guides.
+    Some of the examples included in this specification might also be of use, but the novice author is
+    cautioned that this specification, by necessity, defines the language with a level of detail that
+    might be difficult to understand at first.</p>
+
+
+
+
+  <h4><span>1.10.1</span> Writing secure applications with HTML</h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>When HTML is used to create interactive sites, care needs to be taken to avoid introducing
+    vulnerabilities through which attackers can compromise the integrity of the site itself or of the
+    site's users.</p>
+
+  <p>A comprehensive study of this matter is beyond the scope of this document, and authors are
+    strongly encouraged to study the matter in more detail. However, this section attempts to provide
+    a quick introduction to some common pitfalls in HTML application development.</p>
+
+  <p>The security model of the web is based on the concept of "origins", and correspondingly many of
+    the potential attacks on the web involve cross-origin actions. <a href="https://www.codevoid.net/storyvoidtest/references.html#refsORIGIN">[ORIGIN]</a></p>
+
+  <dl>
+    <dt>Not validating user input
+    <dt>Cross-site scripting (XSS)
+    <dt>SQL injection
+    </dt></dt></dt><dd>
+      <p>When accepting untrusted input, e.g. user-generated content such as text comments, values in
+        URL parameters, messages from third-party sites, etc, it is imperative that the data be
+        validated before use, and properly escaped when displayed. Failing to do this can allow a
+        hostile user to perform a variety of attacks, ranging from the potentially benign, such as
+        providing bogus user information like a negative age, to the serious, such as running scripts
+        every time a user looks at a page that includes the information, potentially propagating the
+        attack in the process, to the catastrophic, such as deleting all data in the server.</p>
+
+      <p>When writing filters to validate user input, it is imperative that filters always be
+        safelist-based, allowing known-safe constructs and disallowing all other input. Blocklist-based
+        filters that disallow known-bad inputs and allow everything else are not secure, as not
+        everything that is bad is yet known (for example, because it might be invented in the
+        future).</p>
+
+      <div>
+
+        <p>For example, suppose a page looked at its URL's query string to determine what to display,
+          and the site then redirected the user to that page to display a message, as in:</p>
+
+        <pre><code><c->&lt;</c-><c->ul</c-><c->&gt;</c->
+ <c->&lt;</c-><c->li</c-><c->&gt;&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"message.cgi?say=Hello"</c-><c->&gt;</c->Say Hello<c->&lt;/</c-><c->a</c-><c->&gt;</c->
+ <c->&lt;</c-><c->li</c-><c->&gt;&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"message.cgi?say=Welcome"</c-><c->&gt;</c->Say Welcome<c->&lt;/</c-><c->a</c-><c->&gt;</c->
+ <c->&lt;</c-><c->li</c-><c->&gt;&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"message.cgi?say=Kittens"</c-><c->&gt;</c->Say Kittens<c->&lt;/</c-><c->a</c-><c->&gt;</c->
+<c->&lt;/</c-><c->ul</c-><c->&gt;</c-></code></pre>
+
+        <p>If the message was just displayed to the user without escaping, a hostile attacker could
+          then craft a URL that contained a script element:</p>
+
+        <pre>https://example.com/message.cgi?say=%3Cscript%3Ealert%28%27Oh%20no%21%27%29%3C/script%3E</pre>
+
+        <p>If the attacker then convinced a victim user to visit this page, a script of the attacker's
+          choosing would run on the page. Such a script could do any number of hostile actions, limited
+          only by what the site offers: if the site is an e-commerce shop, for instance, such a script
+          could cause the user to unknowingly make arbitrarily many unwanted purchases.</p>
+
+        <p>This is called a cross-site scripting attack.</p>
+
+      </div>
+
+      <p>There are many constructs that can be used to try to trick a site into executing code. Here
+        are some that authors are encouraged to consider when writing safelist filters:</p>
+
+      <ul>
+        <li>When allowing harmless-seeming elements like <code><a href="https://www.codevoid.net/storyvoidtest/embedded-content.html#the-img-element">img</a></code>,
+          it is important to safelist
+          any provided attributes as well. If one allowed all attributes then an attacker could, for
+          instance, use the <code><a href="https://www.codevoid.net/storyvoidtest/webappapis.html#handler-onload">onload</a></code>
+          attribute to run arbitrary
+          script.
+        </li><li>When allowing URLs to be provided (e.g. for links), the scheme of each URL also needs to be
+          explicitly safelisted, as there are many schemes that can be abused. The most prominent
+          example is "<code><a href="https://www.codevoid.net/storyvoidtest/browsing-the-web.html#javascript-protocol">javascript:</a></code>",
+          but user agents can
+          implement (and indeed, have historically implemented) others.
+        </li><li>Allowing a <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-base-element">base</a></code>
+          element to be inserted means any <code><a href="https://www.codevoid.net/storyvoidtest/scripting.html#the-script-element">script</a></code>
+          elements
+          in the page with relative links can be hijacked, and similarly that any form submissions can
+          get redirected to a hostile site.
+      </li></ul>
+    </dd><dt>Cross-site request forgery (CSRF)
+    </dt><dd>
+      <p>If a site allows a user to make form submissions with user-specific side-effects, for example
+        posting messages on a forum under the user's name, making purchases, or applying for a passport,
+        it is important to verify that the request was made by the user intentionally, rather than by
+        another site tricking the user into making the request unknowingly.</p>
+
+      <p>This problem exists because HTML forms can be submitted to other origins.</p>
+
+      <p>Sites can prevent such attacks by populating forms with user-specific hidden tokens, or by
+        checking `<code><a href="https://fetch.spec.whatwg.org/#http-origin">Origin</a></code>`
+        headers on all requests.</p>
+    </dd><dt>Clickjacking
+    </dt><dd>
+      <p>A page that provides users with an interface to perform actions that the user might not wish
+        to perform needs to be designed so as to avoid the possibility that users can be tricked into
+        activating the interface.</p>
+
+      <p>One way that a user could be so tricked is if a hostile site places the victim site in a
+        small <code><a href="https://www.codevoid.net/storyvoidtest/iframe-embed-object.html#the-iframe-element">iframe</a></code>
+        and then convinces the user to click, for instance by having the user
+        play a reaction game. Once the user is playing the game, the hostile site can quickly position
+        the iframe under the mouse cursor just as the user is about to click, thus tricking the user
+        into clicking the victim site's interface.</p>
+
+      <p>To avoid this, sites that do not expect to be used in frames are encouraged to only enable
+        their interface if they detect that they are not in a frame (e.g. by comparing the <code><a href="https://www.codevoid.net/storyvoidtest/window-object.html#dom-window">window</a></code>
+        object to the value of the <code><a href="https://www.codevoid.net/storyvoidtest/browsers.html#dom-top">top</a></code>
+        attribute).</p>
+  </dd></dl>
+
+
+
+  <h4><span>1.10.2</span> Common pitfalls to avoid
+    when using the scripting APIs
+  </h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>Scripts in HTML have "run-to-completion" semantics, meaning that the browser will generally run
+    the script uninterrupted before doing anything else, such as firing further events or continuing
+    to parse the document.</p>
+
+  <p>On the other hand, parsing of HTML files happens incrementally, meaning that
+    the parser can pause at any point to let scripts run. This is generally a good thing, but it does
+    mean that authors need to be careful to avoid hooking event handlers after the events could have
+    possibly fired.</p>
+
+  <p>There are two techniques for doing this reliably: use <a href="https://www.codevoid.net/storyvoidtest/webappapis.html#event-handler-content-attributes">event handler content
+      attributes</a>, or create the element and add the event handlers in the same script. The latter
+    is safe because, as mentioned earlier, scripts are run to completion before further events can
+    fire.</p>
+
+  <div>
+
+    <p>One way this could manifest itself is with <code><a href="https://www.codevoid.net/storyvoidtest/embedded-content.html#the-img-element">img</a></code>
+      elements and the <code><a href="https://www.codevoid.net/storyvoidtest/indices.html#event-load">load</a></code>
+      event. The event could fire as soon as the element has been
+      parsed, especially if the image has already been cached (which is common).</p>
+
+    <p>Here, the author uses the <code><a href="https://www.codevoid.net/storyvoidtest/webappapis.html#handler-onload">onload</a></code>
+      handler on an
+      <code><a href="https://www.codevoid.net/storyvoidtest/embedded-content.html#the-img-element">img</a></code>
+      element to catch the <code><a href="https://www.codevoid.net/storyvoidtest/indices.html#event-load">load</a></code>
+      event:
+    </p>
+
+    <pre><code><c->&lt;</c-><c->img</c-> <c->src</c-><c->=</c-><c->"games.png"</c-> <c->alt</c-><c->=</c-><c->"Games"</c-> <c->onload</c-><c->=</c-><c->"gamesLogoHasLoaded(event)"</c-><c->&gt;</c-></code></pre>
+
+    <p>If the element is being added by script, then so long as the event handlers are added in the
+      same script, the event will still not be missed:</p>
+
+    <pre><code><c->&lt;</c-><c->script</c-><c->&gt;</c->
+ <c->var</c-> img <c->=</c-> <c->new</c-> Image<c->();</c->
+ img<c->.</c->src <c->=</c-> <c->'games.png'</c-><c->;</c->
+ img<c->.</c->alt <c->=</c-> <c->'Games'</c-><c->;</c->
+ img<c->.</c->onload <c->=</c-> gamesLogoHasLoaded<c->;</c->
+ <c->// img.addEventListener('load', gamesLogoHasLoaded, false); // would work also</c->
+<c->&lt;/</c-><c->script</c-><c->&gt;</c-></code></pre>
+
+    <p>However, if the author first created the <code><a href="https://www.codevoid.net/storyvoidtest/embedded-content.html#the-img-element">img</a></code>
+      element and then in a separate
+      script added the event listeners, there's a chance that the <code><a href="https://www.codevoid.net/storyvoidtest/indices.html#event-load">load</a></code>
+      event would be fired in between, leading it to be missed:</p>
+
+    <pre><code><c->&lt;!-- Do not use this style, it has a race condition! --&gt;</c->
+ <c->&lt;</c-><c->img</c-> <c->id</c-><c->=</c-><c->"games"</c-> <c->src</c-><c->=</c-><c->"games.png"</c-> <c->alt</c-><c->=</c-><c->"Games"</c-><c->&gt;</c->
+ <c->&lt;!-- the 'load' event might fire here while the parser is taking a</c->
+<c->      break, in which case you will not see it! --&gt;</c->
+ <c->&lt;</c-><c->script</c-><c->&gt;</c->
+  <c->var</c-> img <c->=</c-> document<c->.</c->getElementById<c->(</c-><c->'games'</c-><c->);</c->
+  img<c->.</c->onload <c->=</c-> gamesLogoHasLoaded<c->;</c-> <c->// might never fire!</c->
+ <c->&lt;/</c-><c->script</c-><c->&gt;</c-></code></pre>
+
+  </div>
+
+
+
+  <h4><span>1.10.3</span>
+    How to catch mistakes when writing HTML: validators and conformance checkers</h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>Authors are encouraged to make use of conformance checkers (also known as <i>validators</i>) to
+    catch common mistakes. The WHATWG maintains a list of such tools at: https://whatwg.org/validator/</p>
+
+
+
+  <h3><span>1.11</span> Conformance requirements for authors</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>Unlike previous versions of the HTML specification, this specification defines in some detail
+    the required processing for invalid documents as well as valid documents.</p>
+
+  <p>However, even though the processing of invalid content is in most cases well-defined,
+    conformance requirements for documents are still important: in practice, interoperability (the
+    situation in which all implementations process particular content in a reliable and identical or
+    equivalent way) is not the only goal of document conformance requirements. This section details
+    some of the more common reasons for still distinguishing between a conforming document and one
+    with errors.</p>
+
+
+  <h4><span>1.11.1</span> Presentational markup</h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>The majority of presentational features from previous versions of HTML are no longer allowed.
+    Presentational markup in general has been found to have a number of problems:</p>
+
+  <dl>
+    <dt>The use of presentational elements leads to poorer accessibility
+    </dt><dd>
+      <p>While it is possible to use presentational markup in a way that provides users of assistive
+        technologies (ATs) with an acceptable experience (e.g. using ARIA), doing so is significantly
+        more difficult than doing so when using semantically-appropriate markup. Furthermore, even using
+        such techniques doesn't help make pages accessible for non-AT non-graphical users, such as users
+        of text-mode browsers.</p>
+
+      <p>Using media-independent markup, on the other hand, provides an easy way for documents to be
+        authored in such a way that they work for more users (e.g. users of text browsers).</p>
+    </dd><dt>Higher cost of maintenance
+    </dt><dd>
+      <p>It is significantly easier to maintain a site written in such a way that the markup is
+        style-independent. For example, changing the color of a site that uses <code>&lt;font color=""&gt;</code>
+        throughout requires changes across the entire site,
+        whereas a similar change to a site based on CSS can be done by changing a single file.</p>
+    </dd><dt>Larger document sizes
+    </dt><dd>
+      <p>Presentational markup tends to be much more redundant, and thus results in larger document
+        sizes.</p>
+  </dd></dl>
+
+  <p>For those reasons, presentational markup has been removed from HTML in this version. This
+    change should not come as a surprise; HTML4 deprecated presentational markup many years ago and
+    provided a mode (HTML4 Transitional) to help authors move away from presentational markup; later,
+    XHTML 1.1 went further and obsoleted those features altogether.</p>
+
+  <p>The only remaining presentational markup features in HTML are the <code><a href="https://www.codevoid.net/storyvoidtest/dom.html#attr-style">style</a></code> attribute and the <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-style-element">style</a></code> element. Use
+    of the <code><a href="https://www.codevoid.net/storyvoidtest/dom.html#attr-style">style</a></code> attribute is
+    somewhat discouraged in production environments, but
+    it can be useful for rapid prototyping (where its rules can be directly moved into a separate
+    style sheet later) and for providing specific styles in unusual cases where a separate style sheet
+    would be inconvenient. Similarly, the <code><a href="https://www.codevoid.net/storyvoidtest/semantics.html#the-style-element">style</a></code> element can
+    be useful in syndication or
+    for page-specific styles, but in general an external style sheet is likely to be more convenient
+    when the styles apply to multiple pages.</p>
+
+  <p>It is also worth noting that some elements that were previously presentational have been
+    redefined in this specification to be media-independent: <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-b-element">b</a></code>, <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>,
+    <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-hr-element">hr</a></code>, <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-s-element">s</a></code>, <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-small-element">small</a></code>,
+    and <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-u-element">u</a></code>.
+  </p>
+
+
+  <h4><span>1.11.2</span> Syntax errors</h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>The syntax of HTML is constrained to avoid a wide variety of problems.</p>
+
+  <dl>
+    <dt>Unintuitive error-handling behavior
+    </dt><dd>
+      <p>Certain invalid syntax constructs, when parsed, result in DOM trees that are highly
+        unintuitive.</p>
+
+      <div>
+
+        <p>For example, the following markup fragment results in a DOM with an <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-hr-element">hr</a></code> element
+          that is an <em>earlier</em> sibling of the corresponding <code><a href="https://www.codevoid.net/storyvoidtest/tables.html#the-table-element">table</a></code> element:</p>
+
+        <pre><code><c->&lt;</c-><c->table</c-><c->&gt;&lt;</c-><c->hr</c-><c->&gt;</c->...</code></pre>
+
+      </div>
+    </dd><dt>Errors with optional error recovery
+    </dt><dd>
+      <p>To allow user agents to be used in controlled environments without having to implement the
+        more bizarre and convoluted error handling rules, user agents are permitted to fail whenever
+        encountering a <a href="https://www.codevoid.net/storyvoidtest/parsing.html#parse-errors">parse error</a>.</p>
+    </dd><dt>Errors where the error-handling behavior is not compatible with streaming user agents
+    </dt><dd>
+      <p>Some error-handling behavior, such as the behavior for the <code>&lt;table&gt;&lt;hr&gt;...</code> example mentioned
+        above, are incompatible with streaming
+        user agents (user agents that process HTML files in one pass, without storing state). To avoid
+        interoperability problems with such user agents, any syntax resulting in such behavior is
+        considered invalid.</p>
+    </dd><dt>Errors that can result in infoset coercion
+    </dt><dd>
+      <p>When a user agent based on XML is connected to an HTML parser, it is possible that certain
+        invariants that XML enforces, such as element or attribute names never contain multiple colons,
+        will be violated by an HTML file. Handling this can require that the parser coerce the HTML DOM
+        into an XML-compatible infoset. Most syntax constructs that require such handling are considered
+        invalid. (Comments containing two consecutive hyphens, or ending with a hyphen, are exceptions
+        that are allowed in the HTML syntax.)</p>
+    </dd><dt>Errors that result in disproportionately poor performance
+    </dt><dd>
+      <p>Certain syntax constructs can result in disproportionately poor performance. To discourage the
+        use of such constructs, they are typically made non-conforming.</p>
+
+      <div>
+
+        <p>For example, the following markup results in poor performance, since all the unclosed
+          <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code> elements
+          have to be reconstructed in each paragraph, resulting in progressively
+          more elements in each paragraph:
+        </p>
+
+        <pre><code><c->&lt;</c-><c->p</c-><c->&gt;&lt;</c-><c->i</c-><c->&gt;</c->She dreamt.
+<c->&lt;</c-><c->p</c-><c->&gt;&lt;</c-><c->i</c-><c->&gt;</c->She dreamt that she ate breakfast.
+<c->&lt;</c-><c->p</c-><c->&gt;&lt;</c-><c->i</c-><c->&gt;</c->Then lunch.
+<c->&lt;</c-><c->p</c-><c->&gt;&lt;</c-><c->i</c-><c->&gt;</c->And finally dinner.</code></pre>
+
+        <p>The resulting DOM for this fragment would be:</p>
+
+        <ul>
+          <li><code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-p-element">p</a></code>
+            <ul>
+              <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                <ul>
+                  <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                    <span>She dreamt.</span>
+                </li></ul>
+            </li></ul>
+          </li><li><code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-p-element">p</a></code>
+            <ul>
+              <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                <ul>
+                  <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                    <ul>
+                      <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                        <span>She dreamt that she ate breakfast.</span>
+                    </li></ul>
+                </li></ul>
+            </li></ul>
+          </li><li><code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-p-element">p</a></code>
+            <ul>
+              <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                <ul>
+                  <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                    <ul>
+                      <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                        <ul>
+                          <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                            <span>Then lunch.</span>
+                        </li></ul>
+                    </li></ul>
+                </li></ul>
+            </li></ul>
+          </li><li><code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-p-element">p</a></code>
+            <ul>
+              <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                <ul>
+                  <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                    <ul>
+                      <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                        <ul>
+                          <li><code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-i-element">i</a></code>
+                            <ul>
+                              <li><code><a href="https://dom.spec.whatwg.org/#interface-text">#text</a></code>:
+                                <span>And finally dinner.</span>
+                            </li></ul>
+                        </li></ul>
+                    </li></ul>
+                </li></ul>
+            </li></ul>
+        </li></ul>
+
+      </div>
+    </dd><dt>Errors involving fragile syntax constructs
+    </dt><dd>
+      <p>There are syntax constructs that, for historical reasons, are relatively fragile. To help
+        reduce the number of users who accidentally run into such problems, they are made
+        non-conforming.</p>
+
+      <div>
+
+        <p>For example, the parsing of certain named character references in attributes happens even
+          with the closing semicolon being omitted. It is safe to include an ampersand followed by
+          letters that do not form a named character reference, but if the letters are changed to a
+          string that <em>does</em> form a named character reference, they will be interpreted as that
+          character instead.</p>
+
+        <p>In this fragment, the attribute's value is "<code>?bill&amp;ted</code>":</p>
+
+        <pre><code><c->&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"?bill&amp;ted"</c-><c->&gt;</c->Bill and Ted<c->&lt;/</c-><c->a</c-><c->&gt;</c-></code></pre>
+
+        <p>In the following fragment, however, the attribute's value is actually "<code>?art©</code>", <em>not</em> the
+          intended "<code>?art&amp;copy</code>",
+          because even without the final semicolon, "<code>&amp;copy</code>" is handled the same
+          as "<code>&amp;copy;</code>" and thus gets interpreted as "<code>©</code>":</p>
+
+        <pre><code><c->&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"?art&amp;copy"</c-><c->&gt;</c->Art and Copy<c->&lt;/</c-><c->a</c-><c->&gt;</c-></code></pre>
+
+        <p>To avoid this problem, all named character references are required to end with a semicolon,
+          and uses of named character references without a semicolon are flagged as errors.</p>
+
+        <p>Thus, the correct way to express the above cases is as
+          follows:</p>
+
+        <pre><code><c->&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"?bill&amp;ted"</c-><c->&gt;</c->Bill and Ted<c->&lt;/</c-><c->a</c-><c->&gt;</c-> <c->&lt;!-- &amp;ted is ok, since it's not a named character reference --&gt;</c-></code></pre>
+        <pre><code><c->&lt;</c-><c->a</c-> <c->href</c-><c->=</c-><c->"?art&amp;amp;copy"</c-><c->&gt;</c->Art and Copy<c->&lt;/</c-><c->a</c-><c->&gt;</c-> <c->&lt;!-- the &amp; has to be escaped, since &amp;copy </c-><em><c->is</c-></em><c-> a named character reference --&gt;</c-></code></pre>
+
+      </div>
+    </dd><dt>Errors involving known interoperability problems in legacy user agents
+    </dt><dd>
+      <p>Certain syntax constructs are known to cause especially subtle or serious problems in legacy
+        user agents, and are therefore marked as non-conforming to help authors avoid them.</p>
+
+      <div>
+
+        <p>For example, this is why the U+0060 GRAVE ACCENT character (`) is not allowed in unquoted
+          attributes. In certain legacy user agents, it is sometimes treated as a
+          quote character.</p>
+
+      </div>
+
+      <div>
+
+        <p>Another example of this is the DOCTYPE, which is required to trigger <a href="https://dom.spec.whatwg.org/#concept-document-no-quirks">no-quirks
+            mode</a>, because the behavior of legacy user agents in <a href="https://dom.spec.whatwg.org/#concept-document-quirks">quirks mode</a> is
+          often
+          largely undocumented.</p>
+
+      </div>
+    </dd><dt>Errors that risk exposing authors to security attacks
+    </dt><dd>
+      <p>Certain restrictions exist purely to avoid known security problems.</p>
+
+      <div>
+
+        <p>For example, the restriction on using UTF-7 exists purely to avoid authors falling prey to a
+          known cross-site-scripting attack using UTF-7. <a href="https://www.codevoid.net/storyvoidtest/references.html#refsUTF7">[UTF7]</a></p>
+
+      </div>
+    </dd><dt>Cases where the author's intent is unclear
+    </dt><dd>
+      <p>Markup where the author's intent is very unclear is often made non-conforming. Correcting
+        these errors early makes later maintenance easier.</p>
+
+      <div>
+
+        <p>For example, it is unclear whether the author intended the following to be an
+          <code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements">h1</a></code>
+          heading or an <code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements">h2</a></code>
+          heading:
+        </p>
+
+        <pre><code><c->&lt;</c-><c->h1</c-><c->&gt;</c->Contact details<c->&lt;/</c-><c->h2</c-><c->&gt;</c-></code></pre>
+
+      </div>
+    </dd><dt>Cases that are likely to be typos
+    </dt><dd>
+      <p>When a user makes a simple typo, it is helpful if the error can be caught early, as this can
+        save the author a lot of debugging time. This specification therefore usually considers it an
+        error to use element names, attribute names, and so forth, that do not match the names defined
+        in this specification.</p>
+
+      <div>
+
+        <p>For example, if the author typed <code>&lt;capton&gt;</code> instead of <code>&lt;caption&gt;</code>, this would be
+          flagged as an error and the author could correct
+          the typo immediately.</p>
+
+      </div>
+    </dd><dt>Errors that could interfere with new syntax in the future
+    </dt><dd>
+      <p>In order to allow the language syntax to be extended in the future, certain otherwise
+        harmless features are disallowed.</p>
+
+      <div>
+
+        <p>For example, "attributes" in end tags are ignored currently, but they are invalid, in case a
+          future change to the language makes use of that syntax feature without conflicting with
+          already-deployed (and valid!) content.</p>
+
+      </div>
+  </dd></dl>
+
+  <p>Some authors find it helpful to be in the practice of always quoting all attributes and always
+    including all optional tags, preferring the consistency derived from such custom over the minor
+    benefits of terseness afforded by making use of the flexibility of the HTML syntax. To aid such
+    authors, conformance checkers can provide modes of operation wherein such conventions are
+    enforced.</p>
+
+
+
+  <h4><span>1.11.3</span> Restrictions on content
+    models and on attribute values
+  </h4>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>Beyond the syntax of the language, this specification also places restrictions on how elements
+    and attributes can be specified. These restrictions are present for similar reasons:</p>
+
+  <dl>
+    <dt>Errors involving content with dubious semantics
+    </dt><dd>
+      <p>To avoid misuse of elements with defined meanings, content models are defined that restrict
+        how elements can be nested when such nestings would be of dubious value.</p>
+
+      <p>For example, this specification disallows nesting a <code><a href="https://www.codevoid.net/storyvoidtest/sections.html#the-section-element">section</a></code>
+        element inside a <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-kbd-element">kbd</a></code>
+        element, since it is highly unlikely for an author to indicate
+        that an entire section should be keyed in.</p>
+    </dd><dt>Errors that involve a conflict in expressed semantics
+    </dt><dd>
+      <p>Similarly, to draw the author's attention to mistakes in the use of elements, clear
+        contradictions in the semantics expressed are also considered conformance errors.</p>
+
+      <div>
+
+        <p>In the fragments below, for example, the semantics are nonsensical: a separator cannot
+          simultaneously be a cell, nor can a radio button be a progress bar.</p>
+
+        <pre><code><c->&lt;</c-><c->hr</c-> <c->role</c-><c->=</c-><c->"cell"</c-><c->&gt;</c-></code></pre>
+        <pre><code><c->&lt;</c-><c->input</c-> <c->type</c-><c->=</c-><c->radio</c-> <c->role</c-><c->=</c-><c->progressbar</c-><c->&gt;</c-></code></pre>
+
+      </div>
+
+      <p>Another example is the restrictions on the content models of the
+        <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-ul-element">ul</a></code>
+        element, which only allows <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-li-element">li</a></code>
+        element children. Lists by definition
+        consist just of zero or more list items, so if a <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-ul-element">ul</a></code>
+        element contains something
+        other than an <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-li-element">li</a></code>
+        element, it's not clear what was meant.
+      </p>
+    </dd><dt>Cases where the default styles are likely to lead to confusion
+    </dt><dd>
+      <p>Certain elements have default styles or behaviors that make certain combinations likely to
+        lead to confusion. Where these have equivalent alternatives without this problem, the confusing
+        combinations are disallowed.</p>
+
+      <p>For example, <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-div-element">div</a></code>
+        elements are rendered as <a href="https://drafts.csswg.org/css2/#block-boxes%E2%91%A0">block boxes</a>,
+        and <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-span-element">span</a></code>
+        elements as <a href="https://drafts.csswg.org/css2/#inline-box">inline
+          boxes</a>. Putting a <a href="https://drafts.csswg.org/css2/#block-boxes%E2%91%A0">block box</a> in an
+        <a href="https://drafts.csswg.org/css2/#inline-box">inline box</a> is unnecessarily
+        confusing; since either nesting just <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-div-element">div</a></code>
+        elements, or nesting just <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-span-element">span</a></code>
+        elements, or nesting <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-span-element">span</a></code>
+        elements
+        inside <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-div-element">div</a></code>
+        elements all serve the same purpose as nesting a <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-div-element">div</a></code>
+        element in a <code><a href="https://www.codevoid.net/storyvoidtest/text-level-semantics.html#the-span-element">span</a></code>
+        element, but only the latter involves a <a href="https://drafts.csswg.org/css2/#block-boxes%E2%91%A0">block box</a> in
+        an <a href="https://drafts.csswg.org/css2/#inline-box">inline box</a>, the latter
+        combination is disallowed.
+      </p>
+
+      <p>Another example would be the way <a href="https://www.codevoid.net/storyvoidtest/dom.html#interactive-content-2">interactive content</a> cannot be
+        nested. For example, a <code><a href="https://www.codevoid.net/storyvoidtest/form-elements.html#the-button-element">button</a></code>
+        element cannot contain a <code><a href="https://www.codevoid.net/storyvoidtest/form-elements.html#the-textarea-element">textarea</a></code>
+        element. This is because the default behavior of such nesting interactive elements would be
+        highly confusing to users. Instead of nesting these elements, they can be placed side by
+        side.</p>
+    </dd><dt>Errors that indicate a likely misunderstanding of the specification
+    </dt><dd>
+      <p>Sometimes, something is disallowed because allowing it would likely cause author
+        confusion.</p>
+
+      <p>For example, setting the <code><a href="https://www.codevoid.net/storyvoidtest/form-control-infrastructure.html#attr-fe-disabled">disabled</a></code>
+        attribute to the value "<code>false</code>" is disallowed, because despite the
+        appearance of meaning that the element is enabled, it in fact means that the element is
+        <em>disabled</em> (what matters for implementations is the presence of the attribute, not its
+        value).
+      </p>
+    </dd><dt>Errors involving limits that have been imposed merely to simplify the language
+    </dt><dd>
+      <p>Some conformance errors simplify the language that authors need to learn.</p>
+
+      <p>For example, the <code><a href="https://www.codevoid.net/storyvoidtest/image-maps.html#the-area-element">area</a></code>
+        element's <code><a href="https://www.codevoid.net/storyvoidtest/image-maps.html#attr-area-shape">shape</a></code>
+        attribute, despite accepting both <code><a href="https://www.codevoid.net/storyvoidtest/image-maps.html#attr-area-shape-keyword-circ">circ</a></code>
+        and <code><a href="https://www.codevoid.net/storyvoidtest/image-maps.html#attr-area-shape-keyword-circle">circle</a></code>
+        values in practice as synonyms, disallows
+        the use of the <code><a href="https://www.codevoid.net/storyvoidtest/image-maps.html#attr-area-shape-keyword-circ">circ</a></code>
+        value, so as to simplify
+        tutorials and other learning aids. There would be no benefit to allowing both, but it would
+        cause extra confusion when teaching the language.</p>
+    </dd><dt>Errors that involve peculiarities of the parser
+    </dt><dd>
+      <p>Certain elements are parsed in somewhat eccentric ways (typically for historical reasons),
+        and their content model restrictions are intended to avoid exposing the author to these
+        issues.</p>
+
+      <div>
+
+        <p>For example, a <code><a href="https://www.codevoid.net/storyvoidtest/forms.html#the-form-element">form</a></code>
+          element isn't allowed inside <a href="https://www.codevoid.net/storyvoidtest/dom.html#phrasing-content-2">phrasing content</a>,
+          because when parsed as HTML, a <code><a href="https://www.codevoid.net/storyvoidtest/forms.html#the-form-element">form</a></code>
+          element's start tag will imply a
+          <code><a href="https://www.codevoid.net/storyvoidtest/grouping-content.html#the-p-element">p</a></code>
+          element's end tag. Thus, the following markup results in two <a href="https://www.codevoid.net/storyvoidtest/dom.html#paragraph">paragraphs</a>, not one:
+        </p>
+
+        <pre><code><c->&lt;</c-><c->p</c-><c->&gt;</c->Welcome. <c->&lt;</c-><c->form</c-><c->&gt;&lt;</c-><c->label</c-><c->&gt;</c->Name:<c->&lt;/</c-><c->label</c-><c->&gt;</c-> <c->&lt;</c-><c->input</c-><c->&gt;&lt;/</c-><c->form</c-><c->&gt;</c-></code></pre>
+
+        <p>It is parsed exactly like the following:</p>
+
+        <pre><code><c->&lt;</c-><c->p</c-><c->&gt;</c->Welcome. <c->&lt;/</c-><c->p</c-><c->&gt;&lt;</c-><c->form</c-><c->&gt;&lt;</c-><c->label</c-><c->&gt;</c->Name:<c->&lt;/</c-><c->label</c-><c->&gt;</c-> <c->&lt;</c-><c->input</c-><c->&gt;&lt;/</c-><c->form</c-><c->&gt;</c-></code></pre>
+
+      </div>
+    </dd><dt>Errors that would likely result in scripts failing in hard-to-debug ways
+    </dt><dd>
+      <p>Some errors are intended to help prevent script problems that would be hard to debug.</p>
+
+      <p>This is why, for instance, it is non-conforming to have two <code><a href="https://www.codevoid.net/storyvoidtest/dom.html#the-id-attribute">id</a></code>
+        attributes with the same value. Duplicate IDs lead to the wrong
+        element being selected, with sometimes disastrous effects whose cause is hard to determine.</p>
+    </dd><dt>Errors that waste authoring time
+    </dt><dd>
+      <p>Some constructs are disallowed because historically they have been the cause of a lot of
+        wasted authoring time, and by encouraging authors to avoid making them, authors can save time in
+        future efforts.</p>
+
+      <p>For example, a <code><a href="https://www.codevoid.net/storyvoidtest/scripting.html#the-script-element">script</a></code>
+        element's <code><a href="https://www.codevoid.net/storyvoidtest/scripting.html#attr-script-src">src</a></code>
+        attribute causes the element's contents to be ignored.
+        However, this isn't obvious, especially if the element's contents appear to be executable script
+        — which can lead to authors spending a lot of time trying to debug the inline script
+        without realizing that it is not executing. To reduce this problem, this specification makes it
+        non-conforming to have executable script in a <code><a href="https://www.codevoid.net/storyvoidtest/scripting.html#the-script-element">script</a></code>
+        element when the <code><a href="https://www.codevoid.net/storyvoidtest/scripting.html#attr-script-src">src</a></code>
+        attribute is present. This means that authors who are
+        validating their documents are less likely to waste time with this kind of mistake.</p>
+    </dd><dt>Errors that involve areas that affect authors migrating between the HTML and XML
+      syntaxes
+    </dt><dd>
+      <p>Some authors like to write files that can be interpreted as both XML and HTML with similar
+        results. Though this practice is discouraged in general due to the myriad of subtle
+        complications involved (especially when involving scripting, styling, or any kind of automated
+        serialization), this specification has a few restrictions intended to at least somewhat mitigate
+        the difficulties. This makes it easier for authors to use this as a transitionary step when
+        migrating between the HTML and XML syntaxes.</p>
+
+      <p>For example, there are somewhat complicated rules surrounding the <code><a href="https://www.codevoid.net/storyvoidtest/dom.html#attr-lang">lang</a></code>
+        and <code><a href="https://www.w3.org/TR/xml/#sec-lang-tag">xml:lang</a></code>
+        attributes
+        intended to keep the two synchronized.</p>
+
+      <p>Another example would be the restrictions on the values of <code>xmlns</code> attributes in the
+        HTML serialization, which are intended to ensure that
+        elements in conforming documents end up in the same namespaces whether processed as HTML or
+        XML.</p>
+    </dd><dt>Errors that involve areas reserved for future expansion
+    </dt><dd>
+      <p>As with the restrictions on the syntax intended to allow for new syntax in future revisions
+        of the language, some restrictions on the content models of elements and values of attributes
+        are intended to allow for future expansion of the HTML vocabulary.</p>
+
+      <p>For example, limiting the values of the <code><a href="https://www.codevoid.net/storyvoidtest/links.html#attr-hyperlink-target">target</a></code>
+        attribute that start with an U+005F LOW LINE
+        character (_) to only specific predefined values allows new predefined values to be introduced
+        at a future time without conflicting with author-defined values.</p>
+    </dd><dt>Errors that indicate a mis-use of other specifications
+    </dt><dd>
+      <p>Certain restrictions are intended to support the restrictions made by other
+        specifications.</p>
+
+      <p>For example, requiring that attributes that take media query lists use only
+        <em>valid</em> media query lists reinforces the importance of following the conformance rules of
+        that specification.
+      </p>
+  </dd></dl>
+
+
+
+  <h3><span>1.12</span> Suggested reading</h3>
+
+  <p><i>This section is non-normative.</i></p>
+
+  <p>The following documents might be of interest to readers of this specification.</p>
+
+  <dl>
+    <dt><cite>Character Model for the World Wide Web 1.0: Fundamentals</cite> <a href="https://www.codevoid.net/storyvoidtest/references.html#refsCHARMOD">[CHARMOD]</a>
+    </dt><dd>
+      <blockquote>
+        <p>This Architectural Specification provides authors of specifications, software
+          developers, and content developers with a common reference for interoperable text manipulation on
+          the World Wide Web, building on the Universal Character Set, defined jointly by the Unicode
+          Standard and ISO/IEC 10646. Topics addressed include use of the terms 'character', 'encoding' and
+          'string', a reference processing model, choice and identification of character encodings,
+          character escaping, and string indexing.
+      </p></blockquote>
+    </dd><dt><cite>Unicode Security Considerations</cite> <a href="https://www.codevoid.net/storyvoidtest/references.html#refsUTR36">[UTR36]</a>
+    </dt><dd>
+      <blockquote>
+        <p>Because Unicode contains such a large number of characters and incorporates
+          the varied writing systems of the world, incorrect usage can expose programs or systems to
+          possible security attacks. This is especially important as more and more products are
+          internationalized. This document describes some of the security considerations that programmers,
+          system analysts, standards developers, and users should take into account, and provides specific
+          recommendations to reduce the risk of problems.
+      </p></blockquote>
+    </dd><dt><cite>Web Content Accessibility Guidelines (WCAG)</cite> <a href="https://www.codevoid.net/storyvoidtest/references.html#refsWCAG">[WCAG]</a>
+    </dt><dd>
+      <blockquote>
+        <p>Web Content Accessibility Guidelines (WCAG) covers a wide range of
+          recommendations for making web content more accessible. Following these guidelines will make
+          content accessible to a wider range of people with disabilities, including blindness and low
+          vision, deafness and hearing loss, learning disabilities, cognitive limitations, limited
+          movement, speech disabilities, photosensitivity and combinations of these. Following these
+          guidelines will also often make your web content more usable to users in
+          general.
+      </p></blockquote>
+    </dd><dt><cite>Authoring Tool Accessibility Guidelines (ATAG) 2.0</cite> <a href="https://www.codevoid.net/storyvoidtest/references.html#refsATAG">[ATAG]</a>
+    </dt><dd>
+      <blockquote>
+        <p>This specification provides guidelines for designing web content
+          authoring tools that are more accessible for people with disabilities. An authoring tool that
+          conforms to these guidelines will promote accessibility by providing an accessible user interface
+          to authors with disabilities as well as by enabling, supporting, and promoting the production of
+          accessible web content by all authors.
+      </p></blockquote>
+    </dd><dt><cite>User Agent Accessibility Guidelines (UAAG) 2.0</cite> <a href="https://www.codevoid.net/storyvoidtest/references.html#refsUAAG">[UAAG]</a>
+    </dt><dd>
+      <blockquote>
+        <p>This document provides guidelines for designing user agents that
+          lower barriers to web accessibility for people with disabilities. User agents include browsers
+          and other types of software that retrieve and render web content. A user agent that conforms to
+          these guidelines will promote accessibility through its own user interface and through other
+          internal facilities, including its ability to communicate with other technologies (especially
+          assistive technologies). Furthermore, all users, not just users with disabilities, should find
+          conforming user agents to be more usable.
+      </p></blockquote>
+  </dd></dl>
+
+
+
+  <nav>Table of Contents — <a href="https://www.codevoid.net/storyvoidtest/infrastructure.html">2 Common infrastructure →</a></nav></body>

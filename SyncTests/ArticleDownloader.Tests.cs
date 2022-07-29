@@ -12,7 +12,7 @@ public class ArticleDownloaderTests : IDisposable
     private readonly ArticleDownloader articleDownloader;
 
     private readonly DirectoryInfo testDirectory;
-    private readonly string sampleFilesFolder = Path.Join(Environment.CurrentDirectory, "samplearticles");
+    private readonly string sampleFilesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
 
     #region Mock Article IDs
     private const long BASIC_ARTICLE_NO_IMAGES = 10L;
@@ -56,7 +56,7 @@ public class ArticleDownloaderTests : IDisposable
         // Article without images
         var basicArticleNoImages = GetInfoFor(BASIC_ARTICLE_NO_IMAGES, "Basic Article Without Images");
         this.articleDatabase.AddArticleToFolder(basicArticleNoImages, WellKnownLocalFolderIds.Unread);
-        articleFileMap.Add(basicArticleNoImages.id, Path.Join(this.sampleFilesFolder, "BasicArticleNoImages.html"));
+        articleFileMap.Add(basicArticleNoImages.id, Path.Join(this.sampleFilesFolder, "BasicArticleNoImage.html"));
 
         return articleFileMap;
     }
@@ -83,5 +83,52 @@ public class ArticleDownloaderTests : IDisposable
     {
         var localState = await this.articleDownloader.DownloadBookmark(BASIC_ARTICLE_NO_IMAGES);
         Assert.Equal(this.GetRelativeUriForDownloadedArticle(localState.ArticleId), localState.LocalPath);
+    }
+}
+
+/// <summary>
+/// Sample test that adds the known URLs to the service, and then downloads the
+/// body of those saved bookmarks. Only needs to be run if the set of bookmarks
+/// or service response changes for those bookmarks
+/// </summary>
+public class SampleDataDownloadingHelper
+{
+    private static readonly Uri SAMPLE_BASE_URI = new Uri("https://www.codevoid.net/storyvoidtest/");
+
+    [Fact(Skip = "Not a real test; intended to facilitate downloading sample data")]
+    public async Task AddSampleArticlesAndGetTextOnThemToSaveLocally()
+    {
+        DirectoryInfo? outputDirectory = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, "TestPageOutput"));
+
+        var bookmarksClient = new BookmarksClient(Codevoid.Test.Instapaper.TestUtilities.GetClientInformation());
+        var samplePages = new List<string>()
+        {
+            "BasicArticleNoImage.html",
+            "LargeArticleNoImage.html",
+            "ArticleWithImages.html",
+            "ArticleWithInlineDataImages.html",
+            "ArticleWithFirstImageLessThan150px.html"
+        };
+
+        foreach (var fileName in samplePages)
+        {
+            var bookmarkUri = new Uri(SAMPLE_BASE_URI, fileName);
+            var bookmarkInfo = await bookmarksClient.AddAsync(bookmarkUri);
+            var bookmarkBody = await bookmarksClient.GetTextAsync(bookmarkInfo.Id);
+            var outputFile = Path.Join(outputDirectory.FullName, fileName);
+            File.WriteAllText(outputFile, bookmarkBody);
+        }
+
+        // Vimeo
+        var vimeoUri = new Uri("https://vimeo.com/76979871");
+        var vimeoInfo = await bookmarksClient.AddAsync(vimeoUri);
+        var vimeoBody = await bookmarksClient.GetTextAsync(vimeoInfo.Id);
+        File.WriteAllText(Path.Join(outputDirectory.Name, "vimeo.html"), vimeoBody);
+
+        // YouTube
+        var youtubeUri = new Uri("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+        var youtubeInfo = await bookmarksClient.AddAsync(youtubeUri);
+        var youtubeBody = await bookmarksClient.GetTextAsync(youtubeInfo.Id);
+        File.WriteAllText(Path.Join(outputDirectory.Name, "youtube.html"), youtubeBody);
     }
 }

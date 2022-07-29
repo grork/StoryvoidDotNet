@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="633px" height="633px" viewBox="0 0 633 633" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 60.1 (88133) - https://sketch.com -->
+    <title>Logo</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Codevoid-Logos" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Dark-Logo" transform="translate(-196.000000, -68.000000)">
+            <g id="Logo" transform="translate(131.898794, -11.561629)">
+                <rect id="Surround" fill="#000000" x="64.101206" y="79.5616289" width="633" height="633" rx="77"></rect>
+                <g id="Oval" transform="translate(381.000000, 400.297588) rotate(26.000000) translate(-381.000000, -400.297588) translate(110.000000, 87.797588)" stroke="#FFFFFF" stroke-width="6">
+                    <ellipse cx="270" cy="312.702412" rx="108" ry="292.5"></ellipse>
+                    <ellipse transform="translate(271.000000, 312.702412) rotate(10.000000) translate(-271.000000, -312.702412) " cx="271" cy="312.702412" rx="108" ry="292.5"></ellipse>
+                    <ellipse transform="translate(270.000000, 312.702412) rotate(20.000000) translate(-270.000000, -312.702412) " cx="270" cy="312.702412" rx="108" ry="292.5"></ellipse>
+                    <ellipse transform="translate(269.000000, 312.702412) rotate(30.000000) translate(-269.000000, -312.702412) " cx="269" cy="312.702412" rx="108" ry="292.5"></ellipse>
+                    <ellipse transform="translate(270.876742, 311.500000) rotate(40.000000) translate(-270.876742, -311.500000) " cx="270.876742" cy="311.5" rx="108" ry="292.5"></ellipse>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
