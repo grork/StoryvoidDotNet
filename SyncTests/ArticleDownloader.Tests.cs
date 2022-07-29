@@ -10,6 +10,7 @@ public class ArticleDownloaderTests : IDisposable
     private readonly IDbConnection connection;
     private readonly IArticleDatabase articleDatabase;
     private readonly ArticleDownloader articleDownloader;
+    private readonly IBookmarksClient bookmarkClient;
 
     private readonly DirectoryInfo testDirectory;
     private readonly string sampleFilesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
@@ -18,6 +19,7 @@ public class ArticleDownloaderTests : IDisposable
     private const long MISSING_ARTICLE = 9L;
     private const long BASIC_ARTICLE_NO_IMAGES = 10L;
     private const long UNAVAILABLE_ARTICLE = 11L;
+    private const long LARGE_ARTICLE_NO_IMAGES = 12L;
     #endregion
 
     private static ArticleRecordInformation GetRecordInfoFor(long id, string title)
@@ -44,10 +46,11 @@ public class ArticleDownloaderTests : IDisposable
         this.articleDatabase = articleDatabase;
 
         var fileMap = PopulateDownloadableArticles();
+        this.bookmarkClient = new MockBookmarkServiceWithOnlyGetText(fileMap);
         this.articleDownloader = new ArticleDownloader(
             this.testDirectory.FullName,
             this.articleDatabase,
-            new MockBookmarkServiceWithOnlyGetText(fileMap)
+            this.bookmarkClient
         );
     }
 
@@ -64,6 +67,11 @@ public class ArticleDownloaderTests : IDisposable
         var basicArticleNoImages = GetRecordInfoFor(BASIC_ARTICLE_NO_IMAGES, "Basic Article Without Images");
         this.articleDatabase.AddArticleToFolder(basicArticleNoImages, WellKnownLocalFolderIds.Unread);
         articleFileMap.Add(basicArticleNoImages.id, Path.Join(this.sampleFilesFolder, "BasicArticleNoImage.html"));
+
+        // Large Article without images
+        var largeArticleNoImages = GetRecordInfoFor(LARGE_ARTICLE_NO_IMAGES, "Large Article Without Images");
+        this.articleDatabase.AddArticleToFolder(largeArticleNoImages, WellKnownLocalFolderIds.Unread);
+        articleFileMap.Add(largeArticleNoImages.id, Path.Join(this.sampleFilesFolder, "LargeArticleNoImage.html"));
 
         return articleFileMap;
     }
@@ -92,6 +100,38 @@ public class ArticleDownloaderTests : IDisposable
         Assert.Equal(this.GetRelativeUriForDownloadedArticle(localState.ArticleId), localState.LocalPath);
         Assert.True(localState.AvailableLocally);
         Assert.False(localState.ArticleUnavailable);
+
+        var fileExists = File.Exists(Path.Join(this.testDirectory.FullName, localState.LocalPath!.PathAndQuery));
+        Assert.True(fileExists);
+    }
+
+    [Fact]
+    public async Task LocalFileContainsOnlyTheBody()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(BASIC_ARTICLE_NO_IMAGES);
+        Assert.Equal(this.GetRelativeUriForDownloadedArticle(localState.ArticleId), localState.LocalPath);
+        Assert.True(localState.AvailableLocally);
+        Assert.False(localState.ArticleUnavailable);
+
+        var localContents = File.ReadAllText(Path.Join(this.testDirectory.FullName, localState.LocalPath!.PathAndQuery));
+
+        // We want to make sure that we don't turn this into a fully fledges HTML
+        // document, as the consumer is expected to perform the appropriate
+        // cleanup
+        Assert.StartsWith("<body>", localContents);
+        Assert.EndsWith( "</body>", localContents);
+    }
+
+    [Fact]
+    public async Task CanDownloadLargeArticleWithoutImages()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(LARGE_ARTICLE_NO_IMAGES);
+        Assert.Equal(this.GetRelativeUriForDownloadedArticle(localState.ArticleId), localState.LocalPath);
+        Assert.True(localState.AvailableLocally);
+        Assert.False(localState.ArticleUnavailable);
+
+        var fileExists = File.Exists(Path.Join(this.testDirectory.FullName, localState.LocalPath!.PathAndQuery));
+        Assert.True(fileExists);
     }
 
     [Fact]
