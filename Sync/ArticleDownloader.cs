@@ -1,4 +1,5 @@
 ﻿using AngleSharp;
+using AngleSharp.Dom;
 using System.Text;
 using Codevoid.Instapaper;
 
@@ -53,6 +54,7 @@ public class ArticleDownloader
         var articleDownloaded = true;
         var contentsUnavailable = false;
         Uri? localPath = null;
+        string extractedDescription = String.Empty;
 
         try
         {
@@ -61,7 +63,7 @@ public class ArticleDownloader
 
             // Get the document contents, and process it
             var body = await this.bookmarksClient.GetTextAsync(bookmarkId);
-            body = await this.ProcessArticle(body);
+            (body, extractedDescription) = await this.ProcessArticle(body);
 
             File.WriteAllText(bookmarkAbsoluteFilePath, body, Encoding.UTF8);
             
@@ -83,6 +85,7 @@ public class ArticleDownloader
             AvailableLocally = articleDownloaded,
             ArticleUnavailable = contentsUnavailable,
             LocalPath = localPath,
+            ExtractedDescription = extractedDescription
         });
     }
 
@@ -91,11 +94,11 @@ public class ArticleDownloader
     /// </summary>
     /// <param name="body">HTML body to process</param>
     /// <returns>Processed body with the required changes</returns>
-    private async Task<string> ProcessArticle(string body)
+    private async Task<(string Body, string ExtractedDescription)> ProcessArticle(string body)
     {
         // Remove 'dangerous' aspects of AngleSharps API so bad things can't
         // happen
-        var configuration = Configuration.Default;
+        var configuration = Configuration.Default.WithCss(); // Lets us use GetInnerText()
         configuration = configuration.Without<AngleSharp.Dom.Events.IEventFactory>();
         configuration = configuration.Without<AngleSharp.Dom.IAttributeObserver>();
         configuration = configuration.Without<AngleSharp.Browser.INavigationHandler>();
@@ -104,12 +107,19 @@ public class ArticleDownloader
         var context = BrowsingContext.New(configuration);
         var document = await context.OpenAsync(req => req.Content(body));
 
+        // We sometimes need a textual description of the article derived from
+        // the content body. We do that by extracting up to the first 400 chars
+        // from the *text* of the body (E.g. exclude markup), and stuffing that
+        // in the database.
+        var documentTextContent = document.Body!.GetInnerText() ?? String.Empty;
+        var extractedDescription = documentTextContent.Substring(0, Math.Min(documentTextContent.Length, 400));
+
         // We don't want the document to be a 'full' document -- that'll be
         // handled by the consumer of the file at rendering time, rather than
         // having that baked into the actual on-disk file. So, we'll attempt to
         // mimic what the service returns (just the body). Note that even in a
         // 'no changes' case the service data and this data may not match, as
         // AngleSharp will attempt to generate stricter markup than it accepts
-        return document.Body!.OuterHtml;
+        return (document.Body!.OuterHtml, extractedDescription);
     }
 }

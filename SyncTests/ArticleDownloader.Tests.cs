@@ -20,21 +20,10 @@ public class ArticleDownloaderTests : IDisposable
     private const long BASIC_ARTICLE_NO_IMAGES = 10L;
     private const long UNAVAILABLE_ARTICLE = 11L;
     private const long LARGE_ARTICLE_NO_IMAGES = 12L;
+    private const long SHORT_ARTICLE_NO_IMAGES = 14L;
+    private const long EMPTY_ARTICLE = 15L;
+    private const long YOUTUBE_ARTICLE = 16L;
     #endregion
-
-    private static ArticleRecordInformation GetRecordInfoFor(long id, string title)
-    {
-        return new(
-            id: id,
-            title: title,
-            url: new Uri(TestUtilities.BASE_URL, $"/{id}"),
-            description: String.Empty,
-            readProgress: 0.0F,
-            readProgressTimestamp: DateTime.Now,
-            hash: "ABC",
-            liked: false
-        );
-    }
 
     public ArticleDownloaderTests()
     {
@@ -58,20 +47,30 @@ public class ArticleDownloaderTests : IDisposable
     {
         IDictionary<long, string> articleFileMap = new Dictionary<long, string>();
 
-        // Unavailable article
-        var unavailableArticle = GetRecordInfoFor(UNAVAILABLE_ARTICLE, "Article with no content available");
-        this.articleDatabase.AddArticleToFolder(unavailableArticle, WellKnownLocalFolderIds.Unread);
-        articleFileMap.Add(UNAVAILABLE_ARTICLE, String.Empty);
+        void AddArticle(long id, string filename, string title)
+        {
+            var article = new ArticleRecordInformation(
+                id: id,
+                title: title,
+                url: new Uri(TestUtilities.BASE_URL, $"/{id}"),
+                description: String.Empty,
+                readProgress: 0.0F,
+                readProgressTimestamp: DateTime.Now,
+                hash: "ABC",
+                liked: false
+            );
 
-        // Article without images
-        var basicArticleNoImages = GetRecordInfoFor(BASIC_ARTICLE_NO_IMAGES, "Basic Article Without Images");
-        this.articleDatabase.AddArticleToFolder(basicArticleNoImages, WellKnownLocalFolderIds.Unread);
-        articleFileMap.Add(basicArticleNoImages.id, Path.Join(this.sampleFilesFolder, "BasicArticleNoImage.html"));
+            this.articleDatabase.AddArticleToFolder(article, WellKnownLocalFolderIds.Unread);
+            
+            articleFileMap.Add(id, (!String.IsNullOrWhiteSpace(filename) ? Path.Join(this.sampleFilesFolder, filename) : filename));
+        }
 
-        // Large Article without images
-        var largeArticleNoImages = GetRecordInfoFor(LARGE_ARTICLE_NO_IMAGES, "Large Article Without Images");
-        this.articleDatabase.AddArticleToFolder(largeArticleNoImages, WellKnownLocalFolderIds.Unread);
-        articleFileMap.Add(largeArticleNoImages.id, Path.Join(this.sampleFilesFolder, "LargeArticleNoImage.html"));
+        AddArticle(UNAVAILABLE_ARTICLE, String.Empty, "Article with no content available");
+        AddArticle(BASIC_ARTICLE_NO_IMAGES, "BasicArticleNoImage.html", "Basic Article Without Images");
+        AddArticle(LARGE_ARTICLE_NO_IMAGES, "LargeArticleNoImage.html", "Large Article Without Images");
+        AddArticle(SHORT_ARTICLE_NO_IMAGES, "ShortArticleNoImage.html", "Short Article Without Images");
+        AddArticle(EMPTY_ARTICLE, "EmptyArticle.html", "Empty Article");
+        AddArticle(YOUTUBE_ARTICLE, "youtube.html", "YouTube");
 
         return articleFileMap;
     }
@@ -149,6 +148,36 @@ public class ArticleDownloaderTests : IDisposable
         await Assert.ThrowsAsync<EntityNotFoundException>(() => this.articleDownloader.DownloadBookmark(MISSING_ARTICLE));
         var localState = this.articleDatabase.GetLocalOnlyStateByArticleId(MISSING_ARTICLE);
         Assert.Null(localState);
+    }
+
+    [Fact]
+    public async Task ArticleTextIsExtractedFromBodyText()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(BASIC_ARTICLE_NO_IMAGES);
+        Assert.NotEmpty(localState.ExtractedDescription);
+        Assert.Equal(400, localState.ExtractedDescription.Length);
+    }
+
+    [Fact]
+    public async Task ArticleTextIsExtractedFromBodyTextWhenShort()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(SHORT_ARTICLE_NO_IMAGES);
+        Assert.NotEmpty(localState.ExtractedDescription);
+        Assert.Equal(15, localState.ExtractedDescription.Length);
+    }
+
+    [Fact]
+    public async Task CanDownloadArticleWithEmptyBody()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(EMPTY_ARTICLE);
+        Assert.Empty(localState.ExtractedDescription);
+    }
+
+    [Fact]
+    public async Task DescriptionExtractedFromYouTube()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(YOUTUBE_ARTICLE);
+        Assert.Empty(localState.ExtractedDescription);
     }
 }
 
