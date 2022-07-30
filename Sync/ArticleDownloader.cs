@@ -18,6 +18,19 @@ public class ArticleDownloader
     /// </summary>
     public static readonly Uri ROOT_URI = new Uri("localfile://local");
 
+    
+    private static Lazy<IConfiguration> ParserConfiguration = new Lazy<IConfiguration>(() =>
+    {
+        // Remove 'dangerous' aspects of AngleSharps API so bad things can't
+        // happen
+        var configuration = Configuration.Default.WithCss(); // Lets us use GetInnerText()
+        configuration = configuration.Without<AngleSharp.Dom.Events.IEventFactory>();
+        configuration = configuration.Without<AngleSharp.Dom.IAttributeObserver>();
+        configuration = configuration.Without<AngleSharp.Browser.INavigationHandler>();
+
+        return configuration;
+    }, true);
+
     private string workingRoot;
     private IArticleDatabase articleDatabase;
     private IBookmarksClient bookmarksClient;
@@ -96,12 +109,7 @@ public class ArticleDownloader
     /// <returns>Processed body with the required changes</returns>
     private async Task<(string Body, string ExtractedDescription)> ProcessArticle(string body)
     {
-        // Remove 'dangerous' aspects of AngleSharps API so bad things can't
-        // happen
-        var configuration = Configuration.Default.WithCss(); // Lets us use GetInnerText()
-        configuration = configuration.Without<AngleSharp.Dom.Events.IEventFactory>();
-        configuration = configuration.Without<AngleSharp.Dom.IAttributeObserver>();
-        configuration = configuration.Without<AngleSharp.Browser.INavigationHandler>();
+        var configuration = ArticleDownloader.ParserConfiguration.Value;
 
         // Load the document
         var context = BrowsingContext.New(configuration);
