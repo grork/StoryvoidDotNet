@@ -222,6 +222,38 @@ public class ArticleDownloaderTests : IDisposable
         Assert.Equal(EXPECTED_IMAGE_COUNT, seenImages);
     }
 
+    [Fact]
+    public async Task CanDownloadArticleWithImagesThatHaveQueryStringsInTheirUrls()
+    {
+        const int EXPECTED_IMAGE_COUNT = 9;
+        var localState = await this.articleDownloader.DownloadBookmark(IMAGES_WITH_QUERY_STRINGS);
+        var imagesPath = Path.Join(this.testDirectory.FullName, localState.ArticleId.ToString());
+        Assert.True(Directory.Exists(imagesPath));
+        Assert.Equal(EXPECTED_IMAGE_COUNT, Directory.GetFiles(imagesPath).Count());
+
+        var localPath = Path.Join(this.testDirectory.FullName, localState.LocalPath!.AbsolutePath);
+        var htmlParserContext = BrowsingContext.New(ArticleDownloader.ParserConfiguration);
+        var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
+
+        var seenImages = 0;
+        foreach(var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
+        {
+            var imageSrc = image.GetAttribute("src")!;
+            if(imageSrc!.StartsWith("http"))
+            {
+                // We only look for processed images
+                continue;
+            }
+
+            seenImages += 1;
+
+            var imagePath = Path.Combine(this.testDirectory.FullName, imageSrc);
+            Assert.True(File.Exists(imagePath));
+        }
+
+        Assert.Equal(EXPECTED_IMAGE_COUNT, seenImages);
+    }
+
     #endregion
 }
 
