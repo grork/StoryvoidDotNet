@@ -6,6 +6,58 @@ using Codevoid.Instapaper;
 namespace Codevoid.Storyvoid.Sync;
 
 /// <summary>
+/// Helper to separate an enumeration into fixed-size chunks for batching.
+///
+/// While .net does contain a chunk function, it's only in newer versions (.net
+/// core 6+), and we are targeting .net standard 2.0. If that changes, we should
+/// switch to that. See here for info:
+/// https://docs.microsoft.com/en-us/dotnet/api/system.linq.enumerable.chunk?view=net-6.0
+/// </summary>
+internal static class ChunkinatorExtension
+{
+    /// <summary>
+    /// For the supplied source, break the contents into chunks no more than
+    /// chunkSize'd batches. If there are not enough items to fill a chunk, then
+    /// a chunk smaller than that will be returned/
+    /// </summary>
+    /// <typeparam name="T">Type of items being chunked</typeparam>
+    /// <param name="chunkSize">Size of chunks. Must be greater than 0</param>
+    /// <returns>Enumerable that itself returnes Enumeables of
+    /// chunkSize</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If chunkSize is less than
+    /// 1</exception>
+    internal static IEnumerable<IEnumerable<T>> Chunkify<T>(this IEnumerable<T> instance, int chunkSize)
+    {
+        if (chunkSize < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(chunkSize), "Chunk size must be more than 0");
+        }
+        return ChunkEnumeration(instance, chunkSize);
+    }
+
+    /// <summary>
+    /// Simple helper so that the yeilding works, and the exception is thrown
+    /// before evaluation starts rather than on first element enumeration.
+    /// </summary>
+    private static IEnumerable<IEnumerable<T>> ChunkEnumeration<T>(IEnumerable<T> instance, int chunkSize)
+    {
+        var enumerator = instance.GetEnumerator();
+        while(enumerator.MoveNext())
+        {
+            var chunk = new List<T>(chunkSize);
+            chunk.Add(enumerator.Current);
+
+            for (var index = 1; (index < chunkSize) && enumerator.MoveNext(); index += 1)
+            {
+                chunk.Add(enumerator.Current);
+            }
+
+            yield return chunk;
+        }
+    }
+}
+
+/// <summary>
 /// Downloads Articles (and images) from the service, and updates the local
 /// state to reflect download success and local file paths
 /// </summary>
