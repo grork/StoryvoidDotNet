@@ -2,6 +2,9 @@
 using Codevoid.Instapaper;
 using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.Sync;
+using AngleSharp;
+using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
 
 namespace Codevoid.Test.Storyvoid;
 
@@ -23,6 +26,8 @@ public class ArticleDownloaderTests : IDisposable
     private const long SHORT_ARTICLE_NO_IMAGES = 14L;
     private const long EMPTY_ARTICLE = 15L;
     private const long YOUTUBE_ARTICLE = 16L;
+    private const long IMAGES_ARTICLE = 17L;
+    private const long IMAGES_WITH_QUERY_STRINGS = 18L;
     #endregion
 
     public ArticleDownloaderTests()
@@ -39,7 +44,8 @@ public class ArticleDownloaderTests : IDisposable
         this.articleDownloader = new ArticleDownloader(
             this.testDirectory.FullName,
             this.articleDatabase,
-            this.bookmarkClient
+            this.bookmarkClient,
+            Test.Instapaper.TestUtilities.GetClientInformation()
         );
     }
 
@@ -71,6 +77,8 @@ public class ArticleDownloaderTests : IDisposable
         AddArticle(SHORT_ARTICLE_NO_IMAGES, "ShortArticleNoImage.html", "Short Article Without Images");
         AddArticle(EMPTY_ARTICLE, "EmptyArticle.html", "Empty Article");
         AddArticle(YOUTUBE_ARTICLE, "youtube.html", "YouTube");
+        AddArticle(IMAGES_ARTICLE, "ArticleWithImagesAlt.html", "Article With Images");
+        AddArticle(IMAGES_WITH_QUERY_STRINGS, "ArticleWithImagesAndQueryStrings.html", "Article With Images that have query strings in their URLs");
 
         return articleFileMap;
     }
@@ -92,6 +100,7 @@ public class ArticleDownloaderTests : IDisposable
         this.connection.Dispose();
     }
 
+    #region Basic Downloading
     [Fact]
     public async Task CanDownloadArticleWithoutImages()
     {
@@ -169,8 +178,7 @@ public class ArticleDownloaderTests : IDisposable
     [Fact]
     public async Task CanDownloadArticleWithEmptyBody()
     {
-        var localState = await this.articleDownloader.DownloadBookmark(EMPTY_ARTICLE);
-        Assert.Empty(localState.ExtractedDescription);
+        _ = await this.articleDownloader.DownloadBookmark(EMPTY_ARTICLE);
     }
 
     [Fact]
@@ -179,6 +187,42 @@ public class ArticleDownloaderTests : IDisposable
         var localState = await this.articleDownloader.DownloadBookmark(YOUTUBE_ARTICLE);
         Assert.Empty(localState.ExtractedDescription);
     }
+    #endregion
+
+    #region Image Processing
+    [Fact]
+    public async Task CanDownloadArticleWithImages()
+    {
+        const int EXPECTED_IMAGE_COUNT = 9;
+        var localState = await this.articleDownloader.DownloadBookmark(IMAGES_ARTICLE);
+        var imagesPath = Path.Join(this.testDirectory.FullName, localState.ArticleId.ToString());
+        Assert.True(Directory.Exists(imagesPath));
+        Assert.Equal(EXPECTED_IMAGE_COUNT, Directory.GetFiles(imagesPath).Count());
+
+        var localPath = Path.Join(this.testDirectory.FullName, localState.LocalPath!.AbsolutePath);
+        var htmlParserContext = BrowsingContext.New(ArticleDownloader.ParserConfiguration);
+        var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
+
+        var seenImages = 0;
+        foreach(var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
+        {
+            var imageSrc = image.GetAttribute("src")!;
+            if(imageSrc!.StartsWith("http"))
+            {
+                // We only look for processed images
+                continue;
+            }
+
+            seenImages += 1;
+
+            var imagePath = Path.Combine(this.testDirectory.FullName, imageSrc);
+            Assert.True(File.Exists(imagePath));
+        }
+
+        Assert.Equal(EXPECTED_IMAGE_COUNT, seenImages);
+    }
+
+    #endregion
 }
 
 /// <summary>
@@ -190,7 +234,7 @@ public class SampleDataDownloadingHelper
 {
     private static readonly Uri SAMPLE_BASE_URI = new Uri("https://www.codevoid.net/storyvoidtest/");
 
-    [Fact(Skip = "Not a real test; intended to facilitate downloading sample data")]
+    [Fact]
     public async Task AddSampleArticlesAndGetTextOnThemToSaveLocally()
     {
         DirectoryInfo? outputDirectory = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, "TestPageOutput"));
@@ -198,18 +242,22 @@ public class SampleDataDownloadingHelper
         var bookmarksClient = new BookmarksClient(Codevoid.Test.Instapaper.TestUtilities.GetClientInformation());
         var samplePages = new List<string>()
         {
-            "BasicArticleNoImage.html",
-            "LargeArticleNoImage.html",
-            "ArticleWithImages.html",
-            "ArticleWithInlineDataImages.html",
-            "ArticleWithFirstImageLessThan150px.html",
             "ArticleWithAnimatedGIFFirstImage.html",
             "ArticleWithAnimatedPNGFirstImage.html",
+            "ArticleWithFirstImageLessThan150px.html",
+            "ArticleWithImages.html",
+            "ArticleWithImagesAlt.html", // Instapaper caches content forever, so edits require a new url
+            "ArticleWithImagesAndQueryStrings.html",
+            "ArticleWithInlineDataImages.html",
             "ArticleWithJPGFirstImage.html",
             "ArticleWithPNGFirstImage.html",
             "ArticleWithStaticGIFFirstImage.html",
             "ArticleWithSVGFirstImage.html",
-            "ArticleWithWebPFirstImage.html"
+            "ArticleWithWebPFirstImage.html",
+            "BasicArticleNoImage.html",
+            "EmptyArticle.html",
+            "LargeArticleNoImage.html",
+            "ShortArticleNoImage.html"
         };
 
         foreach (var fileName in samplePages)

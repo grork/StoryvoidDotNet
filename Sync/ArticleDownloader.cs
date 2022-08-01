@@ -1,7 +1,10 @@
-﻿using AngleSharp;
+﻿using System.Text;
+using System.Diagnostics;
+using AngleSharp;
 using AngleSharp.Dom;
-using System.Text;
+using AngleSharp.Html.Dom;
 using Codevoid.Instapaper;
+using Codevoid.Utilities.OAuth;
 
 namespace Codevoid.Storyvoid.Sync;
 
@@ -42,7 +45,7 @@ internal static class ChunkinatorExtension
     private static IEnumerable<IEnumerable<T>> ChunkEnumeration<T>(IEnumerable<T> instance, int chunkSize)
     {
         var enumerator = instance.GetEnumerator();
-        while(enumerator.MoveNext())
+        while (enumerator.MoveNext())
         {
             var chunk = new List<T>(chunkSize);
             chunk.Add(enumerator.Current);
@@ -70,8 +73,7 @@ public class ArticleDownloader
     /// </summary>
     public static readonly Uri ROOT_URI = new Uri("localfile://local");
 
-    
-    private static Lazy<IConfiguration> ParserConfiguration = new Lazy<IConfiguration>(() =>
+    private static Lazy<IConfiguration> lazyParserConfiguration = new Lazy<IConfiguration>(() =>
     {
         // Remove 'dangerous' aspects of AngleSharps API so bad things can't
         // happen
@@ -82,6 +84,10 @@ public class ArticleDownloader
 
         return configuration;
     }, true);
+
+    internal static IConfiguration ParserConfiguration => lazyParserConfiguration.Value;
+
+    private Lazy<HttpClient> ImageClient;
 
     private string workingRoot;
     private IArticleDatabase articleDatabase;
@@ -97,13 +103,24 @@ public class ArticleDownloader
     /// </param>
     /// <param name="articleDatabase">Database to use for article information</param>
     /// <param name="bookmarksClient">Bookmark Service client</param>
+    /// <param name="clientInformation">Client information to use for the user agent when requesting images</param>
     public ArticleDownloader(string workingRoot,
                              IArticleDatabase articleDatabase,
-                             IBookmarksClient bookmarksClient)
+                             IBookmarksClient bookmarksClient,
+                             ClientInformation clientInformation)
     {
         this.workingRoot = workingRoot;
         this.articleDatabase = articleDatabase;
         this.bookmarksClient = bookmarksClient;
+
+        this.ImageClient = new Lazy<HttpClient>(() =>
+        {
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.Clear();
+            client.DefaultRequestHeaders.UserAgent.Add(clientInformation.UserAgent);
+
+            return client;
+        });
     }
 
     /// <summary>
@@ -124,14 +141,14 @@ public class ArticleDownloader
         try
         {
             var bookmarkFileName = $"{bookmarkId}.html";
-            var bookmarkAbsoluteFilePath = Path.Combine(workingRoot, bookmarkFileName);
+            var bookmarkAbsoluteFilePath = Path.Combine(this.workingRoot, bookmarkFileName);
 
             // Get the document contents, and process it
             var body = await this.bookmarksClient.GetTextAsync(bookmarkId);
-            (body, extractedDescription) = await this.ProcessArticle(body);
+            (body, extractedDescription) = await this.ProcessArticle(body, bookmarkId);
 
             File.WriteAllText(bookmarkAbsoluteFilePath, body, Encoding.UTF8);
-            
+
             // We have successfully processed the article, so we can update the
             // state that'll be written to the database later
             localPath = new Uri(ROOT_URI, bookmarkFileName);
@@ -158,14 +175,16 @@ public class ArticleDownloader
     /// Processes the article body prior to being written to disk
     /// </summary>
     /// <param name="body">HTML body to process</param>
+    /// <param name="boomarkId">Article ID we're processing</param>
     /// <returns>Processed body with the required changes</returns>
-    private async Task<(string Body, string ExtractedDescription)> ProcessArticle(string body)
+    private async Task<(string Body, string ExtractedDescription)> ProcessArticle(string body, long boomarkId)
     {
-        var configuration = ArticleDownloader.ParserConfiguration.Value;
+        var configuration = ArticleDownloader.ParserConfiguration;
 
         // Load the document
         var context = BrowsingContext.New(configuration);
         var document = await context.OpenAsync(req => req.Content(body));
+        await ProcessAndDownloadImages(document, boomarkId);
 
         // We sometimes need a textual description of the article derived from
         // the content body. We do that by extracting up to the first 400 chars
@@ -181,5 +200,73 @@ public class ArticleDownloader
         // 'no changes' case the service data and this data may not match, as
         // AngleSharp will attempt to generate stricter markup than it accepts
         return (document.Body!.OuterHtml, extractedDescription);
+    }
+
+    /// <summary>
+    /// Processes images seen in the document, and downloads them. During this
+    /// the document is updated to have a relative file path for the images,
+    /// replacing the absolute URL that was orignally present.
+    /// </summary>
+    /// <param name="document">Document to download images for</param>
+    /// <param name="bookmarkId">Bookmark ID we're processing </param>
+    private async Task ProcessAndDownloadImages(IDocument document, long bookmarkId)
+    {
+        var images = document.QuerySelectorAll<IHtmlImageElement>("img[src^='http']");
+        DirectoryInfo? imageDirectory = null;
+
+        int imageIndex = 1;
+
+        foreach (var imageBatch in images.Chunkify(5))
+        {
+            if (imageDirectory == null)
+            {
+                imageDirectory = Directory.CreateDirectory(Path.Combine(this.workingRoot, bookmarkId.ToString()));
+            }
+
+            foreach (var image in imageBatch)
+            {
+                if (!Uri.IsWellFormedUriString(image.Source!, UriKind.Absolute))
+                {
+                    continue;
+                }
+
+                var imageUri = new Uri(image.Source!, UriKind.Absolute);
+                if (imageUri.Scheme != Uri.UriSchemeHttp && imageUri.Scheme != Uri.UriSchemeHttps)
+                {
+                    continue;
+                }
+
+                // 1. Calculate the extension from the source
+                var extension = Path.GetExtension(imageUri.AbsolutePath);
+                if (String.IsNullOrWhiteSpace(extension))
+                {
+                    Debug.WriteLine("Images without extensions are not supported yet");
+                    continue;
+                }
+
+                extension = extension.Substring(1); // remove the leading .
+
+                // 2. Compute the target file name on the *image index*
+                //    e.g. which Image we're processing, since the file name from
+                //    the source may not be writable locally
+                var filename = $"{imageIndex++}.{extension}";
+
+                // 3. Compute the absolute local path to download to
+                var targetFilePath = Path.Combine(imageDirectory.FullName, filename);
+
+                // 4. Download the image locally
+                using (var targetStream = File.Open(targetFilePath, FileMode.Create, FileAccess.Write))
+                {
+                    using (var requestStream = await this.ImageClient.Value.GetAsync(new Uri(image.Source!), HttpCompletionOption.ResponseHeadersRead))
+                    {
+                        await requestStream.Content.CopyToAsync(targetStream);
+                    }
+                }
+
+                // 5. Rewrite the src attribute on the image to the *relative*
+                //    path that we've calculated
+                image.Source = $"{imageDirectory.Name}/{filename}";
+            }
+        }
     }
 }
