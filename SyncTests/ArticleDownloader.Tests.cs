@@ -28,6 +28,7 @@ public class ArticleDownloaderTests : IDisposable
     private const long YOUTUBE_ARTICLE = 16L;
     private const long IMAGES_ARTICLE = 17L;
     private const long IMAGES_WITH_QUERY_STRINGS = 18L;
+    private const long IMAGES_WITH_INLINE_IMAGES = 19L;
     #endregion
 
     public ArticleDownloaderTests()
@@ -79,6 +80,7 @@ public class ArticleDownloaderTests : IDisposable
         AddArticle(YOUTUBE_ARTICLE, "youtube.html", "YouTube");
         AddArticle(IMAGES_ARTICLE, "ArticleWithImagesAlt.html", "Article With Images");
         AddArticle(IMAGES_WITH_QUERY_STRINGS, "ArticleWithImagesAndQueryStrings.html", "Article With Images that have query strings in their URLs");
+        AddArticle(IMAGES_WITH_INLINE_IMAGES, "ArticleWithInlineDataImages.html", "Article with Inline images");
 
         return articleFileMap;
     }
@@ -249,6 +251,30 @@ public class ArticleDownloaderTests : IDisposable
 
             var imagePath = Path.Combine(this.testDirectory.FullName, imageSrc);
             Assert.True(File.Exists(imagePath));
+        }
+
+        Assert.Equal(EXPECTED_IMAGE_COUNT, seenImages);
+    }
+
+    [Fact]
+    public async Task CanDownloadArticleWithImagesWithInlineData()
+    {
+        const int EXPECTED_IMAGE_COUNT = 2;
+        var localState = await this.articleDownloader.DownloadBookmark(IMAGES_WITH_INLINE_IMAGES);
+        var imagesPath = Path.Join(this.testDirectory.FullName, localState.ArticleId.ToString());
+        Assert.False(Directory.Exists(imagesPath));
+
+        var localPath = Path.Join(this.testDirectory.FullName, localState.LocalPath!.AbsolutePath);
+        var htmlParserContext = BrowsingContext.New(ArticleDownloader.ParserConfiguration);
+        var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
+
+        var seenImages = 0;
+        foreach(var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
+        {
+            var imageSrc = image.GetAttribute("src")!;
+            Assert.StartsWith("data:", imageSrc);
+
+            seenImages += 1;
         }
 
         Assert.Equal(EXPECTED_IMAGE_COUNT, seenImages);
