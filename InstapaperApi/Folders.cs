@@ -116,13 +116,18 @@ public static class WellKnownFolderIds
 }
 
 /// <inheritdoc cref="IFoldersClient"/>
-public sealed class FoldersClient : IFoldersClient
+public sealed class FoldersClient : IFoldersClient, IDisposable
 {
     private readonly HttpClient client;
 
     public FoldersClient(ClientInformation clientInformation)
     {
         this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
+    }
+
+    public void Dispose()
+    {
+        this.client.Dispose();
     }
 
     private async Task<IList<IInstapaperFolder>> PerformRequestAsync(Uri endpoint, HttpContent content)

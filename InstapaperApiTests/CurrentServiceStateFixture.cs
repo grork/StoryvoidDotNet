@@ -106,7 +106,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
                 // costs an 'add'.
                 LogMessage($"Listing articles in folder {id}");
                 var bookmarks = await this.ListBookmarks(id.ToString());
-                foreach(var bookmark in bookmarks)
+                foreach (var bookmark in bookmarks)
                 {
                     await this.Archive(bookmark.id);
                 }
@@ -245,11 +245,11 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
 
             return uris;
         }
-        
+
         internal async Task UnlikeAllLikedArticles()
         {
             var likedArticles = await this.ListBookmarks(WellKnownFolderIds.Liked);
-            foreach(var article in likedArticles)
+            foreach (var article in likedArticles)
             {
                 LogMessage($"Unliking {article.id}");
                 await this.Unlike(article.id);
@@ -304,6 +304,10 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
     public async Task DisposeAsync()
     {
         LogMessage("Starting Cleanup");
+
+        (this.FoldersClient as IDisposable)?.Dispose();
+        (this.BookmarksClient as IDisposable)?.Dispose();
+
         await Task.CompletedTask;
         LogMessage("Completing Cleanup");
     }

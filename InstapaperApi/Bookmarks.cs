@@ -435,13 +435,18 @@ public sealed record HaveStatus
 /// <summary>
 /// Bookmark operations for Instapaper -- adding removing, changing states
 /// </summary>
-public sealed class BookmarksClient : IBookmarksClient
+public sealed class BookmarksClient : IBookmarksClient, IDisposable
 {
     private readonly HttpClient client;
 
     public BookmarksClient(ClientInformation clientInformation)
     {
         this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
+    }
+
+    public void Dispose()
+    {
+        this.client.Dispose();
     }
 
     private Task<(IList<IInstapaperBookmark>, JsonElement? Meta)> PerformRequestAsync(Uri endpoint, string parameterName, string parameterValue)
