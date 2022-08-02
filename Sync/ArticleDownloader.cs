@@ -3,8 +3,10 @@ using System.Diagnostics;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
+using AngleSharpConfiguration = AngleSharp.Configuration;
 using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
+using SixLabors.ImageSharp;
 
 namespace Codevoid.Storyvoid.Sync;
 
@@ -77,7 +79,7 @@ public class ArticleDownloader : IDisposable
     {
         // Remove 'dangerous' aspects of AngleSharps API so bad things can't
         // happen
-        var configuration = Configuration.Default.WithCss(); // Lets us use GetInnerText()
+        var configuration = AngleSharpConfiguration.Default.WithCss(); // Lets us use GetInnerText()
         configuration = configuration.Without<AngleSharp.Dom.Events.IEventFactory>();
         configuration = configuration.Without<AngleSharp.Dom.IAttributeObserver>();
         configuration = configuration.Without<AngleSharp.Browser.INavigationHandler>();
@@ -242,33 +244,51 @@ public class ArticleDownloader : IDisposable
                     continue;
                 }
 
-                // 1. Calculate the extension from the source
-                var extension = Path.GetExtension(imageUri.AbsolutePath);
-                if (String.IsNullOrWhiteSpace(extension))
-                {
-                    Debug.WriteLine("Images without extensions are not supported yet");
-                    continue;
-                }
-
-                extension = extension.Substring(1); // remove the leading .
-
-                // 2. Compute the target file name on the *image index*
+                // 1. Compute the temporary target file name on the *image index*
                 //    e.g. which Image we're processing, since the file name from
                 //    the source may not be writable locally
-                var filename = $"{imageIndex++}.{extension}";
+                var tempFilename = $"{imageIndex++}.temp-image";
 
-                // 3. Compute the absolute local path to download to
-                var targetFilePath = Path.Combine(imageDirectory.FullName, filename);
+                // 2. Compute the absolute local path to download to
+                var tempFilepath = Path.Combine(imageDirectory.FullName, tempFilename);
 
-                // 4. Download the image locally
+                // 3. Download the image locally
                 var imageRequestTask = this.ImageClient.Value.GetAsync(new Uri(image.Source!), HttpCompletionOption.ResponseHeadersRead);
-                using (var targetStream = File.Open(targetFilePath, FileMode.Create, FileAccess.Write))
+                string contentType = "image/unknown";
+                using (var targetStream = File.Open(tempFilepath, FileMode.Create, FileAccess.Write))
                 {
                     using var requestStream = await imageRequestTask;
+                    contentType = requestStream.Content.Headers.ContentType.MediaType;
                     await requestStream.Content.CopyToAsync(targetStream);
                 }
 
-                // 5. Rewrite the src attribute on the image to the *relative*
+                // 4. Identify the image format & metadata
+                string extension = "unknown";
+                var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath);
+                if (imageFormat == null)
+                {
+                    // We couldn't identify it, so we'd better check to see if
+                    // it's an SVG. We're going to rely on the content type
+                    if (contentType != "image/svg+xml")
+                    {
+                        File.Delete(tempFilepath);
+                        continue;
+                    }
+
+                    extension = "svg";
+                }
+                else
+                {
+                    extension = imageFormat.FileExtensions.First();
+                }
+
+                // 6. Move the file into the final destination
+                Debug.Assert(extension != "unknown", "Shouldn't have an unkown file extension");
+                var filename = Path.ChangeExtension(tempFilename, extension);
+                var filePath = Path.Combine(imageDirectory.FullName, filename);
+                File.Move(tempFilepath, filePath);
+
+                // 6. Rewrite the src attribute on the image to the *relative*
                 //    path that we've calculated
                 image.Source = $"{imageDirectory.Name}/{filename}";
             }
