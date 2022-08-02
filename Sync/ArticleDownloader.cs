@@ -64,7 +64,7 @@ internal static class ChunkinatorExtension
 /// Downloads Articles (and images) from the service, and updates the local
 /// state to reflect download success and local file paths
 /// </summary>
-public class ArticleDownloader
+public class ArticleDownloader : IDisposable
 {
     /// <summary>
     /// Placeholder base URI that local paths will be relative to. This is
@@ -121,6 +121,12 @@ public class ArticleDownloader
 
             return client;
         });
+    }
+
+    public void Dispose()
+    {
+        this.ImageClient.Value?.Dispose();
+        this.ImageClient = new Lazy<HttpClient>();
     }
 
     /// <summary>
@@ -182,8 +188,8 @@ public class ArticleDownloader
         var configuration = ArticleDownloader.ParserConfiguration;
 
         // Load the document
-        var context = BrowsingContext.New(configuration);
-        var document = await context.OpenAsync(req => req.Content(body));
+        using var context = BrowsingContext.New(configuration);
+        using var document = await context.OpenAsync(req => req.Content(body));
         await ProcessAndDownloadImages(document, boomarkId);
 
         // We sometimes need a textual description of the article derived from
@@ -255,12 +261,11 @@ public class ArticleDownloader
                 var targetFilePath = Path.Combine(imageDirectory.FullName, filename);
 
                 // 4. Download the image locally
+                var imageRequestTask = this.ImageClient.Value.GetAsync(new Uri(image.Source!), HttpCompletionOption.ResponseHeadersRead);
                 using (var targetStream = File.Open(targetFilePath, FileMode.Create, FileAccess.Write))
                 {
-                    using (var requestStream = await this.ImageClient.Value.GetAsync(new Uri(image.Source!), HttpCompletionOption.ResponseHeadersRead))
-                    {
-                        await requestStream.Content.CopyToAsync(targetStream);
-                    }
+                    using var requestStream = await imageRequestTask;
+                    await requestStream.Content.CopyToAsync(targetStream);
                 }
 
                 // 5. Rewrite the src attribute on the image to the *relative*

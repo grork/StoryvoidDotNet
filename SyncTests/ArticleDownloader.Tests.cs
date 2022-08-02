@@ -68,7 +68,7 @@ public class ArticleDownloaderTests : IDisposable
             );
 
             this.articleDatabase.AddArticleToFolder(article, WellKnownLocalFolderIds.Unread);
-            
+
             articleFileMap.Add(id, (!String.IsNullOrWhiteSpace(filename) ? Path.Join(this.sampleFilesFolder, filename) : filename));
         }
 
@@ -100,6 +100,8 @@ public class ArticleDownloaderTests : IDisposable
 
         this.connection.Close();
         this.connection.Dispose();
+
+        this.articleDownloader.Dispose();
     }
 
     #region Basic Downloading
@@ -129,7 +131,7 @@ public class ArticleDownloaderTests : IDisposable
         // document, as the consumer is expected to perform the appropriate
         // cleanup
         Assert.StartsWith("<body>", localContents);
-        Assert.EndsWith( "</body>", localContents);
+        Assert.EndsWith("</body>", localContents);
     }
 
     [Fact]
@@ -206,10 +208,10 @@ public class ArticleDownloaderTests : IDisposable
         var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
 
         var seenImages = 0;
-        foreach(var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
+        foreach (var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
         {
             var imageSrc = image.GetAttribute("src")!;
-            if(imageSrc!.StartsWith("http"))
+            if (imageSrc!.StartsWith("http"))
             {
                 // We only look for processed images
                 continue;
@@ -238,10 +240,10 @@ public class ArticleDownloaderTests : IDisposable
         var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
 
         var seenImages = 0;
-        foreach(var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
+        foreach (var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
         {
             var imageSrc = image.GetAttribute("src")!;
-            if(imageSrc!.StartsWith("http"))
+            if (imageSrc!.StartsWith("http"))
             {
                 // We only look for processed images
                 continue;
@@ -269,7 +271,7 @@ public class ArticleDownloaderTests : IDisposable
         var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
 
         var seenImages = 0;
-        foreach(var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
+        foreach (var image in document.QuerySelectorAll<IHtmlImageElement>("img[src]"))
         {
             var imageSrc = image.GetAttribute("src")!;
             Assert.StartsWith("data:", imageSrc);
@@ -327,7 +329,9 @@ public class SampleDataDownloadingHelper
                 var bookmarkBody = await bookmarksClient.GetTextAsync(bookmarkInfo.Id);
                 var outputFile = Path.Join(outputDirectory.FullName, fileName);
                 File.WriteAllText(outputFile, bookmarkBody);
-            } catch(BookmarkContentsUnavailableException) {
+            }
+            catch (BookmarkContentsUnavailableException)
+            {
                 Assert.False(true, $"Couldn't download: {bookmarkUri.ToString()}");
             }
         }
