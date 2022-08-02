@@ -62,7 +62,7 @@ internal static class DataExtensions
     public static Uri GetUri(this IDataReader instance, string name)
     {
         var uriString = instance.GetString(name);
-        return new Uri(uriString);
+        return new Uri(uriString, UriKind.RelativeOrAbsolute);
     }
 
     /// <summary>

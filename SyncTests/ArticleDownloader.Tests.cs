@@ -29,6 +29,14 @@ public class ArticleDownloaderTests : IDisposable
     private const long IMAGES_ARTICLE = 17L;
     private const long IMAGES_WITH_QUERY_STRINGS = 18L;
     private const long IMAGES_WITH_INLINE_IMAGES = 19L;
+    private const long FIRST_IMAGE_PNG = 20L;
+    private const long FIRST_IMAGE_ANIMATED_PNG = 21L;
+    private const long FIRST_IMAGE_GIF = 22L;
+    private const long FIRST_IMAGE_ANIMATED_GIF = 23L;
+    private const long FIRST_IMAGE_JPG = 24L;
+    private const long FIRST_IMAGE_SVG = 25L;
+    private const long FIRST_IMAGE_WEBP = 26L;
+    private const long FIRST_IMAGE_LESS_THAN_150PX = 27L;
     #endregion
 
     public ArticleDownloaderTests()
@@ -81,6 +89,15 @@ public class ArticleDownloaderTests : IDisposable
         AddArticle(IMAGES_ARTICLE, "ArticleWithImagesAlt.html", "Article With Images");
         AddArticle(IMAGES_WITH_QUERY_STRINGS, "ArticleWithImagesAndQueryStrings.html", "Article With Images that have query strings in their URLs");
         AddArticle(IMAGES_WITH_INLINE_IMAGES, "ArticleWithInlineDataImages.html", "Article with Inline images");
+        AddArticle(FIRST_IMAGE_PNG, "ArticleWithPNGFirstImage.html", "Article with PNG as first image");
+        AddArticle(FIRST_IMAGE_ANIMATED_PNG, "ArticleWithAnimatedPNGFirstImage.html", "Article with animated PNG as first image");
+        AddArticle(FIRST_IMAGE_GIF, "ArticleWithStaticGIFFirstImage.html", "Article with GIF as first image");
+        AddArticle(FIRST_IMAGE_ANIMATED_GIF, "ArticleWithAnimatedFirstImage.html", "Article with Animated GIF as first image");
+        AddArticle(FIRST_IMAGE_JPG, "ArticleWithJPGFirstImage.html", "Article with JPG as first image");
+        AddArticle(FIRST_IMAGE_SVG, "ArticleWithSVGFirstImage.html", "Article with SVG as first image");
+        AddArticle(FIRST_IMAGE_WEBP, "ArticleWithWEBPFirstImage.html", "Article with WEBP as first image");
+        AddArticle(FIRST_IMAGE_LESS_THAN_150PX, "ArticleWithFirstImageLessThan150px.html", "Article with first image < 150px");
+
 
         return articleFileMap;
     }
@@ -243,7 +260,7 @@ public class ArticleDownloaderTests : IDisposable
     }
 
     [Fact]
-    public async Task CanDownloadArticleWithImagesWithInlineData()
+    public async Task InlineImagesAreLeftUntouchedAndDontDownloadAnything()
     {
         const int EXPECTED_IMAGE_COUNT = 2;
         var localState = await this.articleDownloader.DownloadBookmark(IMAGES_WITH_INLINE_IMAGES);
@@ -266,6 +283,67 @@ public class ArticleDownloaderTests : IDisposable
         Assert.Equal(EXPECTED_IMAGE_COUNT, seenImages);
     }
 
+    [Fact]
+    public async Task NoThumbnailImageReturnedIfNoImagesInArticle()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(BASIC_ARTICLE_NO_IMAGES);
+        Assert.Null(localState.FirstImageLocalPath);
+        Assert.Null(localState.FirstImageRemoteUri);
+        Assert.False(localState.HasImages);
+    }
+
+    [Fact]
+    public async Task NoThumbnailImageReturnedIfOnlyInlineImagesInArticle()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(IMAGES_WITH_INLINE_IMAGES);
+        Assert.Null(localState.FirstImageLocalPath);
+        Assert.Null(localState.FirstImageRemoteUri);
+        Assert.False(localState.HasImages);
+    }
+
+    [Fact]
+    public async Task FirstImageIsSelectedIfArticleHasImagesPng() => await FirstImageIsSelected(FIRST_IMAGE_PNG, "sample.png");
+
+    [Fact]
+    public async Task FirstImageIsSelectedIfArticleHasImagesGif() => await FirstImageIsSelected(FIRST_IMAGE_GIF, "sample-gif89a.gif");
+
+    [Fact]
+    public async Task FirstImageIsSelectedIfArticleHasImagesJpg() => await FirstImageIsSelected(FIRST_IMAGE_JPG, "sample.jpg");
+
+    [Fact]
+    public async Task FirstImageIsSelectedIfArticleHasImagesWebp() => await FirstImageIsSelected(FIRST_IMAGE_WEBP, "sample.webp");
+
+    [Fact]
+    public async Task FirstImageIsSelectedIfArticleHasImagesSvg() => await FirstImageIsSelected(FIRST_IMAGE_SVG, "sample.svg");
+
+    private async Task FirstImageIsSelected(long articleId, string expectedFirstImage)
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(articleId);
+        Assert.NotNull(localState.FirstImageLocalPath);
+        Assert.NotNull(localState.FirstImageRemoteUri);
+        Assert.True(localState.HasImages);
+
+        var expectedLocalPath = new Uri($"{articleId}/1.{Path.GetExtension(expectedFirstImage).Substring(1)}", UriKind.Relative);
+        var expectedRemotePath = new Uri($"https://www.codevoid.net/storyvoidtest/{expectedFirstImage}");
+
+        Assert.Equal(expectedLocalPath, localState.FirstImageLocalPath);
+        Assert.Equal(expectedRemotePath, localState.FirstImageRemoteUri);
+    }
+
+    [Fact]
+    public async Task FirstImageUnder150pxIsNotSelected()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(FIRST_IMAGE_LESS_THAN_150PX);
+        Assert.NotNull(localState.FirstImageLocalPath);
+        Assert.NotNull(localState.FirstImageRemoteUri);
+        Assert.True(localState.HasImages);
+
+        var expectedLocalPath = new Uri($"{FIRST_IMAGE_LESS_THAN_150PX}/2.png", UriKind.Relative);
+        var expectedRemotePath = new Uri("https://www.codevoid.net/storyvoidtest/sample.png");
+
+        Assert.Equal(expectedLocalPath, localState.FirstImageLocalPath);
+        Assert.Equal(expectedRemotePath, localState.FirstImageRemoteUri);
+    }
     #endregion
 }
 

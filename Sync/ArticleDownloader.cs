@@ -68,6 +68,12 @@ internal static class ChunkinatorExtension
 /// </summary>
 public class ArticleDownloader : IDisposable
 {
+    private record FirstImageInformaton(Uri FirstLocalImage, Uri FirstRemoteImage);
+    private record ProcessedArticleInformation(string Body, string ExtractedDescription, FirstImageInformaton? FirstImage);
+
+    private const int MINIMUM_IMAGE_DIMENSION = 150;
+    private const string SVG_CONTENT_TYPE = "image/svg+xml";
+
     /// <summary>
     /// Placeholder base URI that local paths will be relative to. This is
     /// because the local root is variable, and we dont want to encode that path
@@ -145,6 +151,7 @@ public class ArticleDownloader : IDisposable
         var contentsUnavailable = false;
         Uri? localPath = null;
         string extractedDescription = String.Empty;
+        FirstImageInformaton? firstImage = null;
 
         try
         {
@@ -153,7 +160,7 @@ public class ArticleDownloader : IDisposable
 
             // Get the document contents, and process it
             var body = await this.bookmarksClient.GetTextAsync(bookmarkId);
-            (body, extractedDescription) = await this.ProcessArticle(body, bookmarkId);
+            (body, extractedDescription, firstImage) = await this.ProcessArticle(body, bookmarkId);
 
             File.WriteAllText(bookmarkAbsoluteFilePath, body, Encoding.UTF8);
 
@@ -175,7 +182,9 @@ public class ArticleDownloader : IDisposable
             AvailableLocally = articleDownloaded,
             ArticleUnavailable = contentsUnavailable,
             LocalPath = localPath,
-            ExtractedDescription = extractedDescription
+            ExtractedDescription = extractedDescription,
+            FirstImageLocalPath = firstImage?.FirstLocalImage,
+            FirstImageRemoteUri = firstImage?.FirstRemoteImage
         });
     }
 
@@ -185,14 +194,14 @@ public class ArticleDownloader : IDisposable
     /// <param name="body">HTML body to process</param>
     /// <param name="boomarkId">Article ID we're processing</param>
     /// <returns>Processed body with the required changes</returns>
-    private async Task<(string Body, string ExtractedDescription)> ProcessArticle(string body, long boomarkId)
+    private async Task<ProcessedArticleInformation> ProcessArticle(string body, long boomarkId)
     {
         var configuration = ArticleDownloader.ParserConfiguration;
 
         // Load the document
         using var context = BrowsingContext.New(configuration);
         using var document = await context.OpenAsync(req => req.Content(body));
-        await ProcessAndDownloadImages(document, boomarkId);
+        var firstImage = await ProcessAndDownloadImages(document, boomarkId);
 
         // We sometimes need a textual description of the article derived from
         // the content body. We do that by extracting up to the first 400 chars
@@ -207,7 +216,7 @@ public class ArticleDownloader : IDisposable
         // mimic what the service returns (just the body). Note that even in a
         // 'no changes' case the service data and this data may not match, as
         // AngleSharp will attempt to generate stricter markup than it accepts
-        return (document.Body!.OuterHtml, extractedDescription);
+        return new(document.Body!.OuterHtml, extractedDescription, firstImage);
     }
 
     /// <summary>
@@ -217,10 +226,11 @@ public class ArticleDownloader : IDisposable
     /// </summary>
     /// <param name="document">Document to download images for</param>
     /// <param name="bookmarkId">Bookmark ID we're processing </param>
-    private async Task ProcessAndDownloadImages(IDocument document, long bookmarkId)
+    private async Task<FirstImageInformaton?> ProcessAndDownloadImages(IDocument document, long bookmarkId)
     {
         var images = document.QuerySelectorAll<IHtmlImageElement>("img[src^='http']");
         DirectoryInfo? imageDirectory = null;
+        FirstImageInformaton? firstImage = null;
 
         int imageIndex = 1;
 
@@ -269,7 +279,7 @@ public class ArticleDownloader : IDisposable
                 {
                     // We couldn't identify it, so we'd better check to see if
                     // it's an SVG. We're going to rely on the content type
-                    if (contentType != "image/svg+xml")
+                    if (contentType != SVG_CONTENT_TYPE)
                     {
                         File.Delete(tempFilepath);
                         continue;
@@ -282,7 +292,7 @@ public class ArticleDownloader : IDisposable
                     extension = imageFormat.FileExtensions.First();
                 }
 
-                // 6. Move the file into the final destination
+                // 5. Move the file into the final destination
                 Debug.Assert(extension != "unknown", "Shouldn't have an unkown file extension");
                 var filename = Path.ChangeExtension(tempFilename, extension);
                 var filePath = Path.Combine(imageDirectory.FullName, filename);
@@ -290,8 +300,40 @@ public class ArticleDownloader : IDisposable
 
                 // 6. Rewrite the src attribute on the image to the *relative*
                 //    path that we've calculated
-                image.Source = $"{imageDirectory.Name}/{filename}";
+                var relativePath = $"{imageDirectory.Name}/{filename}";
+                var originalUrl = image.Source;
+                image.Source = relativePath;
+
+                if (imageFormat == null && contentType != SVG_CONTENT_TYPE)
+                {
+                    // We have no image details to process, but we downloaded it
+                    // anyway -- maybe the UI can decode it in a different
+                    // context
+                    continue;
+                }
+
+                // 7. Select a first image, if we don't currently have one
+                if (firstImage == null)
+                {
+                    // SVG doesn't have dimensions, per-se. They also render
+                    // well being vector-images. For non-svg images, we don't
+                    // want small images
+                    if (contentType != SVG_CONTENT_TYPE)
+                    {
+                        if (imageInfo.Width < MINIMUM_IMAGE_DIMENSION || imageInfo.Height < MINIMUM_IMAGE_DIMENSION)
+                        {
+                            continue;
+                        }
+                    }
+
+                    firstImage = new FirstImageInformaton(
+                        new Uri(relativePath, UriKind.Relative),
+                        new Uri(originalUrl, UriKind.Absolute)
+                    );
+                }
             }
         }
+
+        return firstImage;
     }
 }
