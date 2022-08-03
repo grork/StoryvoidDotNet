@@ -344,6 +344,20 @@ public class ArticleDownloaderTests : IDisposable
         Assert.Equal(expectedLocalPath, localState.FirstImageLocalPath);
         Assert.Equal(expectedRemotePath, localState.FirstImageRemoteUri);
     }
+
+    [Fact]
+    public async Task CanDownloadSameArticleTwice()
+    {
+        await BasicImageDownloadTest(
+            articleId: IMAGES_ARTICLE,
+            expectedImageCount: 17
+        );
+
+        await BasicImageDownloadTest(
+            articleId: IMAGES_ARTICLE,
+            expectedImageCount: 17
+        );
+    }
     #endregion
 }
 

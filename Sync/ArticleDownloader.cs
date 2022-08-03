@@ -176,7 +176,7 @@ public class ArticleDownloader : IDisposable
             contentsUnavailable = true;
         }
 
-        return articleDatabase.AddLocalOnlyStateForArticle(new()
+        var localState = new DatabaseLocalOnlyArticleState()
         {
             ArticleId = bookmarkId,
             AvailableLocally = articleDownloaded,
@@ -185,7 +185,15 @@ public class ArticleDownloader : IDisposable
             ExtractedDescription = extractedDescription,
             FirstImageLocalPath = firstImage?.FirstLocalImage,
             FirstImageRemoteUri = firstImage?.FirstRemoteImage
-        });
+        };
+
+        var localStatePresent = (articleDatabase.GetLocalOnlyStateByArticleId(bookmarkId) != null);
+        if(localStatePresent)
+        {
+            return articleDatabase.UpdateLocalOnlyArticleState(localState);
+        }
+
+        return articleDatabase.AddLocalOnlyStateForArticle(localState);
     }
 
     /// <summary>
@@ -296,6 +304,13 @@ public class ArticleDownloader : IDisposable
                 Debug.Assert(extension != "unknown", "Shouldn't have an unkown file extension");
                 var filename = Path.ChangeExtension(tempFilename, extension);
                 var filePath = Path.Combine(imageDirectory.FullName, filename);
+
+                // If we're redownloading the article, the image might already
+                // exist. Since we _move_ the file into position, and there is
+                // no overwrite option in this .net verison, we have to try
+                // deleting it -- which doesn't error if the file isn't present
+                File.Delete(filePath);
+
                 File.Move(tempFilepath, filePath);
 
                 // 6. Rewrite the src attribute on the image to the *relative*
