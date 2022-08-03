@@ -324,9 +324,18 @@ public class ArticleDownloader : IDisposable
                     string contentType = "image/unknown";
                     using (var targetStream = File.Open(tempFilepath, FileMode.Create, FileAccess.Write))
                     {
-                        using var requestStream = await imageRequestTask;
-                        contentType = requestStream.Content.Headers.ContentType.MediaType;
-                        await requestStream.Content.CopyToAsync(targetStream);
+                        using var imageResponse = await imageRequestTask;
+                        if(!imageResponse.IsSuccessStatusCode)
+                        {
+                            // If this was a failed request for the image, we
+                            // need to clean up the temporary file we created
+                            targetStream.Close();
+                            File.Delete(tempFilepath);
+                            continue;
+                        }
+
+                        contentType = imageResponse.Content.Headers.ContentType.MediaType;
+                        await imageResponse.Content.CopyToAsync(targetStream);
                     }
 
                     // 4. Identify the image format & metadata

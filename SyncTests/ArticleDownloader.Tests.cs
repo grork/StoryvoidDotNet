@@ -40,6 +40,7 @@ public class ArticleDownloaderTests : IDisposable
     private const long FIRST_IMAGE_SVG = 25L;
     private const long FIRST_IMAGE_WEBP = 26L;
     private const long FIRST_IMAGE_LESS_THAN_150PX = 27L;
+    private const long MISSING_IMAGE = 28L;
     #endregion
 
     public ArticleDownloaderTests()
@@ -110,6 +111,7 @@ public class ArticleDownloaderTests : IDisposable
         AddArticle(FIRST_IMAGE_SVG, "ArticleWithSVGFirstImage.html", "Article with SVG as first image");
         AddArticle(FIRST_IMAGE_WEBP, "ArticleWithWEBPFirstImage.html", "Article with WEBP as first image");
         AddArticle(FIRST_IMAGE_LESS_THAN_150PX, "ArticleWithFirstImageLessThan150px.html", "Article with first image < 150px");
+        AddArticle(MISSING_IMAGE, "ArticleWithMissingImage.html", "Article with a missing image");
 
         // Special case for an article that is available in the database, but
         // isn't on the service. We don't want to add a file mapping in that case
@@ -391,6 +393,15 @@ public class ArticleDownloaderTests : IDisposable
         await BasicImageDownloadTest(
             articleId: IMAGES_ARTICLE,
             expectedImageCount: 17
+        );
+    }
+
+    [Fact]
+    public async Task ArticleWithSomeMissingImagesDownloadsCorrectly()
+    {
+        await BasicImageDownloadTest(
+            articleId: MISSING_IMAGE,
+            expectedImageCount: 1
         );
     }
     #endregion
