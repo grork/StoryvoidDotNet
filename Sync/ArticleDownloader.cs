@@ -117,6 +117,18 @@ public class ArticleDownloader : IDisposable
                              IBookmarksClient bookmarksClient,
                              ClientInformation clientInformation,
                              IArticleDownloaderEventSource? eventSource = null)
+        : this(null, workingRoot, articleDatabase, bookmarksClient, clientInformation, eventSource)
+    { }
+
+    /// <summary>
+    /// Internal to faciliate testing by mocking the request handler
+    /// </summary>
+    internal ArticleDownloader(HttpMessageHandler? handler,
+                               string workingRoot,
+                               IArticleDatabase articleDatabase,
+                               IBookmarksClient bookmarksClient,
+                               ClientInformation clientInformation,
+                               IArticleDownloaderEventSource? eventSource = null)
     {
         this.workingRoot = workingRoot;
         this.articleDatabase = articleDatabase;
@@ -125,7 +137,7 @@ public class ArticleDownloader : IDisposable
 
         this.ImageClient = new Lazy<HttpClient>(() =>
         {
-            HttpClient client = new HttpClient();
+            HttpClient client = (handler is null) ? new HttpClient() : new HttpClient(handler);
             client.DefaultRequestHeaders.UserAgent.Clear();
             client.DefaultRequestHeaders.UserAgent.Add(clientInformation.UserAgent);
 
@@ -335,6 +347,12 @@ public class ArticleDownloader : IDisposable
                     else
                     {
                         extension = imageFormat.FileExtensions.First();
+                        // Image sharp thinks 'bm' is a valid bitmap extension
+                        // and we don't. So lets fix it up.
+                        if(extension == "bm")
+                        {
+                            extension = "bmp";
+                        }
                     }
 
                     // 5. Move the file into the final destination

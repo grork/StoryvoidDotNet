@@ -7,7 +7,7 @@ using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 
-namespace Codevoid.Test.Storyvoid;
+namespace Codevoid.Test.Storyvoid.Sync;
 
 public class ArticleDownloaderTests : IDisposable
 {
@@ -18,7 +18,7 @@ public class ArticleDownloaderTests : IDisposable
     private readonly Codevoid.Utilities.OAuth.ClientInformation clientInformation;
 
     private readonly DirectoryInfo testDirectory;
-    private readonly string sampleFilesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
+    private readonly string mockResponsesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
 
     #region Mock Article IDs
     private const long AWOL_EVERYWHERE_ARTICLE = 8L;
@@ -60,7 +60,9 @@ public class ArticleDownloaderTests : IDisposable
     [MemberNotNull(nameof(articleDownloader))]
     private void ResetArticleDownloader(IArticleDownloaderEventSource? eventSource = null)
     {
+        var samplesFolder = Path.Join(Environment.CurrentDirectory, "samplepages");
         this.articleDownloader = new ArticleDownloader(
+            new FileSystemMappedHttpHandler(Directory.CreateDirectory(samplesFolder)),
             this.testDirectory.FullName,
             this.articleDatabase,
             this.bookmarkClient,
@@ -88,7 +90,7 @@ public class ArticleDownloaderTests : IDisposable
 
             this.articleDatabase.AddArticleToFolder(article, WellKnownLocalFolderIds.Unread);
 
-            articleFileMap.Add(id, (!String.IsNullOrWhiteSpace(filename) ? Path.Join(this.sampleFilesFolder, filename) : filename));
+            articleFileMap.Add(id, (!String.IsNullOrWhiteSpace(filename) ? Path.Join(this.mockResponsesFolder, filename) : filename));
         }
 
         AddArticle(UNAVAILABLE_ARTICLE, String.Empty, "Article with no content available");
