@@ -22,7 +22,7 @@ public sealed class AuthenticationTests
             InstapaperAPIKey.CONSUMER_KEY_SECRET
         );
 
-        var accounts = new Accounts(clientInfoWithoutAccessToken);
+        using var accounts = new Accounts(clientInfoWithoutAccessToken);
 
         TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.INSTAPAPER_ACCOUNT, nameof(InstapaperAPIKey.INSTAPAPER_ACCOUNT));
         TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.INSTAPAPER_PASSWORD, nameof(InstapaperAPIKey.INSTAPAPER_PASSWORD));
@@ -46,7 +46,7 @@ public sealed class AuthenticationTests
     public async Task CanVerifyCredentials()
     {
         var clientInfo = TestUtilities.GetClientInformation();
-        var accounts = new Accounts(clientInfo);
+        using var accounts = new Accounts(clientInfo);
         var userInformation = await accounts.VerifyCredentialsAsync();
 
         Assert.Equal(InstapaperAPIKey.INSTAPAPER_USER_ID, userInformation.UserId); // User ID didn't match

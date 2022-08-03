@@ -32,7 +32,7 @@ public sealed record UserInformation
 /// <summary>
 /// Accounts API for Instapaper -- getting tokens, verifying creds.
 /// </summary>
-public sealed class Accounts
+public sealed class Accounts : IDisposable
 {
     private readonly ClientInformation clientInformation;
     private readonly HttpClient client;
@@ -45,6 +45,11 @@ public sealed class Accounts
     {
         this.clientInformation = clientInformation;
         this.client = OAuthMessageHandler.CreateOAuthHttpClient(clientInformation);
+    }
+
+    public void Dispose()
+    {
+        this.client.Dispose();
     }
 
     /// <summary>

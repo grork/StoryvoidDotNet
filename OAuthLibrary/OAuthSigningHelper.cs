@@ -45,7 +45,7 @@ public sealed class OAuthMessageHandler : DelegatingHandler
     /// <returns>HttpClient that signs requests inline with OAuth 1.0a</returns>
     public static HttpClient CreateOAuthHttpClient(ClientInformation clientInformation)
     {
-        var client = new HttpClient(new OAuthMessageHandler(clientInformation));
+        var client = new HttpClient(new OAuthMessageHandler(clientInformation), disposeHandler: true);
         client.DefaultRequestHeaders.UserAgent.Clear();
         client.DefaultRequestHeaders.UserAgent.Add(clientInformation.UserAgent);
 
