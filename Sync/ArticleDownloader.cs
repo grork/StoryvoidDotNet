@@ -96,10 +96,10 @@ public class ArticleDownloader : IDisposable
     internal static IConfiguration ParserConfiguration => lazyParserConfiguration.Value;
 
     private Lazy<HttpClient> ImageClient;
-
     private string workingRoot;
     private IArticleDatabase articleDatabase;
     private IBookmarksClient bookmarksClient;
+    private IArticleDownloaderEventSource? eventSource;
 
     /// <summary>
     /// Create a downloader instance
@@ -115,11 +115,13 @@ public class ArticleDownloader : IDisposable
     public ArticleDownloader(string workingRoot,
                              IArticleDatabase articleDatabase,
                              IBookmarksClient bookmarksClient,
-                             ClientInformation clientInformation)
+                             ClientInformation clientInformation,
+                             IArticleDownloaderEventSource? eventSource = null)
     {
         this.workingRoot = workingRoot;
         this.articleDatabase = articleDatabase;
         this.bookmarksClient = bookmarksClient;
+        this.eventSource = eventSource;
 
         this.ImageClient = new Lazy<HttpClient>(() =>
         {
@@ -145,13 +147,26 @@ public class ArticleDownloader : IDisposable
     /// </summary>
     /// <param name="bookmarkId">ID of the bookmark to download</param>
     /// <returns>Updated local state information</returns>
-    public async Task<DatabaseLocalOnlyArticleState> DownloadBookmark(long bookmarkId)
+    public async Task<DatabaseLocalOnlyArticleState?> DownloadBookmark(long bookmarkId)
     {
         var articleDownloaded = true;
         var contentsUnavailable = false;
         Uri? localPath = null;
         string extractedDescription = String.Empty;
         FirstImageInformaton? firstImage = null;
+        DownloadArticleArgs? eventInformation = null;
+
+        var articleInformation = this.articleDatabase.GetArticleById(bookmarkId);
+        if(articleInformation == null)
+        {
+            return null;
+        }
+
+        if (this.eventSource != null)
+        {
+            eventInformation = new(bookmarkId, articleInformation.Title);
+            this.eventSource.RaiseArticleStarted(eventInformation);
+        }
 
         try
         {
@@ -190,26 +205,45 @@ public class ArticleDownloader : IDisposable
         var localStatePresent = (articleDatabase.GetLocalOnlyStateByArticleId(bookmarkId) != null);
         if(localStatePresent)
         {
-            return articleDatabase.UpdateLocalOnlyArticleState(localState);
+            localState = articleDatabase.UpdateLocalOnlyArticleState(localState);
+        }
+        else
+        {
+            localState = articleDatabase.AddLocalOnlyStateForArticle(localState);
         }
 
-        return articleDatabase.AddLocalOnlyStateForArticle(localState);
+        if (eventInformation != null)
+        {
+            this.eventSource?.RaiseArticleCompleted(eventInformation);
+        }
+
+        return localState;
     }
 
     /// <summary>
     /// Processes the article body prior to being written to disk
     /// </summary>
     /// <param name="body">HTML body to process</param>
-    /// <param name="boomarkId">Article ID we're processing</param>
+    /// <param name="bookmarkId">Article ID we're processing</param>
     /// <returns>Processed body with the required changes</returns>
-    private async Task<ProcessedArticleInformation> ProcessArticle(string body, long boomarkId)
+    private async Task<ProcessedArticleInformation> ProcessArticle(string body, long bookmarkId)
     {
         var configuration = ArticleDownloader.ParserConfiguration;
 
         // Load the document
         using var context = BrowsingContext.New(configuration);
         using var document = await context.OpenAsync(req => req.Content(body));
-        var firstImage = await ProcessAndDownloadImages(document, boomarkId);
+
+        this.eventSource?.RaiseImagesStarted(bookmarkId);
+        FirstImageInformaton? firstImage = null;
+        try
+        {
+            firstImage = await ProcessAndDownloadImages(document, bookmarkId);
+        }
+        finally
+        {
+            this.eventSource?.RaiseImagesCompleted(bookmarkId);
+        }
 
         // We sometimes need a textual description of the article derived from
         // the content body. We do that by extracting up to the first 400 chars
@@ -271,80 +305,88 @@ public class ArticleDownloader : IDisposable
                 var tempFilepath = Path.Combine(imageDirectory.FullName, tempFilename);
 
                 // 3. Download the image locally
-                var imageRequestTask = this.ImageClient.Value.GetAsync(new Uri(image.Source!), HttpCompletionOption.ResponseHeadersRead);
-                string contentType = "image/unknown";
-                using (var targetStream = File.Open(tempFilepath, FileMode.Create, FileAccess.Write))
+                this.eventSource?.RaiseImageStarted(imageUri);
+                try
                 {
-                    using var requestStream = await imageRequestTask;
-                    contentType = requestStream.Content.Headers.ContentType.MediaType;
-                    await requestStream.Content.CopyToAsync(targetStream);
-                }
-
-                // 4. Identify the image format & metadata
-                string extension = "unknown";
-                var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath);
-                if (imageFormat == null)
-                {
-                    // We couldn't identify it, so we'd better check to see if
-                    // it's an SVG. We're going to rely on the content type
-                    if (contentType != SVG_CONTENT_TYPE)
+                    var imageRequestTask = this.ImageClient.Value.GetAsync(imageUri, HttpCompletionOption.ResponseHeadersRead);
+                    string contentType = "image/unknown";
+                    using (var targetStream = File.Open(tempFilepath, FileMode.Create, FileAccess.Write))
                     {
-                        File.Delete(tempFilepath);
+                        using var requestStream = await imageRequestTask;
+                        contentType = requestStream.Content.Headers.ContentType.MediaType;
+                        await requestStream.Content.CopyToAsync(targetStream);
+                    }
+
+                    // 4. Identify the image format & metadata
+                    string extension = "unknown";
+                    var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath);
+                    if (imageFormat == null)
+                    {
+                        // We couldn't identify it, so we'd better check to see if
+                        // it's an SVG. We're going to rely on the content type
+                        if (contentType != SVG_CONTENT_TYPE)
+                        {
+                            File.Delete(tempFilepath);
+                            continue;
+                        }
+
+                        extension = "svg";
+                    }
+                    else
+                    {
+                        extension = imageFormat.FileExtensions.First();
+                    }
+
+                    // 5. Move the file into the final destination
+                    Debug.Assert(extension != "unknown", "Shouldn't have an unkown file extension");
+                    var filename = Path.ChangeExtension(tempFilename, extension);
+                    var filePath = Path.Combine(imageDirectory.FullName, filename);
+
+                    // If we're redownloading the article, the image might already
+                    // exist. Since we _move_ the file into position, and there is
+                    // no overwrite option in this .net verison, we have to try
+                    // deleting it -- which doesn't error if the file isn't present
+                    File.Delete(filePath);
+
+                    File.Move(tempFilepath, filePath);
+
+                    // 6. Rewrite the src attribute on the image to the *relative*
+                    //    path that we've calculated
+                    var relativePath = $"{imageDirectory.Name}/{filename}";
+                    var originalUrl = image.Source;
+                    image.Source = relativePath;
+
+                    if (imageFormat == null && contentType != SVG_CONTENT_TYPE)
+                    {
+                        // We have no image details to process, but we downloaded it
+                        // anyway -- maybe the UI can decode it in a different
+                        // context
                         continue;
                     }
 
-                    extension = "svg";
-                }
-                else
-                {
-                    extension = imageFormat.FileExtensions.First();
-                }
-
-                // 5. Move the file into the final destination
-                Debug.Assert(extension != "unknown", "Shouldn't have an unkown file extension");
-                var filename = Path.ChangeExtension(tempFilename, extension);
-                var filePath = Path.Combine(imageDirectory.FullName, filename);
-
-                // If we're redownloading the article, the image might already
-                // exist. Since we _move_ the file into position, and there is
-                // no overwrite option in this .net verison, we have to try
-                // deleting it -- which doesn't error if the file isn't present
-                File.Delete(filePath);
-
-                File.Move(tempFilepath, filePath);
-
-                // 6. Rewrite the src attribute on the image to the *relative*
-                //    path that we've calculated
-                var relativePath = $"{imageDirectory.Name}/{filename}";
-                var originalUrl = image.Source;
-                image.Source = relativePath;
-
-                if (imageFormat == null && contentType != SVG_CONTENT_TYPE)
-                {
-                    // We have no image details to process, but we downloaded it
-                    // anyway -- maybe the UI can decode it in a different
-                    // context
-                    continue;
-                }
-
-                // 7. Select a first image, if we don't currently have one
-                if (firstImage == null)
-                {
-                    // SVG doesn't have dimensions, per-se. They also render
-                    // well being vector-images. For non-svg images, we don't
-                    // want small images
-                    if (contentType != SVG_CONTENT_TYPE)
+                    // 7. Select a first image, if we don't currently have one
+                    if (firstImage == null)
                     {
-                        if (imageInfo.Width < MINIMUM_IMAGE_DIMENSION || imageInfo.Height < MINIMUM_IMAGE_DIMENSION)
+                        // SVG doesn't have dimensions, per-se. They also render
+                        // well being vector-images. For non-svg images, we don't
+                        // want small images
+                        if (contentType != SVG_CONTENT_TYPE)
                         {
-                            continue;
+                            if (imageInfo.Width < MINIMUM_IMAGE_DIMENSION || imageInfo.Height < MINIMUM_IMAGE_DIMENSION)
+                            {
+                                continue;
+                            }
                         }
-                    }
 
-                    firstImage = new FirstImageInformaton(
-                        new Uri(relativePath, UriKind.Relative),
-                        new Uri(originalUrl, UriKind.Absolute)
-                    );
+                        firstImage = new FirstImageInformaton(
+                            new Uri(relativePath, UriKind.Relative),
+                            new Uri(originalUrl, UriKind.Absolute)
+                        );
+                    }
+                }
+                finally
+                {
+                    this.eventSource?.RaiseImageCompleted(imageUri);
                 }
             }
         }
