@@ -4,6 +4,7 @@ namespace Codevoid.Test.Storyvoid.Sync;
 internal sealed class FileSystemMappedHttpHandler : HttpMessageHandler
 {
     private DirectoryInfo root;
+    public event EventHandler<Uri>? FileRequested;
 
     internal FileSystemMappedHttpHandler(DirectoryInfo root)
     { this.root = root; }
@@ -57,6 +58,16 @@ internal sealed class FileSystemMappedHttpHandler : HttpMessageHandler
                 // for unextensioned SVG since they don't know the file
                 extension = "unknown";
             }
+        }
+
+        if(this.FileRequested is not null)
+        {
+            this.FileRequested(this, request.RequestUri);
+        }
+
+        if(cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<HttpResponseMessage>(cancellationToken);
         }
 
         HttpResponseMessage fileContentsResponse = new HttpResponseMessage(System.Net.HttpStatusCode.OK);

@@ -16,6 +16,7 @@ public class ArticleDownloaderTests : IDisposable
     private ArticleDownloader articleDownloader;
     private readonly IBookmarksClient bookmarkClient;
     private readonly Codevoid.Utilities.OAuth.ClientInformation clientInformation;
+    private readonly FileSystemMappedHttpHandler localFileHttpHandler;
 
     private readonly DirectoryInfo testDirectory;
     private readonly string mockResponsesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
@@ -55,15 +56,17 @@ public class ArticleDownloaderTests : IDisposable
 
         var fileMap = PopulateDownloadableArticles();
         this.bookmarkClient = new MockBookmarkServiceWithOnlyGetText(fileMap);
+
+        var samplesFolder = Path.Join(Environment.CurrentDirectory, "samplepages");
+        this.localFileHttpHandler = new FileSystemMappedHttpHandler(Directory.CreateDirectory(samplesFolder));
         this.ResetArticleDownloader();
     }
 
     [MemberNotNull(nameof(articleDownloader))]
     private void ResetArticleDownloader(IArticleDownloaderEventSource? eventSource = null)
     {
-        var samplesFolder = Path.Join(Environment.CurrentDirectory, "samplepages");
         this.articleDownloader = new ArticleDownloader(
-            new FileSystemMappedHttpHandler(Directory.CreateDirectory(samplesFolder)),
+            this.localFileHttpHandler,
             this.testDirectory.FullName,
             this.articleDatabase,
             this.bookmarkClient,
@@ -440,6 +443,148 @@ public class ArticleDownloaderTests : IDisposable
         Assert.Equal(IMAGES_ARTICLE, imagesCompleted);
         Assert.Equal(EXPECTED_DOWNLOAD_ARGS, articleCompleted);
     }
+    #endregion
+
+    #region Cancellation
+    [Fact]
+    public async Task NoImagesDownloadedIfCancelledBeforeImagesStarted()
+    {
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        var cancelSource = new CancellationTokenSource();
+
+        this.ResetArticleDownloader(clearingHouse);
+
+        var imagesStarted = false;
+        DownloadArticleArgs? articleCompleted = null;
+        clearingHouse.ArticleStarted += (_, args) => cancelSource.Cancel();
+        clearingHouse.ImagesStarted += (_, articleId) => imagesStarted = true;
+        clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadBookmark(IMAGES_ARTICLE, cancelSource.Token));
+        Assert.False(imagesStarted);
+
+        // Guess the article path, since we cancelled early, we don't have local
+        // state if things are working correctly.
+        var localArticlePath = Path.Join(this.testDirectory.FullName, $"{IMAGES_ARTICLE}.html");
+        Assert.False(File.Exists(localArticlePath));
+
+        var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
+        Assert.False(Directory.Exists(imagesPath));
+
+        // Check that the completed args was fired with the correct info
+        Assert.Equal(new DownloadArticleArgs(IMAGES_ARTICLE, "Article With Images"), articleCompleted);
+    }
+
+    [Fact]
+    public async Task NoImagesDownloadedIfCancelledBeforeFirstImageStarted()
+    {
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        var cancelSource = new CancellationTokenSource();
+
+        this.ResetArticleDownloader(clearingHouse);
+
+        var imagesStarted = false;
+        DownloadArticleArgs? articleCompleted = null;
+        clearingHouse.ImagesStarted += (_, _) => cancelSource.Cancel();
+        clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadBookmark(IMAGES_ARTICLE, cancelSource.Token));
+        Assert.False(imagesStarted);
+
+        // Guess the article path, since we cancelled early, we don't have local
+        // state if things are working correctly.
+        var localArticlePath = Path.Join(this.testDirectory.FullName, $"{IMAGES_ARTICLE}.html");
+        Assert.False(File.Exists(localArticlePath));
+
+        var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
+        Assert.False(Directory.Exists(imagesPath));
+
+        // Check that the completed args was fired with the correct info
+        Assert.Equal(new DownloadArticleArgs(IMAGES_ARTICLE, "Article With Images"), articleCompleted);
+    }
+
+    [Fact]
+    public async Task NoMoreImagesDownloadedIfCancelledBeforeSecondImageStarted()
+    {
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        var cancelSource = new CancellationTokenSource();
+
+        this.ResetArticleDownloader(clearingHouse);
+
+        var imagesSeen = 0;
+        DownloadArticleArgs? articleCompleted = null;
+        clearingHouse.ImageStarted += (_, _) =>
+        {
+            imagesSeen += 1;
+
+            if (imagesSeen == 2)
+            {
+                cancelSource.Cancel();
+            }
+        };
+
+        clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadBookmark(IMAGES_ARTICLE, cancelSource.Token));
+        Assert.Equal(2, imagesSeen);
+
+        // Guess the article path, since we cancelled early, we don't have local
+        // state if things are working correctly.
+        var localArticlePath = Path.Join(this.testDirectory.FullName, $"{IMAGES_ARTICLE}.html");
+        Assert.False(File.Exists(localArticlePath));
+
+        var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
+        if(Directory.Exists(imagesPath))
+        {
+            var files = Directory.GetFiles(imagesPath);
+            Assert.Equal(2, files.Length);
+        }
+
+        // Check that the completed args was fired with the correct info
+        Assert.Equal(new DownloadArticleArgs(IMAGES_ARTICLE, "Article With Images"), articleCompleted);
+    }
+
+    [Fact]
+    public async Task NoMoreImagesDownloadedIfCancelledWithinDownloadRequestBeforeSecondImageStarted()
+    {
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        var cancelSource = new CancellationTokenSource();
+
+        this.ResetArticleDownloader(clearingHouse);
+
+        var imagesSeen = 0;
+        DownloadArticleArgs? articleCompleted = null;
+        this.localFileHttpHandler.FileRequested += (_, _) =>
+        {
+            imagesSeen += 1;
+
+            if (imagesSeen == 2)
+            {
+                cancelSource.Cancel();
+            }
+        };
+
+        clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadBookmark(IMAGES_ARTICLE, cancelSource.Token));
+        Assert.Equal(2, imagesSeen);
+
+        // Guess the article path, since we cancelled early, we don't have local
+        // state if things are working correctly.
+        var localArticlePath = Path.Join(this.testDirectory.FullName, $"{IMAGES_ARTICLE}.html");
+        Assert.False(File.Exists(localArticlePath));
+
+        var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
+        if(Directory.Exists(imagesPath))
+        {
+            var files = Directory.GetFiles(imagesPath);
+            Assert.Equal(2, files.Length);
+        }
+
+        // Check that the completed args was fired with the correct info
+        Assert.Equal(new DownloadArticleArgs(IMAGES_ARTICLE, "Article With Images"), articleCompleted);
+    }
+
     #endregion
 }
 

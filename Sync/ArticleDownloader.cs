@@ -159,7 +159,7 @@ public class ArticleDownloader : IDisposable
     /// </summary>
     /// <param name="bookmarkId">ID of the bookmark to download</param>
     /// <returns>Updated local state information</returns>
-    public async Task<DatabaseLocalOnlyArticleState?> DownloadBookmark(long bookmarkId)
+    public async Task<DatabaseLocalOnlyArticleState?> DownloadBookmark(long bookmarkId, CancellationToken cancellationToken = default)
     {
         var articleDownloaded = true;
         var contentsUnavailable = false;
@@ -182,54 +182,69 @@ public class ArticleDownloader : IDisposable
 
         try
         {
-            var bookmarkFileName = $"{bookmarkId}.html";
-            var bookmarkAbsoluteFilePath = Path.Combine(this.workingRoot, bookmarkFileName);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            // Get the document contents, and process it
-            var body = await this.bookmarksClient.GetTextAsync(bookmarkId);
-            (body, extractedDescription, firstImage) = await this.ProcessArticle(body, bookmarkId);
+            try
+            {
+                var bookmarkFileName = $"{bookmarkId}.html";
+                var bookmarkAbsoluteFilePath = Path.Combine(this.workingRoot, bookmarkFileName);
 
-            File.WriteAllText(bookmarkAbsoluteFilePath, body, Encoding.UTF8);
+                // Get the document contents, and process it
+                var body = await this.bookmarksClient.GetTextAsync(bookmarkId);
+                (body, extractedDescription, firstImage) = await this.ProcessArticle(body, bookmarkId, cancellationToken);
 
-            // We have successfully processed the article, so we can update the
-            // state that'll be written to the database later
-            localPath = new Uri(ROOT_URI, bookmarkFileName);
-            articleDownloaded = true;
+                cancellationToken.ThrowIfCancellationRequested();
+
+                File.WriteAllText(bookmarkAbsoluteFilePath, body, Encoding.UTF8);
+
+                // We have successfully processed the article, so we can update the
+                // state that'll be written to the database later
+                localPath = new Uri(ROOT_URI, bookmarkFileName);
+                articleDownloaded = true;
+            }
+            catch (BookmarkContentsUnavailableException)
+            {
+                // Contents weren't available, so we should mark it as a failure
+                articleDownloaded = false;
+                contentsUnavailable = true;
+            }
+
+            var localState = new DatabaseLocalOnlyArticleState()
+            {
+                ArticleId = bookmarkId,
+                AvailableLocally = articleDownloaded,
+                ArticleUnavailable = contentsUnavailable,
+                LocalPath = localPath,
+                ExtractedDescription = extractedDescription,
+                FirstImageLocalPath = firstImage?.FirstLocalImage,
+                FirstImageRemoteUri = firstImage?.FirstRemoteImage
+            };
+
+            var localStatePresent = (articleDatabase.GetLocalOnlyStateByArticleId(bookmarkId) != null);
+            if (localStatePresent)
+            {
+                localState = articleDatabase.UpdateLocalOnlyArticleState(localState);
+            }
+            else
+            {
+                localState = articleDatabase.AddLocalOnlyStateForArticle(localState);
+            }
+
+            if (eventInformation != null)
+            {
+                this.eventSource?.RaiseArticleCompleted(eventInformation);
+            }
+
+            return localState;
         }
-        catch (BookmarkContentsUnavailableException)
+        catch(TaskCanceledException)
         {
-            // Contents weren't available, so we should mark it as a failure
-            articleDownloaded = false;
-            contentsUnavailable = true;
+            throw new OperationCanceledException();
         }
-
-        var localState = new DatabaseLocalOnlyArticleState()
+        finally
         {
-            ArticleId = bookmarkId,
-            AvailableLocally = articleDownloaded,
-            ArticleUnavailable = contentsUnavailable,
-            LocalPath = localPath,
-            ExtractedDescription = extractedDescription,
-            FirstImageLocalPath = firstImage?.FirstLocalImage,
-            FirstImageRemoteUri = firstImage?.FirstRemoteImage
-        };
-
-        var localStatePresent = (articleDatabase.GetLocalOnlyStateByArticleId(bookmarkId) != null);
-        if(localStatePresent)
-        {
-            localState = articleDatabase.UpdateLocalOnlyArticleState(localState);
+            this.eventSource?.RaiseArticleCompleted(eventInformation!);
         }
-        else
-        {
-            localState = articleDatabase.AddLocalOnlyStateForArticle(localState);
-        }
-
-        if (eventInformation != null)
-        {
-            this.eventSource?.RaiseArticleCompleted(eventInformation);
-        }
-
-        return localState;
     }
 
     /// <summary>
@@ -238,7 +253,7 @@ public class ArticleDownloader : IDisposable
     /// <param name="body">HTML body to process</param>
     /// <param name="bookmarkId">Article ID we're processing</param>
     /// <returns>Processed body with the required changes</returns>
-    private async Task<ProcessedArticleInformation> ProcessArticle(string body, long bookmarkId)
+    private async Task<ProcessedArticleInformation> ProcessArticle(string body, long bookmarkId, CancellationToken cancellationToken)
     {
         var configuration = ArticleDownloader.ParserConfiguration;
 
@@ -250,7 +265,8 @@ public class ArticleDownloader : IDisposable
         FirstImageInformaton? firstImage = null;
         try
         {
-            firstImage = await ProcessAndDownloadImages(document, bookmarkId);
+            cancellationToken.ThrowIfCancellationRequested();
+            firstImage = await ProcessAndDownloadImages(document, bookmarkId, cancellationToken);
         }
         finally
         {
@@ -280,7 +296,7 @@ public class ArticleDownloader : IDisposable
     /// </summary>
     /// <param name="document">Document to download images for</param>
     /// <param name="bookmarkId">Bookmark ID we're processing </param>
-    private async Task<FirstImageInformaton?> ProcessAndDownloadImages(IDocument document, long bookmarkId)
+    private async Task<FirstImageInformaton?> ProcessAndDownloadImages(IDocument document, long bookmarkId, CancellationToken cancellationToken)
     {
         var images = document.QuerySelectorAll<IHtmlImageElement>("img[src^='http']");
         DirectoryInfo? imageDirectory = null;
@@ -290,6 +306,8 @@ public class ArticleDownloader : IDisposable
 
         foreach (var imageBatch in images.Chunkify(5))
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (imageDirectory == null)
             {
                 imageDirectory = Directory.CreateDirectory(Path.Combine(this.workingRoot, bookmarkId.ToString()));
@@ -320,7 +338,7 @@ public class ArticleDownloader : IDisposable
                 this.eventSource?.RaiseImageStarted(imageUri);
                 try
                 {
-                    var imageRequestTask = this.ImageClient.Value.GetAsync(imageUri, HttpCompletionOption.ResponseHeadersRead);
+                    var imageRequestTask = this.ImageClient.Value.GetAsync(imageUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
                     string contentType = "image/unknown";
                     using (var targetStream = File.Open(tempFilepath, FileMode.Create, FileAccess.Write))
                     {
@@ -340,7 +358,7 @@ public class ArticleDownloader : IDisposable
 
                     // 4. Identify the image format & metadata
                     string extension = "unknown";
-                    var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath);
+                    var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath, cancellationToken);
                     if (imageFormat == null)
                     {
                         // We couldn't identify it, so we'd better check to see if
