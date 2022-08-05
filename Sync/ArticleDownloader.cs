@@ -152,6 +152,57 @@ public class ArticleDownloader : IDisposable
     }
 
     /// <summary>
+    /// Given a set of articles, will download the body + images for those
+    /// articles, updating the database along the way.
+    /// </summary>
+    /// <param name="articles">Articles to be downloaded</param>
+    /// <returns>
+    /// Task that completes when supplied articles &amp; their images
+    /// completed
+    /// </returns>
+    internal async Task DownloadBookmarks(IList<DatabaseArticle> articles, CancellationToken cancellationToken = default)
+    {
+        this.eventSource?.RaiseDownloadingStarted(articles.Count);
+
+        try
+        {
+            foreach (var chunk in articles.Chunkify(2))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                foreach (var article in chunk)
+                {
+                    try
+                    {
+                        await this.DownloadBookmark(article.Id, cancellationToken);
+                    }
+                    catch (EntityNotFoundException)
+                    { /* If the article isn't found, we'll attempt another time */ }
+                }
+            }
+        }
+        finally
+        {
+            this.eventSource?.RaiseDownloadingCompleted();
+        }
+    }
+
+    /// <summary>
+    /// Downloads articles which do not have any local state.
+    /// </summary>
+    /// <returns>Task that completes when articles have been processed</returns>
+    internal async Task DownloadBookmarksWithoutLocalState()
+    {
+        var articlesToDownload = this.articleDatabase.ListAllArticlesInAFolder().Select((d) => d.Article).Where((a) => !a.HasLocalState).ToList();
+        if (articlesToDownload.Count == 0)
+        {
+            return;
+        }
+
+        await this.DownloadBookmarks(articlesToDownload);
+    }
+
+    /// <summary>
     /// Downloads the bookmark from the service, processes any images (including
     /// downloading them) if present in the document. The updates are written to
     /// the database and returned, indicating the state of the article (e.g. was
@@ -228,11 +279,6 @@ public class ArticleDownloader : IDisposable
             else
             {
                 localState = articleDatabase.AddLocalOnlyStateForArticle(localState);
-            }
-
-            if (eventInformation != null)
-            {
-                this.eventSource?.RaiseArticleCompleted(eventInformation);
             }
 
             return localState;

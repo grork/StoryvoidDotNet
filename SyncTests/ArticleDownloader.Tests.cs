@@ -109,7 +109,7 @@ public class ArticleDownloaderTests : IDisposable
         AddArticle(FIRST_IMAGE_PNG, "ArticleWithPNGFirstImage.html", "Article with PNG as first image");
         AddArticle(FIRST_IMAGE_ANIMATED_PNG, "ArticleWithAnimatedPNGFirstImage.html", "Article with animated PNG as first image");
         AddArticle(FIRST_IMAGE_GIF, "ArticleWithStaticGIFFirstImage.html", "Article with GIF as first image");
-        AddArticle(FIRST_IMAGE_ANIMATED_GIF, "ArticleWithAnimatedFirstImage.html", "Article with Animated GIF as first image");
+        AddArticle(FIRST_IMAGE_ANIMATED_GIF, "ArticleWithAnimatedGIFFirstImage.html", "Article with Animated GIF as first image");
         AddArticle(FIRST_IMAGE_JPG, "ArticleWithJPGFirstImage.html", "Article with JPG as first image");
         AddArticle(FIRST_IMAGE_SVG, "ArticleWithSVGFirstImage.html", "Article with SVG as first image");
         AddArticle(FIRST_IMAGE_WEBP, "ArticleWithWEBPFirstImage.html", "Article with WEBP as first image");
@@ -118,7 +118,7 @@ public class ArticleDownloaderTests : IDisposable
 
         // Special case for an article that is available in the database, but
         // isn't on the service. We don't want to add a file mapping in that case
-        this.articleDatabase.AddArticleToFolder(new (
+        this.articleDatabase.AddArticleToFolder(new(
                 id: MISSING_REMOTE_ARTICLE,
                 title: "Article not present remotely",
                 url: new Uri(TestUtilities.BASE_URL, $"/{MISSING_REMOTE_ARTICLE}"),
@@ -151,17 +151,22 @@ public class ArticleDownloaderTests : IDisposable
         this.articleDownloader.Dispose();
     }
 
-    #region Basic Downloading
-    [Fact]
-    public async Task CanDownloadArticleWithoutImages()
+    private void AssertAvailableLocallyAndFileExists(DatabaseLocalOnlyArticleState localState)
     {
-        var localState = await this.articleDownloader.DownloadBookmark(BASIC_ARTICLE_NO_IMAGES);
         Assert.Equal(this.GetRelativeUriForDownloadedArticle(localState!.ArticleId), localState!.LocalPath);
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
 
         var fileExists = File.Exists(Path.Join(this.testDirectory.FullName, localState!.LocalPath!.AbsolutePath));
         Assert.True(fileExists);
+    }
+
+    #region Basic Downloading
+    [Fact]
+    public async Task CanDownloadArticleWithoutImages()
+    {
+        var localState = await this.articleDownloader.DownloadBookmark(BASIC_ARTICLE_NO_IMAGES);
+        AssertAvailableLocallyAndFileExists(localState!);
     }
 
     [Fact]
@@ -247,6 +252,25 @@ public class ArticleDownloaderTests : IDisposable
     {
         var localState = await this.articleDownloader.DownloadBookmark(YOUTUBE_ARTICLE);
         Assert.Empty(localState!.ExtractedDescription);
+    }
+
+    [Fact]
+    public async Task MegaTransactionRollsBackSingleArticle()
+    {
+        using (var transaction = this.connection.BeginTransaction())
+        {
+
+            var localState = await this.articleDownloader.DownloadBookmark(BASIC_ARTICLE_NO_IMAGES);
+            Assert.NotNull(localState);
+
+            var retrievedLocalState = this.articleDatabase.GetLocalOnlyStateByArticleId(BASIC_ARTICLE_NO_IMAGES);
+            Assert.NotNull(retrievedLocalState);
+
+            transaction.Rollback();
+        }
+
+        var afterRollbackLocalState = this.articleDatabase.GetLocalOnlyStateByArticleId(BASIC_ARTICLE_NO_IMAGES);
+        Assert.Null(afterRollbackLocalState);
     }
     #endregion
 
@@ -443,6 +467,102 @@ public class ArticleDownloaderTests : IDisposable
         Assert.Equal(IMAGES_ARTICLE, imagesCompleted);
         Assert.Equal(EXPECTED_DOWNLOAD_ARGS, articleCompleted);
     }
+
+    [Fact]
+    public async Task DownloadingMultipleArticleRasiesEvent()
+    {
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            LARGE_ARTICLE_NO_IMAGES,
+            IMAGES_ARTICLE,
+            IMAGES_WITH_QUERY_STRINGS,
+            IMAGES_WITH_INLINE_IMAGES,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        var downloadStarted = false;
+        var articlesStarted = new List<DownloadArticleArgs>();
+        var imagesStarted = new List<long>();
+        var imageStarted = new List<Uri>();
+        var imageCompleted = new List<Uri>();
+        var imagesCompleted = new List<long>();
+        var articlesCompleted = new List<DownloadArticleArgs>();
+        var downloadCompleted = false;
+
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        clearingHouse.DownloadingStarted += (_, _) => downloadStarted = true;
+        clearingHouse.ArticleStarted += (_, args) => articlesStarted.Add(args);
+        clearingHouse.ImagesStarted += (_, articleId) => imagesStarted.Add(articleId);
+        clearingHouse.ImageStarted += (_, uri) => imageStarted.Add(uri);
+        clearingHouse.ImageCompleted += (_, uri) => imageCompleted.Add(uri);
+        clearingHouse.ImagesCompleted += (_, articleId) => imagesCompleted.Add(articleId);
+        clearingHouse.ArticleCompleted += (_, args) => articlesCompleted.Add(args);
+        clearingHouse.DownloadingCompleted += (_, _) => downloadCompleted = true;
+
+        await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+        Assert.True(downloadStarted);
+        Assert.Equal(articleIds.Length, articlesStarted.Count);
+        Assert.Equal(articleIds, imagesStarted);
+        Assert.Equal(imageStarted, imageCompleted);
+        Assert.Equal(articleIds, imagesCompleted);
+        Assert.Equal(articleIds.Length, articlesCompleted.Count);
+        Assert.True(downloadCompleted);
+    }
+
+    [Fact]
+    public async Task DownloadingArticlesWithMissingRemoteArticleRaisesEvents()
+    {
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            LARGE_ARTICLE_NO_IMAGES,
+            MISSING_REMOTE_ARTICLE,
+            IMAGES_WITH_QUERY_STRINGS,
+            IMAGES_WITH_INLINE_IMAGES,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+
+        var articleIdsWithoutMissingArticle = articleIds.Except(new long[] { MISSING_REMOTE_ARTICLE });
+
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        var downloadStarted = false;
+        var articlesStarted = new List<DownloadArticleArgs>();
+        var imagesStarted = new List<long>();
+        var imageStarted = new List<Uri>();
+        var imageCompleted = new List<Uri>();
+        var imagesCompleted = new List<long>();
+        var articlesCompleted = new List<DownloadArticleArgs>();
+        var downloadCompleted = false;
+
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        clearingHouse.DownloadingStarted += (_, _) => downloadStarted = true;
+        clearingHouse.ArticleStarted += (_, args) => articlesStarted.Add(args);
+        clearingHouse.ImagesStarted += (_, articleId) => imagesStarted.Add(articleId);
+        clearingHouse.ImageStarted += (_, uri) => imageStarted.Add(uri);
+        clearingHouse.ImageCompleted += (_, uri) => imageCompleted.Add(uri);
+        clearingHouse.ImagesCompleted += (_, articleId) => imagesCompleted.Add(articleId);
+        clearingHouse.ArticleCompleted += (_, args) => articlesCompleted.Add(args);
+        clearingHouse.DownloadingCompleted += (_, _) => downloadCompleted = true;
+
+        await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+        Assert.True(downloadStarted);
+        Assert.Equal(articleIds.Length, articlesStarted.Count);
+        Assert.Equal(articleIdsWithoutMissingArticle, imagesStarted);
+        Assert.Equal(imageStarted, imageCompleted);
+        Assert.Equal(articleIdsWithoutMissingArticle, imagesCompleted);
+        Assert.Equal(articleIds.Length, articlesCompleted.Count);
+        Assert.True(downloadCompleted);
+    }
     #endregion
 
     #region Cancellation
@@ -534,7 +654,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.False(File.Exists(localArticlePath));
 
         var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
-        if(Directory.Exists(imagesPath))
+        if (Directory.Exists(imagesPath))
         {
             var files = Directory.GetFiles(imagesPath);
             Assert.Equal(2, files.Length);
@@ -575,7 +695,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.False(File.Exists(localArticlePath));
 
         var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
-        if(Directory.Exists(imagesPath))
+        if (Directory.Exists(imagesPath))
         {
             var files = Directory.GetFiles(imagesPath);
             Assert.Equal(2, files.Length);
@@ -584,7 +704,189 @@ public class ArticleDownloaderTests : IDisposable
         // Check that the completed args was fired with the correct info
         Assert.Equal(new DownloadArticleArgs(IMAGES_ARTICLE, "Article With Images"), articleCompleted);
     }
+    #endregion
 
+    #region Bulk Downloading
+    [Fact]
+    public async Task DownloadingWithListOfIdsDownloadsAll()
+    {
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            LARGE_ARTICLE_NO_IMAGES,
+            IMAGES_ARTICLE,
+            IMAGES_WITH_QUERY_STRINGS,
+            IMAGES_WITH_INLINE_IMAGES,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+        var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
+        Assert.Equal(articleIds.Length, articlesLocalState.Count);
+
+        Assert.All(articlesLocalState, this.AssertAvailableLocallyAndFileExists);
+    }
+
+    [Fact]
+    public async Task DownloadingMultipleArticlesWhereOneIsUnavailableDownloadsTheRest()
+    {
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            LARGE_ARTICLE_NO_IMAGES,
+            IMAGES_ARTICLE,
+            UNAVAILABLE_ARTICLE,
+            IMAGES_WITH_INLINE_IMAGES,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+        var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
+        Assert.Equal(articleIds.Length, articlesLocalState.Count);
+
+        Assert.All(articlesLocalState, (state) =>
+        {
+            if (state.ArticleId == UNAVAILABLE_ARTICLE)
+            {
+                // This article shouldn't be downloaded, and should be inspected
+                // differently
+                Assert.True(state.ArticleUnavailable);
+                Assert.Null(state.LocalPath);
+                Assert.False(state.AvailableLocally);
+                Assert.Null(state.FirstImageLocalPath);
+                Assert.Null(state.FirstImageRemoteUri);
+                return;
+            }
+
+            this.AssertAvailableLocallyAndFileExists(state);
+        });
+    }
+
+    [Fact]
+    public async Task DownloadingMultipleArticlesWhereOneIsMissingDownloadsTheRest()
+    {
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            LARGE_ARTICLE_NO_IMAGES,
+            IMAGES_ARTICLE,
+            MISSING_REMOTE_ARTICLE,
+            IMAGES_WITH_INLINE_IMAGES,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+        var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
+        Assert.Equal(articleIds.Length - 1, articlesLocalState.Count);
+
+        Assert.All(articlesLocalState, this.AssertAvailableLocallyAndFileExists);
+    }
+
+    [Fact]
+    public async Task CancellingAfterFirstArticleDoesntDownloadAnyMore()
+    {
+        var cancellationSource = new CancellationTokenSource();
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        var articleIds = new long[]
+        {
+            BASIC_ARTICLE_NO_IMAGES,
+            LARGE_ARTICLE_NO_IMAGES,
+            IMAGES_ARTICLE,
+            IMAGES_WITH_QUERY_STRINGS,
+            IMAGES_WITH_INLINE_IMAGES,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        var seenArticles = 0;
+        clearingHouse.ArticleStarted += (_, _) =>
+        {
+            seenArticles += 1;
+            if(seenArticles > 2)
+            {
+                cancellationSource.Cancel();
+            }
+        };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.articleDownloader.DownloadBookmarks(articlesToDownload, cancellationSource.Token));
+
+        var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
+        Assert.NotEqual(articleIds.Length, articlesLocalState.Count);
+
+        Assert.All(articlesLocalState, this.AssertAvailableLocallyAndFileExists);
+    }
+
+    [Fact]
+    public async Task CanInitiateDownloadOfAllArticlesMissingLocalState()
+    {
+        var articlesWithoutLocalStatePreDownload = this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article);
+
+        await this.articleDownloader.DownloadBookmarksWithoutLocalState();
+
+        var articlesWithoutLocalStatePostDownload = this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article);
+        Assert.Single(articlesWithoutLocalStatePostDownload);
+    }
+
+    [Fact]
+    public async Task InitiatingDownloadWhenAllArticlesHaveLocalStateNoOps()
+    {
+        this.articleDatabase.DeleteArticle(MISSING_REMOTE_ARTICLE);
+        this.articleDatabase.DeleteArticle(UNAVAILABLE_ARTICLE);
+        foreach(var article in this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article))
+        {
+            this.articleDatabase.AddLocalOnlyStateForArticle(new DatabaseLocalOnlyArticleState()
+            {
+                ArticleId = article.Id,
+                AvailableLocally = true,
+                LocalPath = new Uri(TestUtilities.BASE_URL, $"/{MISSING_REMOTE_ARTICLE}")
+            });
+        }
+
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        var downloadsStarted = false;
+        clearingHouse.DownloadingStarted += (_,_) => downloadsStarted = true;
+
+        await this.articleDownloader.DownloadBookmarksWithoutLocalState();
+
+        Assert.False(downloadsStarted, "With all local state being present, downloads shouldn't have started");
+    }
+
+    [Fact]
+    public async Task TransactionCanRollbackMultipleDownloads()
+    {
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            LARGE_ARTICLE_NO_IMAGES,
+            IMAGES_ARTICLE,
+            IMAGES_WITH_QUERY_STRINGS,
+            IMAGES_WITH_INLINE_IMAGES,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+
+        using (var transaction = connection.BeginTransaction())
+        {
+            await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+            transaction.Rollback();
+        }
+
+        var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
+        Assert.Empty(articlesLocalState);
+    }
     #endregion
 }
 
