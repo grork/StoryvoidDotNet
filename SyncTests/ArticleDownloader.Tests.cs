@@ -465,11 +465,12 @@ public class ArticleDownloaderTests : IDisposable
 
         await this.articleDownloader.DownloadBookmark(article);
 
+
         Assert.Equal(article, articleStarting);
         Assert.Equal(IMAGES_ARTICLE, imagesStarted);
         Assert.Equal(18, imageStarted.Count);
         Assert.Equal(imageStarted.Count, imageCompleted.Count);
-        Assert.Equal(imageStarted, imageCompleted);
+        Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(IMAGES_ARTICLE, imagesCompleted);
         Assert.Equal(article, articleCompleted);
     }
@@ -515,7 +516,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(downloadStarted);
         Assert.Equal(articleIds.Length, articlesStarted.Count);
         Assert.Equal(articleIds, imagesStarted);
-        Assert.Equal(imageStarted, imageCompleted);
+        Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(articleIds, imagesCompleted);
         Assert.Equal(articleIds.Length, articlesCompleted.Count);
         Assert.True(downloadCompleted);
@@ -564,7 +565,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(downloadStarted);
         Assert.Equal(articleIds.Length, articlesStarted.Count);
         Assert.Equal(articleIdsWithoutMissingArticle, imagesStarted);
-        Assert.Equal(imageStarted, imageCompleted);
+        Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(articleIdsWithoutMissingArticle, imagesCompleted);
         Assert.Equal(articleIds.Length, articlesCompleted.Count);
         Assert.True(downloadCompleted);
@@ -639,23 +640,26 @@ public class ArticleDownloaderTests : IDisposable
 
         this.ResetArticleDownloader(clearingHouse);
 
-        var imagesSeen = 0;
+        var imagesStarted = 0;
+        var imagesCompleted = 0;
         DatabaseArticle? articleCompleted = null;
         clearingHouse.ImageStarted += (_, _) =>
         {
-            imagesSeen += 1;
+            imagesStarted += 1;
 
-            if (imagesSeen == 2)
+            if (imagesStarted == 2)
             {
                 cancelSource.Cancel();
             }
         };
 
+        clearingHouse.ImagesCompleted += (_, _) => imagesCompleted += 1;
+
         clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
 
         var article = this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!;
         await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadBookmark(article, cancelSource.Token));
-        Assert.Equal(2, imagesSeen);
+        Assert.Equal(1, imagesCompleted);
 
         // Guess the article path, since we cancelled early, we don't have local
         // state if things are working correctly.
@@ -666,7 +670,7 @@ public class ArticleDownloaderTests : IDisposable
         if (Directory.Exists(imagesPath))
         {
             var files = Directory.GetFiles(imagesPath);
-            Assert.Equal(2, files.Length);
+            Assert.True(files.Length < 6);
         }
 
         // Check that the completed args was fired with the correct info
@@ -682,6 +686,7 @@ public class ArticleDownloaderTests : IDisposable
         this.ResetArticleDownloader(clearingHouse);
 
         var imagesSeen = 0;
+        var imagesCompleted = 0;
         DatabaseArticle? articleCompleted = null;
         this.localFileHttpHandler.FileRequested += (_, _) =>
         {
@@ -692,12 +697,13 @@ public class ArticleDownloaderTests : IDisposable
                 cancelSource.Cancel();
             }
         };
+        clearingHouse.ImagesCompleted += (_, _) => imagesCompleted += 1;
 
         clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
 
         var article = this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!;
         await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadBookmark(article, cancelSource.Token));
-        Assert.Equal(2, imagesSeen);
+        Assert.Equal(1, imagesCompleted);
 
         // Guess the article path, since we cancelled early, we don't have local
         // state if things are working correctly.
@@ -708,7 +714,7 @@ public class ArticleDownloaderTests : IDisposable
         if (Directory.Exists(imagesPath))
         {
             var files = Directory.GetFiles(imagesPath);
-            Assert.Equal(2, files.Length);
+            Assert.True(files.Length < 6);
         }
 
         // Check that the completed args was fired with the correct info
@@ -909,7 +915,7 @@ public class SampleDataDownloadingHelper
 {
     private static readonly Uri SAMPLE_BASE_URI = new Uri("https://www.codevoid.net/storyvoidtest/");
 
-    [Fact]
+    [Fact(Skip = "I shouldn't be enabled; I'm only for testing")]
     public async Task AddSampleArticlesAndGetTextOnThemToSaveLocally()
     {
         DirectoryInfo? outputDirectory = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, "TestPageOutput"));

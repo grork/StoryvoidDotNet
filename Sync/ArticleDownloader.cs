@@ -174,7 +174,7 @@ public class ArticleDownloader : IDisposable
                 {
                     try
                     {
-                        await this.DownloadBookmark(article, cancellationToken);
+                        await this.DownloadBookmark(article, cancellationToken).ConfigureAwait(false);
                     }
                     catch (EntityNotFoundException)
                     { /* If the article isn't found, we'll attempt another time */ }
@@ -199,7 +199,7 @@ public class ArticleDownloader : IDisposable
             return;
         }
 
-        await this.DownloadBookmarks(articlesToDownload);
+        await this.DownloadBookmarks(articlesToDownload).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -230,8 +230,8 @@ public class ArticleDownloader : IDisposable
                 var bookmarkAbsoluteFilePath = Path.Combine(this.workingRoot, bookmarkFileName);
 
                 // Get the document contents, and process it
-                var body = await this.bookmarksClient.GetTextAsync(article.Id);
-                (body, extractedDescription, firstImage) = await this.ProcessArticle(body, article.Id, cancellationToken);
+                var body = await this.bookmarksClient.GetTextAsync(article.Id).ConfigureAwait(false);
+                (body, extractedDescription, firstImage) = await this.ProcessArticle(body, article.Id, cancellationToken).ConfigureAwait(false);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -271,7 +271,7 @@ public class ArticleDownloader : IDisposable
 
             return localState;
         }
-        catch(TaskCanceledException)
+        catch (TaskCanceledException)
         {
             throw new OperationCanceledException();
         }
@@ -293,14 +293,14 @@ public class ArticleDownloader : IDisposable
 
         // Load the document
         using var context = BrowsingContext.New(configuration);
-        using var document = await context.OpenAsync(req => req.Content(body));
+        using var document = await context.OpenAsync(req => req.Content(body)).ConfigureAwait(false);
 
         this.eventSource?.RaiseImagesStarted(bookmarkId);
         FirstImageInformaton? firstImage = null;
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            firstImage = await ProcessAndDownloadImages(document, bookmarkId, cancellationToken);
+            firstImage = await ProcessAndDownloadImages(document, bookmarkId, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -347,129 +347,140 @@ public class ArticleDownloader : IDisposable
                 imageDirectory = Directory.CreateDirectory(Path.Combine(this.workingRoot, bookmarkId.ToString()));
             }
 
+            List<Task<FirstImageInformaton?>> workerBatch = new List<Task<FirstImageInformaton?>>();
             foreach (var image in imageBatch)
             {
-                if (!Uri.IsWellFormedUriString(image.Source!, UriKind.Absolute))
-                {
-                    continue;
-                }
+                workerBatch.Add(this.DownloadImageForElement(image, imageIndex += 1, imageDirectory, cancellationToken));
+            }
 
-                var imageUri = new Uri(image.Source!, UriKind.Absolute);
-                if (imageUri.Scheme != Uri.UriSchemeHttp && imageUri.Scheme != Uri.UriSchemeHttps)
-                {
-                    continue;
-                }
+            await Task.WhenAll(workerBatch).ConfigureAwait(false);
 
-                // 1. Compute the temporary target file name on the *image index*
-                //    e.g. which Image we're processing, since the file name from
-                //    the source may not be writable locally
-                var tempFilename = $"{imageIndex++}.temp-image";
-
-                // 2. Compute the absolute local path to download to
-                var tempFilepath = Path.Combine(imageDirectory.FullName, tempFilename);
-
-                // 3. Download the image locally
-                this.eventSource?.RaiseImageStarted(imageUri);
-                try
-                {
-                    var imageRequestTask = this.ImageClient.Value.GetAsync(imageUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-                    string contentType = "image/unknown";
-                    using (var targetStream = File.Open(tempFilepath, FileMode.Create, FileAccess.Write))
-                    {
-                        using var imageResponse = await imageRequestTask;
-                        if(!imageResponse.IsSuccessStatusCode)
-                        {
-                            // If this was a failed request for the image, we
-                            // need to clean up the temporary file we created
-                            targetStream.Close();
-                            File.Delete(tempFilepath);
-                            continue;
-                        }
-
-                        contentType = imageResponse.Content.Headers.ContentType.MediaType;
-                        await imageResponse.Content.CopyToAsync(targetStream);
-                    }
-
-                    // 4. Identify the image format & metadata
-                    string extension = "unknown";
-                    var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath, cancellationToken);
-                    if (imageFormat == null)
-                    {
-                        // We couldn't identify it, so we'd better check to see if
-                        // it's an SVG. We're going to rely on the content type
-                        if (contentType != SVG_CONTENT_TYPE)
-                        {
-                            File.Delete(tempFilepath);
-                            continue;
-                        }
-
-                        extension = "svg";
-                    }
-                    else
-                    {
-                        extension = imageFormat.FileExtensions.First();
-                        // Image sharp thinks 'bm' is a valid bitmap extension
-                        // and we don't. So lets fix it up.
-                        if(extension == "bm")
-                        {
-                            extension = "bmp";
-                        }
-                    }
-
-                    // 5. Move the file into the final destination
-                    Debug.Assert(extension != "unknown", "Shouldn't have an unkown file extension");
-                    var filename = Path.ChangeExtension(tempFilename, extension);
-                    var filePath = Path.Combine(imageDirectory.FullName, filename);
-
-                    // If we're redownloading the article, the image might already
-                    // exist. Since we _move_ the file into position, and there is
-                    // no overwrite option in this .net verison, we have to try
-                    // deleting it -- which doesn't error if the file isn't present
-                    File.Delete(filePath);
-
-                    File.Move(tempFilepath, filePath);
-
-                    // 6. Rewrite the src attribute on the image to the *relative*
-                    //    path that we've calculated
-                    var relativePath = $"{imageDirectory.Name}/{filename}";
-                    var originalUrl = image.Source;
-                    image.Source = relativePath;
-
-                    if (imageFormat == null && contentType != SVG_CONTENT_TYPE)
-                    {
-                        // We have no image details to process, but we downloaded it
-                        // anyway -- maybe the UI can decode it in a different
-                        // context
-                        continue;
-                    }
-
-                    // 7. Select a first image, if we don't currently have one
-                    if (firstImage == null)
-                    {
-                        // SVG doesn't have dimensions, per-se. They also render
-                        // well being vector-images. For non-svg images, we don't
-                        // want small images
-                        if (contentType != SVG_CONTENT_TYPE)
-                        {
-                            if (imageInfo.Width < MINIMUM_IMAGE_DIMENSION || imageInfo.Height < MINIMUM_IMAGE_DIMENSION)
-                            {
-                                continue;
-                            }
-                        }
-
-                        firstImage = new FirstImageInformaton(
-                            new Uri(relativePath, UriKind.Relative),
-                            new Uri(originalUrl, UriKind.Absolute)
-                        );
-                    }
-                }
-                finally
-                {
-                    this.eventSource?.RaiseImageCompleted(imageUri);
-                }
+            if(firstImage == null)
+            {
+                firstImage = workerBatch.Select((t) => t.Result).OfType<FirstImageInformaton>().DefaultIfEmpty(null).First();
             }
         }
 
         return firstImage;
+    }
+
+    private async Task<FirstImageInformaton?> DownloadImageForElement(IHtmlImageElement image, int imageIndex, DirectoryInfo imageDirectory, CancellationToken cancellationToken)
+    {
+        if (!Uri.IsWellFormedUriString(image.Source!, UriKind.Absolute))
+        {
+            return null;
+        }
+
+        var imageUri = new Uri(image.Source!, UriKind.Absolute);
+        if (imageUri.Scheme != Uri.UriSchemeHttp && imageUri.Scheme != Uri.UriSchemeHttps)
+        {
+            return null;
+        }
+
+        // 1. Compute the temporary target file name on the *image index*
+        //    e.g. which Image we're processing, since the file name from
+        //    the source may not be writable locally
+        var tempFilename = $"{imageIndex}.temp-image";
+
+        // 2. Compute the absolute local path to download to
+        var tempFilepath = Path.Combine(imageDirectory.FullName, tempFilename);
+
+        // 3. Download the image locally
+        this.eventSource?.RaiseImageStarted(imageUri);
+        try
+        {
+            var imageRequestTask = this.ImageClient.Value.GetAsync(imageUri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+
+            string contentType = "image/unknown";
+            using (var targetStream = File.Open(tempFilepath, FileMode.Create, FileAccess.Write))
+            {
+                using var imageResponse = await imageRequestTask;
+                if (!imageResponse.IsSuccessStatusCode)
+                {
+                    // If this was a failed request for the image, we
+                    // need to clean up the temporary file we created
+                    targetStream.Close();
+                    File.Delete(tempFilepath);
+                    return null;
+                }
+
+                contentType = imageResponse.Content.Headers.ContentType.MediaType;
+                await imageResponse.Content.CopyToAsync(targetStream).ConfigureAwait(false);
+            }
+
+            // 4. Identify the image format & metadata
+            string extension = "unknown";
+            var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath, cancellationToken).ConfigureAwait(false);
+            if (imageFormat == null)
+            {
+                // We couldn't identify it, so we'd better check to see if
+                // it's an SVG. We're going to rely on the content type
+                if (contentType != SVG_CONTENT_TYPE)
+                {
+                    File.Delete(tempFilepath);
+                    return null;
+                }
+
+                extension = "svg";
+            }
+            else
+            {
+                extension = imageFormat.FileExtensions.First();
+                // Image sharp thinks 'bm' is a valid bitmap extension
+                // and we don't. So lets fix it up.
+                if (extension == "bm")
+                {
+                    extension = "bmp";
+                }
+            }
+
+            // 5. Move the file into the final destination
+            Debug.Assert(extension != "unknown", "Shouldn't have an unkown file extension");
+            var filename = Path.ChangeExtension(tempFilename, extension);
+            var filePath = Path.Combine(imageDirectory.FullName, filename);
+
+            // If we're redownloading the article, the image might already
+            // exist. Since we _move_ the file into position, and there is
+            // no overwrite option in this .net verison, we have to try
+            // deleting it -- which doesn't error if the file isn't present
+            File.Delete(filePath);
+
+            File.Move(tempFilepath, filePath);
+
+            // 6. Rewrite the src attribute on the image to the *relative*
+            //    path that we've calculated
+            var relativePath = $"{imageDirectory.Name}/{filename}";
+            var originalUrl = image.Source;
+            image.Source = relativePath;
+
+            if (imageFormat == null && contentType != SVG_CONTENT_TYPE)
+            {
+                // We have no image details to process, but we downloaded it
+                // anyway -- maybe the UI can decode it in a different
+                // context
+                return null;
+            }
+
+            // 7. Create first image information to allow caller to pick
+            // SVG doesn't have dimensions, per-se. They also render
+            // well being vector-images. For non-svg images, we don't
+            // want small images
+            if (contentType != SVG_CONTENT_TYPE)
+            {
+                if (imageInfo.Width < MINIMUM_IMAGE_DIMENSION || imageInfo.Height < MINIMUM_IMAGE_DIMENSION)
+                {
+                    return null;
+                }
+            }
+
+            return new FirstImageInformaton(
+                new Uri(relativePath, UriKind.Relative),
+                new Uri(originalUrl, UriKind.Absolute)
+            );
+        }
+        finally
+        {
+            this.eventSource?.RaiseImageCompleted(imageUri);
+        }
     }
 }
