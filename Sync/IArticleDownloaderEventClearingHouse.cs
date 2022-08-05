@@ -1,7 +1,5 @@
 namespace Codevoid.Storyvoid.Sync;
 
-public record DownloadArticleArgs(long ArticleId, string Title);
-
 /// <summary>
 /// Event sink for article downloading, allowing components to observe when
 /// downloads start, the constiuent phases, and completion.
@@ -20,7 +18,7 @@ public interface IArticleDownloaderEventSink
     /// <summary>
     /// A specific article download has begin, including it's images
     /// </summary>
-    event EventHandler<DownloadArticleArgs> ArticleStarted;
+    event EventHandler<DatabaseArticle> ArticleStarted;
 
     /// <summary>
     /// Images for a specific article have begun
@@ -45,7 +43,7 @@ public interface IArticleDownloaderEventSink
     /// <summary>
     /// Downloading of a specific article is complete
     /// </summary>
-    event EventHandler<DownloadArticleArgs> ArticleCompleted;
+    event EventHandler<DatabaseArticle> ArticleCompleted;
 
     /// <summary>
     /// Downloading of articles is complete.
@@ -72,7 +70,7 @@ public interface IArticleDownloaderEventSource
     /// <param name="articleInformation">
     /// Information about the article being downloaded
     /// </param>
-    void RaiseArticleStarted(DownloadArticleArgs articleInformation);
+    void RaiseArticleStarted(DatabaseArticle article);
 
     /// <summary>
     /// Images in a specific article have started downloading
@@ -108,7 +106,7 @@ public interface IArticleDownloaderEventSource
     /// <param name="articleInformation">
     /// Information about the article that has completed
     /// </param>
-    void RaiseArticleCompleted(DownloadArticleArgs articleInformation);
+    void RaiseArticleCompleted(DatabaseArticle article);
 
     /// <summary>
     /// Raise that downloading of all articles has completed

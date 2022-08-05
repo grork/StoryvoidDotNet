@@ -1,3 +1,4 @@
+using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.Sync;
 
 namespace Codevoid.Test.Storyvoid;
@@ -8,7 +9,7 @@ internal sealed class MockArticleDownloaderEventClearingHouse : IArticleDownload
     public event EventHandler<int>? DownloadingStarted;
 
     /// <inheritdoc />
-    public event EventHandler<DownloadArticleArgs>? ArticleStarted;
+    public event EventHandler<DatabaseArticle>? ArticleStarted;
     
     /// <inheritdoc />
     public event EventHandler<long>? ImagesStarted;
@@ -23,23 +24,23 @@ internal sealed class MockArticleDownloaderEventClearingHouse : IArticleDownload
     public event EventHandler<long>? ImagesCompleted;
     
     /// <inheritdoc />
-    public event EventHandler<DownloadArticleArgs>? ArticleCompleted;
+    public event EventHandler<DatabaseArticle>? ArticleCompleted;
     
     /// <inheritdoc />
     public event EventHandler? DownloadingCompleted;
 
     /// <inheritdoc />
-    public void RaiseArticleCompleted(DownloadArticleArgs articleInformation)
+    public void RaiseArticleCompleted(DatabaseArticle article)
     {
         var handler = this.ArticleCompleted;
-        handler?.Invoke(this, articleInformation);
+        handler?.Invoke(this, article);
     }
 
     /// <inheritdoc />
-    public void RaiseArticleStarted(DownloadArticleArgs articleInformation)
+    public void RaiseArticleStarted(DatabaseArticle article)
     {
         var handler = this.ArticleStarted;
-        handler?.Invoke(this, articleInformation);
+        handler?.Invoke(this, article);
     }
 
     /// <inheritdoc />

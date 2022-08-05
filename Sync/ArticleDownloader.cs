@@ -169,12 +169,12 @@ public class ArticleDownloader : IDisposable
             foreach (var chunk in articles.Chunkify(2))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                
+
                 foreach (var article in chunk)
                 {
                     try
                     {
-                        await this.DownloadBookmark(article.Id, cancellationToken);
+                        await this.DownloadBookmark(article, cancellationToken);
                     }
                     catch (EntityNotFoundException)
                     { /* If the article isn't found, we'll attempt another time */ }
@@ -210,26 +210,15 @@ public class ArticleDownloader : IDisposable
     /// </summary>
     /// <param name="bookmarkId">ID of the bookmark to download</param>
     /// <returns>Updated local state information</returns>
-    public async Task<DatabaseLocalOnlyArticleState?> DownloadBookmark(long bookmarkId, CancellationToken cancellationToken = default)
+    public async Task<DatabaseLocalOnlyArticleState?> DownloadBookmark(DatabaseArticle article, CancellationToken cancellationToken = default)
     {
         var articleDownloaded = true;
         var contentsUnavailable = false;
         Uri? localPath = null;
         string extractedDescription = String.Empty;
         FirstImageInformaton? firstImage = null;
-        DownloadArticleArgs? eventInformation = null;
 
-        var articleInformation = this.articleDatabase.GetArticleById(bookmarkId);
-        if(articleInformation == null)
-        {
-            return null;
-        }
-
-        if (this.eventSource != null)
-        {
-            eventInformation = new(bookmarkId, articleInformation.Title);
-            this.eventSource.RaiseArticleStarted(eventInformation);
-        }
+        this.eventSource?.RaiseArticleStarted(article);
 
         try
         {
@@ -237,12 +226,12 @@ public class ArticleDownloader : IDisposable
 
             try
             {
-                var bookmarkFileName = $"{bookmarkId}.html";
+                var bookmarkFileName = $"{article.Id}.html";
                 var bookmarkAbsoluteFilePath = Path.Combine(this.workingRoot, bookmarkFileName);
 
                 // Get the document contents, and process it
-                var body = await this.bookmarksClient.GetTextAsync(bookmarkId);
-                (body, extractedDescription, firstImage) = await this.ProcessArticle(body, bookmarkId, cancellationToken);
+                var body = await this.bookmarksClient.GetTextAsync(article.Id);
+                (body, extractedDescription, firstImage) = await this.ProcessArticle(body, article.Id, cancellationToken);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -262,7 +251,7 @@ public class ArticleDownloader : IDisposable
 
             var localState = new DatabaseLocalOnlyArticleState()
             {
-                ArticleId = bookmarkId,
+                ArticleId = article.Id,
                 AvailableLocally = articleDownloaded,
                 ArticleUnavailable = contentsUnavailable,
                 LocalPath = localPath,
@@ -271,8 +260,7 @@ public class ArticleDownloader : IDisposable
                 FirstImageRemoteUri = firstImage?.FirstRemoteImage
             };
 
-            var localStatePresent = (articleDatabase.GetLocalOnlyStateByArticleId(bookmarkId) != null);
-            if (localStatePresent)
+            if (article.HasLocalState)
             {
                 localState = articleDatabase.UpdateLocalOnlyArticleState(localState);
             }
@@ -289,7 +277,7 @@ public class ArticleDownloader : IDisposable
         }
         finally
         {
-            this.eventSource?.RaiseArticleCompleted(eventInformation!);
+            this.eventSource?.RaiseArticleCompleted(article);
         }
     }
 
