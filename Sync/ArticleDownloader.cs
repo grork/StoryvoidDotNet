@@ -347,6 +347,10 @@ public class ArticleDownloader : IDisposable
                 imageDirectory = Directory.CreateDirectory(Path.Combine(this.workingRoot, bookmarkId.ToString()));
             }
 
+            // For all the images in this batch, we'll initiate the tasks,
+            // *before* awaiting them. This allows the network requests to
+            // proceed concucrrentky. Once intiated, we'll wait for all to
+            // complete before processing them further.
             List<Task<FirstImageInformaton?>> workerBatch = new List<Task<FirstImageInformaton?>>();
             foreach (var image in imageBatch)
             {
@@ -355,7 +359,7 @@ public class ArticleDownloader : IDisposable
 
             await Task.WhenAll(workerBatch).ConfigureAwait(false);
 
-            if(firstImage == null)
+            if (firstImage == null)
             {
                 firstImage = workerBatch.Select((t) => t.Result).OfType<FirstImageInformaton>().DefaultIfEmpty(null).First();
             }
