@@ -151,6 +151,16 @@ public class ArticleDownloader : IDisposable
         this.ImageClient = new Lazy<HttpClient>();
     }
 
+    private DatabaseLocalOnlyArticleState ApplyLocalStateToArticle(DatabaseArticle article, DatabaseLocalOnlyArticleState state)
+    {
+        if(article.HasLocalState)
+        {
+            return this.articleDatabase.UpdateLocalOnlyArticleState(state);
+        }
+
+        return this.articleDatabase.AddLocalOnlyStateForArticle(state);
+    }
+
     /// <summary>
     /// Given a set of articles, will download the body + images for those
     /// articles, updating the database along the way.
@@ -164,20 +174,40 @@ public class ArticleDownloader : IDisposable
     {
         this.eventSource?.RaiseDownloadingStarted(articles.Count);
 
+        // Make sure we have an easy look up of articles. This is 'cause when we
+        // get the local state back from the download, we don't know if we need
+        // to Update or Add to the database. Having the article itself *does*
+        // tell us that, which we can use later to make that decision
+        var articleLookup = articles.ToDictionary((a) => a.Id)!;
+
         try
         {
             foreach (var chunk in articles.Chunkify(2))
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                var localstates = new List<DatabaseLocalOnlyArticleState>();
 
                 foreach (var article in chunk)
                 {
                     try
                     {
-                        await this.DownloadBookmark(article, cancellationToken).ConfigureAwait(false);
+                        var localState = await this.DownloadBookmarkCore(article, cancellationToken).ConfigureAwait(false);
+                        if(localState is not null)
+                        {
+                            localstates.Add(localState);
+                        }
                     }
                     catch (EntityNotFoundException)
                     { /* If the article isn't found, we'll attempt another time */ }
+                }
+
+                // Now that we've downloaded the information, we can linearly
+                // apply those changes to the database on a single thread, which
+                // allows the download itself to proceeded concurrently.
+                foreach(var state in localstates)
+                {
+                    var article = articleLookup[state.ArticleId];
+                    this.ApplyLocalStateToArticle(article, state);
                 }
             }
         }
@@ -211,6 +241,17 @@ public class ArticleDownloader : IDisposable
     /// <param name="bookmarkId">ID of the bookmark to download</param>
     /// <returns>Updated local state information</returns>
     public async Task<DatabaseLocalOnlyArticleState?> DownloadBookmark(DatabaseArticle article, CancellationToken cancellationToken = default)
+    {
+        var localState = await this.DownloadBookmarkCore(article, cancellationToken);
+        if(localState is null)
+        {
+            return null;
+        }
+
+        return this.ApplyLocalStateToArticle(article, localState);
+    }
+
+    private async Task<DatabaseLocalOnlyArticleState?> DownloadBookmarkCore(DatabaseArticle article, CancellationToken cancellationToken)
     {
         var articleDownloaded = true;
         var contentsUnavailable = false;
@@ -259,15 +300,6 @@ public class ArticleDownloader : IDisposable
                 FirstImageLocalPath = firstImage?.FirstLocalImage,
                 FirstImageRemoteUri = firstImage?.FirstRemoteImage
             };
-
-            if (article.HasLocalState)
-            {
-                localState = articleDatabase.UpdateLocalOnlyArticleState(localState);
-            }
-            else
-            {
-                localState = articleDatabase.AddLocalOnlyStateForArticle(localState);
-            }
 
             return localState;
         }
