@@ -22,8 +22,8 @@ public class ArticleDownloaderTests : IDisposable
     private readonly string mockResponsesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
 
     #region Mock Article IDs
-    private const long AWOL_EVERYWHERE_ARTICLE = 8L;
-    private const long MISSING_REMOTE_ARTICLE = 9L;
+    private const long MISSING_REMOTE_ARTICLE = 8L;
+    private const long MISSING_REMOTE_ARTICLE_2 = 9L;
     private const long BASIC_ARTICLE_NO_IMAGES = 10L;
     private const long UNAVAILABLE_ARTICLE = 11L;
     private const long LARGE_ARTICLE_NO_IMAGES = 12L;
@@ -122,6 +122,17 @@ public class ArticleDownloaderTests : IDisposable
                 id: MISSING_REMOTE_ARTICLE,
                 title: "Article not present remotely",
                 url: new Uri(TestUtilities.BASE_URL, $"/{MISSING_REMOTE_ARTICLE}"),
+                description: String.Empty,
+                readProgress: 0.0F,
+                readProgressTimestamp: DateTime.Now,
+                hash: "ABC",
+                liked: false
+            ), WellKnownLocalFolderIds.Unread);
+
+        this.articleDatabase.AddArticleToFolder(new(
+                id: MISSING_REMOTE_ARTICLE_2,
+                title: "Article not present remotely",
+                url: new Uri(TestUtilities.BASE_URL, $"/{MISSING_REMOTE_ARTICLE_2}"),
                 description: String.Empty,
                 readProgress: 0.0F,
                 readProgressTimestamp: DateTime.Now,
@@ -487,6 +498,7 @@ public class ArticleDownloaderTests : IDisposable
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
+        Array.Sort(articleIds);
 
         var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
 
@@ -512,6 +524,9 @@ public class ArticleDownloaderTests : IDisposable
         clearingHouse.DownloadingCompleted += (_, _) => downloadCompleted = true;
 
         await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+        imagesStarted.Sort();
+        imagesCompleted.Sort();
 
         Assert.True(downloadStarted);
         Assert.Equal(articleIds.Length, articlesStarted.Count);
@@ -790,6 +805,7 @@ public class ArticleDownloaderTests : IDisposable
             LARGE_ARTICLE_NO_IMAGES,
             IMAGES_ARTICLE,
             MISSING_REMOTE_ARTICLE,
+            MISSING_REMOTE_ARTICLE_2,
             IMAGES_WITH_INLINE_IMAGES,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
@@ -799,7 +815,7 @@ public class ArticleDownloaderTests : IDisposable
         await this.articleDownloader.DownloadBookmarks(articlesToDownload);
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
-        Assert.Equal(articleIds.Length - 1, articlesLocalState.Count);
+        Assert.Equal(articleIds.Length - 2, articlesLocalState.Count);
 
         Assert.All(articlesLocalState, this.AssertAvailableLocallyAndFileExists);
     }
@@ -844,6 +860,7 @@ public class ArticleDownloaderTests : IDisposable
     [Fact]
     public async Task CanInitiateDownloadOfAllArticlesMissingLocalState()
     {
+        this.articleDatabase.DeleteArticle(MISSING_REMOTE_ARTICLE_2);
         var articlesWithoutLocalStatePreDownload = this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article);
 
         await this.articleDownloader.DownloadBookmarksWithoutLocalState();
