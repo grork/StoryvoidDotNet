@@ -336,7 +336,7 @@ public class ArticleDownloader : IDisposable
         DirectoryInfo? imageDirectory = null;
         FirstImageInformaton? firstImage = null;
 
-        int imageIndex = 1;
+        int imageIndex = 0;
 
         foreach (var imageBatch in images.Chunkify(5))
         {
