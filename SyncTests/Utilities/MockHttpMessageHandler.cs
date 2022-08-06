@@ -71,7 +71,7 @@ internal sealed class FileSystemMappedHttpHandler : HttpMessageHandler
         }
 
         HttpResponseMessage fileContentsResponse = new HttpResponseMessage(System.Net.HttpStatusCode.OK);
-        var fileContents = File.Open(localPath, FileMode.Open, FileAccess.Read);
+        var fileContents = File.Open(localPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         HttpContent content = fileContentsResponse.Content = new StreamContent(fileContents);
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue($"image/{(extension == "svg" ? "svg+xml" : extension)}");
 
