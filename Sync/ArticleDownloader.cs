@@ -392,6 +392,43 @@ public class ArticleDownloader : IDisposable
         return firstImage;
     }
 
+    /// <summary>
+    /// Deletes any downloaded articles that are not currently present in the
+    /// database. This includes any images thave have been downloaded.
+    /// 
+    /// It is intended to be called while the database is in a stable state, and
+    /// there are no article downloads in progress.
+    /// </summary>
+    public void DeleteDownloadsWithNoDatabaseArticle()
+    {
+        var articles = new HashSet<long>(this.articleDatabase.ListAllArticlesInAFolder().Select((a) => a.Article.Id));
+        articles.UnionWith(this.articleDatabase.ListArticlesNotInAFolder().Select((a) => a.Id));
+
+        var articleFiles = Directory.GetFiles(this.workingRoot, "*.html");
+
+        foreach(var filePath in articleFiles)
+        {
+            var filename = Path.GetFileNameWithoutExtension(filePath);
+            if(!long.TryParse(filename, out long result))
+            {
+                // Not a valid article ID
+                continue;
+            }
+
+            if(articles.Contains(result))
+            {
+                // Article is in the database, just keep it
+                continue;
+            }
+
+            File.Delete(filePath);
+            try
+            {
+                Directory.Delete(Path.Combine(this.workingRoot, result.ToString()), true);
+            } catch { /* If we can't delete, c'est le vie */ }
+        }
+    }
+
     private async Task<FirstImageInformaton?> DownloadImageForElement(IHtmlImageElement image, int imageIndex, DirectoryInfo imageDirectory, CancellationToken cancellationToken)
     {
         if (!Uri.IsWellFormedUriString(image.Source!, UriKind.Absolute))

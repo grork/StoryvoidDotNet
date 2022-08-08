@@ -168,6 +168,11 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
 
+        if(localState.FirstImageLocalPath is not null)
+        {
+            var firstImageExists = Path.Join(this.testDirectory.FullName, localState.ArticleId.ToString(), localState.FirstImageLocalPath.ToString());
+        }
+
         var fileExists = File.Exists(Path.Join(this.testDirectory.FullName, localState!.LocalPath!.AbsolutePath));
         Assert.True(fileExists);
     }
@@ -1008,7 +1013,6 @@ public class ArticleDownloaderTests : IDisposable
         };
         var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
 
-
         using (var transaction = connection.BeginTransaction())
         {
             await this.articleDownloader.DownloadBookmarks(articlesToDownload);
@@ -1018,6 +1022,86 @@ public class ArticleDownloaderTests : IDisposable
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
         Assert.Empty(articlesLocalState);
+    }
+    #endregion
+
+    #region Orphaned downloads cleanup
+    [Fact]
+    public void CanCleaupWhenNoDownloadedArticles()
+    {
+        var currentFiles = Directory.GetFiles(this.testDirectory.FullName);
+        Assert.Empty(currentFiles);
+
+        this.articleDownloader.DeleteDownloadsWithNoDatabaseArticle();
+
+        currentFiles = Directory.GetFiles(this.testDirectory.FullName);
+        Assert.Empty(currentFiles);
+    }
+
+    [Fact]
+    public async Task CanCleanupCompletelyWhenAllArticlesAreMissing()
+    {
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            IMAGES_ARTICLE,
+            IMAGES_WITH_QUERY_STRINGS,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+        foreach(var id in articleIds)
+        {
+            this.articleDatabase.DeleteArticle(id);
+        }
+
+        articleDownloader.DeleteDownloadsWithNoDatabaseArticle();
+
+        Assert.Empty(Directory.GetFiles(this.testDirectory.FullName));
+    }
+
+    [Fact]
+    public async Task OnlyFilesFromMissingArticlesAreCleanedup()
+    {
+        var articleIds = new long[] {
+            IMAGES_WITH_QUERY_STRINGS,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+        articlesToDownload.Add(this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!);
+        articlesToDownload.Add(this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!);
+
+        await this.articleDownloader.DownloadBookmarks(articlesToDownload);
+
+        // Get the local state for the to-be-deleted articles so we have their
+        // local file paths (Rather than re-computing them)
+        var basicArticleState = this.articleDatabase.GetLocalOnlyStateByArticleId(BASIC_ARTICLE_NO_IMAGES)!;
+        var imagesArticleState = this.articleDatabase.GetLocalOnlyStateByArticleId(IMAGES_ARTICLE)!;
+
+        // Delete two articles that should be cleaned up
+        this.articleDatabase.DeleteArticle(BASIC_ARTICLE_NO_IMAGES);
+        this.articleDatabase.DeleteArticle(IMAGES_ARTICLE);
+
+        articleDownloader.DeleteDownloadsWithNoDatabaseArticle();
+
+        // Verify the basic set of articles we downloaded have their files present
+        foreach(var id in articleIds)
+        {
+            var article = this.articleDatabase.GetArticleById(id)!;
+            this.AssertAvailableLocallyAndFileExists(article.LocalOnlyState!);
+        }
+
+        var basicArticleFileExists = File.Exists(Path.Join(this.testDirectory.FullName, basicArticleState.LocalPath!.AbsolutePath));
+        Assert.False(basicArticleFileExists);
+
+        var imageArticleFileExists = File.Exists(Path.Join(this.testDirectory.FullName, imagesArticleState.LocalPath!.AbsolutePath));
+        Assert.False(imageArticleFileExists);
+
+        var imagesArticleImagesDirectoryExists = Directory.Exists(Path.Join(this.testDirectory.FullName, Path.GetFileNameWithoutExtension(imagesArticleState.LocalPath!.AbsolutePath)));
+        Assert.False(imagesArticleImagesDirectoryExists);
     }
     #endregion
 }
