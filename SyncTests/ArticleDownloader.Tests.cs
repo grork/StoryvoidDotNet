@@ -531,10 +531,6 @@ public class ArticleDownloaderTests : IDisposable
     {
         var articleIds = new long[] {
             BASIC_ARTICLE_NO_IMAGES,
-            LARGE_ARTICLE_NO_IMAGES,
-            IMAGES_ARTICLE,
-            IMAGES_WITH_QUERY_STRINGS,
-            IMAGES_WITH_INLINE_IMAGES,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
@@ -621,10 +617,7 @@ public class ArticleDownloaderTests : IDisposable
     {
         var articleIds = new long[] {
             BASIC_ARTICLE_NO_IMAGES,
-            LARGE_ARTICLE_NO_IMAGES,
             MISSING_REMOTE_ARTICLE,
-            IMAGES_WITH_QUERY_STRINGS,
-            IMAGES_WITH_INLINE_IMAGES,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
@@ -847,10 +840,7 @@ public class ArticleDownloaderTests : IDisposable
     {
         var articleIds = new long[] {
             BASIC_ARTICLE_NO_IMAGES,
-            LARGE_ARTICLE_NO_IMAGES,
             IMAGES_ARTICLE,
-            IMAGES_WITH_QUERY_STRINGS,
-            IMAGES_WITH_INLINE_IMAGES,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
@@ -869,10 +859,7 @@ public class ArticleDownloaderTests : IDisposable
     {
         var articleIds = new long[] {
             BASIC_ARTICLE_NO_IMAGES,
-            LARGE_ARTICLE_NO_IMAGES,
-            IMAGES_ARTICLE,
             UNAVAILABLE_ARTICLE,
-            IMAGES_WITH_INLINE_IMAGES,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
@@ -906,11 +893,8 @@ public class ArticleDownloaderTests : IDisposable
     {
         var articleIds = new long[] {
             BASIC_ARTICLE_NO_IMAGES,
-            LARGE_ARTICLE_NO_IMAGES,
-            IMAGES_ARTICLE,
             MISSING_REMOTE_ARTICLE,
             MISSING_REMOTE_ARTICLE_2,
-            IMAGES_WITH_INLINE_IMAGES,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
@@ -934,10 +918,7 @@ public class ArticleDownloaderTests : IDisposable
         var articleIds = new long[]
         {
             BASIC_ARTICLE_NO_IMAGES,
-            LARGE_ARTICLE_NO_IMAGES,
             IMAGES_ARTICLE,
-            IMAGES_WITH_QUERY_STRINGS,
-            IMAGES_WITH_INLINE_IMAGES,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
@@ -1004,10 +985,7 @@ public class ArticleDownloaderTests : IDisposable
     {
         var articleIds = new long[] {
             BASIC_ARTICLE_NO_IMAGES,
-            LARGE_ARTICLE_NO_IMAGES,
             IMAGES_ARTICLE,
-            IMAGES_WITH_QUERY_STRINGS,
-            IMAGES_WITH_INLINE_IMAGES,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
@@ -1044,7 +1022,6 @@ public class ArticleDownloaderTests : IDisposable
         var articleIds = new long[] {
             BASIC_ARTICLE_NO_IMAGES,
             IMAGES_ARTICLE,
-            IMAGES_WITH_QUERY_STRINGS,
             YOUTUBE_ARTICLE,
             FIRST_IMAGE_JPG
         };
