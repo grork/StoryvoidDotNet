@@ -43,7 +43,7 @@ public sealed class DatabaseEventClearingHouseTests
 
         public bool IsDBNull(int i)
         {
-            return (this.data[i].Data == null);
+            return (this.data[i].Data is null);
         }
 
         public string GetString(int i)

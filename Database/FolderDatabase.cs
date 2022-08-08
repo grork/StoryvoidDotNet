@@ -246,7 +246,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         var t = query.BeginTransactionIfNeeded();
 
         query.AddParameter("@localId", localId);
-        if (serviceId != null)
+        if (serviceId is not null)
         {
             query.AddParameter("@serviceId", (long)(serviceId!));
         }

@@ -274,7 +274,7 @@ internal static class DataExtensions
     /// <returns>The transaction *if* one was created</returns>
     public static IDbTransaction? BeginTransactionIfNeeded(this IDbCommand instance)
     {
-        var t = (instance.Transaction != null) ? null : instance.Connection.BeginTransaction();
+        var t = (instance.Transaction is not null) ? null : instance.Connection.BeginTransaction();
         if (t is not null)
         {
             instance.Transaction = t;

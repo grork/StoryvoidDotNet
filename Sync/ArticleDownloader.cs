@@ -366,7 +366,7 @@ public class ArticleDownloader : IDisposable
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (imageDirectory == null)
+            if (imageDirectory is null)
             {
                 imageDirectory = Directory.CreateDirectory(Path.Combine(this.workingRoot, bookmarkId.ToString()));
             }
@@ -383,7 +383,7 @@ public class ArticleDownloader : IDisposable
 
             await Task.WhenAll(workerBatch).ConfigureAwait(false);
 
-            if (firstImage == null)
+            if (firstImage is null)
             {
                 firstImage = workerBatch.Select((t) => t.Result).OfType<FirstImageInformaton>().DefaultIfEmpty(null).First();
             }
@@ -476,7 +476,7 @@ public class ArticleDownloader : IDisposable
             // 4. Identify the image format & metadata
             string extension = "unknown";
             var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath, cancellationToken).ConfigureAwait(false);
-            if (imageFormat == null)
+            if (imageFormat is null)
             {
                 // We couldn't identify it, so we'd better check to see if
                 // it's an SVG. We're going to rely on the content type
@@ -518,7 +518,7 @@ public class ArticleDownloader : IDisposable
             var originalUrl = image.Source;
             image.Source = relativePath;
 
-            if (imageFormat == null && contentType != SVG_CONTENT_TYPE)
+            if (imageFormat is null && contentType != SVG_CONTENT_TYPE)
             {
                 // We have no image details to process, but we downloaded it
                 // anyway -- maybe the UI can decode it in a different

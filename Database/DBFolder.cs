@@ -46,7 +46,7 @@ public sealed record DatabaseFolder
     /// <summary>
     /// Has this folder been sync'd to the service?
     /// </summary>
-    public bool IsOnService => (this.ServiceId != null);
+    public bool IsOnService => (this.ServiceId is not null);
 
     /// <summary>
     /// Converts a raw database row in to an instance of a folder

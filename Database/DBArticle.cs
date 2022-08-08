@@ -18,7 +18,7 @@ public sealed record DatabaseArticle
     /// Convenience access to check if have local-only state information
     /// available.
     /// </summary>
-    public bool HasLocalState => this.LocalOnlyState != null;
+    public bool HasLocalState => this.LocalOnlyState is not null;
 
     /// <summary>
     /// Article ID in the local database, and on the service

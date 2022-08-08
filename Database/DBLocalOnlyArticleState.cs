@@ -57,7 +57,7 @@ public sealed record DatabaseLocalOnlyArticleState
     /// <summary>
     /// Does this article have an image available
     /// </summary>
-    public bool HasImages => FirstImageLocalPath != null;
+    public bool HasImages => FirstImageLocalPath is not null;
 
     /// <summary>
     /// Converts a raw database row into a hydrated instance of local-only

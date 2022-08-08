@@ -423,7 +423,7 @@ public sealed record HaveStatus
             haveText.AppendFormat(":{0}", this.Hash);
         }
 
-        if (this.ReadProgress != null && this.ProgressLastChanged != null)
+        if (this.ReadProgress is not null && this.ProgressLastChanged is not null)
         {
             haveText.AppendFormat(":{0}:{1}", this.ReadProgress, new DateTimeOffset(this.ProgressLastChanged.Value).ToUnixTimeMilliseconds());
         }
@@ -496,7 +496,7 @@ public sealed class BookmarksClient : IBookmarksClient, IDisposable
                     continue;
 
                 case "meta":
-                    Debug.Assert(meta == null, "Didn't expect more than one meta object");
+                    Debug.Assert(meta is null, "Didn't expect more than one meta object");
                     meta = element;
                     continue;
 
@@ -543,7 +543,7 @@ public sealed class BookmarksClient : IBookmarksClient, IDisposable
             parameters.Add("folder_id", wellKnownFolderId);
         }
 
-        if (haveInformation != null)
+        if (haveInformation is not null)
         {
             var havePayload = String.Join(",", haveInformation);
             if (!String.IsNullOrWhiteSpace(havePayload))
@@ -561,7 +561,7 @@ public sealed class BookmarksClient : IBookmarksClient, IDisposable
         var deletedIds = new List<long>();
 
         // Parse the deleleted ID's if it's present
-        if (meta != null && meta.Value.TryGetProperty("delete_ids", out var deletedIdsElement))
+        if (meta is not null && meta.Value.TryGetProperty("delete_ids", out var deletedIdsElement))
         {
             // Deleted IDs comes in as a comma separated string
             var rawDeletedIds = deletedIdsElement.GetString()!;
@@ -598,7 +598,7 @@ public sealed class BookmarksClient : IBookmarksClient, IDisposable
             { "url", bookmarkUrl.ToString() }
         };
 
-        if (options != null)
+        if (options is not null)
         {
             if (!String.IsNullOrWhiteSpace(options.Title))
             {
