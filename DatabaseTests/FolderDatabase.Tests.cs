@@ -30,7 +30,7 @@ public sealed class FolderDatabaseTests : IDisposable
     [Fact]
     public void DefaultFoldersAreCreated()
     {
-        IList<DatabaseFolder> result = this.db.ListAllFolders();
+        var result = this.db.ListAllFolders();
         Assert.Equal(2, result.Count());
 
         var unreadFolder = result.Where((f) => f.ServiceId == WellKnownServiceFolderIds.Unread).First()!;
@@ -44,7 +44,7 @@ public sealed class FolderDatabaseTests : IDisposable
     [Fact]
     public void DefaultFoldersAreSortedCorrectly()
     {
-        IList<DatabaseFolder> result = this.db.ListAllFolders();
+        var result = this.db.ListAllFolders().ToList();
         Assert.Equal(2, result.Count());
 
         var firstFolder = result[0];
@@ -641,7 +641,7 @@ public sealed class FolderDatabaseTests : IDisposable
         var addedFolder = this.db.CreateFolder("Sample");
 
         // Check that the folder order is correct
-        var allFolders = this.db.ListAllFolders();
+        var allFolders = this.db.ListAllFolders().ToList();
         Assert.Equal(WellKnownLocalFolderIds.Unread, allFolders[0].LocalId);
         Assert.Equal(WellKnownLocalFolderIds.Archive, allFolders[1].LocalId);
         Assert.Equal(addedFolder.LocalId, allFolders[2].LocalId);
@@ -661,7 +661,7 @@ public sealed class FolderDatabaseTests : IDisposable
         var thirdAddedFolder = this.db.CreateFolder("Sample 3 - No position, sorted between well known and explicit positions");
 
         // Check it comes back when listing all folders
-        var allFolders = this.db.ListAllFolders();
+        var allFolders = this.db.ListAllFolders().ToList();
 
         // Check that the folder order is correct
         Assert.Equal(WellKnownLocalFolderIds.Unread, allFolders[0].LocalId);

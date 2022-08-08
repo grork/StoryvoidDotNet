@@ -19,12 +19,12 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
     }
 
     /// <inheritdoc/>
-    public IList<DatabaseFolder> ListAllFolders()
+    public IEnumerable<DatabaseFolder> ListAllFolders()
     {
         return ListAllFolders(this.connection);
     }
 
-    private static IList<DatabaseFolder> ListAllFolders(IDbConnection c)
+    private static IEnumerable<DatabaseFolder> ListAllFolders(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *
@@ -45,12 +45,12 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         return result;
     }
 
-    public IList<DatabaseFolder> ListAllUserFolders()
+    public IEnumerable<DatabaseFolder> ListAllUserFolders()
     {
         return ListAllUserFolders(this.connection);
     }
 
-    private static IList<DatabaseFolder> ListAllUserFolders(IDbConnection c)
+    private static IEnumerable<DatabaseFolder> ListAllUserFolders(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *

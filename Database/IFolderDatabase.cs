@@ -45,14 +45,14 @@ public interface IFolderDatabase
     /// folders (Unread, Archive)
     /// </summary>
     /// <returns>List of folders</returns>
-    IList<DatabaseFolder> ListAllFolders();
+    IEnumerable<DatabaseFolder> ListAllFolders();
 
     /// <summary>
     /// Gets all locally known folders that were created by the user (E.g. not
     /// unread, archive or liked)
     /// </summary>
     /// <returns></returns>
-    IList<DatabaseFolder> ListAllUserFolders();
+    IEnumerable<DatabaseFolder> ListAllUserFolders();
 
     /// <summary>
     /// Gets a specific folder using it's service ID
