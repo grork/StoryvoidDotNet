@@ -74,13 +74,6 @@ public class ArticleDownloader : IDisposable
     private const int MINIMUM_IMAGE_DIMENSION = 150;
     private const string SVG_CONTENT_TYPE = "image/svg+xml";
 
-    /// <summary>
-    /// Placeholder base URI that local paths will be relative to. This is
-    /// because the local root is variable, and we dont want to encode that path
-    /// in the database.
-    /// </summary>
-    public static readonly Uri ROOT_URI = new Uri("localfile://local");
-
     private static Lazy<IConfiguration> lazyParserConfiguration = new Lazy<IConfiguration>(() =>
     {
         // Remove 'dangerous' aspects of AngleSharps API so bad things can't
@@ -276,7 +269,7 @@ public class ArticleDownloader : IDisposable
 
                 // We have successfully processed the article, so we can update the
                 // state that'll be written to the database later
-                localPath = new Uri(ROOT_URI, articleFilename);
+                localPath = new Uri(articleFilename, UriKind.Relative);
                 articleDownloaded = true;
             }
             catch (BookmarkContentsUnavailableException)

@@ -24,7 +24,7 @@ public static class TestUtilities
         return new(
             id: nextArticleId++,
             title: "Sample Article",
-            url: new Uri(BASE_URI, $"/{nextArticleId}"),
+            url: new Uri($"/{nextArticleId}", UriKind.Relative),
             description: String.Empty,
             readProgress: 0.0F,
             readProgressTimestamp: DateTime.Now,

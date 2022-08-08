@@ -145,7 +145,7 @@ public class ArticleDownloaderTests : IDisposable
 
     private Uri GetRelativeUriForDownloadedArticle(long articleId)
     {
-        return new Uri(ArticleDownloader.ROOT_URI, $"{articleId}.html");
+        return new Uri($"{articleId}.html", UriKind.Relative);
     }
 
     public void Dispose()
@@ -173,7 +173,7 @@ public class ArticleDownloaderTests : IDisposable
             var firstImageExists = Path.Join(this.testFolder.FullName, localState.ArticleId.ToString(), localState.FirstImageLocalPath.ToString());
         }
 
-        var fileExists = File.Exists(Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath));
+        var fileExists = File.Exists(Path.Join(this.testFolder.FullName, localState!.LocalPath!.ToString()));
         Assert.True(fileExists);
     }
 
@@ -195,7 +195,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
 
-        var localContents = File.ReadAllText(Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath));
+        var localContents = File.ReadAllText(Path.Join(this.testFolder.FullName, localState!.LocalPath!.ToString()));
 
         // We want to make sure that we don't turn this into a fully fledges HTML
         // document, as the consumer is expected to perform the appropriate
@@ -213,7 +213,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
 
-        var fileExists = File.Exists(Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath));
+        var fileExists = File.Exists(Path.Join(this.testFolder.FullName, localState!.LocalPath!.ToString()));
         Assert.True(fileExists);
     }
 
@@ -300,7 +300,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(Directory.Exists(imagesPath));
         Assert.Equal(expectedImageCount, Directory.GetFiles(imagesPath).Count());
 
-        var localPath = Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath);
+        var localPath = Path.Join(this.testFolder.FullName, localState!.LocalPath!.ToString());
         var htmlParserContext = BrowsingContext.New(ArticleDownloader.ParserConfiguration);
         var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
 
@@ -350,7 +350,7 @@ public class ArticleDownloaderTests : IDisposable
         var imagesPath = Path.Join(this.testFolder.FullName, localState!.ArticleId.ToString());
         Assert.False(Directory.Exists(imagesPath));
 
-        var localPath = Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath);
+        var localPath = Path.Join(this.testFolder.FullName, localState!.LocalPath!.ToString());
         var htmlParserContext = BrowsingContext.New(ArticleDownloader.ParserConfiguration);
         var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
 
@@ -1071,13 +1071,13 @@ public class ArticleDownloaderTests : IDisposable
             this.AssertAvailableLocallyAndFileExists(article.LocalOnlyState!);
         }
 
-        var basicArticleFileExists = File.Exists(Path.Join(this.testFolder.FullName, basicArticleState.LocalPath!.AbsolutePath));
+        var basicArticleFileExists = File.Exists(Path.Join(this.testFolder.FullName, basicArticleState.LocalPath!.ToString()));
         Assert.False(basicArticleFileExists);
 
-        var imageArticleFileExists = File.Exists(Path.Join(this.testFolder.FullName, imagesArticleState.LocalPath!.AbsolutePath));
+        var imageArticleFileExists = File.Exists(Path.Join(this.testFolder.FullName, imagesArticleState.LocalPath!.ToString()));
         Assert.False(imageArticleFileExists);
 
-        var imagesArticleImagesFolderExists = Directory.Exists(Path.Join(this.testFolder.FullName, Path.GetFileNameWithoutExtension(imagesArticleState.LocalPath!.AbsolutePath)));
+        var imagesArticleImagesFolderExists = Directory.Exists(Path.Join(this.testFolder.FullName, Path.GetFileNameWithoutExtension(imagesArticleState.LocalPath!.ToString())));
         Assert.False(imagesArticleImagesFolderExists);
     }
     #endregion

@@ -223,9 +223,9 @@ public class LocalOnlyStateTests : IDisposable
         var newState = state with
         {
             AvailableLocally = state.AvailableLocally!,
-            FirstImageLocalPath = new Uri("imageLocalPathNew://localPathNew"),
-            FirstImageRemoteUri = new Uri("imageRemotePathNew://remotePathNew"),
-            LocalPath = new Uri("articleLocalPathNew://localPathNew"),
+            FirstImageLocalPath = new Uri("localPathNew", UriKind.Relative),
+            FirstImageRemoteUri = new Uri("remotePathNew", UriKind.Relative),
+            LocalPath = new Uri("localPathNew", UriKind.Relative),
             ExtractedDescription = "Extracted with care",
             ArticleUnavailable = !state.ArticleUnavailable,
             IncludeInMRU = !state.IncludeInMRU
