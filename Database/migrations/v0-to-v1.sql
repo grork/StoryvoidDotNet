@@ -76,7 +76,7 @@ CREATE TABLE folder_deletes (
     UNIQUE(title) -- Titles can't be duplicated on the service; enforce here
 ) STRICT;
 
--- Used when adding a URL, not when adding a bookmark directly; we always need
+-- Used when adding a URL, not when adding an article directly; we always need
 -- a round trip to the service + sync to get the article visible somewhere
 CREATE TABLE article_adds (
     url TEXT NOT NULL PRIMARY KEY,

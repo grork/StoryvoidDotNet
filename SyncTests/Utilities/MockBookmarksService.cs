@@ -323,10 +323,10 @@ public class MockBookmarksService : IBookmarksClient
 /// <summary>
 /// Only implements GetTextAsync
 /// </summary>
-public class MockBookmarkServiceWithOnlyGetText : IBookmarksClient
+public class MockBookmarkClientWithOnlyGetText : IBookmarksClient
 {
     private IDictionary<long, string> articleFileMap;
-    public MockBookmarkServiceWithOnlyGetText(IDictionary<long, string> articleFileMap)
+    public MockBookmarkClientWithOnlyGetText(IDictionary<long, string> articleFileMap)
     {
         this.articleFileMap = articleFileMap;
     }

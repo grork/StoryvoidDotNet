@@ -140,7 +140,7 @@ public class InstapaperSync
         {
             this.clearingHouse?.RaiseSyncStarted();
             await this.SyncFolders();
-            await this.SyncBookmarks();
+            await this.SyncArticles();
             this.CleanupOrphanedArticles();
         }
         finally
@@ -288,23 +288,23 @@ public class InstapaperSync
     }
 
     /// <summary>
-    /// Syncs all information related to bookmarks to the service - pending add,
+    /// Syncs all information related to articles to the service - pending add,
     /// delete, moves, and like status changes - as well as pulling service
     /// updates locally.
     /// 
     /// It is expected - but not required - that <see cref="SyncFolders">
     /// SyncFolders</see> will be executed before this.
     /// </summary>
-    internal async Task SyncBookmarks()
+    internal async Task SyncArticles()
     {
         try
         {
             this.clearingHouse?.RaiseArticlesStarted();
-            await this.SyncPendingBookmarkAdds();
-            await this.SyncPendingBookmarkDeletes();
-            await this.SyncPendingBookmarkMoves();
-            await this.SyncBookmarkStateByFolder();
-            await this.SyncBookmarkLikeStatuses();
+            await this.SyncPendingArticleAdds();
+            await this.SyncPendingArticleDeletes();
+            await this.SyncPendingArticleMoves();
+            await this.SyncArticleStateByFolder();
+            await this.SyncArticleLikeStatuses();
         }
         finally
         {
@@ -312,7 +312,7 @@ public class InstapaperSync
         }
     }
 
-    private async Task SyncPendingBookmarkAdds()
+    private async Task SyncPendingArticleAdds()
     {
         var adds = this.articleChangesDb.ListPendingArticleAdds();
         foreach(var add in adds)
@@ -322,7 +322,7 @@ public class InstapaperSync
         }
     }
 
-    private async Task SyncPendingBookmarkDeletes()
+    private async Task SyncPendingArticleDeletes()
     {
         var deletes = this.articleChangesDb.ListPendingArticleDeletes();
         foreach(var delete in deletes)
@@ -333,15 +333,15 @@ public class InstapaperSync
     }
 
     /// <summary>
-    /// Applies all pending bookmark moves between folders we have locally to
+    /// Applies all pending article moves between folders we have locally to
     /// the service. If there is a move to a folder that has not been synced to
     /// the server (E.g. local folder add), that will be explicitly sync'd first.
     ///
     /// This does *not* discover/sync moves that have happened on the service,
     /// which happens in <see
-    /// cref="SyncBookmarkStateByFolder>SyncBookmarkStateByFolder</see>.
+    /// cref="SyncArticleStateByFolder>SyncArticleStateByFolder</see>.
     /// </summary>
-    internal async Task SyncPendingBookmarkMoves()
+    internal async Task SyncPendingArticleMoves()
     {
         var moves = this.articleChangesDb.ListPendingArticleMoves();
         foreach(var move in moves)
@@ -462,10 +462,10 @@ public class InstapaperSync
         }
     }
 
-    internal async Task SyncBookmarkLikeStatuses()
+    internal async Task SyncArticleLikeStatuses()
     {
-        await SyncPendingBookmarkLikeStatusChanges();
-        await SyncBookmarkLikedArticlesWithService();
+        await SyncPendingArticleLikeStatusChanges();
+        await SyncArticleLikedArticlesWithService();
     }
 
     /// <summary>
@@ -474,7 +474,7 @@ public class InstapaperSync
     /// apply locally. This is very similar to syncing the contents of a folder,
     /// but simplified in the handling of the results.
     /// </summary>
-    private async Task SyncBookmarkLikedArticlesWithService()
+    private async Task SyncArticleLikedArticlesWithService()
     {
         var currentLikes = this.articleDb.ListLikedArticles();
         var (addedLikes, removedLiked) = await this.bookmarksClient.ListAsync(
@@ -516,7 +516,7 @@ public class InstapaperSync
         }
     }
 
-    private async Task SyncPendingBookmarkLikeStatusChanges()
+    private async Task SyncPendingArticleLikeStatusChanges()
     {
         var statusChanges = this.articleChangesDb.ListPendingArticleStateChanges();
         foreach (var stateChange in statusChanges)
@@ -556,7 +556,7 @@ public class InstapaperSync
     /// Folder-by-folder, ask the service to tell us what is different, and
     /// apply those changes locally.
     /// </summary>
-    private async Task SyncBookmarkStateByFolder()
+    private async Task SyncArticleStateByFolder()
     {
         // For ever service-sync'd folder, perform a sync
         var localFolders = this.folderDb.ListAllFolders();
@@ -570,7 +570,7 @@ public class InstapaperSync
             }
 
             var articles = this.articleDb.ListArticlesForLocalFolder(folder.LocalId);
-            await this.SyncBookmarksForFolder(articles, folder.GetServiceCompatibleFolderId(), folder.LocalId);
+            await this.SyncArticlesForFolder(articles, folder.GetServiceCompatibleFolderId(), folder.LocalId);
         }
     }
 
@@ -581,7 +581,7 @@ public class InstapaperSync
     /// <param name="articlesInFolder">List of articles we think are in the folder</param>
     /// <param name="folderServiceId">Folder Service ID to sync for (e.g. unread, archive, service ID)</param>
     /// <param name="localFolderId">Folder ID in the local database for that folder</param>
-    private async Task SyncBookmarksForFolder(IEnumerable<DatabaseArticle> articlesInFolder, string folderServiceId, long localFolderId)
+    private async Task SyncArticlesForFolder(IEnumerable<DatabaseArticle> articlesInFolder, string folderServiceId, long localFolderId)
     {
         // Default to something so we don't have to check for nulls
         IList<IInstapaperBookmark> updates = new List<IInstapaperBookmark>();

@@ -170,7 +170,7 @@ public class ArticleDownloader : IDisposable
     /// Task that completes when supplied articles &amp; their images
     /// completed
     /// </returns>
-    internal async Task DownloadBookmarks(IList<DatabaseArticle> articles, CancellationToken cancellationToken = default)
+    internal async Task DownloadArticles(IList<DatabaseArticle> articles, CancellationToken cancellationToken = default)
     {
         this.eventSource?.RaiseDownloadingStarted(articles.Count);
 
@@ -191,7 +191,7 @@ public class ArticleDownloader : IDisposable
                 try
                 {
                     this.eventSource?.RaiseArticleStarted(article);
-                    localState = await this.DownloadBookmarkCore(article, cancellationToken).ConfigureAwait(false);
+                    localState = await this.DownloadArticleCore(article, cancellationToken).ConfigureAwait(false);
 
                     if (localState is not null)
                     {
@@ -214,7 +214,7 @@ public class ArticleDownloader : IDisposable
     /// Downloads articles which do not have any local state.
     /// </summary>
     /// <returns>Task that completes when articles have been processed</returns>
-    internal async Task DownloadBookmarksWithoutLocalState()
+    internal async Task DownloadAllArticlesWithoutLocalState()
     {
         var articlesToDownload = this.articleDatabase.ListAllArticlesInAFolder().Select((d) => d.Article).Where((a) => !a.HasLocalState).ToList();
         if (articlesToDownload.Count == 0)
@@ -222,23 +222,23 @@ public class ArticleDownloader : IDisposable
             return;
         }
 
-        await this.DownloadBookmarks(articlesToDownload).ConfigureAwait(false);
+        await this.DownloadArticles(articlesToDownload).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Downloads the bookmark from the service, processes any images (including
+    /// Downloads the article from the service, processes any images (including
     /// downloading them) if present in the document. The updates are written to
     /// the database and returned, indicating the state of the article (e.g. was
     /// it available, any images, local paths etc)
     /// </summary>
-    /// <param name="bookmarkId">ID of the bookmark to download</param>
+    /// <param name="article">Article to download</param>
     /// <returns>Updated local state information</returns>
-    public async Task<DatabaseLocalOnlyArticleState?> DownloadBookmark(DatabaseArticle article, CancellationToken cancellationToken = default)
+    public async Task<DatabaseLocalOnlyArticleState?> DownloadArticle(DatabaseArticle article, CancellationToken cancellationToken = default)
     {
         try
         {
             this.eventSource?.RaiseArticleStarted(article);
-            var localState = await this.DownloadBookmarkCore(article, cancellationToken);
+            var localState = await this.DownloadArticleCore(article, cancellationToken);
             if (localState is null)
             {
                 return null;
@@ -249,7 +249,7 @@ public class ArticleDownloader : IDisposable
         finally { this.eventSource?.RaiseArticleCompleted(article); }
     }
 
-    private async Task<DatabaseLocalOnlyArticleState?> DownloadBookmarkCore(DatabaseArticle article, CancellationToken cancellationToken)
+    private async Task<DatabaseLocalOnlyArticleState?> DownloadArticleCore(DatabaseArticle article, CancellationToken cancellationToken)
     {
         var articleDownloaded = true;
         var contentsUnavailable = false;
@@ -263,8 +263,8 @@ public class ArticleDownloader : IDisposable
 
             try
             {
-                var bookmarkFileName = $"{article.Id}.html";
-                var bookmarkAbsoluteFilePath = Path.Combine(this.workingRoot, bookmarkFileName);
+                var articleFilename = $"{article.Id}.html";
+                var articleAbsoluteFilePath = Path.Combine(this.workingRoot, articleFilename);
 
                 // Get the document contents, and process it
                 var body = await this.bookmarksClient.GetTextAsync(article.Id).ConfigureAwait(false);
@@ -272,11 +272,11 @@ public class ArticleDownloader : IDisposable
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                File.WriteAllText(bookmarkAbsoluteFilePath, body, Encoding.UTF8);
+                File.WriteAllText(articleAbsoluteFilePath, body, Encoding.UTF8);
 
                 // We have successfully processed the article, so we can update the
                 // state that'll be written to the database later
-                localPath = new Uri(ROOT_URI, bookmarkFileName);
+                localPath = new Uri(ROOT_URI, articleFilename);
                 articleDownloaded = true;
             }
             catch (BookmarkContentsUnavailableException)
@@ -309,9 +309,9 @@ public class ArticleDownloader : IDisposable
     /// Processes the article body prior to being written to disk
     /// </summary>
     /// <param name="body">HTML body to process</param>
-    /// <param name="bookmarkId">Article ID we're processing</param>
+    /// <param name="articleId">Article ID we're processing</param>
     /// <returns>Processed body with the required changes</returns>
-    private async Task<ProcessedArticleInformation> ProcessArticle(string body, long bookmarkId, CancellationToken cancellationToken)
+    private async Task<ProcessedArticleInformation> ProcessArticle(string body, long articleId, CancellationToken cancellationToken)
     {
         var configuration = ArticleDownloader.ParserConfiguration;
 
@@ -319,16 +319,16 @@ public class ArticleDownloader : IDisposable
         using var context = BrowsingContext.New(configuration);
         using var document = await context.OpenAsync(req => req.Content(body)).ConfigureAwait(false);
 
-        this.eventSource?.RaiseImagesStarted(bookmarkId);
+        this.eventSource?.RaiseImagesStarted(articleId);
         FirstImageInformaton? firstImage = null;
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            firstImage = await ProcessAndDownloadImages(document, bookmarkId, cancellationToken).ConfigureAwait(false);
+            firstImage = await ProcessAndDownloadImages(document, articleId, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
-            this.eventSource?.RaiseImagesCompleted(bookmarkId);
+            this.eventSource?.RaiseImagesCompleted(articleId);
         }
 
         // We sometimes need a textual description of the article derived from
@@ -353,8 +353,8 @@ public class ArticleDownloader : IDisposable
     /// replacing the absolute URL that was orignally present.
     /// </summary>
     /// <param name="document">Document to download images for</param>
-    /// <param name="bookmarkId">Bookmark ID we're processing </param>
-    private async Task<FirstImageInformaton?> ProcessAndDownloadImages(IDocument document, long bookmarkId, CancellationToken cancellationToken)
+    /// <param name="articleId">Article ID we're processing </param>
+    private async Task<FirstImageInformaton?> ProcessAndDownloadImages(IDocument document, long articleId, CancellationToken cancellationToken)
     {
         var images = document.QuerySelectorAll<IHtmlImageElement>("img[src^='http']");
         DirectoryInfo? imagesFolder = null;
@@ -368,7 +368,7 @@ public class ArticleDownloader : IDisposable
 
             if (imagesFolder is null)
             {
-                imagesFolder = Directory.CreateDirectory(Path.Combine(this.workingRoot, bookmarkId.ToString()));
+                imagesFolder = Directory.CreateDirectory(Path.Combine(this.workingRoot, articleId.ToString()));
             }
 
             // For all the images in this batch, we'll initiate the tasks,
