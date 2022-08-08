@@ -98,11 +98,11 @@ public class MockFolderService : IFoldersClient
         return Task.CompletedTask;
     }
 
-    public Task<IList<IInstapaperFolder>> ListAsync()
+    public Task<IEnumerable<IInstapaperFolder>> ListAsync()
     {
         var localFolders = this.FolderDB.ListAllCompleteUserFolders();
 
-        return Task.FromResult<IList<IInstapaperFolder>>(new List<IInstapaperFolder>(localFolders.Select((f) => f.ToInstapaperFolder())));
+        return Task.FromResult<IEnumerable<IInstapaperFolder>>(localFolders.Select((f) => f.ToInstapaperFolder()));
     }
     #endregion
 }

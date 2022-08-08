@@ -108,7 +108,7 @@ public interface IBookmarksClient
     /// <returns>
     /// List of bookmarks
     /// </returns>
-    Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
+    Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
 
     /// <summary>
     /// List the bookmarks for a specific folder. For wellknown folders
@@ -125,7 +125,7 @@ public interface IBookmarksClient
     /// <returns>
     /// List of bookmarks
     /// </returns>
-    Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
+    Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit);
 
     /// <summary>
     /// Add a bookmark for the supplied URL.
@@ -214,7 +214,7 @@ public static class IBookmarksClientExtension
     /// <returns>
     /// List of bookmarks
     /// </returns>
-    public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(this IBookmarksClient instance, string wellKnownFolderId, uint limit = 0)
+    public static Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(this IBookmarksClient instance, string wellKnownFolderId, uint limit = 0)
     {
         return instance.ListAsync(wellKnownFolderId, null, limit);
     }
@@ -231,7 +231,7 @@ public static class IBookmarksClientExtension
     /// <returns>
     /// List of bookmarks
     /// </returns>
-    public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(this IBookmarksClient instance, string wellKnownFolderId, IEnumerable<HaveStatus> haveInformation)
+    public static Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(this IBookmarksClient instance, string wellKnownFolderId, IEnumerable<HaveStatus> haveInformation)
     {
         return instance.ListAsync(wellKnownFolderId, haveInformation, 0);
     }
@@ -245,7 +245,7 @@ public static class IBookmarksClientExtension
     /// <returns>
     /// List of bookmarks
     /// </returns>
-    public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(this IBookmarksClient instance, long folder_id, uint limit = 0)
+    public static Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(this IBookmarksClient instance, long folder_id, uint limit = 0)
     {
         return instance.ListAsync(folder_id, null, limit);
     }
@@ -262,7 +262,7 @@ public static class IBookmarksClientExtension
     /// <returns>
     /// List of bookmarks
     /// </returns>
-    public static Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(this IBookmarksClient instance, long folder_id, IEnumerable<HaveStatus> haveInformation)
+    public static Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(this IBookmarksClient instance, long folder_id, IEnumerable<HaveStatus> haveInformation)
     {
         return instance.ListAsync(folder_id, haveInformation, 0);
     }
@@ -529,7 +529,7 @@ public sealed class BookmarksClient : IBookmarksClient, IDisposable
         return result.First();
     }
 
-    public async Task<(IList<IInstapaperBookmark>, IList<long>)> ListAsync(string wellKnownFolderId, IEnumerable<HaveStatus>? haveInformation, uint limit)
+    public async Task<(IEnumerable<IInstapaperBookmark>, IEnumerable<long>)> ListAsync(string wellKnownFolderId, IEnumerable<HaveStatus>? haveInformation, uint limit)
     {
         if (limit > 500)
         {
@@ -575,7 +575,7 @@ public sealed class BookmarksClient : IBookmarksClient, IDisposable
         return (bookmarks, deletedIds);
     }
 
-    public Task<(IList<IInstapaperBookmark>, IList<long>)> ListAsync(long folder_id, IEnumerable<HaveStatus>? haveInformation, uint limit)
+    public Task<(IEnumerable<IInstapaperBookmark>, IEnumerable<long>)> ListAsync(long folder_id, IEnumerable<HaveStatus>? haveInformation, uint limit)
     {
         if (folder_id < 1L)
         {

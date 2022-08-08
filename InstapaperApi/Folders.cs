@@ -86,7 +86,7 @@ public interface IFoldersClient
     /// service. This means folders refrenced by <see cref="WellKnownFolderIds"/>
     /// will not be returned by this call, and must be assumed to exist.
     /// </summary>
-    Task<IList<IInstapaperFolder>> ListAsync();
+    Task<IEnumerable<IInstapaperFolder>> ListAsync();
 
     /// <summary>
     /// Adds a folder to the service, with the supplied parameters
@@ -144,7 +144,7 @@ public sealed class FoldersClient : IFoldersClient, IDisposable
         Debug.Assert(JsonValueKind.Array == payload.ValueKind, "API is always supposed to return an array as the root element");
 
         // Turn the JSON into strongly typed objects
-        IList<IInstapaperFolder> folders = new List<IInstapaperFolder>();
+        var folders = new List<IInstapaperFolder>();
         foreach (var element in payload.EnumerateArray())
         {
             var itemType = element.GetProperty("type").GetString();
@@ -170,7 +170,7 @@ public sealed class FoldersClient : IFoldersClient, IDisposable
     }
 
     /// <inheritdoc/>
-    public async Task<IList<IInstapaperFolder>> ListAsync()
+    public async Task<IEnumerable<IInstapaperFolder>> ListAsync()
     {
         var folders = await this.PerformRequestAsync(EndPoints.Folders.List, new StringContent(String.Empty));
         return folders;

@@ -182,7 +182,7 @@ public class MockBookmarksService : IBookmarksClient
         }
     }
 
-    public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderServiceId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
+    public Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(string folderServiceId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
         var limit = Convert.ToInt32(resultLimit);
         IEnumerable<DatabaseArticle> remoteArticles = new List<DatabaseArticle>();
@@ -205,8 +205,8 @@ public class MockBookmarksService : IBookmarksClient
         {
             // If there was no have information, we should just return the
             // contents of the folder
-            return Task.FromResult<(IList<IInstapaperBookmark>, IList<long>)>(
-                (remoteArticles.Select((a) => a.ToInstapaperBookmark()).Take(limit).ToList(), deletes)
+            return Task.FromResult<(IEnumerable<IInstapaperBookmark>, IEnumerable<long>)>(
+                (remoteArticles.Select((a) => a.ToInstapaperBookmark()).Take(limit), deletes)
             );
         }
 
@@ -273,10 +273,10 @@ public class MockBookmarksService : IBookmarksClient
         }
 
         deletes = new List<long>(havesMap.Select((kvp) => kvp.Key));
-        return Task.FromResult((result, deletes));
+        return Task.FromResult<(IEnumerable<IInstapaperBookmark>, IEnumerable<long>)>((result, deletes));
     }
 
-    public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
+    public Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
         return this.ListAsync(folderId.ToString(), haveInformation, resultLimit);
     }
@@ -335,8 +335,8 @@ public class MockBookmarkClientWithOnlyGetText : IBookmarksClient
     public Task<IInstapaperBookmark> ArchiveAsync(long bookmark_id) => throw new NotImplementedException();
     public Task DeleteAsync(long bookmark_id) => throw new NotImplementedException();
     public Task<IInstapaperBookmark> LikeAsync(long bookmark_id) => throw new NotImplementedException();
-    public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit) => throw new NotImplementedException();
-    public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit) => throw new NotImplementedException();
+    public Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(string folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit) => throw new NotImplementedException();
+    public Task<(IEnumerable<IInstapaperBookmark> Bookmarks, IEnumerable<long> DeletedIds)> ListAsync(long folderId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit) => throw new NotImplementedException();
     public Task<IInstapaperBookmark> MoveAsync(long bookmark_id, long folder_id) => throw new NotImplementedException();
     public Task<IInstapaperBookmark> UnarchiveAsync(long bookmark_id) => throw new NotImplementedException();
     public Task<IInstapaperBookmark> UnlikeAsync(long bookmark_id) => throw new NotImplementedException();

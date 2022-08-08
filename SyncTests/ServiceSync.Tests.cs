@@ -88,7 +88,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
         await this.SharedState.InitializeAsync();
 
         // Initialize some folders
-        var folders = await this.SharedState.FoldersClient.ListAsync();
+        var folders = (await this.SharedState.FoldersClient.ListAsync()).ToList();
         this.folders = folders;
         var foldersNeeded = Math.Max(0, MIN_FOLDERS - folders.Count());
         for (var index = 0; index < foldersNeeded; index += 1)
@@ -100,7 +100,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
         }
 
         // Initialize some articles
-        var currentBookmarks = (await this.SharedState.BookmarksClient.ListAsync(WellKnownFolderIds.Unread)).Bookmarks;
+        var currentBookmarks = (await this.SharedState.BookmarksClient.ListAsync(WellKnownFolderIds.Unread)).Bookmarks.ToList();
         var bookmarksNeeded = Math.Max(0, ((folders.Count() + 2) * MIN_ARTICLES_PER_FOLDER) - currentBookmarks.Count());
         for (var index = 0; index < bookmarksNeeded; index += 1)
         {

@@ -363,7 +363,7 @@ public sealed class BookmarksTests
         var folder = this.SharedState.RecentlyAddedFolder!;
 
         // Get the current state of bookmarks in that folder
-        var (folderContent, _) = await client.ListAsync(folder.Id);
+        var folderContent = (await client.ListAsync(folder.Id)).Bookmarks.ToList();
         Assert.Equal(2, folderContent.Count());
 
         var bookmark1 = folderContent[0];
@@ -472,7 +472,7 @@ public sealed class BookmarksTests
         var folder = this.SharedState.RecentlyAddedFolder!;
 
         // Get the current state of bookmarks in that folder
-        var (folderContent, _) = await client.ListAsync(folder.Id);
+        var folderContent = (await client.ListAsync(folder.Id)).Bookmarks.ToList();
         Assert.Equal(2, folderContent.Count());
 
         var haveInformation = new List<HaveStatus>();
