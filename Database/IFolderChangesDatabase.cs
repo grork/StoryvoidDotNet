@@ -33,7 +33,7 @@ public interface IFolderChangesDatabase
     /// Returns all pending folder additions
     /// </summary>
     /// <returns>Unordered list of folders that have been added</returns>
-    IList<PendingFolderAdd> ListPendingFolderAdds();
+    IEnumerable<PendingFolderAdd> ListPendingFolderAdds();
 
     /// <summary>
     /// Create a pending folder delete in the changes database
@@ -76,5 +76,5 @@ public interface IFolderChangesDatabase
     /// Returns all pending folder deletes
     /// </summary>
     /// <returns>Unordered list of folders that have been deleted</returns>
-    IList<PendingFolderDelete> ListPendingFolderDeletes();
+    IEnumerable<PendingFolderDelete> ListPendingFolderDeletes();
 }

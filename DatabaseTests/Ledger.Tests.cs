@@ -34,8 +34,8 @@ public sealed class FolderLedgerTests : IDisposable
         var folder = this.folders.CreateFolder("Sample");
         var pendingAdds = this.folderChanges.ListPendingFolderAdds();
         Assert.Single(pendingAdds);
-        Assert.Equal(folder.Title, pendingAdds[0].Title);
-        Assert.Equal(folder.LocalId, pendingAdds[0].FolderLocalId);
+        Assert.Equal(folder.Title, pendingAdds.First()!.Title);
+        Assert.Equal(folder.LocalId, pendingAdds.First()!.FolderLocalId);
     }
 
     [Fact]
@@ -57,8 +57,8 @@ public sealed class FolderLedgerTests : IDisposable
 
         var pendingDeletes = this.folderChanges.ListPendingFolderDeletes();
         Assert.Single(pendingDeletes);
-        Assert.Equal(folder.ServiceId, pendingDeletes[0].ServiceId);
-        Assert.Equal(folder.Title, pendingDeletes[0].Title);
+        Assert.Equal(folder.ServiceId, pendingDeletes.First()!.ServiceId);
+        Assert.Equal(folder.Title, pendingDeletes.First()!.Title);
     }
 
     [Fact]

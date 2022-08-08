@@ -101,12 +101,12 @@ internal class FolderChanges : IFolderChangesDatabase
     }
 
     /// <inheritdoc/>
-    public IList<PendingFolderAdd> ListPendingFolderAdds()
+    public IEnumerable<PendingFolderAdd> ListPendingFolderAdds()
     {
         return ListPendingFolderAdds(this.connection);
     }
 
-    private static IList<PendingFolderAdd> ListPendingFolderAdds(IDbConnection c)
+    private static IEnumerable<PendingFolderAdd> ListPendingFolderAdds(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *
@@ -237,12 +237,12 @@ internal class FolderChanges : IFolderChangesDatabase
     }
 
     /// <inheritdoc/>
-    public IList<PendingFolderDelete> ListPendingFolderDeletes()
+    public IEnumerable<PendingFolderDelete> ListPendingFolderDeletes()
     {
         return ListPendingFolderDeletes(this.connection);
     }
 
-    private static IList<PendingFolderDelete> ListPendingFolderDeletes(IDbConnection c)
+    private static IEnumerable<PendingFolderDelete> ListPendingFolderDeletes(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *
