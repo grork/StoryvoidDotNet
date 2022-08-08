@@ -502,6 +502,26 @@ public class ArticleDownloaderTests : IDisposable
     }
 
     [Fact]
+    public async Task ArticleCompletedEventRaisedAfterLocalStateWrittenToDatabase()
+    {
+        var article = this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!;
+
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+        DatabaseLocalOnlyArticleState? localState = null;
+
+        clearingHouse.ArticleCompleted += (_, args) =>
+        {
+            localState = this.articleDatabase.GetLocalOnlyStateByArticleId(args.Id);
+        };
+
+        await this.articleDownloader.DownloadBookmark(article);
+
+        Assert.NotNull(localState);
+        this.AssertAvailableLocallyAndFileExists(localState!);
+    }
+
+    [Fact]
     public async Task DownloadingMultipleArticleRasiesEvent()
     {
         var articleIds = new long[] {
@@ -524,6 +544,7 @@ public class ArticleDownloaderTests : IDisposable
         var imageCompleted = new List<Uri>();
         var imagesCompleted = new List<long>();
         var articlesCompleted = new List<DatabaseArticle>();
+        var localStates = new List<DatabaseLocalOnlyArticleState>();
         var downloadCompleted = false;
 
         var clearingHouse = new MockArticleDownloaderEventClearingHouse();
@@ -560,7 +581,16 @@ public class ArticleDownloaderTests : IDisposable
                 imagesCompleted.Add(articleId);
             }
         };
-        clearingHouse.ArticleCompleted += (_, args) => articlesCompleted.Add(args);
+        clearingHouse.ArticleCompleted += (_, args) =>
+        {
+            articlesCompleted.Add(args);
+            var localState = this.articleDatabase.GetLocalOnlyStateByArticleId(args.Id);
+            if (localState is not null)
+            {
+                localStates.Add(localState);
+            }
+
+        };
         clearingHouse.DownloadingCompleted += (_, _) => downloadCompleted = true;
 
         await this.articleDownloader.DownloadBookmarks(articlesToDownload);
@@ -575,6 +605,9 @@ public class ArticleDownloaderTests : IDisposable
         Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(articleIds, imagesCompleted);
         Assert.Equal(articleIds.Length, articlesCompleted.Count);
+        Assert.Equal(articleIds.Length, localStates.Count);
+        foreach (var state in localStates)
+        { this.AssertAvailableLocallyAndFileExists(state); }
         Assert.True(downloadCompleted);
     }
 

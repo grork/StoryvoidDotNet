@@ -182,33 +182,26 @@ public class ArticleDownloader : IDisposable
 
         try
         {
-            foreach (var chunk in articles.Chunkify(2))
+            cancellationToken.ThrowIfCancellationRequested();
+            var localstates = new List<DatabaseLocalOnlyArticleState>();
+
+            foreach (var article in articles)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var localstates = new List<DatabaseLocalOnlyArticleState>();
-
-                foreach (var article in chunk)
+                DatabaseLocalOnlyArticleState? localState = null;
+                try
                 {
-                    try
+                    this.eventSource?.RaiseArticleStarted(article);
+                    localState = await this.DownloadBookmarkCore(article, cancellationToken).ConfigureAwait(false);
+
+                    if (localState is not null)
                     {
-                        var localState = await this.DownloadBookmarkCore(article, cancellationToken).ConfigureAwait(false);
-                        if(localState is not null)
-                        {
-                            localstates.Add(localState);
-                        }
+                        this.ApplyLocalStateToArticle(article, localState);
                     }
-                    catch (EntityNotFoundException)
-                    { /* If the article isn't found, we'll attempt another time */ }
                 }
-
-                // Now that we've downloaded the information, we can linearly
-                // apply those changes to the database on a single thread, which
-                // allows the download itself to proceeded concurrently.
-                foreach(var state in localstates)
-                {
-                    var article = articleLookup[state.ArticleId];
-                    this.ApplyLocalStateToArticle(article, state);
-                }
+                catch (EntityNotFoundException)
+                { /* If the article isn't found, we'll attempt another time */ }
+                finally
+                { this.eventSource?.RaiseArticleCompleted(article); }
             }
         }
         finally
@@ -242,13 +235,18 @@ public class ArticleDownloader : IDisposable
     /// <returns>Updated local state information</returns>
     public async Task<DatabaseLocalOnlyArticleState?> DownloadBookmark(DatabaseArticle article, CancellationToken cancellationToken = default)
     {
-        var localState = await this.DownloadBookmarkCore(article, cancellationToken);
-        if(localState is null)
+        try
         {
-            return null;
-        }
+            this.eventSource?.RaiseArticleStarted(article);
+            var localState = await this.DownloadBookmarkCore(article, cancellationToken);
+            if (localState is null)
+            {
+                return null;
+            }
 
-        return this.ApplyLocalStateToArticle(article, localState);
+            return this.ApplyLocalStateToArticle(article, localState);
+        }
+        finally { this.eventSource?.RaiseArticleCompleted(article); }
     }
 
     private async Task<DatabaseLocalOnlyArticleState?> DownloadBookmarkCore(DatabaseArticle article, CancellationToken cancellationToken)
@@ -258,8 +256,6 @@ public class ArticleDownloader : IDisposable
         Uri? localPath = null;
         string extractedDescription = String.Empty;
         FirstImageInformaton? firstImage = null;
-
-        this.eventSource?.RaiseArticleStarted(article);
 
         try
         {
@@ -306,10 +302,6 @@ public class ArticleDownloader : IDisposable
         catch (TaskCanceledException)
         {
             throw new OperationCanceledException();
-        }
-        finally
-        {
-            this.eventSource?.RaiseArticleCompleted(article);
         }
     }
 
