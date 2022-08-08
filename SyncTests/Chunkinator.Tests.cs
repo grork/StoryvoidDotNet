@@ -1,6 +1,6 @@
 using Codevoid.Storyvoid.Sync;
 
-namespace Codevoid.Test.Storyvoid;
+namespace Codevoid.Test.Storyvoid.Sync;
 
 public class ChunkinatorTests
 {

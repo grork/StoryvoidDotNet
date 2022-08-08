@@ -1,4 +1,4 @@
-﻿namespace Codevoid.Test.Storyvoid;
+﻿namespace Codevoid.Test.Storyvoid.Sync;
 
 public sealed class FolderSyncTests : BaseSyncTest
 {

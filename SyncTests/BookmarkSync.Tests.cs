@@ -1,6 +1,6 @@
 using Codevoid.Storyvoid;
 
-namespace Codevoid.Test.Storyvoid;
+namespace Codevoid.Test.Storyvoid.Sync;
 
 public class BookmarkSyncTests : BaseSyncTest
 {
