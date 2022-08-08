@@ -468,9 +468,24 @@ public class ArticleDownloaderTests : IDisposable
         this.ResetArticleDownloader(clearingHouse);
 
         clearingHouse.ArticleStarted += (_, args) => articleStarting = args;
-        clearingHouse.ImagesStarted += (_, articleId) => imagesStarted = articleId;
-        clearingHouse.ImageStarted += (_, uri) => imageStarted.Add(uri);
-        clearingHouse.ImageCompleted += (_, uri) => imageCompleted.Add(uri);
+        clearingHouse.ImagesStarted += (_, articleId) =>imagesStarted = articleId;
+
+        clearingHouse.ImageStarted += (_, uri) =>
+        {
+            lock (imageStarted)
+            {
+                imageStarted.Add(uri);
+            }
+        };
+
+        clearingHouse.ImageCompleted += (_, uri) =>
+        {
+            lock (imageCompleted)
+            {
+                imageCompleted.Add(uri);
+            }
+        };
+
         clearingHouse.ImagesCompleted += (_, articleId) => imagesCompleted = articleId;
         clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
 
@@ -516,10 +531,35 @@ public class ArticleDownloaderTests : IDisposable
 
         clearingHouse.DownloadingStarted += (_, _) => downloadStarted = true;
         clearingHouse.ArticleStarted += (_, args) => articlesStarted.Add(args);
-        clearingHouse.ImagesStarted += (_, articleId) => imagesStarted.Add(articleId);
-        clearingHouse.ImageStarted += (_, uri) => imageStarted.Add(uri);
-        clearingHouse.ImageCompleted += (_, uri) => imageCompleted.Add(uri);
-        clearingHouse.ImagesCompleted += (_, articleId) => imagesCompleted.Add(articleId);
+        clearingHouse.ImagesStarted += (_, articleId) =>
+        {
+            lock (imagesStarted)
+            {
+                imagesStarted.Add(articleId);
+            }
+        };
+
+        clearingHouse.ImageStarted += (_, uri) =>
+        {
+            lock (imageStarted)
+            {
+                imageStarted.Add(uri);
+            }
+        };
+        clearingHouse.ImageCompleted += (_, uri) =>
+        {
+            lock (imageCompleted)
+            {
+                imageCompleted.Add(uri);
+            }
+        };
+        clearingHouse.ImagesCompleted += (_, articleId) =>
+        {
+            lock (imagesCompleted)
+            {
+                imagesCompleted.Add(articleId);
+            }
+        };
         clearingHouse.ArticleCompleted += (_, args) => articlesCompleted.Add(args);
         clearingHouse.DownloadingCompleted += (_, _) => downloadCompleted = true;
 
@@ -531,6 +571,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(downloadStarted);
         Assert.Equal(articleIds.Length, articlesStarted.Count);
         Assert.Equal(articleIds, imagesStarted);
+        Assert.Equal(imageStarted.Count, imageCompleted.Count);
         Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(articleIds, imagesCompleted);
         Assert.Equal(articleIds.Length, articlesCompleted.Count);
@@ -568,10 +609,34 @@ public class ArticleDownloaderTests : IDisposable
 
         clearingHouse.DownloadingStarted += (_, _) => downloadStarted = true;
         clearingHouse.ArticleStarted += (_, args) => articlesStarted.Add(args);
-        clearingHouse.ImagesStarted += (_, articleId) => imagesStarted.Add(articleId);
-        clearingHouse.ImageStarted += (_, uri) => imageStarted.Add(uri);
-        clearingHouse.ImageCompleted += (_, uri) => imageCompleted.Add(uri);
-        clearingHouse.ImagesCompleted += (_, articleId) => imagesCompleted.Add(articleId);
+        clearingHouse.ImagesStarted += (_, articleId) =>
+        {
+            lock (imagesStarted)
+            {
+                imagesStarted.Add(articleId);
+            }
+        };
+        clearingHouse.ImageStarted += (_, uri) =>
+        {
+            lock (imageStarted)
+            {
+                imageStarted.Add(uri);
+            }
+        };
+        clearingHouse.ImageCompleted += (_, uri) =>
+        {
+            lock (imageCompleted)
+            {
+                imageCompleted.Add(uri);
+            }
+        };
+        clearingHouse.ImagesCompleted += (_, articleId) =>
+        {
+            lock (imagesCompleted)
+            {
+                imagesCompleted.Add(articleId);
+            }
+        };
         clearingHouse.ArticleCompleted += (_, args) => articlesCompleted.Add(args);
         clearingHouse.DownloadingCompleted += (_, _) => downloadCompleted = true;
 
@@ -580,6 +645,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(downloadStarted);
         Assert.Equal(articleIds.Length, articlesStarted.Count);
         Assert.Equal(articleIdsWithoutMissingArticle, imagesStarted);
+        Assert.Equal(imageStarted.Count, imageCompleted.Count);
         Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(articleIdsWithoutMissingArticle, imagesCompleted);
         Assert.Equal(articleIds.Length, articlesCompleted.Count);
