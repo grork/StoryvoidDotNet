@@ -56,7 +56,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
         }
 
         #region Folder State Reset
-        private async Task<IList<ulong>> ListFolderIds()
+        private async Task<IEnumerable<ulong>> ListFolderIds()
         {
             LogMessage("Requesting folders: Start");
             var payload = await this.PerformRequestAsync(EndPoints.Folders.List, new StringContent(String.Empty));
@@ -118,7 +118,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
         #endregion
 
         #region Bookmarks State Reset
-        private async Task<IList<(ulong id,
+        private async Task<IEnumerable<(ulong id,
                                   bool liked,
                                   string hash,
                                   ulong progress_timestamp,
@@ -214,7 +214,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             }
         }
 
-        internal async Task<IList<(ulong id, Uri uri)>> ResetAllUnreadItems()
+        internal async Task<IEnumerable<(ulong id, Uri uri)>> ResetAllUnreadItems()
         {
             // List bookmarks so we can compute hashes + known progress
             var unreadBookmarks = await this.ListBookmarks(WellKnownFolderIds.Unread);
@@ -325,7 +325,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
 
         LogMessage("Cleaning up Bookmarks");
         await apiHelper.MoveArchivedBookmarksToUnread();
-        var remoteBookmarks = await apiHelper.ResetAllUnreadItems();
+        var remoteBookmarks = (await apiHelper.ResetAllUnreadItems()).ToList();
 
         // Collect all the remote test bookmarks that are still available
         // to be added e.g. those that *don't* appear in the remote list,
@@ -412,6 +412,6 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
         return uri;
     }
 
-    public IList<(ulong id, Uri uri)> RemoteBookmarksAtStart { get; private set; } = new List<(ulong, Uri)>();
+    public IEnumerable<(ulong id, Uri uri)> RemoteBookmarksAtStart { get; private set; } = new List<(ulong, Uri)>();
     #endregion
 }

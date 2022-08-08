@@ -131,7 +131,7 @@ internal static class TestUtilities
         ), folder);
     }
 
-    internal static IList<DatabaseFolder> ListAllCompleteUserFolders(this IFolderDatabase instance)
+    internal static IEnumerable<DatabaseFolder> ListAllCompleteUserFolders(this IFolderDatabase instance)
     {
         var localFolders = from f in instance.ListAllUserFolders()
                            where f.ServiceId.HasValue && f.LocalId != WellKnownLocalFolderIds.Unread && f.LocalId != WellKnownLocalFolderIds.Archive

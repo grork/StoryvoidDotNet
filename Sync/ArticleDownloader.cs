@@ -170,7 +170,7 @@ public class ArticleDownloader : IDisposable
     /// Task that completes when supplied articles &amp; their images
     /// completed
     /// </returns>
-    internal async Task DownloadArticles(IList<DatabaseArticle> articles, CancellationToken cancellationToken = default)
+    internal async Task DownloadArticles(IEnumerable<DatabaseArticle> articles, CancellationToken cancellationToken = default)
     {
         this.eventSource?.RaiseDownloadingStarted(articles.Count());
 

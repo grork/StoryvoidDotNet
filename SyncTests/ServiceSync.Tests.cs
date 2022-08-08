@@ -68,7 +68,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
     #endregion
 
     private CurrentServiceStateFixture SharedState;
-    private IList<IInstapaperFolder>? folders;
+    private IEnumerable<IInstapaperFolder>? folders;
 
     public ServiceSyncTests(CurrentServiceStateFixture state)
     {
@@ -130,7 +130,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
     {
         // Check folders
         var remoteFoldersTask = service.Folders.ListAsync();
-        var localFolders = database.Folders.ListAllCompleteUserFolders();
+        var localFolders = database.Folders.ListAllCompleteUserFolders().ToList();
         var remoteFolders = await remoteFoldersTask;
         localFolders.AssertSameAs(remoteFolders);
 

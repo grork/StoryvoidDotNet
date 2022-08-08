@@ -584,8 +584,8 @@ public class InstapaperSync
     private async Task SyncArticlesForFolder(IEnumerable<DatabaseArticle> articlesInFolder, string folderServiceId, long localFolderId)
     {
         // Default to something so we don't have to check for nulls
-        IList<IInstapaperBookmark> updates = new List<IInstapaperBookmark>();
-        IList<long> deletes = new List<long>();
+        IEnumerable<IInstapaperBookmark> updates = new List<IInstapaperBookmark>();
+        IEnumerable<long> deletes = new List<long>();
 
         try
         {
