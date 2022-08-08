@@ -31,7 +31,7 @@ public interface IArticleChangesDatabase
     /// Lists any pending article additions
     /// </summary>
     /// <returns>Unordered article additions currently present</returns>
-    IList<PendingArticleAdd> ListPendingArticleAdds();
+    IEnumerable<PendingArticleAdd> ListPendingArticleAdds();
 
     /// <summary>
     /// Deletes a pending article add that matches the supplied URL. If no url
@@ -57,7 +57,7 @@ public interface IArticleChangesDatabase
     /// Lists any pending article deletes
     /// </summary>
     /// <returns>Unordered article deletes</returns>
-    IList<long> ListPendingArticleDeletes();
+    IEnumerable<long> ListPendingArticleDeletes();
 
     /// <summary>
     /// Deletes a pending article delete that matches the supplied ID. If no id
@@ -85,7 +85,7 @@ public interface IArticleChangesDatabase
     /// Lists any pending article state changes (e.g. like/unlike)
     /// </summary>
     /// <returns>Unordered article state changes</returns>
-    IList<PendingArticleStateChange> ListPendingArticleStateChanges();
+    IEnumerable<PendingArticleStateChange> ListPendingArticleStateChanges();
 
     /// <summary>
     /// Deletes a pending article state change that matches the supplied ID. If
@@ -107,7 +107,7 @@ public interface IArticleChangesDatabase
     /// <summary>
     /// Lists any pending article moves
     /// </summary>
-    IList<PendingArticleMove> ListPendingArticleMoves();
+    IEnumerable<PendingArticleMove> ListPendingArticleMoves();
 
     /// <summary>
     /// Lists any pending article moves into the supplied folder
@@ -115,7 +115,7 @@ public interface IArticleChangesDatabase
     /// Throws FolderNotFoundException if the folder does not exist
     /// </summary>
     /// <throws cref="FolderNotFoundException">
-    IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId);
+    IEnumerable<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId);
 
     /// <summary>
     /// Deletes a pending article move that matches the supplied ID. If no id

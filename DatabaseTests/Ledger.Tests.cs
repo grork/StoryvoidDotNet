@@ -171,7 +171,7 @@ public sealed class ArticleLedgerTests : IDisposable
         var pendingDeletes = this.articleChanges.ListPendingArticleDeletes();
         Assert.Single(pendingDeletes);
 
-        Assert.Equal(article.Id, pendingDeletes[0]);
+        Assert.Equal(article.Id, pendingDeletes.First()!);
     }
 
     [Fact]
@@ -191,8 +191,8 @@ public sealed class ArticleLedgerTests : IDisposable
         var pendingMoves = this.articleChanges.ListPendingArticleMoves();
         Assert.Single(pendingMoves);
 
-        Assert.Equal(article.Id, pendingMoves[0].ArticleId);
-        Assert.Equal(this.CustomFolder1.LocalId, pendingMoves[0].DestinationFolderLocalId);
+        Assert.Equal(article.Id, pendingMoves.First()!.ArticleId);
+        Assert.Equal(this.CustomFolder1.LocalId, pendingMoves.First()!.DestinationFolderLocalId);
     }
 
     [Fact]
@@ -217,8 +217,8 @@ public sealed class ArticleLedgerTests : IDisposable
         var pendingMoves = this.articleChanges.ListPendingArticleMoves();
         Assert.Single(pendingMoves);
 
-        Assert.Equal(article.Id, pendingMoves[0].ArticleId);
-        Assert.Equal(this.CustomFolder2.LocalId, pendingMoves[0].DestinationFolderLocalId);
+        Assert.Equal(article.Id, pendingMoves.First()!.ArticleId);
+        Assert.Equal(this.CustomFolder2.LocalId, pendingMoves.First()!.DestinationFolderLocalId);
     }
 
     [Fact]
@@ -234,8 +234,8 @@ public sealed class ArticleLedgerTests : IDisposable
 
         var pendingStateChanges = this.articleChanges.ListPendingArticleStateChanges();
         Assert.Single(pendingStateChanges);
-        Assert.Equal(article.Id, pendingStateChanges[0].ArticleId);
-        Assert.True(pendingStateChanges[0].Liked);
+        Assert.Equal(article.Id, pendingStateChanges.First()!.ArticleId);
+        Assert.True(pendingStateChanges.First()!.Liked);
     }
 
     [Fact]
@@ -265,8 +265,8 @@ public sealed class ArticleLedgerTests : IDisposable
 
         var pendingStateChanges = this.articleChanges.ListPendingArticleStateChanges();
         Assert.Single(pendingStateChanges);
-        Assert.Equal(article.Id, pendingStateChanges[0].ArticleId);
-        Assert.False(pendingStateChanges[0].Liked);
+        Assert.Equal(article.Id, pendingStateChanges.First()!.ArticleId);
+        Assert.False(pendingStateChanges.First()!.Liked);
     }
 
     [Fact]

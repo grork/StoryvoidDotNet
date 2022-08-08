@@ -61,12 +61,12 @@ internal class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public IList<PendingArticleAdd> ListPendingArticleAdds()
+    public IEnumerable<PendingArticleAdd> ListPendingArticleAdds()
     {
         return ListPendingArticleAdds(this.connection);
     }
 
-    private static IList<PendingArticleAdd> ListPendingArticleAdds(IDbConnection c)
+    private static IEnumerable<PendingArticleAdd> ListPendingArticleAdds(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT * FROM article_adds;
@@ -174,12 +174,12 @@ internal class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public IList<long> ListPendingArticleDeletes()
+    public IEnumerable<long> ListPendingArticleDeletes()
     {
         return ListPendingArticleDeletes(this.connection);
     }
 
-    private static IList<long> ListPendingArticleDeletes(IDbConnection c)
+    private static IEnumerable<long> ListPendingArticleDeletes(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *
@@ -260,12 +260,12 @@ internal class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public IList<PendingArticleStateChange> ListPendingArticleStateChanges()
+    public IEnumerable<PendingArticleStateChange> ListPendingArticleStateChanges()
     {
         return ListPendingArticleStateChanges(this.connection);
     }
 
-    private static IList<PendingArticleStateChange> ListPendingArticleStateChanges(IDbConnection c)
+    private static IEnumerable<PendingArticleStateChange> ListPendingArticleStateChanges(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *
@@ -389,12 +389,12 @@ internal class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public IList<PendingArticleMove> ListPendingArticleMoves()
+    public IEnumerable<PendingArticleMove> ListPendingArticleMoves()
     {
         return ListPendingArticleMoves(this.connection);
     }
 
-    private static IList<PendingArticleMove> ListPendingArticleMoves(IDbConnection c)
+    private static IEnumerable<PendingArticleMove> ListPendingArticleMoves(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *
@@ -413,12 +413,12 @@ internal class ArticleChanges : IArticleChangesDatabase
     }
 
     /// <inheritdoc />
-    public IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId)
+    public IEnumerable<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(long localFolderId)
     {
         return ListPendingArticleMovesForLocalFolderId(this.connection, localFolderId);
     }
 
-    private static IList<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(IDbConnection c, long localFolderId)
+    private static IEnumerable<PendingArticleMove> ListPendingArticleMovesForLocalFolderId(IDbConnection c, long localFolderId)
     {
         using var query = c.CreateCommand(@"
             SELECT *
