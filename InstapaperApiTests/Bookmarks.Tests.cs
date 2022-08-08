@@ -177,7 +177,7 @@ public sealed class BookmarksTests
 
         // Check that it is actually liked in the listing
         var (likedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Liked);
-        Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
+        Assert.Single(likedBookmarks); // Only expected one bookmark
 
         // Check the one we JUST added is actually present
         Assert.Equal(result.Id, likedBookmarks.First().Id);
@@ -198,7 +198,7 @@ public sealed class BookmarksTests
 
         // Check that it is actually liked in the listing
         var (likedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Liked);
-        Assert.Equal(1, likedBookmarks.Count); // Only expected one bookmark
+        Assert.Single(likedBookmarks); // Only expected one bookmark
 
         // Check the one we JUST added is actually present
         Assert.Equal(result.Id, likedBookmarks.First().Id);
@@ -270,7 +270,7 @@ public sealed class BookmarksTests
 
         // Check that it is actually liked in the listing
         var (archivedBookmarks, _) = await this.Client.ListAsync(WellKnownFolderIds.Archived);
-        Assert.Equal(1, archivedBookmarks.Count); // Only expected one bookmark
+        Assert.Single(archivedBookmarks); // Only expected one bookmark
 
         // Check the one we JUST added is actually present
         Assert.Equal(result.Id, archivedBookmarks.First().Id);
@@ -351,7 +351,7 @@ public sealed class BookmarksTests
 
         // Get the current state of bookmarks in that folder
         var (folderContent, _) = await client.ListAsync(folder.Id);
-        Assert.Equal(2, folderContent.Count);
+        Assert.Equal(2, folderContent.Count());
 
         Assert.Contains(folderContent, (b) => b.Id == candidate.Id);
     }
@@ -364,7 +364,7 @@ public sealed class BookmarksTests
 
         // Get the current state of bookmarks in that folder
         var (folderContent, _) = await client.ListAsync(folder.Id);
-        Assert.Equal(2, folderContent.Count);
+        Assert.Equal(2, folderContent.Count());
 
         var bookmark1 = folderContent[0];
         var bookmark2 = folderContent[1];
@@ -392,7 +392,7 @@ public sealed class BookmarksTests
 
         // Perform the list with the have information
         var (updatedBookmarks, _) = await client.ListAsync(folder.Id, new[] { bookmark1Have, bookmark2Have });
-        Assert.Equal(2, updatedBookmarks.Count); // Expected two bookmarks
+        Assert.Equal(2, updatedBookmarks.Count()); // Expected two bookmarks
 
         var updatedBookmark1 = (from b in updatedBookmarks
                                 where b.Id == bookmark1.Id
@@ -419,7 +419,7 @@ public sealed class BookmarksTests
 
         // Get the current state of bookmarks in that folder
         var (folderContent, _) = await client.ListAsync(folder.Id);
-        Assert.Equal(2, folderContent.Count);
+        Assert.Equal(2, folderContent.Count());
 
         var haveInformation = new List<HaveStatus>();
         foreach (var bookmark in folderContent)
@@ -440,7 +440,7 @@ public sealed class BookmarksTests
 
         // Get the current state of bookmarks in that folder
         var (folderContent, _) = await client.ListAsync(folder.Id);
-        Assert.Equal(2, folderContent.Count);
+        Assert.Equal(2, folderContent.Count());
 
         var haveInformation = new List<HaveStatus>();
         foreach (var bookmark in folderContent)
@@ -460,7 +460,7 @@ public sealed class BookmarksTests
         Assert.Empty(folderContentWithHave);
 
         // Check the two things we expected to be deleted were deleted
-        Assert.Equal(2, deletedIds.Count);
+        Assert.Equal(2, deletedIds.Count());
         Assert.Contains(deletedIds, (id) => id == fakeHave.Id);
         Assert.Contains(deletedIds, (id) => id == fakeHave2.Id);
     }
@@ -473,7 +473,7 @@ public sealed class BookmarksTests
 
         // Get the current state of bookmarks in that folder
         var (folderContent, _) = await client.ListAsync(folder.Id);
-        Assert.Equal(2, folderContent.Count);
+        Assert.Equal(2, folderContent.Count());
 
         var haveInformation = new List<HaveStatus>();
         foreach (var bookmark in folderContent)
@@ -496,7 +496,7 @@ public sealed class BookmarksTests
         var (folderContentWithHave, _) = await client.ListAsync(folder.Id, haveInformation);
 
         // Check the two things we expected to be deleted were deleted
-        Assert.Equal(1, folderContentWithHave.Count);
+        Assert.Single(folderContentWithHave);
         Assert.Contains(folderContentWithHave, (b) =>
         {
             return (b.Id == secondBookmark.Id) &&
@@ -512,10 +512,10 @@ public sealed class BookmarksTests
 
         // Get the current state of bookmarks in that folder
         var (folderContent, _) = await client.ListAsync(folder.Id);
-        Assert.Equal(2, folderContent.Count);
+        Assert.Equal(2, folderContent.Count());
 
         var (folderContentWithHave, _) = await client.ListAsync(folder.Id, limit: 1);
-        Assert.Equal(1, folderContentWithHave.Count); // Limited to 1 item, should only get one
+        Assert.Single(folderContentWithHave); // Limited to 1 item, should only get one
     }
 
     [Fact]
@@ -550,7 +550,7 @@ public sealed class BookmarksTests
         await client.DeleteAsync(this.SharedState.RecentlyAddedBookmark!.Id);
 
         var (folderContents, _) = await client.ListAsync(this.SharedState.RecentlyAddedFolder!.Id);
-        Assert.Equal(1, folderContents.Count);
+        Assert.Single(folderContents);
         Assert.DoesNotContain(folderContents, (b) => (b.Id == this.SharedState.RecentlyAddedBookmark!.Id));
 
         this.SharedState.UpdateOrSetRecentBookmark(null);

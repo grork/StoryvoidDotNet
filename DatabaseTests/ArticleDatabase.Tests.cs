@@ -122,7 +122,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         var articles = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Equal(1, articles.Count);
+        Assert.Single(articles);
         Assert.Contains(articles, (b) => b.Id == article.Id);
 
         var articleFromListing = articles.First();
@@ -139,7 +139,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
 
         var articles = this.db.ListArticlesForLocalFolder(this.CustomFolder1.LocalId);
-        Assert.Equal(1, articles.Count);
+        Assert.Single(articles);
         Assert.Contains(articles, (b) => b.Id == article.Id);
 
         var articleFromlisting = articles.First();
@@ -174,7 +174,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var customArticle = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
 
         var articles = this.db.ListAllArticlesInAFolder();
-        Assert.Equal(2, articles.Count);
+        Assert.Equal(2, articles.Count());
         Assert.Contains(articles, (c) =>
         {
             var matchingArticle = c.Article.Id == customArticle.Id;
@@ -237,7 +237,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var unreadFolderArticle = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         var customFolderArticles = this.db.ListArticlesForLocalFolder(this.CustomFolder1.LocalId);
-        Assert.Equal(1, customFolderArticles.Count);
+        Assert.Single(customFolderArticles);
         Assert.Contains(customFolderArticles, (b) => b.Id == customFolderArticle.Id);
 
         var customArticleFromListing = customFolderArticles.First();
@@ -248,7 +248,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         Assert.False(customArticleFromListing.HasLocalState);
 
         var unreadFolderArticles = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Equal(1, unreadFolderArticles.Count);
+        Assert.Single(unreadFolderArticles);
         Assert.Contains(unreadFolderArticles, (b) => b.Id == unreadFolderArticle.Id);
 
         var unreadArticleFromListing = unreadFolderArticles.First();
@@ -313,7 +313,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         );
 
         var likedArticles = this.db.ListLikedArticles();
-        Assert.Equal(1, likedArticles.Count);
+        Assert.Single(likedArticles);
         Assert.Contains(likedArticles, (a) => (a.Id == article.id) && a.Liked);
     }
 
@@ -327,7 +327,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         _ = this.db.AddArticleToFolder(article2, this.CustomFolder1.LocalId);
 
         var likedArticles = this.db.ListLikedArticles();
-        Assert.Equal(2, likedArticles.Count);
+        Assert.Equal(2, likedArticles.Count());
         Assert.Contains(likedArticles, (a) => (a.Id == article1.id) && a.Liked);
         Assert.Contains(likedArticles, (a) => (a.Id == article2.id) && a.Liked);
     }
@@ -529,7 +529,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
 
         var beforeUpdate = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Equal(1, beforeUpdate.Count);
+        Assert.Single(beforeUpdate);
         Assert.Contains(beforeUpdate, (a) =>
             (a.Id == article.Id) && a.ReadProgress == article.ReadProgress && a.ReadProgressTimestamp == article.ReadProgressTimestamp);
 
@@ -537,7 +537,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var progress = 0.3F;
         article = this.db.UpdateReadProgressForArticle(progress, progressTimestamp, article.Id);
         var afterUpdate = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Equal(1, afterUpdate.Count);
+        Assert.Single(afterUpdate);
         Assert.Contains(afterUpdate, (a) =>
             (a.Id == article.Id) && a.ReadProgress == progress && a.ReadProgressTimestamp == progressTimestamp);
     }
@@ -592,7 +592,7 @@ public sealed class ArticleDatabaseTests : IDisposable
 
         // Check it's in the destination
         var customArticles = this.db.ListArticlesForLocalFolder(this.CustomFolder1.LocalId);
-        Assert.Equal(1, customArticles.Count);
+        Assert.Single(customArticles);
         Assert.Contains(customArticles, (a) => a.Id == article.Id);
 
         // Check it's not present in unread
@@ -679,7 +679,7 @@ public sealed class ArticleDatabaseTests : IDisposable
 
         // Check it's in the destination
         var archivedArticles = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
-        Assert.Equal(1, archivedArticles.Count);
+        Assert.Single(archivedArticles);
         Assert.Contains(archivedArticles, (b) => b.Id == article.Id);
 
         // Check it's not present in unread
@@ -710,7 +710,7 @@ public sealed class ArticleDatabaseTests : IDisposable
 
         // Check it's in the destination
         var unreadArticles = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Equal(1, unreadArticles.Count);
+        Assert.Single(unreadArticles);
         Assert.Contains(unreadArticles, (b) => b.Id == article.Id);
 
         // Check it's not present in unread
@@ -741,7 +741,7 @@ public sealed class ArticleDatabaseTests : IDisposable
 
         // Check it's in the destination
         var unreadArticles = this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
-        Assert.Equal(1, unreadArticles.Count);
+        Assert.Single(unreadArticles);
         Assert.Contains(unreadArticles, (b) => b.Id == article.Id);
 
         // Check it's not present in unread
@@ -924,7 +924,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var customArticle2 = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
 
         var articles = this.db.ListAllArticlesInAFolder();
-        Assert.Equal(2, articles.Count);
+        Assert.Equal(2, articles.Count());
         Assert.Contains(articles, (c) =>
         {
             var matchingArticle = c.Article.Id == customArticle1.Id;
@@ -949,7 +949,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var addedArticle = this.db.AddArticleNoFolder(article);
 
         var orphanedArticles = this.db.ListArticlesNotInAFolder();
-        Assert.Equal(1, orphanedArticles.Count);
+        Assert.Single(orphanedArticles);
         Assert.Equal(addedArticle, orphanedArticles[0]);
     }
 
@@ -962,7 +962,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         var customArticle3 = this.db.AddArticleNoFolder(TestUtilities.GetRandomArticle());
 
         var articles = this.db.ListArticlesNotInAFolder();
-        Assert.Equal(2, articles.Count);
+        Assert.Equal(2, articles.Count());
         Assert.Contains(customArticle2, articles);
         Assert.Contains(customArticle3, articles);
         Assert.DoesNotContain(unreadArticle, articles);

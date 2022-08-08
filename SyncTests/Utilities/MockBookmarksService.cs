@@ -72,7 +72,7 @@ public class MockBookmarksService : IBookmarksClient
 
         var allArticles = articleDb.ListAllArticles();
 
-        if (allArticles.Count > 0)
+        if (allArticles.Count() > 0)
         {
             var max = (from a in allArticles
                        select a.Id).Max();

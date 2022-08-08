@@ -96,7 +96,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
         internal async Task DeleteAllFolders()
         {
             var folders = await this.ListFolderIds();
-            LogMessage($"Found {folders.Count} folders");
+            LogMessage($"Found {folders.Count()} folders");
             foreach (var id in folders)
             {
                 // Since Instapaper has a bug today that instead of following
@@ -160,7 +160,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
                 }
             }
 
-            LogMessage($"Found {bookmarks.Count} bookmarks");
+            LogMessage($"Found {bookmarks.Count()} bookmarks");
 
             return bookmarks;
         }
@@ -339,9 +339,9 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             }
         }
 
-        LogMessage($"There were {availableToAddUris.Count} URIs available to add");
+        LogMessage($"There were {availableToAddUris.Count()} URIs available to add");
 
-        if (availableToAddUris.Count < 1)
+        if (availableToAddUris.Count() < 1)
         {
             LogMessage("There weren't any URIs for adding, so deleting one");
 
@@ -404,7 +404,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
 
     public Uri GetNextAddableUrl()
     {
-        Assert.True(this.available.Count > 0); // Expected a URL to be available
+        Assert.True(this.available.Count() > 0); // Expected a URL to be available
 
         var uri = this.available.First();
         this.available.Remove(uri);

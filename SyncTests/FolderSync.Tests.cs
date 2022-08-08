@@ -23,7 +23,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         await this.syncEngine.SyncFolders();
 
         // Check that the folders match
-        Assert.True(this.databases.FolderDB.ListAllCompleteUserFolders().Count > 0);
+        Assert.True(this.databases.FolderDB.ListAllCompleteUserFolders().Count() > 0);
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.FoldersClient.FolderDB);
     }
 
@@ -52,7 +52,7 @@ public sealed class FolderSyncTests : BaseSyncTest
     [Fact]
     public async Task CompleteFoldersThatAreOnlyLocalAreRemovedDuringSync()
     {
-        var targetFolderCount = this.databases.FolderDB.ListAllCompleteUserFolders().Count - 1;
+        var targetFolderCount = this.databases.FolderDB.ListAllCompleteUserFolders().Count() - 1;
 
         // Create a folder that only exists remotely
         var remoteToDelete = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
@@ -61,7 +61,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         await this.syncEngine.SyncFolders();
 
         var localFolders = this.databases.FolderDB.ListAllCompleteUserFolders();
-        Assert.Equal(targetFolderCount, localFolders.Count);
+        Assert.Equal(targetFolderCount, localFolders.Count());
         Assert.DoesNotContain(remoteToDelete, localFolders, new CompareFoldersIgnoringLocalId());
     }
 
@@ -69,7 +69,7 @@ public sealed class FolderSyncTests : BaseSyncTest
     public async Task FoldersAddedRemotelyAreAddedWhenLocalDatabaseIsntEmpty()
     {
         var remoteFolder = this.service.FoldersClient.FolderDB.AddCompleteFolderToDb();
-        var localFolderCount = this.databases.FolderDB.ListAllCompleteUserFolders().Count;
+        var localFolderCount = this.databases.FolderDB.ListAllCompleteUserFolders().Count();
 
         // Perform the sync, which should pull down remote folders
         await this.syncEngine.SyncFolders();

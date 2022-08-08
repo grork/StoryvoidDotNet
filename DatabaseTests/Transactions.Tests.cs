@@ -44,7 +44,7 @@ public sealed class FolderTransactionTests : IDisposable
 
         Assert.Throws<Exception>(() => this.db.CreateFolder("Sample"));
 
-        Assert.Equal(2, this.db.ListAllFolders().Count);
+        Assert.Equal(2, this.db.ListAllFolders().Count());
         Assert.Empty(this.folderChanges.ListPendingFolderAdds());
     }
 
@@ -64,7 +64,7 @@ public sealed class FolderTransactionTests : IDisposable
 
         Assert.Throws<Exception>(() => this.db.CreateFolder("Sample"));
 
-        Assert.Equal(3, this.db.ListAllFolders().Count);
+        Assert.Equal(3, this.db.ListAllFolders().Count());
         Assert.Single(this.folderChanges.ListPendingFolderAdds());
     }
 
@@ -79,7 +79,7 @@ public sealed class FolderTransactionTests : IDisposable
         };
         Assert.Throws<Exception>(() => this.db.DeleteFolder(createdFolder.LocalId));
 
-        Assert.Equal(3, this.db.ListAllFolders().Count);
+        Assert.Equal(3, this.db.ListAllFolders().Count());
         Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
     }
 
@@ -93,7 +93,7 @@ public sealed class FolderTransactionTests : IDisposable
 
         Assert.Throws<Exception>(() => this.db.DeleteFolder(createdFolder.LocalId));
 
-        Assert.Equal(2, this.db.ListAllFolders().Count);
+        Assert.Equal(2, this.db.ListAllFolders().Count());
         Assert.Single(this.folderChanges.ListPendingFolderDeletes());
     }
 }
@@ -227,7 +227,7 @@ public sealed class ArticleTransactionTests : IDisposable
         Assert.Throws<Exception>(() => this.db.MoveArticleToFolder(randomArticle.id, this.CustomFolder1.LocalId));
 
         Assert.Empty(this.db.ListArticlesForLocalFolder(this.CustomFolder1.LocalId));
-        Assert.Equal(1, this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).Count);
+        Assert.Single(this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread));
     }
 
     [Fact]
@@ -266,7 +266,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         Assert.Throws<Exception>(() => this.db.DeleteArticle(randomArticle.id));
 
-        Assert.Equal(1, this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread).Count);
+        Assert.Single(this.db.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread));
 
         var localState = this.db.GetLocalOnlyStateByArticleId(randomArticle.id);
         Assert.NotNull(localState);

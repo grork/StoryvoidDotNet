@@ -499,8 +499,8 @@ public class ArticleDownloaderTests : IDisposable
 
         Assert.Equal(article, articleStarting);
         Assert.Equal(IMAGES_ARTICLE, imagesStarted);
-        Assert.Equal(18, imageStarted.Count);
-        Assert.Equal(imageStarted.Count, imageCompleted.Count);
+        Assert.Equal(18, imageStarted.Count());
+        Assert.Equal(imageStarted.Count(), imageCompleted.Count());
         Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(IMAGES_ARTICLE, imagesCompleted);
         Assert.Equal(article, articleCompleted);
@@ -600,13 +600,13 @@ public class ArticleDownloaderTests : IDisposable
         imagesCompleted.Sort();
 
         Assert.True(downloadStarted);
-        Assert.Equal(articleIds.Length, articlesStarted.Count);
+        Assert.Equal(articleIds.Length, articlesStarted.Count());
         Assert.Equal(articleIds, imagesStarted);
-        Assert.Equal(imageStarted.Count, imageCompleted.Count);
+        Assert.Equal(imageStarted.Count(), imageCompleted.Count());
         Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(articleIds, imagesCompleted);
-        Assert.Equal(articleIds.Length, articlesCompleted.Count);
-        Assert.Equal(articleIds.Length, localStates.Count);
+        Assert.Equal(articleIds.Length, articlesCompleted.Count());
+        Assert.Equal(articleIds.Length, localStates.Count());
         foreach (var state in localStates)
         { this.AssertAvailableLocallyAndFileExists(state); }
         Assert.True(downloadCompleted);
@@ -674,12 +674,12 @@ public class ArticleDownloaderTests : IDisposable
         await this.articleDownloader.DownloadArticles(articlesToDownload);
 
         Assert.True(downloadStarted);
-        Assert.Equal(articleIds.Length, articlesStarted.Count);
+        Assert.Equal(articleIds.Length, articlesStarted.Count());
         Assert.Equal(articleIdsWithoutMissingArticle, imagesStarted);
-        Assert.Equal(imageStarted.Count, imageCompleted.Count);
+        Assert.Equal(imageStarted.Count(), imageCompleted.Count());
         Assert.Equal(imageStarted.OrderBy((i) => i.ToString()), imageCompleted.OrderBy((i) => i.ToString()));
         Assert.Equal(articleIdsWithoutMissingArticle, imagesCompleted);
-        Assert.Equal(articleIds.Length, articlesCompleted.Count);
+        Assert.Equal(articleIds.Length, articlesCompleted.Count());
         Assert.True(downloadCompleted);
     }
     #endregion
@@ -849,7 +849,7 @@ public class ArticleDownloaderTests : IDisposable
         await this.articleDownloader.DownloadArticles(articlesToDownload);
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
-        Assert.Equal(articleIds.Length, articlesLocalState.Count);
+        Assert.Equal(articleIds.Length, articlesLocalState.Count());
 
         Assert.All(articlesLocalState, this.AssertAvailableLocallyAndFileExists);
     }
@@ -868,7 +868,7 @@ public class ArticleDownloaderTests : IDisposable
         await this.articleDownloader.DownloadArticles(articlesToDownload);
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
-        Assert.Equal(articleIds.Length, articlesLocalState.Count);
+        Assert.Equal(articleIds.Length, articlesLocalState.Count());
 
         Assert.All(articlesLocalState, (state) =>
         {
@@ -903,7 +903,7 @@ public class ArticleDownloaderTests : IDisposable
         await this.articleDownloader.DownloadArticles(articlesToDownload);
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
-        Assert.Equal(articleIds.Length - 2, articlesLocalState.Count);
+        Assert.Equal(articleIds.Length - 2, articlesLocalState.Count());
 
         Assert.All(articlesLocalState, this.AssertAvailableLocallyAndFileExists);
     }
@@ -937,7 +937,7 @@ public class ArticleDownloaderTests : IDisposable
         await Assert.ThrowsAsync<OperationCanceledException>(() => this.articleDownloader.DownloadArticles(articlesToDownload, cancellationSource.Token));
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
-        Assert.NotEqual(articleIds.Length, articlesLocalState.Count);
+        Assert.NotEqual(articleIds.Length, articlesLocalState.Count());
 
         Assert.All(articlesLocalState, this.AssertAvailableLocallyAndFileExists);
     }

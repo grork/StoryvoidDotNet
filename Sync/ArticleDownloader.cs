@@ -172,7 +172,7 @@ public class ArticleDownloader : IDisposable
     /// </returns>
     internal async Task DownloadArticles(IList<DatabaseArticle> articles, CancellationToken cancellationToken = default)
     {
-        this.eventSource?.RaiseDownloadingStarted(articles.Count);
+        this.eventSource?.RaiseDownloadingStarted(articles.Count());
 
         // Make sure we have an easy look up of articles. This is 'cause when we
         // get the local state back from the download, we don't know if we need
@@ -217,7 +217,7 @@ public class ArticleDownloader : IDisposable
     internal async Task DownloadAllArticlesWithoutLocalState()
     {
         var articlesToDownload = this.articleDatabase.ListAllArticlesInAFolder().Select((d) => d.Article).Where((a) => !a.HasLocalState).ToList();
-        if (articlesToDownload.Count == 0)
+        if (articlesToDownload.Count() == 0)
         {
             return;
         }

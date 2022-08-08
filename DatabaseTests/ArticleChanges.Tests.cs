@@ -130,7 +130,7 @@ public sealed class ArticleChangesTests : IDisposable
         var articleTwo = this.articleChangesDb.CreatePendingArticleAdd(new(TestUtilities.BASE_URI, "/somethingelse"), TestUtilities.SAMPLE_TITLE);
 
         var result = this.articleChangesDb.ListPendingArticleAdds();
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
         Assert.Contains(articleOne, result);
         Assert.Contains(articleTwo, result);
     }
@@ -194,7 +194,7 @@ public sealed class ArticleChangesTests : IDisposable
         _ = this.articleChangesDb.CreatePendingArticleDelete(secondArticleId);
 
         var result = this.articleChangesDb.ListPendingArticleDeletes();
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
         Assert.Contains(firstArticleId, result);
         Assert.Contains(secondArticleId, result);
     }
@@ -283,7 +283,7 @@ public sealed class ArticleChangesTests : IDisposable
         _ = this.articleChangesDb.CreatePendingArticleStateChange(secondArticleId, false);
 
         var result = this.articleChangesDb.ListPendingArticleStateChanges();
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
         Assert.Contains(result, x => x.ArticleId == firstArticleId && x.Liked);
         Assert.Contains(result, x => x.ArticleId == secondArticleId && !x.Liked);
     }
@@ -392,7 +392,7 @@ public sealed class ArticleChangesTests : IDisposable
         _ = this.articleChangesDb.CreatePendingArticleMove(secondArticleId, destinationFolderLocalId);
 
         var result = this.articleChangesDb.ListPendingArticleMoves();
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
         Assert.Contains(result, x => x.ArticleId == firstArticleId && x.DestinationFolderLocalId == destinationFolderLocalId);
         Assert.Contains(result, x => x.ArticleId == secondArticleId && x.DestinationFolderLocalId == destinationFolderLocalId);
     }
@@ -419,7 +419,7 @@ public sealed class ArticleChangesTests : IDisposable
         _ = this.articleChangesDb.CreatePendingArticleMove(thirdArticleId, secondDestinationFolder);
 
         var result = this.articleChangesDb.ListPendingArticleMovesForLocalFolderId(destinationFolderLocalId);
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
         Assert.Contains(result, x => x.ArticleId == firstArticleId && x.DestinationFolderLocalId == destinationFolderLocalId);
         Assert.Contains(result, x => x.ArticleId == secondArticleId && x.DestinationFolderLocalId == destinationFolderLocalId);
     }

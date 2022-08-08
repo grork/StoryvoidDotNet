@@ -15,9 +15,9 @@ internal static class ComparisonExtensions
         local = local.OrderBy((f) => f.ServiceId!).ToList();
         remote = remote.OrderBy((f) => f.Id).ToList();
 
-        Assert.Equal(local.Count, remote.Count);
+        Assert.Equal(local.Count(), remote.Count());
 
-        for (var index = 0; index < local.Count; index += 1)
+        for (var index = 0; index < local.Count(); index += 1)
         {
             var localFolder = local[index];
             var remoteFolder = remote[index];
@@ -34,9 +34,9 @@ internal static class ComparisonExtensions
         local = local.OrderBy((a) => a.Id).ToList();
         remote = remote.OrderBy((a) => a.Id).ToList();
 
-        Assert.Equal(local.Count, remote.Count);
+        Assert.Equal(local.Count(), remote.Count());
 
-        for (var index = 0; index < local.Count; index += 1)
+        for (var index = 0; index < local.Count(); index += 1)
         {
             var localArticle = local[index];
             var remoteBookmark = remote[index];
@@ -90,7 +90,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
         // Initialize some folders
         var folders = await this.SharedState.FoldersClient.ListAsync();
         this.folders = folders;
-        var foldersNeeded = Math.Max(0, MIN_FOLDERS - folders.Count);
+        var foldersNeeded = Math.Max(0, MIN_FOLDERS - folders.Count());
         for (var index = 0; index < foldersNeeded; index += 1)
         {
             var folderName = DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString();
@@ -101,7 +101,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
 
         // Initialize some articles
         var currentBookmarks = (await this.SharedState.BookmarksClient.ListAsync(WellKnownFolderIds.Unread)).Bookmarks;
-        var bookmarksNeeded = Math.Max(0, ((folders.Count + 2) * MIN_ARTICLES_PER_FOLDER) - currentBookmarks.Count);
+        var bookmarksNeeded = Math.Max(0, ((folders.Count() + 2) * MIN_ARTICLES_PER_FOLDER) - currentBookmarks.Count());
         for (var index = 0; index < bookmarksNeeded; index += 1)
         {
             var newArticle = await this.SharedState.BookmarksClient.AddAsync(this.SharedState.GetNextAddableUrl());
@@ -123,7 +123,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
 
         // Check we have enough in 'unread'
         var unreadBookmarks = await this.SharedState.BookmarksClient.ListAsync(WellKnownFolderIds.Unread);
-        Assert.Equal(2, unreadBookmarks.Bookmarks.Count);
+        Assert.Equal(2, unreadBookmarks.Bookmarks.Count());
     }
 
     private async static Task AssertDatabaseAndRemoteMatch((IFolderDatabase Folders, IArticleDatabase Articles) database, (IFoldersClient Folders, IBookmarksClient Bookmarks) service)
@@ -158,7 +158,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
         var remoteArticlesTasks = localFolders.Select((f) => service.Bookmarks.ListAsync(Convert.ToInt64(f.ServiceId!))).ToList();
         
         // Compare user folder contents
-        for (var index = 0; index < localFolders.Count; index += 1)
+        for (var index = 0; index < localFolders.Count(); index += 1)
         {
             var localFolder = localFolders[index];
             var localArticles = database.Articles.ListArticlesForLocalFolder(localFolder.LocalId);

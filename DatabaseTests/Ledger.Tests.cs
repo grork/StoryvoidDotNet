@@ -33,7 +33,7 @@ public sealed class FolderLedgerTests : IDisposable
 
         var folder = this.folders.CreateFolder("Sample");
         var pendingAdds = this.folderChanges.ListPendingFolderAdds();
-        Assert.Equal(1, pendingAdds.Count);
+        Assert.Single(pendingAdds);
         Assert.Equal(folder.Title, pendingAdds[0].Title);
         Assert.Equal(folder.LocalId, pendingAdds[0].FolderLocalId);
     }
@@ -56,7 +56,7 @@ public sealed class FolderLedgerTests : IDisposable
         this.folders.DeleteFolder(folder.LocalId);
 
         var pendingDeletes = this.folderChanges.ListPendingFolderDeletes();
-        Assert.Equal(1, pendingDeletes.Count);
+        Assert.Single(pendingDeletes);
         Assert.Equal(folder.ServiceId, pendingDeletes[0].ServiceId);
         Assert.Equal(folder.Title, pendingDeletes[0].Title);
     }
@@ -69,7 +69,7 @@ public sealed class FolderLedgerTests : IDisposable
         Assert.Empty(this.folderChanges.ListPendingFolderDeletes());
         this.folders.DeleteFolder(folder.LocalId);
         this.folders.DeleteFolder(folder.LocalId);
-        Assert.Equal(1, this.folderChanges.ListPendingFolderDeletes().Count);
+        Assert.Single(this.folderChanges.ListPendingFolderDeletes());
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public sealed class ArticleLedgerTests : IDisposable
         this.articles.DeleteArticle(article.Id);
 
         var pendingDeletes = this.articleChanges.ListPendingArticleDeletes();
-        Assert.Equal(1, pendingDeletes.Count);
+        Assert.Single(pendingDeletes);
 
         Assert.Equal(article.Id, pendingDeletes[0]);
     }
@@ -189,7 +189,7 @@ public sealed class ArticleLedgerTests : IDisposable
         );
 
         var pendingMoves = this.articleChanges.ListPendingArticleMoves();
-        Assert.Equal(1, pendingMoves.Count);
+        Assert.Single(pendingMoves);
 
         Assert.Equal(article.Id, pendingMoves[0].ArticleId);
         Assert.Equal(this.CustomFolder1.LocalId, pendingMoves[0].DestinationFolderLocalId);
@@ -215,7 +215,7 @@ public sealed class ArticleLedgerTests : IDisposable
         );
 
         var pendingMoves = this.articleChanges.ListPendingArticleMoves();
-        Assert.Equal(1, pendingMoves.Count);
+        Assert.Single(pendingMoves);
 
         Assert.Equal(article.Id, pendingMoves[0].ArticleId);
         Assert.Equal(this.CustomFolder2.LocalId, pendingMoves[0].DestinationFolderLocalId);
@@ -233,7 +233,7 @@ public sealed class ArticleLedgerTests : IDisposable
         this.articles.LikeArticle(article.Id);
 
         var pendingStateChanges = this.articleChanges.ListPendingArticleStateChanges();
-        Assert.Equal(1, pendingStateChanges.Count);
+        Assert.Single(pendingStateChanges);
         Assert.Equal(article.Id, pendingStateChanges[0].ArticleId);
         Assert.True(pendingStateChanges[0].Liked);
     }
@@ -264,7 +264,7 @@ public sealed class ArticleLedgerTests : IDisposable
         this.articles.UnlikeArticle(article.Id);
 
         var pendingStateChanges = this.articleChanges.ListPendingArticleStateChanges();
-        Assert.Equal(1, pendingStateChanges.Count);
+        Assert.Single(pendingStateChanges);
         Assert.Equal(article.Id, pendingStateChanges[0].ArticleId);
         Assert.False(pendingStateChanges[0].Liked);
     }

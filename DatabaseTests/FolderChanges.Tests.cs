@@ -95,7 +95,7 @@ public sealed class FolderChangesTests : IDisposable
         var change2 = this.db.CreatePendingFolderAdd(this.CustomLocalFolder2.LocalId);
 
         var allChanges = this.db.ListPendingFolderAdds();
-        Assert.Equal(2, allChanges.Count);
+        Assert.Equal(2, allChanges.Count());
         Assert.Contains(change1, allChanges);
         Assert.Contains(change2, allChanges);
     }

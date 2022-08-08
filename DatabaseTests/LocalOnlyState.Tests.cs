@@ -138,7 +138,7 @@ public class LocalOnlyStateTests : IDisposable
         var articlesWithoutLocalState = (from a in articles
                                          where (a.Id != articleId) && !a.HasLocalState
                                          select a).Count();
-        Assert.Equal(articles.Count - 1, articlesWithoutLocalState);
+        Assert.Equal(articles.Count() - 1, articlesWithoutLocalState);
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class LocalOnlyStateTests : IDisposable
         var articlesWithLocalState = (from a in articles
                                       where a.HasLocalState
                                       select a);
-        Assert.Equal(addedLocalState.Count, articlesWithLocalState.Count());
+        Assert.Equal(addedLocalState.Count(), articlesWithLocalState.Count());
 
         foreach (var localState in addedLocalState)
         {

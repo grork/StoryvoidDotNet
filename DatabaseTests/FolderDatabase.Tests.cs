@@ -31,7 +31,7 @@ public sealed class FolderDatabaseTests : IDisposable
     public void DefaultFoldersAreCreated()
     {
         IList<DatabaseFolder> result = this.db.ListAllFolders();
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
 
         var unreadFolder = result.Where((f) => f.ServiceId == WellKnownServiceFolderIds.Unread).First()!;
         var archiveFolder = result.Where((f) => f.ServiceId == WellKnownServiceFolderIds.Archive).First()!;
@@ -45,7 +45,7 @@ public sealed class FolderDatabaseTests : IDisposable
     public void DefaultFoldersAreSortedCorrectly()
     {
         IList<DatabaseFolder> result = this.db.ListAllFolders();
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Count());
 
         var firstFolder = result[0];
         var secondFolder = result[1];
@@ -116,7 +116,7 @@ public sealed class FolderDatabaseTests : IDisposable
         // Check it comes back when listing all folders
         var allFolders = this.db.ListAllFolders();
         Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
-        Assert.Equal(3, allFolders.Count);
+        Assert.Equal(3, allFolders.Count());
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public sealed class FolderDatabaseTests : IDisposable
         // Check it comes back when listing all folders
         var allFolders = this.db.ListAllUserFolders();
         Assert.Contains(addedFolder, allFolders);
-        Assert.Equal(1, allFolders.Count);
+        Assert.Single(allFolders);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public sealed class FolderDatabaseTests : IDisposable
         // Check it comes back when listing all folders
         var allFolders = this.db.ListAllFolders();
         Assert.Contains(allFolders, (f) => f.LocalId == addedFolder.LocalId);
-        Assert.Equal(4, allFolders.Count);
+        Assert.Equal(4, allFolders.Count());
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public sealed class FolderDatabaseTests : IDisposable
         var firstFolder = this.db.CreateFolder("Sample");
         var secondFolder = this.db.CreateFolder("Sample2");
 
-        Assert.Equal(2, eventPayloads.Count);
+        Assert.Equal(2, eventPayloads.Count());
         Assert.Equal(firstFolder.Title, eventPayloads[0]);
         Assert.Equal(secondFolder.Title, eventPayloads[1]);
     }
@@ -209,7 +209,7 @@ public sealed class FolderDatabaseTests : IDisposable
 
         // Check a spurious folder wasn't created
         var allFolders = this.db.ListAllFolders();
-        Assert.Equal(3, allFolders.Count);
+        Assert.Equal(3, allFolders.Count());
     }
 
     [Fact]
@@ -305,7 +305,7 @@ public sealed class FolderDatabaseTests : IDisposable
 
         // Check it comes back when listing all folders
         var allFolders = this.db.ListAllFolders();
-        Assert.Equal(3, allFolders.Count);
+        Assert.Equal(3, allFolders.Count());
     }
 
     [Fact]
@@ -364,7 +364,7 @@ public sealed class FolderDatabaseTests : IDisposable
     [Fact]
     public void UpdatingFolderThatDoesntExistFails()
     {
-        var preCount = this.db.ListAllFolders().Count;
+        var preCount = this.db.ListAllFolders().Count();
         Assert.Throws<FolderNotFoundException>(() =>
         {
             _ = this.db.UpdateFolder(
@@ -377,7 +377,7 @@ public sealed class FolderDatabaseTests : IDisposable
         });
 
         // Check there wasn't one created
-        var postCount = this.db.ListAllFolders().Count;
+        var postCount = this.db.ListAllFolders().Count();
         Assert.Equal(preCount, postCount);
     }
 
@@ -420,7 +420,7 @@ public sealed class FolderDatabaseTests : IDisposable
 
         // Verify folder is missing
         var folders = this.db.ListAllFolders();
-        Assert.Equal(2, folders.Count);
+        Assert.Equal(2, folders.Count());
     }
 
     [Fact]

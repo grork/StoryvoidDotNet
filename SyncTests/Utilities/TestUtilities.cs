@@ -266,7 +266,7 @@ public abstract class BaseSyncTest : IDisposable
         this.SetSyncEngineFromDatabases();
 
         // Make sure we have an empty database for this test.
-        Assert.Equal(DEFAULT_FOLDER_COUNT, this.databases.FolderDB.ListAllFolders().Count);
+        Assert.Equal(DEFAULT_FOLDER_COUNT, this.databases.FolderDB.ListAllFolders().Count());
     }
 
     protected void SwitchToEmptyServiceDatabase()

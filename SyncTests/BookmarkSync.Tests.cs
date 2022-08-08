@@ -1276,13 +1276,13 @@ public class BookmarkSyncTests : BaseSyncTest
     [Fact]
     public async Task ArticlesOutsideThePerFolderLimitAreDeletedLocally()
     {
-        var preSyncArticleCount = this.databases.ArticleDB.ListAllArticlesInAFolder().Count;
+        var preSyncArticleCount = this.databases.ArticleDB.ListAllArticlesInAFolder().Count();
 
         this.syncEngine.ArticlesPerFolderToSync = 1;
 
         await this.syncEngine.SyncArticles();
 
-        var postSyncArticleCount = this.databases.ArticleDB.ListAllArticlesInAFolder().Count;
+        var postSyncArticleCount = this.databases.ArticleDB.ListAllArticlesInAFolder().Count();
         Assert.True(postSyncArticleCount < preSyncArticleCount);
     }
 
@@ -1333,7 +1333,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.syncEngine.CleanupOrphanedArticles();
 
         var postSyncArticle = this.databases.ArticleDB.ListAllArticlesInAFolder();
-        Assert.True(postSyncArticle.Count < preSyncArticles.Count);
+        Assert.True(postSyncArticle.Count() < preSyncArticles.Count());
 
         foreach (var unreachable in preSyncArticles.Except(postSyncArticle))
         {
