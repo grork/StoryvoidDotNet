@@ -357,7 +357,7 @@ public class ArticleDownloader : IDisposable
     private async Task<FirstImageInformaton?> ProcessAndDownloadImages(IDocument document, long bookmarkId, CancellationToken cancellationToken)
     {
         var images = document.QuerySelectorAll<IHtmlImageElement>("img[src^='http']");
-        DirectoryInfo? imageDirectory = null;
+        DirectoryInfo? imagesFolder = null;
         FirstImageInformaton? firstImage = null;
 
         int imageIndex = 0;
@@ -366,9 +366,9 @@ public class ArticleDownloader : IDisposable
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (imageDirectory is null)
+            if (imagesFolder is null)
             {
-                imageDirectory = Directory.CreateDirectory(Path.Combine(this.workingRoot, bookmarkId.ToString()));
+                imagesFolder = Directory.CreateDirectory(Path.Combine(this.workingRoot, bookmarkId.ToString()));
             }
 
             // For all the images in this batch, we'll initiate the tasks,
@@ -378,7 +378,7 @@ public class ArticleDownloader : IDisposable
             List<Task<FirstImageInformaton?>> workerBatch = new List<Task<FirstImageInformaton?>>();
             foreach (var image in imageBatch)
             {
-                workerBatch.Add(this.DownloadImageForElement(image, imageIndex += 1, imageDirectory, cancellationToken));
+                workerBatch.Add(this.DownloadImageForElement(image, imageIndex += 1, imagesFolder, cancellationToken));
             }
 
             await Task.WhenAll(workerBatch).ConfigureAwait(false);
@@ -429,7 +429,7 @@ public class ArticleDownloader : IDisposable
         }
     }
 
-    private async Task<FirstImageInformaton?> DownloadImageForElement(IHtmlImageElement image, int imageIndex, DirectoryInfo imageDirectory, CancellationToken cancellationToken)
+    private async Task<FirstImageInformaton?> DownloadImageForElement(IHtmlImageElement image, int imageIndex, DirectoryInfo imagesFolder, CancellationToken cancellationToken)
     {
         if (!Uri.IsWellFormedUriString(image.Source!, UriKind.Absolute))
         {
@@ -448,7 +448,7 @@ public class ArticleDownloader : IDisposable
         var tempFilename = $"{imageIndex}.temp-image";
 
         // 2. Compute the absolute local path to download to
-        var tempFilepath = Path.Combine(imageDirectory.FullName, tempFilename);
+        var tempFilepath = Path.Combine(imagesFolder.FullName, tempFilename);
 
         // 3. Download the image locally
         this.eventSource?.RaiseImageStarted(imageUri);
@@ -502,7 +502,7 @@ public class ArticleDownloader : IDisposable
             // 5. Move the file into the final destination
             Debug.Assert(extension != "unknown", "Shouldn't have an unkown file extension");
             var filename = Path.ChangeExtension(tempFilename, extension);
-            var filePath = Path.Combine(imageDirectory.FullName, filename);
+            var filePath = Path.Combine(imagesFolder.FullName, filename);
 
             // If we're redownloading the article, the image might already
             // exist. Since we _move_ the file into position, and there is
@@ -514,7 +514,7 @@ public class ArticleDownloader : IDisposable
 
             // 6. Rewrite the src attribute on the image to the *relative*
             //    path that we've calculated
-            var relativePath = $"{imageDirectory.Name}/{filename}";
+            var relativePath = $"{imagesFolder.Name}/{filename}";
             var originalUrl = image.Source;
             image.Source = relativePath;
 

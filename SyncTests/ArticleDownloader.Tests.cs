@@ -18,7 +18,7 @@ public class ArticleDownloaderTests : IDisposable
     private readonly Codevoid.Utilities.OAuth.ClientInformation clientInformation;
     private readonly FileSystemMappedHttpHandler localFileHttpHandler;
 
-    private readonly DirectoryInfo testDirectory;
+    private readonly DirectoryInfo testFolder;
     private readonly string mockResponsesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
 
     #region Mock Article IDs
@@ -47,7 +47,7 @@ public class ArticleDownloaderTests : IDisposable
     public ArticleDownloaderTests()
     {
         var testFolderId = Guid.NewGuid().ToString();
-        this.testDirectory = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, testFolderId));
+        this.testFolder = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, testFolderId));
 
         var (connection, _, _, articleDatabase, _) = TestUtilities.GetEmptyDatabase();
         this.connection = connection;
@@ -67,7 +67,7 @@ public class ArticleDownloaderTests : IDisposable
     {
         this.articleDownloader = new ArticleDownloader(
             this.localFileHttpHandler,
-            this.testDirectory.FullName,
+            this.testFolder.FullName,
             this.articleDatabase,
             this.bookmarkClient,
             clientInformation,
@@ -152,7 +152,7 @@ public class ArticleDownloaderTests : IDisposable
     {
         try
         {
-            this.testDirectory.Delete(true);
+            this.testFolder.Delete(true);
         }
         catch (IOException) { }
 
@@ -170,10 +170,10 @@ public class ArticleDownloaderTests : IDisposable
 
         if(localState.FirstImageLocalPath is not null)
         {
-            var firstImageExists = Path.Join(this.testDirectory.FullName, localState.ArticleId.ToString(), localState.FirstImageLocalPath.ToString());
+            var firstImageExists = Path.Join(this.testFolder.FullName, localState.ArticleId.ToString(), localState.FirstImageLocalPath.ToString());
         }
 
-        var fileExists = File.Exists(Path.Join(this.testDirectory.FullName, localState!.LocalPath!.AbsolutePath));
+        var fileExists = File.Exists(Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath));
         Assert.True(fileExists);
     }
 
@@ -195,7 +195,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
 
-        var localContents = File.ReadAllText(Path.Join(this.testDirectory.FullName, localState!.LocalPath!.AbsolutePath));
+        var localContents = File.ReadAllText(Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath));
 
         // We want to make sure that we don't turn this into a fully fledges HTML
         // document, as the consumer is expected to perform the appropriate
@@ -213,7 +213,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
 
-        var fileExists = File.Exists(Path.Join(this.testDirectory.FullName, localState!.LocalPath!.AbsolutePath));
+        var fileExists = File.Exists(Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath));
         Assert.True(fileExists);
     }
 
@@ -296,11 +296,11 @@ public class ArticleDownloaderTests : IDisposable
     {
         var article = this.articleDatabase.GetArticleById(articleId)!;
         var localState = await this.articleDownloader.DownloadBookmark(article);
-        var imagesPath = Path.Join(this.testDirectory.FullName, localState!.ArticleId.ToString());
+        var imagesPath = Path.Join(this.testFolder.FullName, localState!.ArticleId.ToString());
         Assert.True(Directory.Exists(imagesPath));
         Assert.Equal(expectedImageCount, Directory.GetFiles(imagesPath).Count());
 
-        var localPath = Path.Join(this.testDirectory.FullName, localState!.LocalPath!.AbsolutePath);
+        var localPath = Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath);
         var htmlParserContext = BrowsingContext.New(ArticleDownloader.ParserConfiguration);
         var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
 
@@ -316,7 +316,7 @@ public class ArticleDownloaderTests : IDisposable
 
             seenImages += 1;
 
-            var imagePath = Path.Combine(this.testDirectory.FullName, imageSrc);
+            var imagePath = Path.Combine(this.testFolder.FullName, imageSrc);
             Assert.True(File.Exists(imagePath));
         }
 
@@ -347,10 +347,10 @@ public class ArticleDownloaderTests : IDisposable
         const int EXPECTED_IMAGE_COUNT = 2;
         var article = this.articleDatabase.GetArticleById(IMAGES_WITH_INLINE_IMAGES)!;
         var localState = await this.articleDownloader.DownloadBookmark(article);
-        var imagesPath = Path.Join(this.testDirectory.FullName, localState!.ArticleId.ToString());
+        var imagesPath = Path.Join(this.testFolder.FullName, localState!.ArticleId.ToString());
         Assert.False(Directory.Exists(imagesPath));
 
-        var localPath = Path.Join(this.testDirectory.FullName, localState!.LocalPath!.AbsolutePath);
+        var localPath = Path.Join(this.testFolder.FullName, localState!.LocalPath!.AbsolutePath);
         var htmlParserContext = BrowsingContext.New(ArticleDownloader.ParserConfiguration);
         var document = await htmlParserContext.OpenAsync((r) => r.Content(File.Open(localPath, FileMode.Open, FileAccess.Read), true));
 
@@ -705,10 +705,10 @@ public class ArticleDownloaderTests : IDisposable
 
         // Guess the article path, since we cancelled early, we don't have local
         // state if things are working correctly.
-        var localArticlePath = Path.Join(this.testDirectory.FullName, $"{IMAGES_ARTICLE}.html");
+        var localArticlePath = Path.Join(this.testFolder.FullName, $"{IMAGES_ARTICLE}.html");
         Assert.False(File.Exists(localArticlePath));
 
-        var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
+        var imagesPath = Path.Join(this.testFolder.FullName, IMAGES_ARTICLE.ToString());
         Assert.False(Directory.Exists(imagesPath));
 
         // Check that the completed args was fired with the correct info
@@ -734,10 +734,10 @@ public class ArticleDownloaderTests : IDisposable
 
         // Guess the article path, since we cancelled early, we don't have local
         // state if things are working correctly.
-        var localArticlePath = Path.Join(this.testDirectory.FullName, $"{IMAGES_ARTICLE}.html");
+        var localArticlePath = Path.Join(this.testFolder.FullName, $"{IMAGES_ARTICLE}.html");
         Assert.False(File.Exists(localArticlePath));
 
-        var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
+        var imagesPath = Path.Join(this.testFolder.FullName, IMAGES_ARTICLE.ToString());
         Assert.False(Directory.Exists(imagesPath));
 
         // Check that the completed args was fired with the correct info
@@ -775,10 +775,10 @@ public class ArticleDownloaderTests : IDisposable
 
         // Guess the article path, since we cancelled early, we don't have local
         // state if things are working correctly.
-        var localArticlePath = Path.Join(this.testDirectory.FullName, $"{IMAGES_ARTICLE}.html");
+        var localArticlePath = Path.Join(this.testFolder.FullName, $"{IMAGES_ARTICLE}.html");
         Assert.False(File.Exists(localArticlePath));
 
-        var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
+        var imagesPath = Path.Join(this.testFolder.FullName, IMAGES_ARTICLE.ToString());
         if (Directory.Exists(imagesPath))
         {
             var files = Directory.GetFiles(imagesPath);
@@ -819,10 +819,10 @@ public class ArticleDownloaderTests : IDisposable
 
         // Guess the article path, since we cancelled early, we don't have local
         // state if things are working correctly.
-        var localArticlePath = Path.Join(this.testDirectory.FullName, $"{IMAGES_ARTICLE}.html");
+        var localArticlePath = Path.Join(this.testFolder.FullName, $"{IMAGES_ARTICLE}.html");
         Assert.False(File.Exists(localArticlePath));
 
-        var imagesPath = Path.Join(this.testDirectory.FullName, IMAGES_ARTICLE.ToString());
+        var imagesPath = Path.Join(this.testFolder.FullName, IMAGES_ARTICLE.ToString());
         if (Directory.Exists(imagesPath))
         {
             var files = Directory.GetFiles(imagesPath);
@@ -1007,12 +1007,12 @@ public class ArticleDownloaderTests : IDisposable
     [Fact]
     public void CanCleaupWhenNoDownloadedArticles()
     {
-        var currentFiles = Directory.GetFiles(this.testDirectory.FullName);
+        var currentFiles = Directory.GetFiles(this.testFolder.FullName);
         Assert.Empty(currentFiles);
 
         this.articleDownloader.DeleteDownloadsWithNoDatabaseArticle();
 
-        currentFiles = Directory.GetFiles(this.testDirectory.FullName);
+        currentFiles = Directory.GetFiles(this.testFolder.FullName);
         Assert.Empty(currentFiles);
     }
 
@@ -1036,7 +1036,7 @@ public class ArticleDownloaderTests : IDisposable
 
         articleDownloader.DeleteDownloadsWithNoDatabaseArticle();
 
-        Assert.Empty(Directory.GetFiles(this.testDirectory.FullName));
+        Assert.Empty(Directory.GetFiles(this.testFolder.FullName));
     }
 
     [Fact]
@@ -1071,14 +1071,14 @@ public class ArticleDownloaderTests : IDisposable
             this.AssertAvailableLocallyAndFileExists(article.LocalOnlyState!);
         }
 
-        var basicArticleFileExists = File.Exists(Path.Join(this.testDirectory.FullName, basicArticleState.LocalPath!.AbsolutePath));
+        var basicArticleFileExists = File.Exists(Path.Join(this.testFolder.FullName, basicArticleState.LocalPath!.AbsolutePath));
         Assert.False(basicArticleFileExists);
 
-        var imageArticleFileExists = File.Exists(Path.Join(this.testDirectory.FullName, imagesArticleState.LocalPath!.AbsolutePath));
+        var imageArticleFileExists = File.Exists(Path.Join(this.testFolder.FullName, imagesArticleState.LocalPath!.AbsolutePath));
         Assert.False(imageArticleFileExists);
 
-        var imagesArticleImagesDirectoryExists = Directory.Exists(Path.Join(this.testDirectory.FullName, Path.GetFileNameWithoutExtension(imagesArticleState.LocalPath!.AbsolutePath)));
-        Assert.False(imagesArticleImagesDirectoryExists);
+        var imagesArticleImagesFolderExists = Directory.Exists(Path.Join(this.testFolder.FullName, Path.GetFileNameWithoutExtension(imagesArticleState.LocalPath!.AbsolutePath)));
+        Assert.False(imagesArticleImagesFolderExists);
     }
     #endregion
 }
@@ -1095,7 +1095,7 @@ public class SampleDataDownloadingHelper
     [Fact(Skip = "I shouldn't be enabled; I'm only for testing")]
     public async Task AddSampleArticlesAndGetTextOnThemToSaveLocally()
     {
-        DirectoryInfo? outputDirectory = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, "TestPageOutput"));
+        DirectoryInfo? outputFolder = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, "TestPageOutput"));
 
         var bookmarksClient = new BookmarksClient(Codevoid.Test.Instapaper.TestUtilities.GetClientInformation());
         var samplePages = new List<string>()
@@ -1125,7 +1125,7 @@ public class SampleDataDownloadingHelper
             try
             {
                 var bookmarkBody = await bookmarksClient.GetTextAsync(bookmarkInfo.Id);
-                var outputFile = Path.Join(outputDirectory.FullName, fileName);
+                var outputFile = Path.Join(outputFolder.FullName, fileName);
                 File.WriteAllText(outputFile, bookmarkBody);
             }
             catch (BookmarkContentsUnavailableException)
@@ -1138,12 +1138,12 @@ public class SampleDataDownloadingHelper
         var vimeoUri = new Uri("https://vimeo.com/76979871");
         var vimeoInfo = await bookmarksClient.AddAsync(vimeoUri);
         var vimeoBody = await bookmarksClient.GetTextAsync(vimeoInfo.Id);
-        File.WriteAllText(Path.Join(outputDirectory.Name, "vimeo.html"), vimeoBody);
+        File.WriteAllText(Path.Join(outputFolder.Name, "vimeo.html"), vimeoBody);
 
         // YouTube
         var youtubeUri = new Uri("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
         var youtubeInfo = await bookmarksClient.AddAsync(youtubeUri);
         var youtubeBody = await bookmarksClient.GetTextAsync(youtubeInfo.Id);
-        File.WriteAllText(Path.Join(outputDirectory.Name, "youtube.html"), youtubeBody);
+        File.WriteAllText(Path.Join(outputFolder.Name, "youtube.html"), youtubeBody);
     }
 }
