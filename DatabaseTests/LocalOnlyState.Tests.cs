@@ -285,4 +285,46 @@ public class LocalOnlyStateTests : IDisposable
         var result = this.db.GetLocalOnlyStateByArticleId(state.ArticleId);
         Assert.Null(result);
     }
+
+    [Fact]
+    public void ListingLikedArticlesReturnsLocalStateIfPresent()
+    {
+        var articleId = this.sampleArticles.First().Id;
+        _ = this.db.AddLocalOnlyStateForArticle(LocalOnlyStateTests.GetSampleLocalOnlyState(articleId));
+        _ = this.db.LikeArticle(articleId);
+
+        var likedArticles = this.db.ListLikedArticles();
+        Assert.Single(likedArticles);
+        var likedArticle = likedArticles.First()!;
+
+        Assert.True(likedArticle.HasLocalState);
+        Assert.NotNull(likedArticle.LocalOnlyState);
+    }
+
+    [Fact]
+    public void ListingAllArticlesInAFolderReturnsLocalStateIfPresent()
+    {
+        var articleId = this.sampleArticles.First().Id;
+        _ = this.db.AddLocalOnlyStateForArticle(LocalOnlyStateTests.GetSampleLocalOnlyState(articleId));
+
+        var articlesInAFolder = this.db.ListAllArticlesInAFolder();
+        var articleExpectedToHaveState = articlesInAFolder.Select((a) => a.Article).First((a) => a.Id == articleId)!;
+
+        Assert.True(articleExpectedToHaveState.HasLocalState);
+        Assert.NotNull(articleExpectedToHaveState.LocalOnlyState);
+    }
+
+    [Fact]
+    public void ListingArticlesNotInAFolderReturnsLocalStateIfPresent()
+    {
+        var articleId = this.sampleArticles.First().Id;
+        _ = this.db.AddLocalOnlyStateForArticle(LocalOnlyStateTests.GetSampleLocalOnlyState(articleId));
+        this.db.RemoveArticleFromAnyFolder(articleId);
+
+        var articlesInAFolder = this.db.ListArticlesNotInAFolder();
+        var articleExpectedToHaveState = articlesInAFolder.First((a) => a.Id == articleId)!;
+
+        Assert.True(articleExpectedToHaveState.HasLocalState);
+        Assert.NotNull(articleExpectedToHaveState.LocalOnlyState);
+    }
 }

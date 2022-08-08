@@ -87,7 +87,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     {
         using var query = c.CreateCommand(@"
             SELECT *
-            FROM articles
+            FROM articles_with_local_only_state
             WHERE id NOT IN (SELECT article_id FROM article_to_folder)
             ORDER BY id
         ");
@@ -112,7 +112,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     {
         using var query = c.CreateCommand(@"
             SELECT *
-            FROM articles
+            FROM articles_with_local_only_state
             WHERE liked = true
             ORDER BY id
         ");
