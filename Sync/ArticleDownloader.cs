@@ -209,7 +209,7 @@ public class ArticleDownloader : IDisposable
     /// <returns>Task that completes when articles have been processed</returns>
     internal async Task DownloadAllArticlesWithoutLocalState()
     {
-        var articlesToDownload = this.articleDatabase.ListAllArticlesInAFolder().Select((d) => d.Article).Where((a) => !a.HasLocalState).ToList();
+        var articlesToDownload = this.articleDatabase.ListArticlesWithoutLocalOnlyState();
         if (articlesToDownload.Count() == 0)
         {
             return;

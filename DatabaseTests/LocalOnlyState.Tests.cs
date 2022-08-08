@@ -172,6 +172,28 @@ public class LocalOnlyStateTests : IDisposable
     }
 
     [Fact]
+    public void ListingArticlesArtclesWithoutLocalOnlyStateOnlyReturnsArticlesWithoutLocalOnlyState()
+    {
+        var addedLocalState = new List<DatabaseLocalOnlyArticleState>();
+
+        foreach (var a in this.sampleArticles.Take(2))
+        {
+            var data = LocalOnlyStateTests.GetSampleLocalOnlyState(a.Id);
+            _ = this.db.AddLocalOnlyStateForArticle(data);
+
+            addedLocalState.Add(data);
+        }
+
+        var articles = this.db.ListArticlesWithoutLocalOnlyState();
+        Assert.Equal(this.sampleArticles.Count - 2, articles.Count());
+
+        foreach (var article in articles)
+        {
+            Assert.False(article.HasLocalState);
+        }
+    }
+
+    [Fact]
     public void CanRemoveLocalOnlyStateForArticleWhenPresent()
     {
         var state = LocalOnlyStateTests.GetSampleLocalOnlyState(this.sampleArticles.First()!.Id);

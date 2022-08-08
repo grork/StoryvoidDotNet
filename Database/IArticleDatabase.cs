@@ -49,6 +49,15 @@ public interface IArticleDatabase
     IEnumerable<DatabaseArticle> ListArticlesNotInAFolder();
 
     /// <summary>
+    /// Lists all articles that do not currently have any local only state. This
+    /// allows callers to then download the data for those specific articles.
+    /// </summary>
+    /// <returns>
+    /// List of articles that don't currently have local only state
+    /// </returns>
+    IEnumerable<DatabaseArticle> ListArticlesWithoutLocalOnlyState();
+
+    /// <summary>
     /// Add a article to the database
     /// </summary>
     /// <param name="data">Article information to add</param>

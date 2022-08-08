@@ -6,6 +6,31 @@ namespace Codevoid.Storyvoid;
 internal sealed partial class ArticleDatabase
 {
     /// <inheritdoc/>
+    public IEnumerable<DatabaseArticle> ListArticlesWithoutLocalOnlyState()
+    {
+        return ListArticlesWithoutLocalOnlyState(this.connection);
+    }
+
+    private IEnumerable<DatabaseArticle> ListArticlesWithoutLocalOnlyState(IDbConnection c)
+    {
+        using var query = c.CreateCommand(@"
+            SELECT *
+            FROM articles_with_local_only_state
+            WHERE article_id is null
+            ORDER BY id
+        ");
+
+        var results = new List<DatabaseArticle>();
+        using var rows = query.ExecuteReader();
+        while (rows.Read())
+        {
+            results.Add(DatabaseArticle.FromRow(rows));
+        }
+
+        return results;
+    }
+
+    /// <inheritdoc/>
     public DatabaseLocalOnlyArticleState? GetLocalOnlyStateByArticleId(long articleId)
     {
         return GetLocalOnlyStateByArticleId(this.connection, articleId);
