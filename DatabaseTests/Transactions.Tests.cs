@@ -146,7 +146,7 @@ public sealed class ArticleTransactionTests : IDisposable
 
         var articles = this.db.ListAllArticlesInAFolder();
         Assert.Single(articles);
-        Assert.Equal(articleToAdd.id, articles[0].Article.Id);
+        Assert.Equal(articleToAdd.id, articles.First()!.Article.Id);
     }
     
     [Fact]

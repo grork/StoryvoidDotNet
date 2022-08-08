@@ -10,17 +10,17 @@ namespace Codevoid.Test.ServiceIntegration;
 
 internal static class ComparisonExtensions
 {
-    internal static void AssertSameAs(this IList<DatabaseFolder> local, IList<IInstapaperFolder> remote)
+    internal static void AssertSameAs(this IEnumerable<DatabaseFolder> local, IEnumerable<IInstapaperFolder> remote)
     {
-        local = local.OrderBy((f) => f.ServiceId!).ToList();
-        remote = remote.OrderBy((f) => f.Id).ToList();
+        var localList = local.OrderBy((f) => f.ServiceId!).ToList();
+        var remoteList = remote.OrderBy((f) => f.Id).ToList();
 
         Assert.Equal(local.Count(), remote.Count());
 
         for (var index = 0; index < local.Count(); index += 1)
         {
-            var localFolder = local[index];
-            var remoteFolder = remote[index];
+            var localFolder = localList[index];
+            var remoteFolder = remoteList[index];
 
             Assert.Equal(localFolder.ServiceId!, remoteFolder.Id);
             Assert.Equal(localFolder.Title, remoteFolder.Title);
@@ -29,17 +29,17 @@ internal static class ComparisonExtensions
         }
     }
 
-    internal static void AssertSameAs(this IList<DatabaseArticle> local, IList<IInstapaperBookmark> remote)
+    internal static void AssertSameAs(this IEnumerable<DatabaseArticle> local, IEnumerable<IInstapaperBookmark> remote)
     {
-        local = local.OrderBy((a) => a.Id).ToList();
-        remote = remote.OrderBy((a) => a.Id).ToList();
+        var localList = local.OrderBy((a) => a.Id).ToList();
+        var remoteList = remote.OrderBy((a) => a.Id).ToList();
 
         Assert.Equal(local.Count(), remote.Count());
 
         for (var index = 0; index < local.Count(); index += 1)
         {
-            var localArticle = local[index];
-            var remoteBookmark = remote[index];
+            var localArticle = localList[index];
+            var remoteBookmark = remoteList[index];
 
             Assert.Equal(localArticle.Id, remoteBookmark.Id);
             Assert.Equal(localArticle.Url, remoteBookmark.Url);

@@ -21,12 +21,12 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     }
 
     /// <inheritdoc/>
-    public IList<DatabaseArticle> ListArticlesForLocalFolder(long localFolderId)
+    public IEnumerable<DatabaseArticle> ListArticlesForLocalFolder(long localFolderId)
     {
         return ListArticlesForLocalFolder(this.connection, localFolderId);
     }
 
-    private static IList<DatabaseArticle> ListArticlesForLocalFolder(IDbConnection c, long localFolderId)
+    private static IEnumerable<DatabaseArticle> ListArticlesForLocalFolder(IDbConnection c, long localFolderId)
     {
         using var query = c.CreateCommand(@"
             SELECT a.*
@@ -50,12 +50,12 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     }
 
     /// <inheritdoc />
-    public IList<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder()
+    public IEnumerable<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder()
     {
         return ListAllArticlesInAFolder(this.connection);
     }
 
-    private static IList<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder(IDbConnection c)
+    private static IEnumerable<(DatabaseArticle Article, long LocalFolderId)> ListAllArticlesInAFolder(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT a.*, article_to_folder.local_folder_id
@@ -78,12 +78,12 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     }
 
     /// <inheritdoc />
-    public IList<DatabaseArticle> ListArticlesNotInAFolder()
+    public IEnumerable<DatabaseArticle> ListArticlesNotInAFolder()
     {
         return ListArticlesNotInAFolder(this.connection);
     }
 
-    private static IList<DatabaseArticle> ListArticlesNotInAFolder(IDbConnection c)
+    private static IEnumerable<DatabaseArticle> ListArticlesNotInAFolder(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *
@@ -103,12 +103,12 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     }
 
     /// <inheritdoc/>
-    public IList<DatabaseArticle> ListLikedArticles()
+    public IEnumerable<DatabaseArticle> ListLikedArticles()
     {
         return ListLikedArticles(this.connection);
     }
 
-    private static IList<DatabaseArticle> ListLikedArticles(IDbConnection c)
+    private static IEnumerable<DatabaseArticle> ListLikedArticles(IDbConnection c)
     {
         using var query = c.CreateCommand(@"
             SELECT *

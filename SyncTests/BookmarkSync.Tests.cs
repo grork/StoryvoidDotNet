@@ -23,7 +23,7 @@ public class BookmarkSyncTests : BaseSyncTest
         // Make sure we can see it on the service
         var remoteArticles = this.service.BookmarksClient.ArticleDB.ListAllArticlesInAFolder();
         Assert.Single(remoteArticles);
-        Assert.Equal(addedUrl, remoteArticles[0]!.Article.Url);
+        Assert.Equal(addedUrl, remoteArticles.First()!.Article.Url);
         this.databases.ArticleChangesDB.AssertNoPendingEdits();
     }
 

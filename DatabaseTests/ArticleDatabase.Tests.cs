@@ -950,7 +950,7 @@ public sealed class ArticleDatabaseTests : IDisposable
 
         var orphanedArticles = this.db.ListArticlesNotInAFolder();
         Assert.Single(orphanedArticles);
-        Assert.Equal(addedArticle, orphanedArticles[0]);
+        Assert.Equal(addedArticle, orphanedArticles.First()!);
     }
 
     [Fact]

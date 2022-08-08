@@ -185,7 +185,7 @@ public class MockBookmarksService : IBookmarksClient
     public Task<(IList<IInstapaperBookmark> Bookmarks, IList<long> DeletedIds)> ListAsync(string folderServiceId, IEnumerable<HaveStatus>? haveInformation, uint resultLimit)
     {
         var limit = Convert.ToInt32(resultLimit);
-        IList<DatabaseArticle> remoteArticles = new List<DatabaseArticle>();
+        IEnumerable<DatabaseArticle> remoteArticles = new List<DatabaseArticle>();
         if (folderServiceId == WellKnownFolderIds.Liked)
         {
             remoteArticles = this.ArticleDB.ListLikedArticles();
