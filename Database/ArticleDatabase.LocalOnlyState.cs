@@ -59,7 +59,15 @@ internal sealed partial class ArticleDatabase
     /// <inheritdoc/>
     public DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(DatabaseLocalOnlyArticleState localOnlyArticleState)
     {
-        return AddLocalOnlyStateForArticle(this.connection, localOnlyArticleState);
+        var updatedState = AddLocalOnlyStateForArticle(this.connection, localOnlyArticleState);
+
+        if(this.eventSource is not null)
+        {
+            var article = this.GetArticleById(localOnlyArticleState.ArticleId)!;
+            this.eventSource.RaiseArticleUpdated(article);
+        }
+
+        return updatedState;
     }
 
     private static DatabaseLocalOnlyArticleState AddLocalOnlyStateForArticle(IDbConnection c, DatabaseLocalOnlyArticleState localOnlyArticleState)
@@ -122,10 +130,15 @@ internal sealed partial class ArticleDatabase
     /// <inheritdoc/>
     public void DeleteLocalOnlyArticleState(long articleId)
     {
-        DeleteLocalOnlyArticleState(this.connection, articleId);
+        var wasDeleted = DeleteLocalOnlyArticleState(this.connection, articleId);
+        if(wasDeleted && this.eventSource is not null)
+        {
+            var article = this.GetArticleById(articleId);
+            this.eventSource.RaiseArticleUpdated(article!);
+        }
     }
 
-    private static void DeleteLocalOnlyArticleState(IDbConnection c, long articleId)
+    private static bool DeleteLocalOnlyArticleState(IDbConnection c, long articleId)
     {
         using var query = c.CreateCommand(@"
             DELETE FROM article_local_only_state
@@ -133,7 +146,7 @@ internal sealed partial class ArticleDatabase
         ");
 
         query.AddParameter("@articleId", articleId);
-        query.ExecuteNonQuery();
+        return (query.ExecuteNonQuery() > 0);
     }
 
     public DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)
@@ -143,7 +156,14 @@ internal sealed partial class ArticleDatabase
             throw new ArgumentException("Article ID must be greater than 0");
         }
 
-        return UpdateLocalOnlyArticleState(this.connection, updatedLocalOnlyArticleState);
+        var updatedState = UpdateLocalOnlyArticleState(this.connection, updatedLocalOnlyArticleState);
+        if(this.eventSource is not null)
+        {
+            var article = this.GetArticleById(updatedState.ArticleId);
+            this.eventSource.RaiseArticleUpdated(article!);
+        }
+
+        return updatedState;
     }
 
     private static DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(IDbConnection c, DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState)

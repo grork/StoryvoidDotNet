@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using Codevoid.Storyvoid;
 
 namespace Codevoid.Test.Storyvoid;
@@ -12,7 +13,7 @@ public class LocalOnlyStateTests : IDisposable
     public LocalOnlyStateTests()
     {
         this.connection = TestUtilities.GetConnection();
-        this.db = new ArticleDatabase(this.connection);
+        this.ResetArticleDatabaseWrapper();
         this.sampleArticles = this.PopulateDatabaseWithArticles();
     }
 
@@ -20,6 +21,12 @@ public class LocalOnlyStateTests : IDisposable
     {
         this.connection.Close();
         this.connection.Dispose();
+    }
+
+    [MemberNotNull(nameof(db))]
+    private void ResetArticleDatabaseWrapper(IDatabaseEventSource? clearingHouse = null)
+    {
+        this.db = new ArticleDatabase(this.connection, clearingHouse);
     }
 
     public IList<DatabaseArticle> PopulateDatabaseWithArticles()
@@ -326,5 +333,69 @@ public class LocalOnlyStateTests : IDisposable
 
         Assert.True(articleExpectedToHaveState.HasLocalState);
         Assert.NotNull(articleExpectedToHaveState.LocalOnlyState);
+    }
+    
+    [Fact]
+    public void ArticleUpdatedEventRaisedWhenLocalStateIsAdded()
+    {
+        var clearingHouse = new DatabaseEventClearingHouse();
+        this.ResetArticleDatabaseWrapper(clearingHouse);
+
+        var articleId = this.sampleArticles.First()!.Id;
+        DatabaseArticle? article = null;
+        clearingHouse.ArticleUpdated += (_, args) => article = args;
+
+        this.db.AddLocalOnlyStateForArticle(LocalOnlyStateTests.GetSampleLocalOnlyState(articleId));
+
+        Assert.NotNull(article);
+        Assert.True(article!.HasLocalState);
+        Assert.Equal(articleId, article!.Id);
+    }
+
+    [Fact]
+    public void ArticleUpdatedEventRaisedWhenLocalStateIsUpdated()
+    {
+        var articleId = this.sampleArticles.First()!.Id;
+        var originalLocalState = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId);
+        this.db.AddLocalOnlyStateForArticle(originalLocalState);
+
+        var clearingHouse = new DatabaseEventClearingHouse();
+        this.ResetArticleDatabaseWrapper(clearingHouse);
+
+        DatabaseArticle? article = null;
+        var updatedState = originalLocalState with
+        {
+            ArticleUnavailable = !originalLocalState.ArticleUnavailable
+        };
+
+        clearingHouse.ArticleUpdated += (_, args) => article = args;
+
+        this.db.UpdateLocalOnlyArticleState(updatedState);
+
+        Assert.NotNull(article);
+        Assert.True(article!.HasLocalState);
+        Assert.Equal(articleId, article!.Id);
+        Assert.Equal(updatedState.ArticleUnavailable, article.LocalOnlyState!.ArticleUnavailable);
+    }
+
+    [Fact]
+    public void ArticleUpdatedEventRaisedWhenLocalStateIsDeleted()
+    {
+        var articleId = this.sampleArticles.First()!.Id;
+        var originalLocalState = LocalOnlyStateTests.GetSampleLocalOnlyState(articleId);
+        this.db.AddLocalOnlyStateForArticle(originalLocalState);
+
+        var clearingHouse = new DatabaseEventClearingHouse();
+        this.ResetArticleDatabaseWrapper(clearingHouse);
+
+        DatabaseArticle? article = null;
+
+        clearingHouse.ArticleUpdated += (_, args) => article = args;
+
+        this.db.DeleteLocalOnlyArticleState(articleId);
+
+        Assert.NotNull(article);
+        Assert.False(article!.HasLocalState);
+        Assert.Equal(articleId, article!.Id);
     }
 }
