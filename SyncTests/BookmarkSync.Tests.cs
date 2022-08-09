@@ -1341,4 +1341,265 @@ public class BookmarkSyncTests : BaseSyncTest
         }
     }
     #endregion
+
+    #region Cancellation
+    [Fact]
+    public async Task CancellingArticleSyncPriorToFirstAddDoesNotSyncAnything()
+    {
+        this.SwitchToEmptyLocalDatabase();
+        this.SwitchToEmptyServiceDatabase();
+
+        this.databases.ArticleChangesDB.CreatePendingArticleAdd(TestUtilities.GetRandomUrl(), null);
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingAdd += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleAdds());
+        Assert.Empty(this.service.BookmarksClient.ArticleDB.ListAllArticles());
+    }
+
+    [Fact]
+    public async Task CancellingArticleSyncAfterFirstAddDoesNotSyncAnythingElse()
+    {
+        this.SwitchToEmptyLocalDatabase();
+        this.SwitchToEmptyServiceDatabase();
+
+        var addedUrl = TestUtilities.GetRandomUrl();
+        this.databases.ArticleChangesDB.CreatePendingArticleAdd(addedUrl, null);
+        this.databases.ArticleChangesDB.CreatePendingArticleAdd(TestUtilities.GetRandomUrl(), null);
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        var eventCount = 0;
+        this.syncEngine.__Hook_ArticleSync_PrePendingAdd += (_, _) =>
+        {
+            eventCount += 1;
+            if (eventCount == 2)
+            {
+                source.Cancel();
+            }
+        };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleAdds());
+        Assert.Contains(this.service.BookmarksClient.ArticleDB.ListAllArticles(), (a) => a.Url == addedUrl);
+    }
+
+    [Fact]
+    public async Task CancellingArticleDeleteBeforeFirstDeleteDoesNotSyncAnything()
+    {
+        var articleToDelete = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+
+        var ledger = this.GetLedger();
+        this.databases.ArticleDB.DeleteArticle(articleToDelete.Id);
+        ledger.Dispose();
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingDelete += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        Assert.NotNull(this.service.BookmarksClient.ArticleDB.GetArticleById(articleToDelete.Id));
+        Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleDeletes());
+    }
+
+    [Fact]
+    public async Task CancellingArticleDeleteBeforeSecondDeleteDoesNotSyncAnythingMove()
+    {
+        var articleToDelete = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+
+        var ledger = this.GetLedger();
+        this.databases.ArticleDB.DeleteArticle(articleToDelete.Id);
+
+        var articleToDelete2 = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+
+        this.databases.ArticleDB.DeleteArticle(articleToDelete2.Id);
+        ledger.Dispose();
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        var eventCount = 0;
+
+        this.syncEngine.__Hook_ArticleSync_PrePendingDelete += (_, _) =>
+        {
+            eventCount += 1;
+
+            if (eventCount == 2)
+            {
+                source.Cancel();
+            }
+        };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        Assert.Null(this.service.BookmarksClient.ArticleDB.GetArticleById(articleToDelete.Id));
+        Assert.NotNull(this.service.BookmarksClient.ArticleDB.GetArticleById(articleToDelete2.Id));
+        Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleDeletes());
+    }
+
+    [Fact]
+    public async Task CancellingArticleMoveBeforeFirstMoveDoesNotSyncAnything()
+    {
+        var articleToMove = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        var destinationFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        
+        var ledger = this.GetLedger();
+        this.databases.ArticleDB.MoveArticleToFolder(articleToMove.Id, destinationFolder.LocalId);
+        ledger.Dispose();
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSyncPrePendingMove += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        var remoteDestinationFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(destinationFolder.ServiceId!.Value)!;
+        Assert.DoesNotContain(
+            this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteDestinationFolder.LocalId),
+            (a) => a.Id == articleToMove.Id
+        );
+
+        Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleMovesForLocalFolderId(destinationFolder.LocalId));
+    }
+
+    [Fact]
+    public async Task CancellingArticleMoveBeforeSecondMoveDoesNotSyncAnythingMore()
+    {
+        var articleToMove = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        var destinationFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        
+        var ledger = this.GetLedger();
+        this.databases.ArticleDB.MoveArticleToFolder(articleToMove.Id, destinationFolder.LocalId);
+        ledger.Dispose();
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSyncPrePendingMove += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        var remoteDestinationFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(destinationFolder.ServiceId!.Value)!;
+        Assert.DoesNotContain(
+            this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteDestinationFolder.LocalId),
+            (a) => a.Id == articleToMove.Id
+        );
+
+        Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleMovesForLocalFolderId(destinationFolder.LocalId));
+    }
+
+    [Fact]
+    public async Task CancellingArticleForFolderSyncBeforeFirstFolderDoesntSyncAnything()
+    {
+        var remoteArticleToMutate = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        remoteArticleToMutate = this.service.BookmarksClient.ArticleDB.UpdateReadProgressForArticle(0.9F, DateTime.Now, remoteArticleToMutate.Id);
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSyncPreFolder += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteArticleToMutate.Id)!;
+        Assert.NotEqual(remoteArticleToMutate, localArticle);
+    }
+
+    [Fact]
+    public async Task CancellingArticleSyncForFolderBeforeSecondFolderDoesntSyncAnythingMore()
+    {
+        var remoteArticleToMutate = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        remoteArticleToMutate = this.service.BookmarksClient.ArticleDB.UpdateReadProgressForArticle(0.9F, DateTime.Now, remoteArticleToMutate.Id);
+
+        var remoteArticleToMutate2 = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(this.service.FoldersClient.FolderDB.FirstCompleteUserFolder().LocalId);
+        remoteArticleToMutate2 = this.service.BookmarksClient.ArticleDB.UpdateReadProgressForArticle(0.1F, DateTime.Now, remoteArticleToMutate2.Id);
+
+        CancellationTokenSource source = new CancellationTokenSource();
+
+        var eventCount = 0;
+        this.syncEngine.__Hook_ArticleSyncPreFolder += (_, _) =>
+        {
+            eventCount += 1;
+            if (eventCount == 2)
+            {
+                source.Cancel();
+            }
+        };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteArticleToMutate.Id)!;
+        Assert.Equal(remoteArticleToMutate, localArticle);
+
+        var localArticle2 = this.databases.ArticleDB.GetArticleById(remoteArticleToMutate2.Id);
+        Assert.NotEqual(remoteArticleToMutate2, localArticle2);
+    }
+
+    [Fact]
+    public async Task CancellingLikeSyncingBeforeFirstSyncDoesntSyncAnything()
+    {
+        var localArticleToLike = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
+
+        using(var ledger = this.GetLedger())
+        {
+            localArticleToLike = this.databases.ArticleDB.LikeArticle(localArticleToLike.Id);
+        }
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSyncPreLike += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        var remoteLikedArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(localArticleToLike.Id)!;
+        Assert.False(remoteLikedArticle.Liked);
+    }
+
+    [Fact]
+    public async Task CancellingLikeSyncingBeforeSecondSyncDoesntSyncAnythingMore()
+    {
+        var localArticleToLike = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
+        var localArticleToLike2 = this.databases.ArticleDB.FirstUnlikedArticleInfolder(this.databases.FolderDB.FirstCompleteUserFolder().LocalId);
+
+        using(var ledger = this.GetLedger())
+        {
+            localArticleToLike = this.databases.ArticleDB.LikeArticle(localArticleToLike.Id);
+            localArticleToLike2 = this.databases.ArticleDB.LikeArticle(localArticleToLike2.Id);
+        }
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        var eventCount = 0;
+
+        this.syncEngine.__Hook_ArticleSyncPreLike += (_, _) =>
+        {
+            eventCount += 1;
+
+            if (eventCount == 2)
+            {
+                source.Cancel();
+            }
+        };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        // The order in which the pending changes are synced is 'undefined'. This
+        // means the order is potentially reversed. At the time of authoring,
+        // the first article to be sync'd is actually the second change. 🤷
+        var remoteLikedArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(localArticleToLike.Id)!;
+        Assert.False(remoteLikedArticle.Liked);
+
+        var remoteLikedArticle2 = this.service.BookmarksClient.ArticleDB.GetArticleById(localArticleToLike2.Id)!;
+        Assert.True(remoteLikedArticle2.Liked);
+    }
+
+    [Fact]
+    public async Task CancellingLikeSyncingBeforeCollectingRemoteChangesDoesntSyncRemoteChanges()
+    {
+        var remoteLikedArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
+        remoteLikedArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteLikedArticle.Id);
+
+        CancellationTokenSource source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSyncPreRemoteLikeFolderSync += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+
+        var localArticle = this.databases.ArticleDB.GetArticleById(remoteLikedArticle.Id)!;
+        Assert.False(localArticle.Liked);
+    }
+    #endregion
 }

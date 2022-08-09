@@ -134,13 +134,28 @@ public class InstapaperSync
         this.clearingHouse = clearingHouse;
     }
 
-    public async Task SyncEverything()
+    #region Test Hooks
+    internal event EventHandler? __Hook_FolderSync_PreSingleAdd;
+    internal event EventHandler? __Hook_FolderSync_PreSingleDelete;
+    internal event EventHandler? __Hook_FolderSync_PostProcessList;
+    internal event EventHandler? __Hook_ArticleSync_PrePendingAdd;
+    internal event EventHandler? __Hook_ArticleSync_PrePendingDelete;
+    internal event EventHandler? __Hook_ArticleSyncPrePendingMove;
+    internal event EventHandler? __Hook_ArticleSyncPreLike;
+    internal event EventHandler? __Hook_ArticleSyncPreRemoteLikeFolderSync;
+    internal event EventHandler? __Hook_ArticleSyncPreFolder;
+    #endregion
+
+    public async Task SyncEverything(CancellationToken cancellationToken = default)
     {
         try
         {
             this.clearingHouse?.RaiseSyncStarted();
-            await this.SyncFolders();
-            await this.SyncArticles();
+            cancellationToken.ThrowIfCancellationRequested();
+            await this.SyncFolders(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            await this.SyncArticles(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             this.CleanupOrphanedArticles();
         }
         finally
@@ -153,13 +168,13 @@ public class InstapaperSync
     /// Synchronises the folder information with the service. Pending adds &
     /// deletes are applied first before a 'mop up' of all folder information
     /// </summary>
-    internal async Task SyncFolders()
+    internal async Task SyncFolders(CancellationToken cancellationToken = default)
     {
         try
         {
             this.clearingHouse?.RaiseFoldersStarted();
-            await this.SyncPendingFolderAdds();
-            await this.SyncPendingFolderDeletes();
+            await this.SyncPendingFolderAdds(cancellationToken);
+            await this.SyncPendingFolderDeletes(cancellationToken);
 
             var remoteFoldersTask = this.foldersClient.ListAsync();
             var localFolders = this.folderDb.ListAllUserFolders();
@@ -168,6 +183,10 @@ public class InstapaperSync
             // aren't supposed to sync. If they were seen in an earlier sync and are
             // now set not to sync, they'll be cleaned up as not being available.
             var remoteFolders = (await remoteFoldersTask).Where((f) => f.SyncToMobile);
+
+            this.__Hook_FolderSync_PostProcessList?.Invoke(this, EventArgs.Empty);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Check which remote folders need to be added or updated locally
             foreach (var rf in remoteFolders)
@@ -209,11 +228,13 @@ public class InstapaperSync
         }
     }
 
-    private async Task SyncPendingFolderAdds()
+    private async Task SyncPendingFolderAdds(CancellationToken cancellationToken = default)
     {
         var pendingAdds = this.folderChangesDb.ListPendingFolderAdds();
         foreach(var add in pendingAdds)
         {
+            this.__Hook_FolderSync_PreSingleAdd?.Invoke(this, EventArgs.Empty);
+            cancellationToken.ThrowIfCancellationRequested();
             await this.SyncSinglePendingFolderAdd(add);
         }
     }
@@ -268,11 +289,13 @@ public class InstapaperSync
         return result;
     }
 
-    private async Task SyncPendingFolderDeletes()
+    private async Task SyncPendingFolderDeletes(CancellationToken cancellationToken = default)
     {
         var pendingDeletes = this.folderChangesDb.ListPendingFolderDeletes();
         foreach(var delete in pendingDeletes)
         {
+            this.__Hook_FolderSync_PreSingleDelete?.Invoke(this, EventArgs.Empty);
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 await this.foldersClient.DeleteAsync(delete.ServiceId);
@@ -295,16 +318,21 @@ public class InstapaperSync
     /// It is expected - but not required - that <see cref="SyncFolders">
     /// SyncFolders</see> will be executed before this.
     /// </summary>
-    internal async Task SyncArticles()
+    internal async Task SyncArticles(CancellationToken cancellationToken = default)
     {
         try
         {
             this.clearingHouse?.RaiseArticlesStarted();
-            await this.SyncPendingArticleAdds();
-            await this.SyncPendingArticleDeletes();
-            await this.SyncPendingArticleMoves();
-            await this.SyncArticleStateByFolder();
-            await this.SyncArticleLikeStatuses();
+            cancellationToken.ThrowIfCancellationRequested();
+            await this.SyncPendingArticleAdds(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            await this.SyncPendingArticleDeletes(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            await this.SyncPendingArticleMoves(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            await this.SyncArticleStateByFolder(cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            await this.SyncArticleLikeStatuses(cancellationToken);
         }
         finally
         {
@@ -312,21 +340,25 @@ public class InstapaperSync
         }
     }
 
-    private async Task SyncPendingArticleAdds()
+    private async Task SyncPendingArticleAdds(CancellationToken cancellationToken = default)
     {
         var adds = this.articleChangesDb.ListPendingArticleAdds();
         foreach(var add in adds)
         {
+            this.__Hook_ArticleSync_PrePendingAdd?.Invoke(this, EventArgs.Empty);
+            cancellationToken.ThrowIfCancellationRequested();
             _ = await this.bookmarksClient.AddAsync(add.Url, null);
             this.articleChangesDb.DeletePendingArticleAdd(add.Url);
         }
     }
 
-    private async Task SyncPendingArticleDeletes()
+    private async Task SyncPendingArticleDeletes(CancellationToken cancellationToken = default)
     {
         var deletes = this.articleChangesDb.ListPendingArticleDeletes();
         foreach(var delete in deletes)
         {
+            this.__Hook_ArticleSync_PrePendingDelete?.Invoke(this, EventArgs.Empty);
+            cancellationToken.ThrowIfCancellationRequested();
             await this.bookmarksClient.DeleteAsync(delete);
             this.articleChangesDb.DeletePendingArticleDelete(delete);
         }
@@ -341,11 +373,14 @@ public class InstapaperSync
     /// which happens in <see
     /// cref="SyncArticleStateByFolder>SyncArticleStateByFolder</see>.
     /// </summary>
-    internal async Task SyncPendingArticleMoves()
+    internal async Task SyncPendingArticleMoves(CancellationToken cancellationToken = default)
     {
         var moves = this.articleChangesDb.ListPendingArticleMoves();
         foreach(var move in moves)
         {
+            this.__Hook_ArticleSyncPrePendingMove?.Invoke(this, EventArgs.Empty);
+            cancellationToken.ThrowIfCancellationRequested();
+
             var destinationFolder = this.folderDb.GetFolderByLocalId(move.DestinationFolderLocalId);
             
             // Get our folder ducks in a row -- which may require us to sync a
@@ -462,10 +497,13 @@ public class InstapaperSync
         }
     }
 
-    internal async Task SyncArticleLikeStatuses()
+    internal async Task SyncArticleLikeStatuses(CancellationToken cancellationToken = default)
     {
-        await SyncPendingArticleLikeStatusChanges();
-        await SyncArticleLikedArticlesWithService();
+        await SyncPendingArticleLikeStatusChanges(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        this.__Hook_ArticleSyncPreRemoteLikeFolderSync?.Invoke(this, EventArgs.Empty);
+        await SyncArticleLikedArticlesWithService(cancellationToken);
     }
 
     /// <summary>
@@ -474,8 +512,10 @@ public class InstapaperSync
     /// apply locally. This is very similar to syncing the contents of a folder,
     /// but simplified in the handling of the results.
     /// </summary>
-    private async Task SyncArticleLikedArticlesWithService()
+    private async Task SyncArticleLikedArticlesWithService(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var currentLikes = this.articleDb.ListLikedArticles();
         var (addedLikes, removedLiked) = await this.bookmarksClient.ListAsync(
             WellKnownFolderIds.Liked,
@@ -516,11 +556,13 @@ public class InstapaperSync
         }
     }
 
-    private async Task SyncPendingArticleLikeStatusChanges()
+    private async Task SyncPendingArticleLikeStatusChanges(CancellationToken cancellationToken = default)
     {
         var statusChanges = this.articleChangesDb.ListPendingArticleStateChanges();
         foreach (var stateChange in statusChanges)
         {
+            this.__Hook_ArticleSyncPreLike?.Invoke(this, EventArgs.Empty);
+            cancellationToken.ThrowIfCancellationRequested();
             IInstapaperBookmark? updatedBookmark = null;
             try
             {
@@ -556,7 +598,7 @@ public class InstapaperSync
     /// Folder-by-folder, ask the service to tell us what is different, and
     /// apply those changes locally.
     /// </summary>
-    private async Task SyncArticleStateByFolder()
+    private async Task SyncArticleStateByFolder(CancellationToken cancellationToken = default)
     {
         // For ever service-sync'd folder, perform a sync
         var localFolders = this.folderDb.ListAllFolders();
@@ -569,6 +611,9 @@ public class InstapaperSync
                 continue;
             }
 
+            this.__Hook_ArticleSyncPreFolder?.Invoke(this, EventArgs.Empty);
+
+            cancellationToken.ThrowIfCancellationRequested();
             var articles = this.articleDb.ListArticlesForLocalFolder(folder.LocalId);
             await this.SyncArticlesForFolder(articles, folder.GetServiceCompatibleFolderId(), folder.LocalId);
         }

@@ -373,4 +373,183 @@ public sealed class FolderSyncTests : BaseSyncTest
         this.databases.FolderChangesDB.AssertNoPendingEdits();
     }
     #endregion
+
+    #region Cancellation
+    [Fact]
+    public async Task CancellingFolderSyncOnFirstAddDoesNotPushAdd()
+    {
+        const string FOLDER_TITLE = "Cancellation Folder";
+        var source = new CancellationTokenSource();
+        var ledger = this.GetLedger();
+
+        var localNewFolder = this.databases.FolderDB.CreateFolder(FOLDER_TITLE);
+
+        ledger.Dispose();
+
+        this.syncEngine.__Hook_FolderSync_PreSingleAdd += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+
+        // Check it didn't make it remotely
+        var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByTitle(FOLDER_TITLE);
+        Assert.Null(remoteFolder);
+
+        // Check the pending add is still local
+        var pendingFolderAdd = this.databases.FolderChangesDB.GetPendingFolderAdd(localNewFolder.LocalId);
+        Assert.NotNull(pendingFolderAdd);
+    }
+
+    [Fact]
+    public async Task CancellingFolderSyncOnSecondAddCompletesFirstButSecondRemains()
+    {
+        const string FOLDER_TITLE = "Cancellation Folder";
+        const string FOLDER_TITLE_2 = "Cancelletion Folder 2";
+
+        var source = new CancellationTokenSource();
+        var ledger = this.GetLedger();
+
+        var localNewFolder = this.databases.FolderDB.CreateFolder(FOLDER_TITLE);
+        var localNewFolder2 = this.databases.FolderDB.CreateFolder(FOLDER_TITLE_2);
+
+        ledger.Dispose();
+
+        var eventCount = 0;
+        this.syncEngine.__Hook_FolderSync_PreSingleAdd += (_, _) =>
+        {
+            eventCount += 1;
+            if (eventCount == 2)
+            {
+                source.Cancel();
+            }
+        };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+
+        // Check the first made it remotely
+        var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByTitle(FOLDER_TITLE);
+        Assert.NotNull(remoteFolder);
+
+        localNewFolder = this.databases.FolderDB.GetFolderByTitle(FOLDER_TITLE);
+        Assert.NotNull(localNewFolder);
+        Assert.NotNull(localNewFolder!.ServiceId);
+
+        // Check the first pending add has been removed
+        var pendingFolderAdd = this.databases.FolderChangesDB.GetPendingFolderAdd(localNewFolder.LocalId);
+        Assert.Null(pendingFolderAdd);
+
+        // Check the second add is still present, still pending
+        var remoteFolder2 = this.service.FoldersClient.FolderDB.GetFolderByTitle(FOLDER_TITLE_2);
+        Assert.Null(remoteFolder2);
+
+        // Check the second pending add is still local
+        var pendingFolderAdd2 = this.databases.FolderChangesDB.GetPendingFolderAdd(localNewFolder2.LocalId);
+        Assert.NotNull(pendingFolderAdd2);
+    }
+
+    [Fact]
+    public async Task CancellingFolderSyncOnFirstDeleteDoesNotPushTheDelete()
+    {
+        var source = new CancellationTokenSource();
+        var ledger = this.GetLedger();
+
+        var toBeDeletedFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        this.databases.FolderDB.DeleteFolder(toBeDeletedFolder.LocalId);
+
+        ledger.Dispose();
+
+        this.syncEngine.__Hook_FolderSync_PreSingleDelete += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+
+        // Check it didn't make it remotely
+        var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(toBeDeletedFolder.ServiceId!.Value);
+        Assert.NotNull(remoteFolder);
+
+        // Check the pending delete is still local
+        var pendingFolderDelete = this.databases.FolderChangesDB.GetPendingFolderDelete(toBeDeletedFolder.ServiceId!.Value);
+        Assert.NotNull(pendingFolderDelete);
+    }
+
+    [Fact]
+    public async Task CancellingFolderSyncOnSecondDeleteCompletesFirstButSecondRemains()
+    {
+        var source = new CancellationTokenSource();
+        var ledger = this.GetLedger();
+
+        var toBeDeletedFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        this.databases.FolderDB.DeleteFolder(toBeDeletedFolder.LocalId);
+
+        var toBeDeletedFolder2 = this.databases.FolderDB.FirstCompleteUserFolder();
+        this.databases.FolderDB.DeleteFolder(toBeDeletedFolder2.LocalId);
+
+        ledger.Dispose();
+
+        var eventCount = 0;
+        this.syncEngine.__Hook_FolderSync_PreSingleDelete += (_, _) =>
+        {
+            eventCount += 1;
+            if (eventCount == 2)
+            {
+                source.Cancel();
+            }
+        };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+
+        // Check the first made it remotely
+        var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(toBeDeletedFolder.ServiceId!.Value);
+        Assert.Null(remoteFolder);
+
+        // Check the pending delete is gone
+        var pendingFolderDelete = this.databases.FolderChangesDB.GetPendingFolderDelete(toBeDeletedFolder.ServiceId!.Value);
+        Assert.Null(pendingFolderDelete);
+
+        // Check second didn't make it remotely
+        var remoteFolder2 = this.service.FoldersClient.FolderDB.GetFolderByServiceId(toBeDeletedFolder2.ServiceId!.Value);
+        Assert.NotNull(remoteFolder2);
+
+        // Check the pending delete is still local
+        var pendingFolderDelete2 = this.databases.FolderChangesDB.GetPendingFolderDelete(toBeDeletedFolder2.ServiceId!.Value);
+        Assert.NotNull(pendingFolderDelete2);
+    }
+
+    [Fact]
+    public async Task CancellingFolderSyncAfterAddsAndDeletesButBeforeImplicitChangeSyncsDoesntSyncImplicitChanges()
+    {
+        const string FOLDER_TITLE = "Cancellation Folder";
+        var toBeDeletedFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        var source = new CancellationTokenSource();
+        var ledger = this.GetLedger();
+
+        // Delete a local folder, add a new folder
+        this.databases.FolderDB.DeleteFolder(toBeDeletedFolder.LocalId);
+        var localNewFolder = this.databases.FolderDB.CreateFolder(FOLDER_TITLE);
+
+        ledger.Dispose();
+
+        // Mutate a remote folder so we can track if the title changes
+        var toBeChangedRemoteFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        var updatedRemoteFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(toBeChangedRemoteFolder.ServiceId!.Value)! with
+        {
+            Title = "Hamster"
+        };
+
+        this.syncEngine.__Hook_FolderSync_PostProcessList += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+        
+        this.databases.FolderChangesDB.AssertNoPendingEdits();
+
+        // Check add made it remotely
+        var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByTitle(FOLDER_TITLE);
+        Assert.NotNull(remoteFolder);
+
+        // Check delete made it remotely
+        var deletedRemoteFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(toBeDeletedFolder.ServiceId!.Value);
+        Assert.Null(deletedRemoteFolder);
+
+        var localFolderThatShouldntBeChanged = this.databases.FolderDB.GetFolderByLocalId(toBeChangedRemoteFolder.LocalId);
+        Assert.Equal(toBeChangedRemoteFolder, localFolderThatShouldntBeChanged);
+    }
+    #endregion
 }
