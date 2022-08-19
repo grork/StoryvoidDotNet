@@ -37,8 +37,8 @@ public sealed class FolderDatabaseTests : IDisposable
         var archiveFolder = result.Where((f) => f.ServiceId == WellKnownServiceFolderIds.Archive).First()!;
 
         // Check the convenience IDs are correct
-        Assert.Equal(unreadFolder.LocalId, WellKnownLocalFolderIds.Unread);
-        Assert.Equal(archiveFolder.LocalId, WellKnownLocalFolderIds.Archive);
+        Assert.Equal(WellKnownLocalFolderIds.Unread, unreadFolder.LocalId);
+        Assert.Equal(WellKnownLocalFolderIds.Archive, archiveFolder.LocalId);
     }
 
     [Fact]
@@ -51,8 +51,8 @@ public sealed class FolderDatabaseTests : IDisposable
         var secondFolder = result[1];
 
         // Check the convenience IDs are correct
-        Assert.Equal(firstFolder.LocalId, WellKnownLocalFolderIds.Unread);
-        Assert.Equal(secondFolder.LocalId, WellKnownLocalFolderIds.Archive);
+        Assert.Equal(WellKnownLocalFolderIds.Unread, firstFolder.LocalId);
+        Assert.Equal(WellKnownLocalFolderIds.Archive, secondFolder.LocalId);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class FolderDatabaseTests : IDisposable
     {
         // Create folder; check results are returned
         var addedFolder = this.db.CreateFolder("Sample");
-        
+
         // Check it comes back when listing all folders
         var allFolders = this.db.ListAllUserFolders();
         Assert.Contains(addedFolder, allFolders);

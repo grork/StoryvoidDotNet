@@ -123,7 +123,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
 
         // Check we have enough in 'unread'
         var unreadBookmarks = await this.SharedState.BookmarksClient.ListAsync(WellKnownFolderIds.Unread);
-        Assert.Equal(2, unreadBookmarks.Bookmarks.Count());
+        Assert.True(unreadBookmarks.Bookmarks.Count() > 1);
     }
 
     private async static Task AssertDatabaseAndRemoteMatch((IFolderDatabase Folders, IArticleDatabase Articles) database, (IFoldersClient Folders, IBookmarksClient Bookmarks) service)
@@ -156,7 +156,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
 
         // Eagerly get the contents of the remote folders
         var remoteArticlesTasks = localFolders.Select((f) => service.Bookmarks.ListAsync(Convert.ToInt64(f.ServiceId!))).ToList();
-        
+
         // Compare user folder contents
         for (var index = 0; index < localFolders.Count(); index += 1)
         {
@@ -205,7 +205,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
     public async Task PendingAndRemoteUpdatesAreAppliedLocallyAndRemotely()
     {
         var (syncEngine, localDatabase) = await SyncAndVerifyInitialRemoteState();
-        
+
         try
         {
             // List remote unread articles so we can fiddle with them
