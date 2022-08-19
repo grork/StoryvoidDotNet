@@ -182,7 +182,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task CanDownloadArticleWithoutImages()
     {
         var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         AssertAvailableLocallyAndFileExists(localState!);
     }
 
@@ -190,7 +190,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task LocalFileContainsOnlyTheBody()
     {
         var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.Equal(this.GetRelativeUriForDownloadedArticle(localState!.ArticleId), localState!.LocalPath);
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
@@ -208,7 +208,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task CanDownloadLargeArticleWithoutImages()
     {
         var article = this.articleDatabase.GetArticleById(LARGE_ARTICLE_NO_IMAGES)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.Equal(this.GetRelativeUriForDownloadedArticle(localState!.ArticleId), localState!.LocalPath);
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
@@ -221,7 +221,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task DownloadingUnavailableArticleMarksArticleAsUnavailable()
     {
         var article = this.articleDatabase.GetArticleById(UNAVAILABLE_ARTICLE)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.Null(localState!.LocalPath);
         Assert.False(localState!.AvailableLocally);
         Assert.True(localState!.ArticleUnavailable);
@@ -231,7 +231,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task DownloadingArticleThatIsntOnTheServiceFails()
     {
         var article = this.articleDatabase.GetArticleById(MISSING_REMOTE_ARTICLE)!;
-        await Assert.ThrowsAsync<EntityNotFoundException>(() => this.articleDownloader.DownloadArticle(article));
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => this.articleDownloader.DownloadArticleAsync(article));
         var localState = this.articleDatabase.GetLocalOnlyStateByArticleId(MISSING_REMOTE_ARTICLE);
         Assert.Null(localState);
     }
@@ -240,7 +240,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task ArticleTextIsExtractedFromBodyText()
     {
         var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.NotEmpty(localState!.ExtractedDescription);
         Assert.Equal(400, localState!.ExtractedDescription.Length);
     }
@@ -249,7 +249,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task ArticleTextIsExtractedFromBodyTextWhenShort()
     {
         var article = this.articleDatabase.GetArticleById(SHORT_ARTICLE_NO_IMAGES)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.NotEmpty(localState!.ExtractedDescription);
         Assert.Equal(15, localState!.ExtractedDescription.Length);
     }
@@ -258,7 +258,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task CanDownloadArticleWithEmptyBody()
     {
         var article = this.articleDatabase.GetArticleById(EMPTY_ARTICLE)!;
-        var localState = (await this.articleDownloader.DownloadArticle(article))!;
+        var localState = (await this.articleDownloader.DownloadArticleAsync(article))!;
         this.AssertAvailableLocallyAndFileExists(localState);
     }
 
@@ -266,7 +266,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task DescriptionExtractedFromYouTube()
     {
         var article = this.articleDatabase.GetArticleById(YOUTUBE_ARTICLE)!;
-        var localState = (await this.articleDownloader.DownloadArticle(article))!;
+        var localState = (await this.articleDownloader.DownloadArticleAsync(article))!;
         this.AssertAvailableLocallyAndFileExists(localState);
     }
 
@@ -277,7 +277,7 @@ public class ArticleDownloaderTests : IDisposable
         using (var transaction = this.connection.BeginTransaction())
         {
 
-            var localState = await this.articleDownloader.DownloadArticle(article);
+            var localState = await this.articleDownloader.DownloadArticleAsync(article);
             Assert.NotNull(localState);
 
             var retrievedLocalState = this.articleDatabase.GetLocalOnlyStateByArticleId(BASIC_ARTICLE_NO_IMAGES);
@@ -295,7 +295,7 @@ public class ArticleDownloaderTests : IDisposable
     private async Task BasicImageDownloadTest(long articleId, int expectedImageCount)
     {
         var article = this.articleDatabase.GetArticleById(articleId)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         var imagesPath = Path.Join(this.testFolder.FullName, localState!.ArticleId.ToString());
         Assert.True(Directory.Exists(imagesPath));
         Assert.Equal(expectedImageCount, Directory.GetFiles(imagesPath).Count());
@@ -346,7 +346,7 @@ public class ArticleDownloaderTests : IDisposable
     {
         const int EXPECTED_IMAGE_COUNT = 2;
         var article = this.articleDatabase.GetArticleById(IMAGES_WITH_INLINE_IMAGES)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         var imagesPath = Path.Join(this.testFolder.FullName, localState!.ArticleId.ToString());
         Assert.False(Directory.Exists(imagesPath));
 
@@ -370,7 +370,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task NoThumbnailImageReturnedIfNoImagesInArticle()
     {
         var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.Null(localState!.FirstImageLocalPath);
         Assert.Null(localState!.FirstImageRemoteUri);
         Assert.False(localState!.HasImages);
@@ -380,7 +380,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task NoThumbnailImageReturnedIfOnlyInlineImagesInArticle()
     {
         var article = this.articleDatabase.GetArticleById(IMAGES_WITH_INLINE_IMAGES)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.Null(localState!.FirstImageLocalPath);
         Assert.Null(localState!.FirstImageRemoteUri);
         Assert.False(localState!.HasImages);
@@ -404,7 +404,7 @@ public class ArticleDownloaderTests : IDisposable
     private async Task FirstImageIsSelected(long articleId, string expectedFirstImage)
     {
         var article = this.articleDatabase.GetArticleById(articleId)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.NotNull(localState!.FirstImageLocalPath);
         Assert.NotNull(localState!.FirstImageRemoteUri);
         Assert.True(localState!.HasImages);
@@ -420,7 +420,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task FirstImageUnder150pxIsNotSelected()
     {
         var article = this.articleDatabase.GetArticleById(FIRST_IMAGE_LESS_THAN_150PX)!;
-        var localState = await this.articleDownloader.DownloadArticle(article);
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
         Assert.NotNull(localState!.FirstImageLocalPath);
         Assert.NotNull(localState!.FirstImageRemoteUri);
         Assert.True(localState!.HasImages);
@@ -494,7 +494,7 @@ public class ArticleDownloaderTests : IDisposable
         clearingHouse.ImagesCompleted += (_, articleId) => imagesCompleted = articleId;
         clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
 
-        await this.articleDownloader.DownloadArticle(article);
+        await this.articleDownloader.DownloadArticleAsync(article);
 
 
         Assert.Equal(article, articleStarting);
@@ -520,7 +520,7 @@ public class ArticleDownloaderTests : IDisposable
             localState = this.articleDatabase.GetLocalOnlyStateByArticleId(args.Id);
         };
 
-        await this.articleDownloader.DownloadArticle(article);
+        await this.articleDownloader.DownloadArticleAsync(article);
 
         Assert.NotNull(localState);
         this.AssertAvailableLocallyAndFileExists(localState!);
@@ -594,7 +594,7 @@ public class ArticleDownloaderTests : IDisposable
         };
         clearingHouse.DownloadingCompleted += (_, _) => downloadCompleted = true;
 
-        await this.articleDownloader.DownloadArticles(articlesToDownload);
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
         imagesStarted.Sort();
         imagesCompleted.Sort();
@@ -671,7 +671,7 @@ public class ArticleDownloaderTests : IDisposable
         clearingHouse.ArticleCompleted += (_, args) => articlesCompleted.Add(args);
         clearingHouse.DownloadingCompleted += (_, _) => downloadCompleted = true;
 
-        await this.articleDownloader.DownloadArticles(articlesToDownload);
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
         Assert.True(downloadStarted);
         Assert.Equal(articleIds.Length, articlesStarted.Count());
@@ -700,7 +700,7 @@ public class ArticleDownloaderTests : IDisposable
         clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
 
         var article = this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!;
-        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadArticle(article, cancelSource.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadArticleAsync(article, cancelSource.Token));
         Assert.False(imagesStarted);
 
         // Guess the article path, since we cancelled early, we don't have local
@@ -729,7 +729,7 @@ public class ArticleDownloaderTests : IDisposable
         clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
 
         var article = this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!;
-        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadArticle(article, cancelSource.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadArticleAsync(article, cancelSource.Token));
         Assert.False(imagesStarted);
 
         // Guess the article path, since we cancelled early, we don't have local
@@ -770,7 +770,7 @@ public class ArticleDownloaderTests : IDisposable
         clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
 
         var article = this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!;
-        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadArticle(article, cancelSource.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadArticleAsync(article, cancelSource.Token));
         Assert.Equal(1, imagesCompleted);
 
         // Guess the article path, since we cancelled early, we don't have local
@@ -814,7 +814,7 @@ public class ArticleDownloaderTests : IDisposable
         clearingHouse.ArticleCompleted += (_, args) => articleCompleted = args;
 
         var article = this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!;
-        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadArticle(article, cancelSource.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => articleDownloader.DownloadArticleAsync(article, cancelSource.Token));
         Assert.Equal(1, imagesCompleted);
 
         // Guess the article path, since we cancelled early, we don't have local
@@ -846,7 +846,7 @@ public class ArticleDownloaderTests : IDisposable
         };
         var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
 
-        await this.articleDownloader.DownloadArticles(articlesToDownload);
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
         Assert.Equal(articleIds.Length, articlesLocalState.Count());
@@ -865,7 +865,7 @@ public class ArticleDownloaderTests : IDisposable
         };
         var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
 
-        await this.articleDownloader.DownloadArticles(articlesToDownload);
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
         Assert.Equal(articleIds.Length, articlesLocalState.Count());
@@ -900,7 +900,7 @@ public class ArticleDownloaderTests : IDisposable
         };
         var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
 
-        await this.articleDownloader.DownloadArticles(articlesToDownload);
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
         Assert.Equal(articleIds.Length - 2, articlesLocalState.Count());
@@ -934,7 +934,7 @@ public class ArticleDownloaderTests : IDisposable
             }
         };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.articleDownloader.DownloadArticles(articlesToDownload, cancellationSource.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.articleDownloader.DownloadArticlesAsync(articlesToDownload, cancellationSource.Token));
 
         var articlesLocalState = articleIds.Select((id) => this.articleDatabase.GetLocalOnlyStateByArticleId(id)).OfType<DatabaseLocalOnlyArticleState>().ToList()!;
         Assert.NotEqual(articleIds.Length, articlesLocalState.Count());
@@ -948,7 +948,7 @@ public class ArticleDownloaderTests : IDisposable
         this.articleDatabase.DeleteArticle(MISSING_REMOTE_ARTICLE_2);
         var articlesWithoutLocalStatePreDownload = this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article);
 
-        await this.articleDownloader.DownloadAllArticlesWithoutLocalState();
+        await this.articleDownloader.DownloadAllArticlesWithoutLocalStateAsync();
 
         var articlesWithoutLocalStatePostDownload = this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article);
         Assert.Single(articlesWithoutLocalStatePostDownload);
@@ -975,7 +975,7 @@ public class ArticleDownloaderTests : IDisposable
         var downloadsStarted = false;
         clearingHouse.DownloadingStarted += (_,_) => downloadsStarted = true;
 
-        await this.articleDownloader.DownloadAllArticlesWithoutLocalState();
+        await this.articleDownloader.DownloadAllArticlesWithoutLocalStateAsync();
 
         Assert.False(downloadsStarted, "With all local state being present, downloads shouldn't have started");
     }
@@ -993,7 +993,7 @@ public class ArticleDownloaderTests : IDisposable
 
         using (var transaction = connection.BeginTransaction())
         {
-            await this.articleDownloader.DownloadArticles(articlesToDownload);
+            await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
             transaction.Rollback();
         }
@@ -1027,7 +1027,7 @@ public class ArticleDownloaderTests : IDisposable
         };
         var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
 
-        await this.articleDownloader.DownloadArticles(articlesToDownload);
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
         foreach(var id in articleIds)
         {
@@ -1051,7 +1051,7 @@ public class ArticleDownloaderTests : IDisposable
         articlesToDownload.Add(this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!);
         articlesToDownload.Add(this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!);
 
-        await this.articleDownloader.DownloadArticles(articlesToDownload);
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
         // Get the local state for the to-be-deleted articles so we have their
         // local file paths (Rather than re-computing them)

@@ -18,7 +18,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.databases.ArticleChangesDB.CreatePendingArticleAdd(addedUrl, null);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Make sure we can see it on the service
         var remoteArticles = this.service.BookmarksClient.ArticleDB.ListAllArticlesInAFolder();
@@ -38,7 +38,7 @@ public class BookmarkSyncTests : BaseSyncTest
         ledger.Dispose();
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check it's gone
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
@@ -59,7 +59,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check it's really gone from the service
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
@@ -82,7 +82,7 @@ public class BookmarkSyncTests : BaseSyncTest
         ledger.Dispose();
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check it's gone
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
@@ -105,7 +105,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check in the new folder
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
@@ -130,7 +130,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check it's gone
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
@@ -156,7 +156,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.FoldersClient.FolderDB.DeleteFolder(remoteFirstFolder.LocalId);
 
         // Sync
-        await this.syncEngine.SyncPendingArticleMoves();
+        await this.syncEngine.SyncPendingArticleMovesAsync();
 
         // Check it's gone
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
@@ -178,7 +178,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check in the unread folder
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
@@ -205,7 +205,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.DeleteArticle(firstArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncPendingArticleMoves();
+        await this.syncEngine.SyncPendingArticleMovesAsync();
 
         // Check the article is not in a folder, for later clean up
         var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
@@ -229,7 +229,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check in the archive folder folder
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
@@ -253,7 +253,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.DeleteArticle(firstUnreadArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is not in a folder, for later clean up
         var orphanedArticles = this.databases.ArticleDB.ListArticlesNotInAFolder();
@@ -274,7 +274,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check in the new folder
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
@@ -296,7 +296,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check in the new folder
         var articlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
@@ -318,7 +318,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check in the new folder
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
@@ -341,7 +341,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check article still available remotely
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id);
@@ -380,7 +380,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }));
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check it's in the new folder
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(firstFolder.LocalId);
@@ -417,7 +417,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }));
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check it's in the new folder
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Unread);
@@ -454,7 +454,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }));
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check it's in the new folder
         var remoteArticlesInFolder = this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive);
@@ -483,7 +483,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is liked
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
@@ -505,7 +505,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is liked
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
@@ -527,7 +527,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is liked
         var remoteArticle = this.service.BookmarksClient.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == firstUnreadArticle.Url);
@@ -552,7 +552,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is unliked
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
@@ -575,7 +575,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is unliked
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
@@ -599,7 +599,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is not re-added
         var remoteArticle = this.service.BookmarksClient.ArticleDB.ListAllArticles().FirstOrDefault((a) => a.Url == firstUnreadArticle.Url);
@@ -628,7 +628,7 @@ public class BookmarkSyncTests : BaseSyncTest
         }));
 
         // Sync
-        await this.syncEngine.SyncArticleLikeStatuses();
+        await this.syncEngine.SyncArticleLikeStatusesAsync();
 
         // Check the article is liked
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
@@ -659,7 +659,7 @@ public class BookmarkSyncTests : BaseSyncTest
         var addedArticle = this.service.BookmarksClient.ArticleDB.AddRandomArticleToDb();
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available now
         var localArticle = this.databases.ArticleDB.GetArticleById(addedArticle.Id);
@@ -681,7 +681,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteFirstUnreadArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is missing
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id);
@@ -707,7 +707,7 @@ public class BookmarkSyncTests : BaseSyncTest
         var remoteAddedArticle = this.service.BookmarksClient.ArticleDB.AddRandomArticleToDb(WellKnownLocalFolderIds.Archive);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available now
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteAddedArticle.Id);
@@ -729,7 +729,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteFirstArchiveArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is missing
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstArchiveArticle.Id);
@@ -757,7 +757,7 @@ public class BookmarkSyncTests : BaseSyncTest
         var remoteAddedArticle = this.service.BookmarksClient.ArticleDB.AddRandomArticleToDb(remoteFirstUserFolder.LocalId);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available now
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteAddedArticle.Id);
@@ -781,7 +781,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteArticle.Id);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is missing
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteArticle.Id);
@@ -810,7 +810,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUnreadArticle.Id, remoteFirstUserFolder.LocalId);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteUnreadArticle.Id);
@@ -834,7 +834,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUnreadArticle.Id, WellKnownLocalFolderIds.Archive);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteUnreadArticle.Id);
@@ -863,7 +863,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUserArticle.Id, WellKnownLocalFolderIds.Unread);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteUserArticle.Id);
@@ -892,7 +892,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUserArticle.Id, WellKnownLocalFolderIds.Archive);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteUserArticle.Id);
@@ -925,7 +925,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteUserArticle.Id, remoteSecondUserFolder.LocalId);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteUserArticle.Id);
@@ -951,7 +951,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteArchiveArticle.Id, remoteFirstUserFolder.LocalId);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteArchiveArticle.Id);
@@ -975,7 +975,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteArchiveArticle.Id, WellKnownLocalFolderIds.Unread);
 
         // Sync
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the article is available
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteArchiveArticle.Id);
@@ -1007,7 +1007,7 @@ public class BookmarkSyncTests : BaseSyncTest
             Hash = "NEWHASH"
         }));
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
         firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
@@ -1029,7 +1029,7 @@ public class BookmarkSyncTests : BaseSyncTest
             Hash = "NEWHASH"
         }));
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
         firstUnreadArticle = this.databases.ArticleDB.GetArticleById(firstUnreadArticle.Id)!;
@@ -1051,7 +1051,7 @@ public class BookmarkSyncTests : BaseSyncTest
             Hash = "NEWHASH"
         }));
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
@@ -1073,7 +1073,7 @@ public class BookmarkSyncTests : BaseSyncTest
             Hash = "NEWHASH"
         }));
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
@@ -1096,7 +1096,7 @@ public class BookmarkSyncTests : BaseSyncTest
             Hash = "NEWHASH"
         }));
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
@@ -1119,7 +1119,7 @@ public class BookmarkSyncTests : BaseSyncTest
             Hash = "NEWHASH"
         }));
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var remoteArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
         firstArchiveArticle = this.databases.ArticleDB.GetArticleById(firstArchiveArticle.Id)!;
@@ -1134,7 +1134,7 @@ public class BookmarkSyncTests : BaseSyncTest
         var remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         remoteFirstUnreadArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteFirstUnreadArticle.Id);
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id)!;
         Assert.True(localArticle.Liked);
@@ -1159,7 +1159,7 @@ public class BookmarkSyncTests : BaseSyncTest
         // happening for ~3 years, we should mimick the bug in our local testing
         this.service.BookmarksClient.ArticleDB.RemoveArticleFromAnyFolder(remoteFirstUnreadArticle.Id);
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id)!;
         Assert.True(localArticle.Liked);
@@ -1190,7 +1190,7 @@ public class BookmarkSyncTests : BaseSyncTest
         // happening for ~3 years, we should mimick the bug in our local testing
         this.service.BookmarksClient.ArticleDB.RemoveArticleFromAnyFolder(remoteFirstUnreadArticle.Id);
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteFirstUnreadArticle.Id)!;
         Assert.True(localArticle.Liked);
@@ -1210,7 +1210,7 @@ public class BookmarkSyncTests : BaseSyncTest
         var localFirstUnreadArticle = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         this.databases.ArticleDB.LikeArticle(localFirstUnreadArticle.Id);
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var localArticle = this.databases.ArticleDB.GetArticleById(localFirstUnreadArticle.Id)!;
         Assert.False(localArticle.Liked);
@@ -1256,7 +1256,7 @@ public class BookmarkSyncTests : BaseSyncTest
         var localFirstArticle = this.databases.ArticleDB.FirstArticleInFolder(localUserFolderThatIsntTheDeletedOne.LocalId);
         localFirstArticle = this.databases.ArticleDB.UpdateReadProgressForArticle(localFirstArticle.ReadProgress + 0.5F, DateTime.Now, localFirstArticle.Id);
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         // Check the deleted folder wasn't deleted locally, and that it's contents match
         var localFolderThatWasDeletedPostSync = this.databases.FolderDB.GetFolderByServiceId(remoteUserFolder.ServiceId!.Value)!;
@@ -1280,7 +1280,7 @@ public class BookmarkSyncTests : BaseSyncTest
 
         this.syncEngine.ArticlesPerFolderToSync = 1;
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
 
         var postSyncArticleCount = this.databases.ArticleDB.ListAllArticlesInAFolder().Count();
         Assert.True(postSyncArticleCount < preSyncArticleCount);
@@ -1309,7 +1309,7 @@ public class BookmarkSyncTests : BaseSyncTest
 
         this.syncEngine.ArticlesPerFolderToSync = 1;
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
         this.syncEngine.CleanupOrphanedArticles();
 
         // Check the article is no longer in the folder
@@ -1329,7 +1329,7 @@ public class BookmarkSyncTests : BaseSyncTest
 
         this.syncEngine.ArticlesPerFolderToSync = 1;
 
-        await this.syncEngine.SyncArticles();
+        await this.syncEngine.SyncArticlesAsync();
         this.syncEngine.CleanupOrphanedArticles();
 
         var postSyncArticle = this.databases.ArticleDB.ListAllArticlesInAFolder();
@@ -1354,7 +1354,7 @@ public class BookmarkSyncTests : BaseSyncTest
         CancellationTokenSource source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSync_PrePendingAdd += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleAdds());
         Assert.Empty(this.service.BookmarksClient.ArticleDB.ListAllArticles());
@@ -1381,7 +1381,7 @@ public class BookmarkSyncTests : BaseSyncTest
             }
         };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleAdds());
         Assert.Contains(this.service.BookmarksClient.ArticleDB.ListAllArticles(), (a) => a.Url == addedUrl);
@@ -1399,7 +1399,7 @@ public class BookmarkSyncTests : BaseSyncTest
         CancellationTokenSource source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSync_PrePendingDelete += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         Assert.NotNull(this.service.BookmarksClient.ArticleDB.GetArticleById(articleToDelete.Id));
         Assert.Single(this.databases.ArticleChangesDB.ListPendingArticleDeletes());
@@ -1431,7 +1431,7 @@ public class BookmarkSyncTests : BaseSyncTest
             }
         };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         Assert.Null(this.service.BookmarksClient.ArticleDB.GetArticleById(articleToDelete.Id));
         Assert.NotNull(this.service.BookmarksClient.ArticleDB.GetArticleById(articleToDelete2.Id));
@@ -1451,7 +1451,7 @@ public class BookmarkSyncTests : BaseSyncTest
         CancellationTokenSource source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSyncPrePendingMove += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         var remoteDestinationFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(destinationFolder.ServiceId!.Value)!;
         Assert.DoesNotContain(
@@ -1475,7 +1475,7 @@ public class BookmarkSyncTests : BaseSyncTest
         CancellationTokenSource source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSyncPrePendingMove += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         var remoteDestinationFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(destinationFolder.ServiceId!.Value)!;
         Assert.DoesNotContain(
@@ -1495,7 +1495,7 @@ public class BookmarkSyncTests : BaseSyncTest
         CancellationTokenSource source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSyncPreFolder += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteArticleToMutate.Id)!;
         Assert.NotEqual(remoteArticleToMutate, localArticle);
@@ -1522,7 +1522,7 @@ public class BookmarkSyncTests : BaseSyncTest
             }
         };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteArticleToMutate.Id)!;
         Assert.Equal(remoteArticleToMutate, localArticle);
@@ -1544,7 +1544,7 @@ public class BookmarkSyncTests : BaseSyncTest
         CancellationTokenSource source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSyncPreLike += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         var remoteLikedArticle = this.service.BookmarksClient.ArticleDB.GetArticleById(localArticleToLike.Id)!;
         Assert.False(remoteLikedArticle.Liked);
@@ -1575,7 +1575,7 @@ public class BookmarkSyncTests : BaseSyncTest
             }
         };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         // The order in which the pending changes are synced is 'undefined'. This
         // means the order is potentially reversed. At the time of authoring,
@@ -1596,7 +1596,7 @@ public class BookmarkSyncTests : BaseSyncTest
         CancellationTokenSource source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSyncPreRemoteLikeFolderSync += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticles(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteLikedArticle.Id)!;
         Assert.False(localArticle.Liked);

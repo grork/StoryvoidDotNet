@@ -146,7 +146,7 @@ public class ArticleDownloader : IDisposable
 
     private DatabaseLocalOnlyArticleState ApplyLocalStateToArticle(DatabaseArticle article, DatabaseLocalOnlyArticleState state)
     {
-        if(article.HasLocalState)
+        if (article.HasLocalState)
         {
             return this.articleDatabase.UpdateLocalOnlyArticleState(state);
         }
@@ -163,7 +163,7 @@ public class ArticleDownloader : IDisposable
     /// Task that completes when supplied articles &amp; their images
     /// completed
     /// </returns>
-    internal async Task DownloadArticles(IEnumerable<DatabaseArticle> articles, CancellationToken cancellationToken = default)
+    internal async Task DownloadArticlesAsync(IEnumerable<DatabaseArticle> articles, CancellationToken cancellationToken = default)
     {
         this.eventSource?.RaiseDownloadingStarted(articles.Count());
 
@@ -184,7 +184,7 @@ public class ArticleDownloader : IDisposable
                 try
                 {
                     this.eventSource?.RaiseArticleStarted(article);
-                    localState = await this.DownloadArticleCore(article, cancellationToken).ConfigureAwait(false);
+                    localState = await this.DownloadArticleCoreAsync(article, cancellationToken).ConfigureAwait(false);
 
                     if (localState is not null)
                     {
@@ -207,7 +207,7 @@ public class ArticleDownloader : IDisposable
     /// Downloads articles which do not have any local state.
     /// </summary>
     /// <returns>Task that completes when articles have been processed</returns>
-    internal async Task DownloadAllArticlesWithoutLocalState()
+    internal async Task DownloadAllArticlesWithoutLocalStateAsync()
     {
         var articlesToDownload = this.articleDatabase.ListArticlesWithoutLocalOnlyState();
         if (articlesToDownload.Count() == 0)
@@ -215,7 +215,7 @@ public class ArticleDownloader : IDisposable
             return;
         }
 
-        await this.DownloadArticles(articlesToDownload).ConfigureAwait(false);
+        await this.DownloadArticlesAsync(articlesToDownload).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -226,12 +226,12 @@ public class ArticleDownloader : IDisposable
     /// </summary>
     /// <param name="article">Article to download</param>
     /// <returns>Updated local state information</returns>
-    public async Task<DatabaseLocalOnlyArticleState?> DownloadArticle(DatabaseArticle article, CancellationToken cancellationToken = default)
+    public async Task<DatabaseLocalOnlyArticleState?> DownloadArticleAsync(DatabaseArticle article, CancellationToken cancellationToken = default)
     {
         try
         {
             this.eventSource?.RaiseArticleStarted(article);
-            var localState = await this.DownloadArticleCore(article, cancellationToken);
+            var localState = await this.DownloadArticleCoreAsync(article, cancellationToken);
             if (localState is null)
             {
                 return null;
@@ -242,7 +242,7 @@ public class ArticleDownloader : IDisposable
         finally { this.eventSource?.RaiseArticleCompleted(article); }
     }
 
-    private async Task<DatabaseLocalOnlyArticleState?> DownloadArticleCore(DatabaseArticle article, CancellationToken cancellationToken)
+    private async Task<DatabaseLocalOnlyArticleState?> DownloadArticleCoreAsync(DatabaseArticle article, CancellationToken cancellationToken)
     {
         var articleDownloaded = true;
         var contentsUnavailable = false;
@@ -261,7 +261,7 @@ public class ArticleDownloader : IDisposable
 
                 // Get the document contents, and process it
                 var body = await this.bookmarksClient.GetTextAsync(article.Id).ConfigureAwait(false);
-                (body, extractedDescription, firstImage) = await this.ProcessArticle(body, article.Id, cancellationToken).ConfigureAwait(false);
+                (body, extractedDescription, firstImage) = await this.ProcessArticleAsync(body, article.Id, cancellationToken).ConfigureAwait(false);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -304,7 +304,7 @@ public class ArticleDownloader : IDisposable
     /// <param name="body">HTML body to process</param>
     /// <param name="articleId">Article ID we're processing</param>
     /// <returns>Processed body with the required changes</returns>
-    private async Task<ProcessedArticleInformation> ProcessArticle(string body, long articleId, CancellationToken cancellationToken)
+    private async Task<ProcessedArticleInformation> ProcessArticleAsync(string body, long articleId, CancellationToken cancellationToken)
     {
         var configuration = ArticleDownloader.ParserConfiguration;
 
@@ -317,7 +317,7 @@ public class ArticleDownloader : IDisposable
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            firstImage = await ProcessAndDownloadImages(document, articleId, cancellationToken).ConfigureAwait(false);
+            firstImage = await ProcessAndDownloadImagesAsync(document, articleId, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -347,7 +347,7 @@ public class ArticleDownloader : IDisposable
     /// </summary>
     /// <param name="document">Document to download images for</param>
     /// <param name="articleId">Article ID we're processing </param>
-    private async Task<FirstImageInformaton?> ProcessAndDownloadImages(IDocument document, long articleId, CancellationToken cancellationToken)
+    private async Task<FirstImageInformaton?> ProcessAndDownloadImagesAsync(IDocument document, long articleId, CancellationToken cancellationToken)
     {
         var images = document.QuerySelectorAll<IHtmlImageElement>("img[src^='http']");
         DirectoryInfo? imagesFolder = null;
@@ -371,7 +371,7 @@ public class ArticleDownloader : IDisposable
             List<Task<FirstImageInformaton?>> workerBatch = new List<Task<FirstImageInformaton?>>();
             foreach (var image in imageBatch)
             {
-                workerBatch.Add(this.DownloadImageForElement(image, imageIndex += 1, imagesFolder, cancellationToken));
+                workerBatch.Add(this.DownloadImageForElementAsync(image, imageIndex += 1, imagesFolder, cancellationToken));
             }
 
             await Task.WhenAll(workerBatch).ConfigureAwait(false);
@@ -399,16 +399,16 @@ public class ArticleDownloader : IDisposable
 
         var articleFiles = Directory.GetFiles(this.workingRoot, "*.html");
 
-        foreach(var filePath in articleFiles)
+        foreach (var filePath in articleFiles)
         {
             var filename = Path.GetFileNameWithoutExtension(filePath);
-            if(!long.TryParse(filename, out long result))
+            if (!long.TryParse(filename, out long result))
             {
                 // Not a valid article ID
                 continue;
             }
 
-            if(articles.Contains(result))
+            if (articles.Contains(result))
             {
                 // Article is in the database, just keep it
                 continue;
@@ -418,11 +418,12 @@ public class ArticleDownloader : IDisposable
             try
             {
                 Directory.Delete(Path.Combine(this.workingRoot, result.ToString()), true);
-            } catch { /* If we can't delete, c'est le vie */ }
+            }
+            catch { /* If we can't delete, c'est le vie */ }
         }
     }
 
-    private async Task<FirstImageInformaton?> DownloadImageForElement(IHtmlImageElement image, int imageIndex, DirectoryInfo imagesFolder, CancellationToken cancellationToken)
+    private async Task<FirstImageInformaton?> DownloadImageForElementAsync(IHtmlImageElement image, int imageIndex, DirectoryInfo imagesFolder, CancellationToken cancellationToken)
     {
         if (!Uri.IsWellFormedUriString(image.Source!, UriKind.Absolute))
         {

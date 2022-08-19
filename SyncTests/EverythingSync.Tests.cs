@@ -30,7 +30,7 @@ public class EverythingSyncTests : BaseSyncTest
     {
         this.SwitchToEmptyLocalDatabase();
 
-        await this.syncEngine.SyncEverything();
+        await this.syncEngine.SyncEverythingAsync();
 
         this.AssertServerAndClientMatch();
     }
@@ -59,7 +59,7 @@ public class EverythingSyncTests : BaseSyncTest
         clearingHouse.ArticlesEnded += (_, _) => raisedEvents.ArticlesEnded = true;
         clearingHouse.SyncEnded += (_, _) => raisedEvents.SyncEnded = true;
 
-        await this.syncEngine.SyncEverything();
+        await this.syncEngine.SyncEverythingAsync();
 
         Assert.True(raisedEvents.SyncStarted);
         Assert.True(raisedEvents.FoldersStarted);
@@ -74,7 +74,7 @@ public class EverythingSyncTests : BaseSyncTest
     {
         this.SwitchToEmptyServiceDatabase();
 
-        await this.syncEngine.SyncEverything();
+        await this.syncEngine.SyncEverythingAsync();
 
         this.AssertServerAndClientMatch();
     }
@@ -124,7 +124,7 @@ public class EverythingSyncTests : BaseSyncTest
             localArticleToUpdate = this.databases.ArticleDB.LikeArticle(localArticleToUpdate.Id);
         }
 
-        await this.syncEngine.SyncEverything();
+        await this.syncEngine.SyncEverythingAsync();
 
         this.AssertServerAndClientMatch();
     }
@@ -136,7 +136,7 @@ public class EverythingSyncTests : BaseSyncTest
 
         var transaction = this.StartTransactionForLocalDatabase();
 
-        await this.syncEngine.SyncEverything();
+        await this.syncEngine.SyncEverythingAsync();
 
         this.AssertServerAndClientMatch();
 

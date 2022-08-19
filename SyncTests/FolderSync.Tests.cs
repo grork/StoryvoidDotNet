@@ -8,7 +8,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         this.SwitchToEmptyServiceDatabase();
         this.SwitchToEmptyLocalDatabase();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.FoldersClient.FolderDB);
     }
@@ -20,7 +20,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         this.SwitchToEmptyLocalDatabase();
         
         // Perform the sync, which should pull down remote folders
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check that the folders match
         Assert.True(this.databases.FolderDB.ListAllCompleteUserFolders().Count() > 0);
@@ -43,7 +43,7 @@ public sealed class FolderSyncTests : BaseSyncTest
             shouldSync: remoteFolder.ShouldSync
         );
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         firstLocalUserFolder = (this.databases.FolderDB.GetFolderByServiceId(firstLocalUserFolder.ServiceId!.Value))!;
         Assert.Equal(remoteFolder, firstLocalUserFolder, new CompareFoldersIgnoringLocalId());
@@ -58,7 +58,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         var remoteToDelete = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
         this.service.FoldersClient.FolderDB.DeleteFolder(remoteToDelete.LocalId);
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         var localFolders = this.databases.FolderDB.ListAllCompleteUserFolders();
         Assert.Equal(targetFolderCount, localFolders.Count());
@@ -72,7 +72,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         var localFolderCount = this.databases.FolderDB.ListAllCompleteUserFolders().Count();
 
         // Perform the sync, which should pull down remote folders
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check that the folders match
         Assert.Equal(localFolderCount + 1, this.databases.FolderDB.ListAllCompleteUserFolders().Count());
@@ -85,7 +85,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         var deletedRemoteFolder = this.service.FoldersClient.FolderDB.FirstCompleteUserFolder();
         var addedRemoteFolder = this.service.FoldersClient.FolderDB.AddCompleteFolderToDb();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         TestUtilities.AssertFoldersListsAreSame(this.databases.FolderDB, this.service.FoldersClient.FolderDB);
     }
@@ -102,7 +102,7 @@ public sealed class FolderSyncTests : BaseSyncTest
             shouldSync: false
         );
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         var localFolders = this.databases.FolderDB.ListAllCompleteUserFolders();
         Assert.DoesNotContain(remoteFolderSetToNotSync, localFolders, new CompareFoldersIgnoringLocalId());
@@ -121,7 +121,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check we can get that same folder, and it now has a service ID
         var syncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(newFolderId);
@@ -140,7 +140,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         var newFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         var syncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(newFolderId);
         Assert.NotNull(syncedNewFolder);
@@ -161,7 +161,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         var secondNewFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder 2").LocalId;
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         var firstSyncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(firstNewFolderId);
         Assert.NotNull(firstSyncedNewFolder);
@@ -187,7 +187,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         var newFolderId = this.databases.FolderDB.CreateFolder(firstSeviceFolder.Title).LocalId;
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         var syncedNewFolder = this.databases.FolderDB.GetFolderByLocalId(newFolderId);
         Assert.NotNull(syncedNewFolder);
@@ -209,7 +209,7 @@ public sealed class FolderSyncTests : BaseSyncTest
         var normalAddFolderId = this.databases.FolderDB.CreateFolder("Local Only Folder").LocalId;
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check duplicate-titled folder is good
         var syncedFolderWithDuplicateTitle = this.databases.FolderDB.GetFolderByLocalId(duplicateTitleFolderId);
@@ -237,7 +237,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check we can get that same folder, and it now has a service ID
         var nowDeletedFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value);
@@ -264,7 +264,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check we can get that same folder, and it now has a service ID
         var nowDeletedFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(deletedFolder.ServiceId!.Value);
@@ -287,7 +287,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check the local Pending add round tripped
         var syncedLocalFolder = this.databases.FolderDB.GetFolderByLocalId(localNewFolderId);
@@ -317,7 +317,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         ledger.Dispose();
 
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check the local Pending add round tripped
         var syncedLocalFolder = this.databases.FolderDB.GetFolderByLocalId(localNewFolderId);
@@ -355,7 +355,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         ledger.Dispose();
         
-        await this.syncEngine.SyncFolders();
+        await this.syncEngine.SyncFoldersAsync();
 
         // Check the local Pending add round tripped
         var syncedLocalFolder = this.databases.FolderDB.GetFolderByLocalId(localNewFolderId);
@@ -388,7 +388,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         this.syncEngine.__Hook_FolderSync_PreSingleAdd += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFoldersAsync(source.Token));
 
         // Check it didn't make it remotely
         var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByTitle(FOLDER_TITLE);
@@ -423,7 +423,7 @@ public sealed class FolderSyncTests : BaseSyncTest
             }
         };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFoldersAsync(source.Token));
 
         // Check the first made it remotely
         var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByTitle(FOLDER_TITLE);
@@ -459,7 +459,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         this.syncEngine.__Hook_FolderSync_PreSingleDelete += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFoldersAsync(source.Token));
 
         // Check it didn't make it remotely
         var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(toBeDeletedFolder.ServiceId!.Value);
@@ -494,7 +494,7 @@ public sealed class FolderSyncTests : BaseSyncTest
             }
         };
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFoldersAsync(source.Token));
 
         // Check the first made it remotely
         var remoteFolder = this.service.FoldersClient.FolderDB.GetFolderByServiceId(toBeDeletedFolder.ServiceId!.Value);
@@ -536,7 +536,7 @@ public sealed class FolderSyncTests : BaseSyncTest
 
         this.syncEngine.__Hook_FolderSync_PostProcessList += (_, _) => source.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFolders(source.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFoldersAsync(source.Token));
         
         this.databases.FolderChangesDB.AssertNoPendingEdits();
 

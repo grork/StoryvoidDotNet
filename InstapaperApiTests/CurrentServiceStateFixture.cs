@@ -56,7 +56,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
         }
 
         #region Folder State Reset
-        private async Task<IEnumerable<ulong>> ListFolderIds()
+        private async Task<IEnumerable<ulong>> ListFolderIdsAsync()
         {
             LogMessage("Requesting folders: Start");
             var payload = await this.PerformRequestAsync(EndPoints.Folders.List, new StringContent(String.Empty));
@@ -83,7 +83,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             return folders;
         }
 
-        private async Task DeleteFolder(ulong folderId)
+        private async Task DeleteFolderAsync(ulong folderId)
         {
             var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
             {
@@ -93,9 +93,9 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             _ = await this.PerformRequestAsync(EndPoints.Folders.Delete, content);
         }
 
-        internal async Task DeleteAllFolders()
+        internal async Task DeleteAllFoldersAsync()
         {
-            var folders = await this.ListFolderIds();
+            var folders = await this.ListFolderIdsAsync();
             LogMessage($"Found {folders.Count()} folders");
             foreach (var id in folders)
             {
@@ -105,14 +105,14 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
                 // ourselves. We can't move to 'unread' directly because that
                 // costs an 'add'.
                 LogMessage($"Listing articles in folder {id}");
-                var bookmarks = await this.ListBookmarks(id.ToString());
+                var bookmarks = await this.ListBookmarksAsync(id.ToString());
                 foreach (var bookmark in bookmarks)
                 {
-                    await this.Archive(bookmark.id);
+                    await this.ArchiveAsync(bookmark.id);
                 }
 
                 LogMessage($"Deleting folder {id}");
-                await this.DeleteFolder(id);
+                await this.DeleteFolderAsync(id);
             }
         }
         #endregion
@@ -122,7 +122,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
                                   bool liked,
                                   string hash,
                                   ulong progress_timestamp,
-                                  string url)>> ListBookmarks(string wellKnownFolderId, string have = "")
+                                  string url)>> ListBookmarksAsync(string wellKnownFolderId, string have = "")
         {
             var contentKeys = new Dictionary<string, string>()
             {
@@ -165,7 +165,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             return bookmarks;
         }
 
-        private async Task Archive(ulong bookmarkId)
+        private async Task ArchiveAsync(ulong bookmarkId)
         {
             var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
             {
@@ -175,7 +175,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Star, content);
         }
 
-        private async Task Unarchive(ulong bookmarkId)
+        private async Task UnarchiveAsync(ulong bookmarkId)
         {
             var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
             {
@@ -185,7 +185,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Unarchive, content);
         }
 
-        private async Task Unlike(ulong bookmarkId)
+        private async Task UnlikeAsync(ulong bookmarkId)
         {
             var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
             {
@@ -195,7 +195,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Unstar, content);
         }
 
-        public async Task DeleteBookmark(ulong bookmarkId)
+        public async Task DeleteBookmarkAsync(ulong bookmarkId)
         {
             var content = new FormUrlEncodedContent((NullableStringEnumerable)new Dictionary<string, string>()
             {
@@ -205,19 +205,19 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
             _ = await this.PerformRequestAsync(EndPoints.Bookmarks.Delete, content);
         }
 
-        internal async Task MoveArchivedBookmarksToUnread()
+        internal async Task MoveArchivedBookmarksToUnreadAsync()
         {
-            var archivedBookmarks = await this.ListBookmarks(WellKnownFolderIds.Archived);
+            var archivedBookmarks = await this.ListBookmarksAsync(WellKnownFolderIds.Archived);
             foreach (var bookmark in archivedBookmarks)
             {
-                await this.Unarchive(bookmark.id);
+                await this.UnarchiveAsync(bookmark.id);
             }
         }
 
-        internal async Task<IEnumerable<(ulong id, Uri uri)>> ResetAllUnreadItems()
+        internal async Task<IEnumerable<(ulong id, Uri uri)>> ResetAllUnreadItemsAsync()
         {
             // List bookmarks so we can compute hashes + known progress
-            var unreadBookmarks = await this.ListBookmarks(WellKnownFolderIds.Unread);
+            var unreadBookmarks = await this.ListBookmarksAsync(WellKnownFolderIds.Unread);
 
             // Create Have Values for all the bookmarks to reset their progress
             // to zero. Using the have capability allows this to be one
@@ -235,24 +235,24 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
                 // Reset the like status
                 if (bookmark.liked)
                 {
-                    await this.Unlike(bookmark.id);
+                    await this.UnlikeAsync(bookmark.id);
                 }
             }
 
             // Actually reset them
             LogMessage("Performing reset with have information");
-            _ = await this.ListBookmarks(WellKnownFolderIds.Unread, String.Join(',', haves));
+            _ = await this.ListBookmarksAsync(WellKnownFolderIds.Unread, String.Join(',', haves));
 
             return uris;
         }
 
-        internal async Task UnlikeAllLikedArticles()
+        internal async Task UnlikeAllLikedArticlesAsync()
         {
-            var likedArticles = await this.ListBookmarks(WellKnownFolderIds.Liked);
+            var likedArticles = await this.ListBookmarksAsync(WellKnownFolderIds.Liked);
             foreach (var article in likedArticles)
             {
                 LogMessage($"Unliking {article.id}");
-                await this.Unlike(article.id);
+                await this.UnlikeAsync(article.id);
             }
         }
         #endregion
@@ -318,14 +318,14 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
         var apiHelper = new SimpleInstapaperApi(this.logger);
 
         LogMessage("Cleaning up Folders");
-        await apiHelper.DeleteAllFolders();
+        await apiHelper.DeleteAllFoldersAsync();
 
         LogMessage("Cleaning up liked Articles");
-        await apiHelper.UnlikeAllLikedArticles();
+        await apiHelper.UnlikeAllLikedArticlesAsync();
 
         LogMessage("Cleaning up Bookmarks");
-        await apiHelper.MoveArchivedBookmarksToUnread();
-        var remoteBookmarks = (await apiHelper.ResetAllUnreadItems()).ToList();
+        await apiHelper.MoveArchivedBookmarksToUnreadAsync();
+        var remoteBookmarks = (await apiHelper.ResetAllUnreadItemsAsync()).ToList();
 
         // Collect all the remote test bookmarks that are still available
         // to be added e.g. those that *don't* appear in the remote list,
@@ -351,7 +351,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
                                     where TestUrls.BasicRemoteTestUris.Contains(bookmark.uri)
                                     select bookmark).First();
 
-            await apiHelper.DeleteBookmark(bookmarkToDelete.id);
+            await apiHelper.DeleteBookmarkAsync(bookmarkToDelete.id);
             remoteBookmarks.Remove(bookmarkToDelete);
             availableToAddUris.Add(bookmarkToDelete.uri);
         }

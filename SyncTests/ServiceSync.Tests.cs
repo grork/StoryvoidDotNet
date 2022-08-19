@@ -186,7 +186,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
                                                           localDatabase.ArticleChangeDB,
                                                           this.SharedState.BookmarksClient);
 
-        await syncEngine.SyncEverything();
+        await syncEngine.SyncEverythingAsync();
 
         await AssertDatabaseAndRemoteMatch((localDatabase.FolderDB, localDatabase.ArticleDB), (this.SharedState.FoldersClient, this.SharedState.BookmarksClient));
 
@@ -234,7 +234,7 @@ public sealed class ServiceSyncTests : IAsyncLifetime
             // Move it to another folder
             await this.SharedState.BookmarksClient.MoveAsync(remoteUnreadBookmark.Id, firstUserFolder.ServiceId!.Value);
 
-            await syncEngine.SyncEverything();
+            await syncEngine.SyncEverythingAsync();
 
             await AssertDatabaseAndRemoteMatch((localDatabase.FolderDB, localDatabase.ArticleDB), (this.SharedState.FoldersClient, this.SharedState.BookmarksClient));
         }
