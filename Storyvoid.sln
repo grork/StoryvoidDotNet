@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OAuthLibrary", "OAuthLibrary\OAuthLibrary.csproj", "{FD3B4348-539A-4C6C-A50A-55AE7F23CABB}"
@@ -24,6 +24,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync", "Sync\Sync.csproj", "{1DD04D63-9F53-406C-A082-2FC40FC626DE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncTests", "SyncTests\SyncTests.csproj", "{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModels", "ViewModels\ViewModels.csproj", "{27DB371F-09B8-47DA-B9A4-C0B199E7D300}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModelsTests", "ViewModelsTests\ViewModelsTests.csproj", "{1E8E5B97-4686-496E-A303-FC44A9136956}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,5 +67,13 @@ Global
 		{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27DB371F-09B8-47DA-B9A4-C0B199E7D300}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27DB371F-09B8-47DA-B9A4-C0B199E7D300}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27DB371F-09B8-47DA-B9A4-C0B199E7D300}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27DB371F-09B8-47DA-B9A4-C0B199E7D300}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E8E5B97-4686-496E-A303-FC44A9136956}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E8E5B97-4686-496E-A303-FC44A9136956}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E8E5B97-4686-496E-A303-FC44A9136956}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E8E5B97-4686-496E-A303-FC44A9136956}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
