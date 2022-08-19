@@ -32,7 +32,25 @@ public sealed record UserInformation
 /// <summary>
 /// Accounts API for Instapaper -- getting tokens, verifying creds.
 /// </summary>
-public sealed class Accounts : IDisposable
+public interface IAccounts
+{
+    /// <summary>
+    /// Gets a full access token + secret for the supplied credentials
+    /// </summary>
+    /// <returns><see cref="ClientInformation"/> with authentication tokens</returns>
+    Task<ClientInformation> GetAccessTokenAsync(string username, string password);
+
+    /// <summary>
+    /// Verify the authentication token stored by this instance.
+    /// </summary>
+    /// <returns>User information if successful</returns>
+    Task<UserInformation> VerifyCredentialsAsync();
+}
+
+/// <summary>
+/// Accounts API for Instapaper -- getting tokens, verifying creds.
+/// </summary>
+public sealed class Accounts : IAccounts, IDisposable
 {
     private readonly ClientInformation clientInformation;
     private readonly HttpClient client;
@@ -52,10 +70,7 @@ public sealed class Accounts : IDisposable
         this.client.Dispose();
     }
 
-    /// <summary>
-    /// Gets a full access token + secret for the supplied credentials
-    /// </summary>
-    /// <returns><see cref="ClientInformation"/> with authentication tokens</returns>
+    /// <inheritdoc/>
     public async Task<ClientInformation> GetAccessTokenAsync(string username, string password)
     {
         var parameters = new FormUrlEncodedContent(
@@ -90,10 +105,7 @@ public sealed class Accounts : IDisposable
             secret);
     }
 
-    /// <summary>
-    /// Verify the authentication token stored by this instance.
-    /// </summary>
-    /// <returns>User information if successful</returns>
+    /// <inheritdoc/>
     public async Task<UserInformation> VerifyCredentialsAsync()
     {
         var payload = new FormUrlEncodedContent(new Dictionary<string, string>());
