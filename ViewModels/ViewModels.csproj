@@ -9,4 +9,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
+  </ItemGroup>
 </Project>

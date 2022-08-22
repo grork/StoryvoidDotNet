@@ -25,6 +25,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ViewModels\ViewModels.csproj" />
+    <ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
+    <ProjectReference Include="..\OAuthLibrary\OAuthLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>
