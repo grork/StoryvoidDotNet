@@ -56,7 +56,8 @@ public class Authenticator : INotifyPropertyChanged
     /// <summary>
     /// E-mail (E.g. account name) to be used when verifying the account.
     /// </summary>
-    public string Email {
+    public string Email
+    {
         get => this._email;
         set
         {
