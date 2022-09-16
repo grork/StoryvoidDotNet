@@ -4,19 +4,33 @@ using Xunit.Abstractions;
 
 namespace Codevoid.Test.Instapaper;
 
-public sealed class AuthenticationTests
+public sealed class AuthenticationTests : IDisposable
 {
     private readonly ITestOutputHelper outputHelper;
+    private readonly Accounts accounts;
     public AuthenticationTests(ITestOutputHelper outputHelper)
     {
         this.outputHelper = outputHelper;
+        this.accounts = new Accounts(TestUtilities.GetClientInformation());
+    }
+
+    public void Dispose()
+    {
+        this.accounts.Dispose();
+    }
+
+    [Fact]
+    public void VerifyPlaceholderKeysHaveBeenRemoved()
+    {
+        TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY, nameof(InstapaperAPIKey.CONSUMER_KEY));
+        TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY_SECRET, nameof(InstapaperAPIKey.CONSUMER_KEY_SECRET));
+        TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.INSTAPAPER_ACCOUNT, nameof(InstapaperAPIKey.INSTAPAPER_ACCOUNT));
+        TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.INSTAPAPER_PASSWORD, nameof(InstapaperAPIKey.INSTAPAPER_PASSWORD));
     }
 
     [Fact]
     public async Task CanGetAccessToken()
     {
-        TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY, nameof(InstapaperAPIKey.CONSUMER_KEY));
-        TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.CONSUMER_KEY_SECRET, nameof(InstapaperAPIKey.CONSUMER_KEY_SECRET));
         var clientInfoWithoutAccessToken = new ClientInformation(
             InstapaperAPIKey.CONSUMER_KEY,
             InstapaperAPIKey.CONSUMER_KEY_SECRET
@@ -24,8 +38,6 @@ public sealed class AuthenticationTests
 
         using var accounts = new Accounts(clientInfoWithoutAccessToken);
 
-        TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.INSTAPAPER_ACCOUNT, nameof(InstapaperAPIKey.INSTAPAPER_ACCOUNT));
-        TestUtilities.ThrowIfValueIsAPIKeyHasntBeenSet(InstapaperAPIKey.INSTAPAPER_PASSWORD, nameof(InstapaperAPIKey.INSTAPAPER_PASSWORD));
         var clientInfoWithAccessToken = await accounts.GetAccessTokenAsync(
             InstapaperAPIKey.INSTAPAPER_ACCOUNT,
             InstapaperAPIKey.INSTAPAPER_PASSWORD
@@ -40,6 +52,25 @@ public sealed class AuthenticationTests
         this.outputHelper.WriteLine("Token Information for this request:");
         this.outputHelper.WriteLine("Token: {0}", clientInfoWithAccessToken.Token);
         this.outputHelper.WriteLine("Token Secret: {0}", clientInfoWithAccessToken.TokenSecret);
+    }
+
+    [Fact]
+    public async Task GettingAccessTokenWithMissingEmailAddressThrowsException()
+    {
+        await Assert.ThrowsAsync<AuthenticationFailedException>(() => this.accounts.GetAccessTokenAsync(String.Empty, InstapaperAPIKey.INSTAPAPER_PASSWORD));
+    }
+
+    [Fact]
+    public async Task GettingAccessTokenWithNonExistantAccountThrowsException()
+    {
+        var fakeAccount = $"{DateTime.Now.Millisecond.ToString()}{InstapaperAPIKey.INSTAPAPER_ACCOUNT}";
+        await Assert.ThrowsAsync<AuthenticationFailedException>(() => this.accounts.GetAccessTokenAsync(fakeAccount, InstapaperAPIKey.INSTAPAPER_PASSWORD));
+    }
+
+    [Fact]
+    public async Task GettingAccessTokenWithIncorrectPasswordThrowsException()
+    {
+        await Assert.ThrowsAsync<AuthenticationFailedException>(() => this.accounts.GetAccessTokenAsync(InstapaperAPIKey.INSTAPAPER_ACCOUNT, "NotThePassword"));
     }
 
     [Fact]

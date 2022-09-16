@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Net;
+using System.Text.Json;
 using Codevoid.Utilities.OAuth;
 
 namespace Codevoid.Instapaper;
@@ -83,6 +84,11 @@ public sealed class Accounts : IAccounts, IDisposable
         );
 
         var result = await this.client.PostAsync(Codevoid.Instapaper.EndPoints.Access.AccessToken, parameters);
+        if (result.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            throw new AuthenticationFailedException();
+        }
+
         result.EnsureSuccessStatusCode();
 
         var body = await result.Content.ReadAsStringAsync();

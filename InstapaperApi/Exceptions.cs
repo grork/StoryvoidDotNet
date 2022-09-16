@@ -94,3 +94,13 @@ public sealed class EntityNotFoundException : InstapaperServiceException
     internal EntityNotFoundException() : base("Entity with that ID was not found")
     { }
 }
+
+/// <summary>
+/// The supplied account information was incorrect -- either the password was
+/// wrong, or the account wasn't present.
+/// </summary>
+public sealed class AuthenticationFailedException : InstapaperServiceException
+{
+    internal AuthenticationFailedException() : base("Account not found, or password incorrect")
+    { }
+}
