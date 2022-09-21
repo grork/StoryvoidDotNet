@@ -13,15 +13,18 @@ public class ArticleList : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private readonly IFolderDatabase folderDatabase;
+    private readonly IArticleDatabase articleDatabase;
     private DatabaseFolder _currentFolder;
+    private IList<DatabaseArticle>? _articles;
 
     /// <summary>
     /// Construct a new article list for the supplied databases.
     /// </summary>
     /// <param name="folderDatabase">Folder database</param>
-    public ArticleList(IFolderDatabase folderDatabase)
+    public ArticleList(IFolderDatabase folderDatabase, IArticleDatabase articleDatabase)
     {
         this.folderDatabase = folderDatabase;
+        this.articleDatabase = articleDatabase;
         this._currentFolder = this.folderDatabase.GetFolderByLocalId(WellKnownLocalFolderIds.Unread)!;
         this.Folders = new ObservableCollection<DatabaseFolder>(this.folderDatabase.ListAllFolders());
     }
@@ -58,12 +61,31 @@ public class ArticleList : INotifyPropertyChanged
             }
 
             this._currentFolder = value;
+            this._articles = null;
             this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(Articles));
         }
     }
 
     /// <summary>
     /// All folders currently in the database.
     /// </summary>
-    public ObservableCollection<DatabaseFolder> Folders { get; private set; }
+    public IList<DatabaseFolder> Folders { get; private set; }
+
+    /// <summary>
+    /// Articles in the current folder, sorted by the current sort
+    /// </summary>
+    public IList<DatabaseArticle> Articles
+    {
+        get
+        {
+            if (this._articles == null)
+            {
+                var articles = this.articleDatabase.ListArticlesForLocalFolder(this.CurrentFolder.LocalId);
+                this._articles = new ObservableCollection<DatabaseArticle>(articles);
+            }
+
+            return this._articles;
+        }
+    }
 }
