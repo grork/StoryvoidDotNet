@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Codevoid.Test.Storyvoid;
 
-internal static class TestUtilities
+public static class TestUtilities
 {
     // Because we're deleting things from databases, 'next' ID won't always be
     // 'highest plus one'; so instead of trying to account for that, just always
@@ -38,11 +38,11 @@ internal static class TestUtilities
         return (connection, folderDb, folderChangesDb, articleDb, articleChangesDb);
     }
 
-    internal static (SqliteConnection Connection,
-                    IFolderDatabase FolderDB,
-                    IFolderChangesDatabase FolderChangeDB,
-                    IArticleDatabase ArticleDB,
-                    IArticleChangesDatabase ArticleChangeDB) GetDatabases()
+    public static (SqliteConnection Connection,
+                   IFolderDatabase FolderDB,
+                   IFolderChangesDatabase FolderChangeDB,
+                   IArticleDatabase ArticleDB,
+                   IArticleChangesDatabase ArticleChangeDB) GetDatabases()
     {
         var (localConnection, folderDb, folderChangesDb, articleDb, articleChangesDb) = GetEmptyDatabase();
         PopulateDatabase(folderDb, articleDb);

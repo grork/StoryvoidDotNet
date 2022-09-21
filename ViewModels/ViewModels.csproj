@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
+    <ProjectReference Include="..\Database\Database.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Resources.resx">
