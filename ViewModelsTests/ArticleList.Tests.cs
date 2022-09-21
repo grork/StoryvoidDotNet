@@ -25,9 +25,39 @@ public class ArticleListTests : IDisposable
     }
 
     [Fact]
-    public void CanConstruct()
+    public void ConstructedListHasUnreadFolderAsDefault()
     {
-        var articleList = new ArticleList(this.folderDatabase);
-        Assert.NotNull(articleList);
+        Assert.NotNull(this.viewmodel.CurrentFolder);
+        Assert.Equal(WellKnownLocalFolderIds.Unread, this.viewmodel.CurrentFolder.LocalId);
+    }
+
+    [Fact]
+    public void ConstructedListHasFoldersAvailable()
+    {
+        Assert.NotNull(this.viewmodel.Folders);
+        Assert.NotEmpty(this.viewmodel.Folders);
+    }
+
+    [Fact]
+    public void SettingCurrentFolderToSameValueDoesntRaisepRopertyChanged()
+    {
+        var propertyChangeRaised = false;
+        this.viewmodel.PropertyChanged += (_, _) => propertyChangeRaised = true;
+
+        this.viewmodel.CurrentFolder = this.viewmodel.CurrentFolder;
+        Assert.False(propertyChangeRaised);
+    }
+
+    [Fact]
+    public void SettingCurrentFolderToNewValueRaisesPropertyChanged()
+    {
+        var newFolder = (from folder in this.viewmodel.Folders
+                         where folder.LocalId != WellKnownLocalFolderIds.Unread
+                         select folder).First();
+
+        Assert.PropertyChanged(this.viewmodel, nameof(this.viewmodel.CurrentFolder), () =>
+        {
+            this.viewmodel.CurrentFolder = newFolder;
+        });
     }
 }
