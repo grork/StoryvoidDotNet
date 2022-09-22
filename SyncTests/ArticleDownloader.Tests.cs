@@ -52,7 +52,7 @@ public class ArticleDownloaderTests : IDisposable
         var (connection, _, _, articleDatabase, _) = TestUtilities.GetEmptyDatabase();
         this.connection = connection;
         this.articleDatabase = articleDatabase;
-        this.clientInformation = Test.Instapaper.TestUtilities.GetClientInformation();
+        this.clientInformation = TestUtilities.GetClientInformation();
 
         var fileMap = PopulateDownloadableArticles();
         this.bookmarkClient = new MockBookmarkClientWithOnlyGetText(fileMap);
@@ -1097,7 +1097,7 @@ public class SampleDataDownloadingHelper
     {
         DirectoryInfo? outputFolder = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, "TestPageOutput"));
 
-        var bookmarksClient = new BookmarksClient(Codevoid.Test.Instapaper.TestUtilities.GetClientInformation());
+        var bookmarksClient = new BookmarksClient(TestUtilities.GetClientInformation());
         var samplePages = new List<string>()
         {
             "ArticleWithAnimatedGIFFirstImage.html",

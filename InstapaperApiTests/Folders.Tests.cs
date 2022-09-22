@@ -3,7 +3,7 @@ using Xunit.Extensions.Ordering;
 
 namespace Codevoid.Test.Instapaper;
 
-[Order(1), Collection(TestUtilities.TestCollectionName)]
+[Order(1), Collection(InstaperAPITestUtilities.TestCollectionName)]
 public sealed class FoldersTests
 {
     private CurrentServiceStateFixture SharedState;

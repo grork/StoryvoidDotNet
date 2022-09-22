@@ -13,7 +13,7 @@ namespace Codevoid.Test.Instapaper;
 /// up as the tests execute in a specific order to slowly build up enough
 /// tested functionality to place the API in a known state
 /// </summary>
-[Order(2), Collection(TestUtilities.TestCollectionName)]
+[Order(2), Collection(InstaperAPITestUtilities.TestCollectionName)]
 public sealed class BookmarksTests
 {
     private CurrentServiceStateFixture SharedState;

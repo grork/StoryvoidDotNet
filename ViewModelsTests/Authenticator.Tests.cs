@@ -1,5 +1,4 @@
 using Codevoid.Storyvoid.ViewModels;
-using Codevoid.Test.Instapaper;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;
 
@@ -83,8 +82,8 @@ public class AuthenticatorTests
     [Fact]
     public async void AuthenticatingWithValidCredentialsReturnsValidClientInformation()
     {
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
-        this.authenticator.Password = InstapaperAPIKey.INSTAPAPER_PASSWORD;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
 
         var clientInfo = await this.authenticator.Authenticate();
         Assert.NotNull(clientInfo);
@@ -93,8 +92,8 @@ public class AuthenticatorTests
     [Fact]
     public async void AuthenticatingWithValidCredentialsReturnsValidClientInformationMatchingSavedInformation()
     {
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
-        this.authenticator.Password = InstapaperAPIKey.INSTAPAPER_PASSWORD;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
 
         Assert.False(this.settings.HasTokens);
 
@@ -108,8 +107,8 @@ public class AuthenticatorTests
     [Fact]
     public async void AuthenticatingWithValidCredentialsSetsEmptyErrorMessage()
     {
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
-        this.authenticator.Password = InstapaperAPIKey.INSTAPAPER_PASSWORD;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
 
         _ = await this.authenticator.Authenticate();
 
@@ -120,8 +119,8 @@ public class AuthenticatorTests
     [Fact]
     public async void AuthenticatingSetsWorkingToTrueAndThenFalseWithSuccessfulAuthentication()
     {
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
-        this.authenticator.Password = InstapaperAPIKey.INSTAPAPER_PASSWORD;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
 
         var isWorkingSetToTrue = false;
 
@@ -142,7 +141,7 @@ public class AuthenticatorTests
     [Fact]
     public async void AuthenticatingWithInvalidCredentialsDoesNotReturnClientInformation()
     {
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
 
         var clientInfo = await this.authenticator.Authenticate();
         Assert.Null(clientInfo);
@@ -151,7 +150,7 @@ public class AuthenticatorTests
     [Fact]
     public async void AuthenticatingWithInvalidCredentialsDoesNotReturnClientInformationAndSetsEmptyTokens()
     {
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
 
         Assert.False(this.settings.HasTokens);
 
@@ -165,7 +164,7 @@ public class AuthenticatorTests
     [Fact]
     public async void AuthenticatingWithInvalidCredentialsSetsWorkingToTrueAndThenFalseWithUnsuccessfulAuthentication()
     {
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
 
         var isWorkingSetToTrue = false;
         this.authenticator.PropertyChanged += (_, name) =>
@@ -185,7 +184,7 @@ public class AuthenticatorTests
     [Fact]
     public async void AuthenticatingWithInvalidCredentialsSetsErrorMessage()
     {
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
 
         var clientInfo = await this.authenticator.Authenticate();
         Assert.False(String.IsNullOrEmpty(this.authenticator.FriendlyErrorMessage));
@@ -195,8 +194,8 @@ public class AuthenticatorTests
     public async void TimingOutRequestsClearsIsWorkingAndSetsAppropriateErrorMessage()
     {
         this.accountService.TimeoutRequests = true;
-        this.authenticator.Email = InstapaperAPIKey.INSTAPAPER_ACCOUNT;
-        this.authenticator.Password = InstapaperAPIKey.INSTAPAPER_PASSWORD;
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
 
         var isWorkingSetToTrue = false;
 

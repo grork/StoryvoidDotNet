@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Codevoid.Instapaper;
+using Codevoid.Test.Storyvoid;
 using Codevoid.Utilities.OAuth;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -397,7 +398,7 @@ public sealed class CurrentServiceStateFixture : IAsyncLifetime
 
     public IInstapaperBookmark? NotFoundBookmark { get; private set; }
 
-    internal void SetNotFoundBookmark(IInstapaperBookmark bookmark)
+    public void SetNotFoundBookmark(IInstapaperBookmark bookmark)
     {
         this.NotFoundBookmark = bookmark;
     }

@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModels", "ViewModels\Vi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModelsTests", "ViewModelsTests\ViewModelsTests.csproj", "{1E8E5B97-4686-496E-A303-FC44A9136956}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtilitiesTests", "TestUtilities\TestUtilitiesTests.csproj", "{B4B03A8A-AAEF-4F15-9ED7-658640423C90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,5 +77,9 @@ Global
 		{1E8E5B97-4686-496E-A303-FC44A9136956}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E8E5B97-4686-496E-A303-FC44A9136956}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E8E5B97-4686-496E-A303-FC44A9136956}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4B03A8A-AAEF-4F15-9ED7-658640423C90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4B03A8A-AAEF-4F15-9ED7-658640423C90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4B03A8A-AAEF-4F15-9ED7-658640423C90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4B03A8A-AAEF-4F15-9ED7-658640423C90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

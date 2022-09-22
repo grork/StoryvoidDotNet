@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
     <ProjectReference Include="..\OAuthLibrary\OAuthLibrary.csproj" />
+    <ProjectReference Include="..\TestUtilities\TestUtilitiesTests.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,12 +36,4 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <!--
-    Don't let people get confused with missing class names, error early if the
-    API key file is missing
-  -->
-  <Target Name="CheckKeyFilePresent" BeforeTargets="BeforeBuild">
-    <Error Condition="!Exists('$(MSBuildProjectDirectory)\InstapaperAPIKey.cs')" Text="Please create a InstapaperAPIKey.cs in $(MSBuildProjectDirectory). See README.md for more details" />
-  </Target>
 </Project>
