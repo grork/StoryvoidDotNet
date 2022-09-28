@@ -1,6 +1,9 @@
 ﻿using System;
 namespace Codevoid.Storyvoid.ViewModels;
 
+/// <summary>
+/// Sorts smaller IDs higher in the list, larger lower
+/// </summary>
 internal sealed class OldestToNewestArticleComparer : IComparer<DatabaseArticle?>
 {
     public int Compare(DatabaseArticle? x, DatabaseArticle? y)
