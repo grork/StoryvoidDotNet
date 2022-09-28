@@ -1,7 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleToAttribute("DatabaseTests")]
-[assembly: InternalsVisibleToAttribute("TestUtilitiesTests")]
+[assembly: InternalsVisibleTo("DatabaseTests")]
+[assembly: InternalsVisibleTo("TestUtilitiesTests")]
+[assembly: InternalsVisibleTo("ViewModelsTests")]
 
 // Support `init` keyword properties on non-.net 5.0 targets. Compiler looks for
 // the type in the assembly, so this fakes it out. Magic.

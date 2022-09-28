@@ -65,7 +65,26 @@ public static class TestUtilities
         );
     }
 
-        // Because we're deleting things from databases, 'next' ID won't always be
+    private static long nextMockDatabaseArticleId = 1L;
+    public static DatabaseArticle GetMockDatabaseArticle()
+    {
+        var id = nextMockDatabaseArticleId++;
+        var reader = new MockReader(new (string Name, object? Data)[]
+        {
+            ("id", id),
+            ("url", $"https://www.codevoid.net/{id}"),
+            ("title", $"Sample {id}"),
+            ("read_progress", 0.1F),
+            ("read_progress_timestamp", DateTime.Now),
+            ("hash", $"1234{id}"),
+            ("liked", false),
+            ("description", null)
+        });
+
+        return DatabaseArticle.FromRow(reader);
+    }
+
+    // Because we're deleting things from databases, 'next' ID won't always be
     // 'highest plus one'; so instead of trying to account for that, just always
     // bump it up by one
     private static long nextServiceId = 100L;
