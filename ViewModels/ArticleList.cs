@@ -43,7 +43,8 @@ public class ArticleList : INotifyPropertyChanged
     private DatabaseFolder currentFolder;
     private SortOption currentSort;
     private IArticleListSettings settings;
-    private IList<DatabaseArticle>? articles;
+    private ObservableCollection<DatabaseFolder> folders;
+    private ObservableCollection<DatabaseArticle>? articles;
 
     /// <summary>
     /// Construct a new article list for the supplied databases.
@@ -59,7 +60,7 @@ public class ArticleList : INotifyPropertyChanged
         this.articleDatabase = articleDatabase;
         this.settings = settings;
         this.currentFolder = this.folderDatabase.GetFolderByLocalId(WellKnownLocalFolderIds.Unread)!;
-        this.Folders = new ObservableCollection<DatabaseFolder>(this.folderDatabase.ListAllFolders());
+        this.folders = new ObservableCollection<DatabaseFolder>(this.folderDatabase.ListAllFolders());
 
         this.Sorts = new List<SortOption>
         {
@@ -125,12 +126,12 @@ public class ArticleList : INotifyPropertyChanged
     /// <summary>
     /// All folders currently in the database.
     /// </summary>
-    public IList<DatabaseFolder> Folders { get; private set; }
+    public IReadOnlyCollection<DatabaseFolder> Folders => this.folders;
 
     /// <summary>
     /// Articles in the current folder, sorted by the current sort
     /// </summary>
-    public IList<DatabaseArticle> Articles
+    public IReadOnlyCollection<DatabaseArticle> Articles
     {
         get
         {
