@@ -13,3 +13,7 @@ public class MockAccountSettings : IAccountSettings
     public bool HasTokens => this.tokens != null;
 }
 
+public class MockArticleListSettings : IArticleListSettings
+{
+    public string SortIdentifier { get; set; } = ArticleList.DefaultSortIdentifier;
+}

@@ -10,12 +10,18 @@ public class ArticleListTests : IDisposable
     private (IFolderDatabase Folders, IArticleDatabase Articles) databases;
     private SqliteConnection connection;
     private ArticleList viewmodel;
+    private MockArticleListSettings settings = new MockArticleListSettings();
+
     public ArticleListTests()
     {
         var (connection, folders, _, articles, _) = TestUtilities.GetDatabases();
         this.databases = (folders, articles);
         this.connection = connection;
-        this.viewmodel = new ArticleList(this.databases.Folders, this.databases.Articles);
+        this.viewmodel = new ArticleList(
+            this.databases.Folders,
+            this.databases.Articles,
+            this.settings
+        );
     }
 
     public void Dispose()
@@ -92,5 +98,112 @@ public class ArticleListTests : IDisposable
         });
 
         Assert.Equal(this.databases.Articles.ListArticlesForLocalFolder(newFolder.LocalId), this.viewmodel.Articles);
+    }
+
+    [Fact]
+    public void DefaultSortIsInAvailableSortsList()
+    {
+        Assert.Contains(this.viewmodel.CurrentSort, this.viewmodel.Sorts);
+    }
+
+    [Fact]
+    public void DefaultSortIsOldestToNewest()
+    {
+        Assert.Equal(ArticleList.DefaultSortIdentifier, this.viewmodel.CurrentSort.Identifier);
+    }
+
+    [Fact]
+    public void SettingDifferentSortChangesTheResultsToMatchTheSelectedSort()
+    {
+        var beforeList = this.viewmodel.Articles;
+        this.viewmodel.CurrentSort = this.viewmodel.Sorts.First((s) => s != this.viewmodel.CurrentSort);
+        var afterList = this.viewmodel.Articles;
+
+        Assert.NotEqual(beforeList, afterList);
+    }
+
+    [Fact]
+    public void SettingDifferentSortThenBackToDefaultHasMatchingResults()
+    {
+        var beforeList = this.viewmodel.Articles;
+        this.viewmodel.CurrentSort = this.viewmodel.Sorts.First((s) => s != this.viewmodel.CurrentSort);
+        this.viewmodel.CurrentSort = this.viewmodel.Sorts.First();
+        var afterList = this.viewmodel.Articles;
+
+        Assert.Equal(beforeList, afterList);
+    }
+
+    [Fact]
+    public void SettingCurrentSortToTheSameSortDoesNotRaisePropertyChangeNotificiations()
+    {
+        var articlesPropertyChangeRaised = false;
+        var currentSortPropertyChangeRaised = false;
+        this.viewmodel.PropertyChanged += (_, args) =>
+        {
+            switch (args.PropertyName)
+            {
+                case "Articles":
+                    articlesPropertyChangeRaised = true;
+                    break;
+
+                case "CurrentSort":
+                    currentSortPropertyChangeRaised = true;
+                    break;
+            }
+        };
+
+        this.viewmodel.CurrentSort = this.viewmodel.CurrentSort;
+
+        Assert.False(articlesPropertyChangeRaised, $"{nameof(this.viewmodel.Articles)} property change was raised");
+        Assert.False(currentSortPropertyChangeRaised, $"{nameof(this.viewmodel.CurrentSort)} property change was raised");
+    }
+
+    [Fact]
+    public void SettingCurrentSortToDifferentValueRaisesPropertyChangeNotificiations()
+    {
+        var articlesPropertyChangeRaised = false;
+        var currentSortPropertyChangeRaised = false;
+        this.viewmodel.PropertyChanged += (_, args) =>
+        {
+            switch (args.PropertyName)
+            {
+                case "Articles":
+                    articlesPropertyChangeRaised = true;
+                    break;
+
+                case "CurrentSort":
+                    currentSortPropertyChangeRaised = true;
+                    break;
+            }
+        };
+
+        this.viewmodel.CurrentSort = this.viewmodel.Sorts.First((s) => s != this.viewmodel.CurrentSort);
+
+        Assert.True(articlesPropertyChangeRaised, $"{nameof(this.viewmodel.Articles)} property change wasn't raised");
+        Assert.True(currentSortPropertyChangeRaised, $"{nameof(this.viewmodel.CurrentSort)} property change wasn't raised");
+    }
+
+    [Fact]
+    public void CurrentSortReflectsPersistedSettingOnConstruction()
+    {
+        var nonDefaultSortIdentifier = this.viewmodel.Sorts.First((s) => s.Identifier != ArticleList.DefaultSortIdentifier).Identifier;
+        this.settings.SortIdentifier = nonDefaultSortIdentifier;
+
+        var alternativeViewModel = new ArticleList(
+            this.databases.Folders,
+            this.databases.Articles,
+            this.settings
+        );
+
+        Assert.Equal(nonDefaultSortIdentifier, alternativeViewModel.CurrentSort.Identifier);
+    }
+
+    [Fact]
+    public void ChangingCurrentSortUpdatesSettingsToTheNewSort()
+    {
+        var nonDefaultSort = this.viewmodel.Sorts.First((s) => s.Identifier != ArticleList.DefaultSortIdentifier);
+        this.viewmodel.CurrentSort = nonDefaultSort;
+
+        Assert.Equal(nonDefaultSort.Identifier, settings.SortIdentifier);
     }
 }
