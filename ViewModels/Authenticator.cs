@@ -6,7 +6,7 @@ using Codevoid.Utilities.OAuth;
 namespace Codevoid.Storyvoid.ViewModels;
 
 /// <summary>
-/// Read & Write account settings e.g., Instapaper Tokens.
+/// Read &amp; write account settings e.g., Instapaper Tokens.
 ///
 /// It is expected that the implementor stores them in a secure manner.
 /// </summary>
