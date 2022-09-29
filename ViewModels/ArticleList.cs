@@ -40,10 +40,10 @@ public class ArticleList : INotifyPropertyChanged
 
     private readonly IFolderDatabase folderDatabase;
     private readonly IArticleDatabase articleDatabase;
-    private DatabaseFolder _currentFolder;
+    private DatabaseFolder currentFolder;
     private SortOption currentSort;
     private IArticleListSettings settings;
-    private IList<DatabaseArticle>? _articles;
+    private IList<DatabaseArticle>? articles;
 
     /// <summary>
     /// Construct a new article list for the supplied databases.
@@ -58,7 +58,7 @@ public class ArticleList : INotifyPropertyChanged
         this.folderDatabase = folderDatabase;
         this.articleDatabase = articleDatabase;
         this.settings = settings;
-        this._currentFolder = this.folderDatabase.GetFolderByLocalId(WellKnownLocalFolderIds.Unread)!;
+        this.currentFolder = this.folderDatabase.GetFolderByLocalId(WellKnownLocalFolderIds.Unread)!;
         this.Folders = new ObservableCollection<DatabaseFolder>(this.folderDatabase.ListAllFolders());
 
         this.Sorts = new List<SortOption>
@@ -107,16 +107,16 @@ public class ArticleList : INotifyPropertyChanged
     /// </summary>
     public DatabaseFolder CurrentFolder
     {
-        get => this._currentFolder;
+        get => this.currentFolder;
         set
         {
-            if (this._currentFolder == value)
+            if (this.currentFolder == value)
             {
                 return;
             }
 
-            this._currentFolder = value;
-            this._articles = null;
+            this.currentFolder = value;
+            this.articles = null;
             this.RaisePropertyChanged();
             this.RaisePropertyChanged(nameof(Articles));
         }
@@ -134,13 +134,13 @@ public class ArticleList : INotifyPropertyChanged
     {
         get
         {
-            if (this._articles == null)
+            if (this.articles == null)
             {
                 var articles = this.articleDatabase.ListArticlesForLocalFolder(this.CurrentFolder.LocalId).OrderBy((a) => a, this.CurrentSort.Comparer);
-                this._articles = new ObservableCollection<DatabaseArticle>(articles);
+                this.articles = new ObservableCollection<DatabaseArticle>(articles);
             }
 
-            return this._articles;
+            return this.articles;
         }
     }
 
@@ -167,7 +167,7 @@ public class ArticleList : INotifyPropertyChanged
             Debug.Assert(this.Sorts.Contains(value));
 
             this.currentSort = value;
-            this._articles = null;
+            this.articles = null;
             this.settings.SortIdentifier = value.Identifier;
             this.RaisePropertyChanged();
             this.RaisePropertyChanged("Articles");

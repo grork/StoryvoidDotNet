@@ -26,9 +26,9 @@ public class Authenticator : INotifyPropertyChanged
 {
     private readonly IAccounts accountsService;
     private readonly IAccountSettings settings;
-    private string _email;
-    private bool _isWorking = false;
-    private string _friendlyErrorMessage = String.Empty;
+    private string email;
+    private bool isWorking = false;
+    private string friendlyErrorMessage = String.Empty;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -46,15 +46,15 @@ public class Authenticator : INotifyPropertyChanged
     /// </summary>
     public bool IsWorking
     {
-        get => this._isWorking;
+        get => this.isWorking;
         private set
         {
-            if (this._isWorking == value)
+            if (this.isWorking == value)
             {
                 return;
             }
 
-            this._isWorking = value;
+            this.isWorking = value;
             this.RaisePropertyChanged();
         }
     }
@@ -65,15 +65,15 @@ public class Authenticator : INotifyPropertyChanged
     /// </summary>
     public string FriendlyErrorMessage
     {
-        get => this._friendlyErrorMessage;
+        get => this.friendlyErrorMessage;
         private set
         {
-            if (this._friendlyErrorMessage == value)
+            if (this.friendlyErrorMessage == value)
             {
                 return;
             }
 
-            this._friendlyErrorMessage = value;
+            this.friendlyErrorMessage = value;
             this.RaisePropertyChanged();
         }
     }
@@ -88,7 +88,7 @@ public class Authenticator : INotifyPropertyChanged
     {
         this.accountsService = accountsService;
         this.settings = settings;
-        this._email = String.Empty;
+        this.email = String.Empty;
         this.Password = String.Empty;
     }
 
@@ -117,15 +117,15 @@ public class Authenticator : INotifyPropertyChanged
     /// </summary>
     public string Email
     {
-        get => this._email;
+        get => this.email;
         set
         {
-            if (this._email == value)
+            if (this.email == value)
             {
                 return;
             }
 
-            this._email = value;
+            this.email = value;
             this.RaisePropertyChanged();
 
             // Verification capability might change; make callers request it to
