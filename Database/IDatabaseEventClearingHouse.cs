@@ -2,7 +2,7 @@ namespace Codevoid.Storyvoid;
 
 /// <summary>
 /// Events raised from the database for consumers to react to changes in the
-/// database *after* they have committed data to the database.
+/// database *after* they have been committed to the database.
 /// 
 /// It's important to note that it is up to the listener to ensure they handle
 /// the event on the correct thread.
@@ -50,7 +50,7 @@ public interface IDatabaseEventSink
     /// article information, and the destination folder. The source folder is
     /// not included.
     /// </summary>
-    event EventHandler<(DatabaseArticle Article, long LocalFolderId)> ArticleMoved;
+    event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)> ArticleMoved;
 
     /// <summary>
     /// Raised when an article is updated -- either because of user action, or

@@ -23,7 +23,7 @@ public sealed class DatabaseEventClearingHouse : IDatabaseEventSink, IDatabaseEv
     public event EventHandler<long>? ArticleDeleted;
 
     /// <inheritdoc />
-    public event EventHandler<(DatabaseArticle Article, long LocalFolderId)>? ArticleMoved;
+    public event EventHandler<(DatabaseArticle Article, long DestinationLocalFolderId)>? ArticleMoved;
 
     /// <inheritdoc />
     public event EventHandler<DatabaseArticle>? ArticleUpdated;
