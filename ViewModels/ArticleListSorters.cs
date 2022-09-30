@@ -77,11 +77,22 @@ internal sealed class ByProgressDescendingComparer : IComparer<DatabaseArticle>
             return -1;
         }
 
+        // We need to dig deeper if it's the same read progress
         if (x!.ReadProgress == y!.ReadProgress)
         {
-            return x.ReadProgressTimestamp.CompareTo(y.ReadProgressTimestamp);
+            var relativeOrder = x.ReadProgressTimestamp.CompareTo(y.ReadProgressTimestamp);
+
+            // And even deeper if it's the same Timestamp
+            if (relativeOrder == 0)
+            {
+                // Welp, lets hope they're different IDs!
+                return (x.Id.CompareTo(y.Id));
+            }
+
+            return relativeOrder;
         }
 
+        // -1 to make sure higher progress is sorted to the top of the list
         return (x.ReadProgress.CompareTo(y.ReadProgress) * -1);
     }
 }

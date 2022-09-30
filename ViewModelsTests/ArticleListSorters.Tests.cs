@@ -46,6 +46,14 @@ public class OldestToNewestArticleComparerTests
     }
 
     [Fact]
+    public void SecondArticleSameAsFirstReturnsSameOrder()
+    {
+        var second = TestUtilities.GetMockDatabaseArticle();
+        var first = second with { Liked = true };
+        Assert.Equal(0, comparer.Compare(first, second));
+    }
+
+    [Fact]
     public void ListSortsOldestFirst()
     {
         var first = TestUtilities.GetMockDatabaseArticle();
@@ -130,6 +138,14 @@ public class NewestToOldestArticleComparerTests
         var second = TestUtilities.GetMockDatabaseArticle();
         var first = TestUtilities.GetMockDatabaseArticle();
         Assert.Equal(-1, comparer.Compare(first, second));
+    }
+
+    [Fact]
+    public void SecondArticleSameAsFirstReturnsSameOrder()
+    {
+        var second = TestUtilities.GetMockDatabaseArticle();
+        var first = second with { Liked = true };
+        Assert.Equal(0, comparer.Compare(first, second));
     }
 
     [Fact]
@@ -317,5 +333,55 @@ public class ByProgressDescendingComparerTest
 
         listOfArticles.Sort(this.comparer);
         Assert.Equal(firstArticle, listOfArticles.First());
+    }
+
+    [Fact]
+    public void SameProgressDifferentIDSortsByOldestFirst()
+    {
+        (float progress, DateTime timestamp) p = (0.5F, DateTime.Now);
+        var secondArticle = TestUtilities.GetMockDatabaseArticle() with
+        { ReadProgress = p.progress, ReadProgressTimestamp = p.timestamp };
+
+        var firstArticle = TestUtilities.GetMockDatabaseArticle() with
+        { ReadProgress = p.progress, ReadProgressTimestamp = p.timestamp };
+
+        Assert.Equal(1, this.comparer.Compare(firstArticle, secondArticle));
+    }
+
+    [Fact]
+    public void SameProgressSameIDSamePosition()
+    {
+        var firstArticle = TestUtilities.GetMockDatabaseArticle() with
+        { ReadProgress = 0.5F, ReadProgressTimestamp = DateTime.Now };
+
+        var secondArticle = firstArticle with { Liked = true };
+
+        Assert.Equal(0, this.comparer.Compare(firstArticle, secondArticle));
+    }
+
+    [Fact]
+    public void SameProgressDifferentTimestampSortsOlderFirst()
+    {
+        (float progress, DateTime timestamp) p = (0.5F, DateTime.Now);
+        var secondArticle = TestUtilities.GetMockDatabaseArticle() with
+        { ReadProgress = p.progress, ReadProgressTimestamp = p.timestamp };
+
+        var firstArticle = TestUtilities.GetMockDatabaseArticle() with
+        { ReadProgress = p.progress, ReadProgressTimestamp = p.timestamp.Subtract(TimeSpan.FromDays(1)) };
+
+        Assert.Equal(-1, this.comparer.Compare(firstArticle, secondArticle));
+    }
+
+    [Fact]
+    public void SameProgressDifferentTimestampSortsNewerLast()
+    {
+        (float progress, DateTime timestamp) p = (0.5F, DateTime.Now);
+        var secondArticle = TestUtilities.GetMockDatabaseArticle() with
+        { ReadProgress = p.progress, ReadProgressTimestamp = p.timestamp };
+
+        var firstArticle = TestUtilities.GetMockDatabaseArticle() with
+        { ReadProgress = p.progress, ReadProgressTimestamp = p.timestamp.Add(TimeSpan.FromDays(1)) };
+
+        Assert.Equal(1, this.comparer.Compare(firstArticle, secondArticle));
     }
 }
