@@ -8,7 +8,8 @@ namespace Codevoid.Test.Storyvoid;
 
 public static class TestUtilities
 {
-    private static long nextArticleId = 1L;
+    // Don't start IDs at 1, so we have space for 'older' articles to be added
+    private static long nextArticleId = 100L;
     public static readonly Uri BASE_URI = new("https://www.codevoid.net");
     public const string SAMPLE_TITLE = "Codevoid";
 
@@ -65,7 +66,8 @@ public static class TestUtilities
         );
     }
 
-    private static long nextMockDatabaseArticleId = 1L;
+    // Don't start IDs at 1, so we have space for 'older' articles to be added
+    private static long nextMockDatabaseArticleId = 100L;
     public static DatabaseArticle GetMockDatabaseArticle()
     {
         var id = nextMockDatabaseArticleId++;
@@ -87,7 +89,7 @@ public static class TestUtilities
     // Because we're deleting things from databases, 'next' ID won't always be
     // 'highest plus one'; so instead of trying to account for that, just always
     // bump it up by one
-    private static long nextServiceId = 100L;
+    private static long nextServiceId = 200L;
     public static readonly Uri BASE_URL = new Uri("https://www.codevoid.net");
 
     private static long GetNextServiceId()
