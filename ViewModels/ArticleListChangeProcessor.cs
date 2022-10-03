@@ -9,10 +9,10 @@ namespace Codevoid.Storyvoid.ViewModels;
 /// </summary>
 public class ArticleListChangeProcessor : IDisposable
 {
-    private IList<DatabaseArticle> targetList;
-    private IDatabaseEventSink eventSource;
-    private IComparer<DatabaseArticle> comparer;
-    private long targetFolderLocalId;
+    private readonly IList<DatabaseArticle> targetList;
+    private readonly IDatabaseEventSink eventSource;
+    private readonly IComparer<DatabaseArticle> comparer;
+    private readonly long targetFolderLocalId;
 
     /// <summary>
     /// Construct new change processor, and start listening for changes.
