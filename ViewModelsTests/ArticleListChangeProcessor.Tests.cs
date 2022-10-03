@@ -447,4 +447,134 @@ public class ArticleListChangeProcessorTests
         Assert.Empty(articles);
     }
     #endregion
+
+    #region Moved Articles
+    [Fact]
+    public void ArticleMovedIntoEmptyFolder()
+    {
+        var sort = this.OldestToNewest;
+        var articles = new List<DatabaseArticle>();
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToMoved = TestUtilities.GetMockDatabaseArticle();
+
+        this.clearingHouse.RaiseArticleMoved(articleToMoved, WellKnownLocalFolderIds.Unread);
+
+        Assert.Single(articles);
+        Assert.Equal(articleToMoved, articles.First());
+    }
+
+    [Fact]
+    public void ArticleMovedIntoFolderFirst()
+    {
+        var sort = this.OldestToNewest;
+        var articles = GetSortedArticleListFor(sort);
+        var priorCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToMove = TestUtilities.GetMockDatabaseArticle() with { Id = articles.Min((a) => a.Id) - 1 };
+
+        this.clearingHouse.RaiseArticleMoved(articleToMove, WellKnownLocalFolderIds.Unread);
+
+        Assert.Equal(priorCount + 1, articles.Count);
+        Assert.Equal(articleToMove, articles.First());
+    }
+
+    [Fact]
+    public void ArticleMovedIntoFolderMiddle()
+    {
+        var sort = this.OldestToNewest;
+        var baseArticles = GetSortedArticleListFor(sort);
+        var priorCount = baseArticles.Count;
+
+        for (var index = 0; index < baseArticles.Count; index += 1)
+        {
+            var articles = new List<DatabaseArticle>(baseArticles);
+            using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+            var articleToMove = articles[index] with { Id = articles[index].Id + 1 };
+
+            this.clearingHouse.RaiseArticleMoved(articleToMove, WellKnownLocalFolderIds.Unread);
+
+            Assert.Equal(priorCount + 1, articles.Count);
+            Assert.Equal(articleToMove, articles[index + 1]);
+        }
+    }
+
+    [Fact]
+    public void ArticleMovedIntoFolderLast()
+    {
+        var sort = this.OldestToNewest;
+        var articles = GetSortedArticleListFor(sort);
+        var priorCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToMove = TestUtilities.GetMockDatabaseArticle() with { Id = articles.Max((a) => a.Id) + 1 };
+
+        this.clearingHouse.RaiseArticleMoved(articleToMove, WellKnownLocalFolderIds.Unread);
+
+        Assert.Equal(priorCount + 1, articles.Count);
+        Assert.Equal(articleToMove, articles.Last());
+    }
+
+    [Fact]
+    public void ArticleMovedInAnotherFolderAndNotToThisFolder()
+    {
+        var sort = this.OldestToNewest;
+        var articles = GetSortedArticleListFor(sort);
+        var priorCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToMove = TestUtilities.GetMockDatabaseArticle();
+
+        this.clearingHouse.RaiseArticleMoved(articleToMove, WellKnownLocalFolderIds.Archive);
+
+        Assert.Equal(priorCount, articles.Count);
+        Assert.DoesNotContain(articleToMove, articles);
+    }
+
+    [Fact]
+    public void ArticleMovedInAnotherFolderAndNotToThisFolderWhichIsEmpty()
+    {
+        var sort = this.OldestToNewest;
+        var articles = new List<DatabaseArticle>();
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToMove = TestUtilities.GetMockDatabaseArticle();
+
+        this.clearingHouse.RaiseArticleMoved(articleToMove, WellKnownLocalFolderIds.Archive);
+
+        Assert.Empty(articles);
+    }
+
+    [Fact]
+    public void ArticleMovedOutOfThisFolder()
+    {
+        var sort = this.OldestToNewest;
+        var articles = GetSortedArticleListFor(sort);
+        var priorCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToMove = articles.First();
+
+        this.clearingHouse.RaiseArticleMoved(articleToMove, WellKnownLocalFolderIds.Archive);
+
+        Assert.Equal(priorCount - 1, articles.Count);
+        Assert.DoesNotContain(articleToMove, articles);
+    }
+
+    [Fact]
+    void ArticleMovedOutOfThisFolderLeavingItEmpty()
+    {
+        var sort = this.OldestToNewest;
+        var articles = new List<DatabaseArticle> { TestUtilities.GetMockDatabaseArticle() };
+        var priorCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToMove = articles.First();
+
+        this.clearingHouse.RaiseArticleMoved(articleToMove, WellKnownLocalFolderIds.Archive);
+
+        Assert.Empty(articles);
+    }
+    #endregion
 }

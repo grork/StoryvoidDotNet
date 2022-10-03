@@ -39,6 +39,7 @@ public class ArticleListChangeProcessor : IDisposable
         this.eventSource.ArticleAdded += HandleArticleAdded;
         this.eventSource.ArticleDeleted += HandleArticleDeleted;
         this.eventSource.ArticleUpdated += HandleArticleUpdated;
+        this.eventSource.ArticleMoved += HandleArticleMoved;
     }
 
     private void StopListeningForArticleChanges()
@@ -46,6 +47,7 @@ public class ArticleListChangeProcessor : IDisposable
         this.eventSource.ArticleAdded -= HandleArticleAdded;
         this.eventSource.ArticleDeleted -= HandleArticleDeleted;
         this.eventSource.ArticleUpdated -= HandleArticleUpdated;
+        this.eventSource.ArticleMoved -= HandleArticleMoved;
     }
 
     public void Dispose()
@@ -196,5 +198,19 @@ public class ArticleListChangeProcessor : IDisposable
 
         targetList.RemoveAt(originalIndex);
         targetList.Insert(targetIndex, e);
+    }
+
+    private void HandleArticleMoved(object? sender, (DatabaseArticle Article, long DestinationLocalFolderId) e)
+    {
+        // Treat 'moved to this folder' as an add; thats basically what it is
+        if (e.DestinationLocalFolderId == this.targetFolderLocalId)
+        {
+            this.HandleArticleAdded(sender, e);
+            return;
+        }
+
+        // For everything else, treat it as a delete. Since we have the article
+        // we can do remove, and it'll do the right thing for us
+        this.targetList.Remove(e.Article);
     }
 }
