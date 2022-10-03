@@ -8,6 +8,7 @@ namespace Codevoid.Test.Storyvoid.ViewModels;
 public class ArticleListChangeProcessorTests
 {
     private readonly OldestToNewestArticleComparer OldestToNewest = new OldestToNewestArticleComparer();
+    private readonly NewestToOldestArticleComparer NewestToOldest = new NewestToOldestArticleComparer();
     private readonly ByProgressDescendingComparer ProgressDescending = new ByProgressDescendingComparer();
     private readonly DatabaseEventClearingHouse clearingHouse = new DatabaseEventClearingHouse();
 
@@ -37,7 +38,7 @@ public class ArticleListChangeProcessorTests
     public void NewItemWithEmptyListIsAdded()
     {
         var sort = this.OldestToNewest;
-        IList<DatabaseArticle> articles = new List<DatabaseArticle>();
+        var articles = new List<DatabaseArticle>();
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleToAdd = TestUtilities.GetMockDatabaseArticle();
@@ -106,7 +107,7 @@ public class ArticleListChangeProcessorTests
     public void UpdatedArticleInSingleArticleList()
     {
         var sort = this.ProgressDescending;
-        IList<DatabaseArticle> articles = new List<DatabaseArticle> { TestUtilities.GetMockDatabaseArticle() };
+        var articles = new List<DatabaseArticle> { TestUtilities.GetMockDatabaseArticle() };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleUpdated = articles.First() with { ReadProgress = 0.0F };
@@ -121,7 +122,7 @@ public class ArticleListChangeProcessorTests
     public void UpdatedArticleInEmptyArticleList()
     {
         var sort = this.ProgressDescending;
-        IList<DatabaseArticle> articles = new List<DatabaseArticle>();
+        var articles = new List<DatabaseArticle>();
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleUpdated = TestUtilities.GetMockDatabaseArticle();
@@ -136,7 +137,7 @@ public class ArticleListChangeProcessorTests
     {
         var sort = this.ProgressDescending;
         var originalArticle = TestUtilities.GetMockDatabaseArticle();
-        IList<DatabaseArticle> articles = new List<DatabaseArticle> { originalArticle };
+        var articles = new List<DatabaseArticle> { originalArticle };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleUpdated = TestUtilities.GetMockDatabaseArticle();
@@ -352,6 +353,98 @@ public class ArticleListChangeProcessorTests
 
         Assert.Equal(priorCount, articles.Count);
         Assert.Equal(articleUpdated, articles[halfWayItemIndex]);
+    }
+    #endregion
+
+    #region Deleting Articles
+    [Fact]
+    public void DeletingFirstExistingArticleRemovesArticleAtStart()
+    {
+        var sort = this.NewestToOldest;
+        var articles = GetSortedArticleListFor(sort);
+        var originalCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToDelete = articles.First();
+
+        this.clearingHouse.RaiseArticleDeleted(articleToDelete.Id);
+
+        Assert.Equal(originalCount - 1, articles.Count);
+        Assert.DoesNotContain(articleToDelete, articles);
+    }
+
+    [Fact]
+    public void DeletingLastExistingArticleRemovesArticleAtEnd()
+    {
+        var sort = this.NewestToOldest;
+        var articles = GetSortedArticleListFor(sort);
+        var originalCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToDelete = articles.Last();
+
+        this.clearingHouse.RaiseArticleDeleted(articleToDelete.Id);
+
+        Assert.Equal(originalCount - 1, articles.Count);
+        Assert.DoesNotContain(articleToDelete, articles);
+    }
+
+    [Fact]
+    public void DeletingMiddleExistingArticleRemovesArticleInMiddle()
+    {
+        var sort = this.NewestToOldest;
+        var articles = GetSortedArticleListFor(sort);
+        var originalCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToDelete = articles[4];
+
+        this.clearingHouse.RaiseArticleDeleted(articleToDelete.Id);
+
+        Assert.Equal(originalCount - 1, articles.Count);
+        Assert.DoesNotContain(articleToDelete, articles);
+    }
+
+    [Fact]
+    public void DeletedArticleEventForArticleNotInTheListIsIgnored()
+    {
+        var sort = this.NewestToOldest;
+        var articles = GetSortedArticleListFor(sort);
+        var originalCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+
+        this.clearingHouse.RaiseArticleDeleted(999L);
+
+        Assert.Equal(originalCount, articles.Count);
+    }
+
+    [Fact]
+    public void DeletedArticleEventWithEmptyListDoesNothing()
+    {
+        var sort = this.NewestToOldest;
+        var articles = new List<DatabaseArticle>();
+        var originalCount = articles.Count;
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+
+        this.clearingHouse.RaiseArticleDeleted(999L);
+
+        Assert.Equal(originalCount, articles.Count);
+    }
+
+    [Fact]
+    public void DeletingLastArticleInTheListDeletesIt()
+    {
+        var sort = this.NewestToOldest;
+        var articles = new List<DatabaseArticle> { TestUtilities.GetMockDatabaseArticle() };
+
+        using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
+        var articleToDelete = articles.First();
+
+        this.clearingHouse.RaiseArticleDeleted(articleToDelete.Id);
+
+        Assert.Empty(articles);
     }
     #endregion
 }

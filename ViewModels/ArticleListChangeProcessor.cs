@@ -37,12 +37,14 @@ public class ArticleListChangeProcessor : IDisposable
     private void StartListeningForArticleChanges()
     {
         this.eventSource.ArticleAdded += HandleArticleAdded;
+        this.eventSource.ArticleDeleted += HandleArticleDeleted;
         this.eventSource.ArticleUpdated += HandleArticleUpdated;
     }
 
     private void StopListeningForArticleChanges()
     {
         this.eventSource.ArticleAdded -= HandleArticleAdded;
+        this.eventSource.ArticleDeleted -= HandleArticleDeleted;
         this.eventSource.ArticleUpdated -= HandleArticleUpdated;
     }
 
@@ -92,6 +94,30 @@ public class ArticleListChangeProcessor : IDisposable
             this.targetList.Insert(index, e.Article);
             break;
         }
+    }
+
+    private void HandleArticleDeleted(object? sender, long e)
+    {
+        // We only have the index of the deleted item, so we need to find its
+        // index rather than just 'Remove'.
+        var indexOfItemToRemove = -1;
+        for (var index = 0; index < this.targetList.Count; index += 1)
+        {
+            var item = this.targetList[index];
+            if (item.Id == e)
+            {
+                indexOfItemToRemove = index;
+                break;
+            }
+        }
+
+        // We didn't find the item in the list, so nothing to do.
+        if (indexOfItemToRemove == -1)
+        {
+            return;
+        }
+
+        this.targetList.RemoveAt(indexOfItemToRemove);
     }
 
     private void HandleArticleUpdated(object? sender, DatabaseArticle e)
