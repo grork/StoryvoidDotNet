@@ -86,6 +86,60 @@ public static class TestUtilities
         return DatabaseArticle.FromRow(reader);
     }
 
+    public static (DatabaseFolder Unread, DatabaseFolder Archive) GetMockDefaultFolders()
+    {
+        var unreadReader = new MockReader(new (string Name, object? Data)[]
+        {
+            ("local_id", 1L),
+            ("service_id", -1L),
+            ("title", "Home"),
+            ("position", -100L),
+            ("should_sync", 1L)
+        });
+
+        var archiveReader = new MockReader(new (string Name, object? Data)[]
+        {
+            ("local_id", 2L),
+            ("service_id", -2L),
+            ("title", "Archive"),
+            ("position", -99L),
+            ("should_sync", 1L)
+        });
+
+        return (DatabaseFolder.FromRow(unreadReader), DatabaseFolder.FromRow(archiveReader));
+    }
+
+    private static long nextMockDatabaseLocalFolderId = 100L;
+    private static long nextMockDatabaseServiceFolderId = 1000L;
+    private static long nextMockFolderPosition = 1L;
+    public static DatabaseFolder GetMockSyncedDatabaseFolder()
+    {
+        var reader = new MockReader(new (string Name, object? Data)[]
+        {
+            ("local_id", nextMockDatabaseLocalFolderId++),
+            ("service_id", nextMockDatabaseServiceFolderId++),
+            ("title", "Archive"),
+            ("position", nextMockFolderPosition++),
+            ("should_sync", 1L)
+        });
+
+        return DatabaseFolder.FromRow(reader);
+    }
+
+    public static DatabaseFolder GetMockUnsyncedDatabaseFolder()
+    {
+        var reader = new MockReader(new (string Name, object? Data)[]
+        {
+            ("local_id", nextMockDatabaseLocalFolderId++),
+            ("service_id", null),
+            ("title", "Archive"),
+            ("position", 0L),
+            ("should_sync", 1L)
+        });
+
+        return DatabaseFolder.FromRow(reader);
+    }
+
     // Because we're deleting things from databases, 'next' ID won't always be
     // 'highest plus one'; so instead of trying to account for that, just always
     // bump it up by one
