@@ -471,4 +471,48 @@ public class FolderListChangeProcessorTests
         Assert.Equal(folderToUpdate, folders.Last());
     }
     #endregion
+
+    #region Deletes
+    [Fact]
+    public void DeletingFolderWithEmptyListDoesNothing()
+    {
+        var folders = new List<DatabaseFolder>();
+
+        using var changeHandler = new FolderListChangeProcessor(folders, this.clearingHouse);
+        var folderToDelete = TestUtilities.GetMockSyncedDatabaseFolder();
+
+        this.clearingHouse.RaiseFolderDeleted(folderToDelete);
+        Assert.Empty(folders);
+    }
+
+    [Fact]
+    public void DeletingFolderNotPresentInListLeavesListIntact()
+    {
+        var folders = this.GetDefaultFolderList();
+        var originalCount = folders.Count;
+
+        using var changeHandler = new FolderListChangeProcessor(folders, this.clearingHouse);
+        var folderToDelete = TestUtilities.GetMockSyncedDatabaseFolder();
+
+        this.clearingHouse.RaiseFolderDeleted(folderToDelete);
+
+        Assert.DoesNotContain(folderToDelete, folders);
+        Assert.Equal(originalCount, folders.Count);
+    }
+
+    [Fact]
+    public void DeletingFolderPresentInListRemovesIt()
+    {
+        var folders = this.GetDefaultFolderList();
+        var originalCount = folders.Count;
+
+        using var changeHandler = new FolderListChangeProcessor(folders, this.clearingHouse);
+        var folderToDelete = folders.Last();
+
+        this.clearingHouse.RaiseFolderDeleted(folderToDelete);
+
+        Assert.DoesNotContain(folderToDelete, folders);
+        Assert.Equal(originalCount - 1, folders.Count);
+    }
+    #endregion
 }

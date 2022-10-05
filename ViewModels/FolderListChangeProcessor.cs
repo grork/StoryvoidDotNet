@@ -27,6 +27,7 @@ public class FolderListChangeProcessor : BaseListChangeProcessor<DatabaseFolder>
     {
         this.eventSource.FolderAdded += HandleFolderAdded;
         this.eventSource.FolderUpdated += HandleFolderUpdated;
+        this.eventSource.FolderDeleted += HandleFolderDeleted;
     }
 
     private void StopListeningForFolderChanges()
@@ -40,4 +41,5 @@ public class FolderListChangeProcessor : BaseListChangeProcessor<DatabaseFolder>
 
     private void HandleFolderAdded(object? sender, DatabaseFolder e) => this.HandleItemAdded(e);
     private void HandleFolderUpdated(object? sender, DatabaseFolder e) => this.HandleItemUpdated(e);
+    private void HandleFolderDeleted(object? sender, DatabaseFolder e) => this.HandleItemDeleted(e.LocalId);
 }
