@@ -26,15 +26,18 @@ public class FolderListChangeProcessor : BaseListChangeProcessor<DatabaseFolder>
     private void StartListeningForFolderChanges()
     {
         this.eventSource.FolderAdded += HandleFolderAdded;
+        this.eventSource.FolderUpdated += HandleFolderUpdated;
     }
 
     private void StopListeningForFolderChanges()
     {
         this.eventSource.FolderAdded -= HandleFolderAdded;
+        this.eventSource.FolderUpdated -= HandleFolderUpdated;
     }
 
     protected override bool IdentifiersMatch(DatabaseFolder first, DatabaseFolder second) => first.LocalId == second.LocalId;
     protected override bool IdentifiersMatch(DatabaseFolder item, long identifier) => item.LocalId == identifier;
 
     private void HandleFolderAdded(object? sender, DatabaseFolder e) => this.HandleItemAdded(e);
+    private void HandleFolderUpdated(object? sender, DatabaseFolder e) => this.HandleItemUpdated(e);
 }

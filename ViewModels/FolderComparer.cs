@@ -23,7 +23,7 @@ internal class FolderComparer : IComparer<DatabaseFolder>
             return 1;
         }
 
-        if (x!.LocalId == y!.LocalId)
+        if (x!.LocalId == y!.LocalId && x!.Position == y!.Position)
         {
             return 0;
         }
@@ -64,7 +64,13 @@ internal class FolderComparer : IComparer<DatabaseFolder>
         // If we don't have position, fallback to local ID
         if (!x.ServiceId.HasValue && !y.ServiceId.HasValue)
         {
-            return x.LocalId.CompareTo(y.LocalId);
+            var relativeOrder = x.Position.CompareTo(y.Position);
+            if (relativeOrder == 0)
+            {
+                relativeOrder = x.LocalId.CompareTo(y.LocalId);
+            }
+
+            return relativeOrder;
         }
 
         return x.Position.CompareTo(y.Position);

@@ -154,6 +154,77 @@ public class FolderComprarerTests
     }
 
     [Fact]
+    public void SameIDDifferentPositionSyncedSortsCorrectOrder()
+    {
+        var folder = TestUtilities.GetMockSyncedDatabaseFolder();
+        var folderUpdatedPosition = folder with { Position = folder.Position - 1 };
+        var relativeOrder = this.comparer.Compare(
+            folder,
+            folderUpdatedPosition
+        );
+
+        Assert.Equal(1, relativeOrder);
+    }
+
+    [Fact]
+    public void SameIDSamePositionSyncedIsSamePosition()
+    {
+        var folder = TestUtilities.GetMockSyncedDatabaseFolder();
+        var relativeOrder = this.comparer.Compare(
+            folder,
+            folder
+        );
+
+        Assert.Equal(0, relativeOrder);
+    }
+
+    [Fact]
+    public void UnsyncedFoldersWithDifferentPositionsRespectRelativePosition()
+    {
+        var first = TestUtilities.GetMockUnsyncedDatabaseFolder();
+        var second = TestUtilities.GetMockUnsyncedDatabaseFolder();
+        first = first with { Position = second.Position + 10 };
+
+        var relativeOrder = this.comparer.Compare(first, second);
+        Assert.Equal(1, relativeOrder);
+    }
+
+    [Fact]
+    public void SameIDDifferentPositionUnyncedSortsCorrectOrder()
+    {
+        var folder = TestUtilities.GetMockUnsyncedDatabaseFolder();
+        var folderUpdatedPosition = folder with { Position = folder.Position - 1 };
+        var relativeOrder = this.comparer.Compare(
+            folder,
+            folderUpdatedPosition
+        );
+
+        Assert.Equal(1, relativeOrder);
+    }
+
+    [Fact]
+    public void SameIDSamePositionUnsyncedIsSamePosition()
+    {
+        var folder = TestUtilities.GetMockUnsyncedDatabaseFolder();
+        var relativeOrder = this.comparer.Compare(
+            folder,
+            folder
+        );
+
+        Assert.Equal(0, relativeOrder);
+    }
+
+    [Fact]
+    public void UnsyncedWithLowerPositionThanSyncedSortsAfterSynced()
+    {
+        var synced = TestUtilities.GetMockSyncedDatabaseFolder();
+        var unsynced = TestUtilities.GetMockUnsyncedDatabaseFolder() with { Position = synced.Position - 10 };
+
+        var relativeOrder = this.comparer.Compare(unsynced, synced);
+        Assert.Equal(1, relativeOrder);
+    }
+
+    [Fact]
     public void FoldersSortUnreadArchiveSyncedSyncedUnsynced()
     {
         var syncedFolder1 = TestUtilities.GetMockSyncedDatabaseFolder();

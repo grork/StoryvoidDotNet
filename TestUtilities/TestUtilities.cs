@@ -119,7 +119,7 @@ public static class TestUtilities
             ("local_id", nextMockDatabaseLocalFolderId++),
             ("service_id", nextMockDatabaseServiceFolderId++),
             ("title", "Archive"),
-            ("position", nextMockFolderPosition++),
+            ("position", nextMockFolderPosition += 5),
             ("should_sync", 1L)
         });
 
