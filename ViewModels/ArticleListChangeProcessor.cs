@@ -36,18 +36,18 @@ public class ArticleListChangeProcessor : IDisposable
 
     private void StartListeningForArticleChanges()
     {
-        this.eventSource.ArticleAdded += HandleArticleAdded;
-        this.eventSource.ArticleDeleted += HandleArticleDeleted;
-        this.eventSource.ArticleUpdated += HandleArticleUpdated;
-        this.eventSource.ArticleMoved += HandleArticleMoved;
+        this.eventSource.ArticleAdded += this.HandleArticleAdded;
+        this.eventSource.ArticleDeleted += this.HandleArticleDeleted;
+        this.eventSource.ArticleUpdated += this.HandleArticleUpdated;
+        this.eventSource.ArticleMoved += this.HandleArticleMoved;
     }
 
     private void StopListeningForArticleChanges()
     {
-        this.eventSource.ArticleAdded -= HandleArticleAdded;
-        this.eventSource.ArticleDeleted -= HandleArticleDeleted;
-        this.eventSource.ArticleUpdated -= HandleArticleUpdated;
-        this.eventSource.ArticleMoved -= HandleArticleMoved;
+        this.eventSource.ArticleAdded -= this.HandleArticleAdded;
+        this.eventSource.ArticleDeleted -= this.HandleArticleDeleted;
+        this.eventSource.ArticleUpdated -= this.HandleArticleUpdated;
+        this.eventSource.ArticleMoved -= this.HandleArticleMoved;
     }
 
     public void Dispose()
@@ -128,7 +128,7 @@ public class ArticleListChangeProcessor : IDisposable
         var targetIndex = -1;
 
         // Item won't be in the list if it's an empty list
-        if (targetList.Count == 0)
+        if (this.targetList.Count == 0)
         {
             return;
         }
@@ -181,7 +181,7 @@ public class ArticleListChangeProcessor : IDisposable
         // assume that means right at the end
         if (targetIndex == -1)
         {
-            targetIndex = targetList.Count - 1;
+            targetIndex = this.targetList.Count - 1;
         }
 
         // For observable lists, we don't want to raise a delete then add
@@ -196,8 +196,8 @@ public class ArticleListChangeProcessor : IDisposable
             return;
         }
 
-        targetList.RemoveAt(originalIndex);
-        targetList.Insert(targetIndex, e);
+        this.targetList.RemoveAt(originalIndex);
+        this.targetList.Insert(targetIndex, e);
     }
 
     private void HandleArticleMoved(object? sender, (DatabaseArticle Article, long DestinationLocalFolderId) e)
