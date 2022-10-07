@@ -63,7 +63,7 @@ public interface IDatabaseEventSink
 /// <summary>
 /// Interface for components that need to raise the events on the clearing house
 /// </summary>
-internal interface IDatabaseEventSource
+public interface IDatabaseEventSource
 {
     /// <summary>
     /// Raise a folder added event

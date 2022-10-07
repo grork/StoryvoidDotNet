@@ -8,26 +8,29 @@ namespace Codevoid.Test.Storyvoid.ViewModels;
 public class ArticleListTests : IDisposable
 {
     private (IFolderDatabase Folders, IArticleDatabase Articles) databases;
+    private DatabaseEventClearingHouse clearingHouse = new DatabaseEventClearingHouse();
     private SqliteConnection connection;
     private ArticleList viewmodel;
     private MockArticleListSettings settings = new MockArticleListSettings();
 
     public ArticleListTests()
     {
-        var (connection, folders, _, articles, _) = TestUtilities.GetDatabases();
+        var (connection, folders, _, articles, _) = TestUtilities.GetDatabases(this.clearingHouse);
         this.databases = (folders, articles);
         this.connection = connection;
         this.viewmodel = new ArticleList(
             this.databases.Folders,
             this.databases.Articles,
+            this.clearingHouse,
             this.settings
         );
     }
 
     public void Dispose()
     {
-        this.connection?.Close();
-        this.connection?.Dispose();
+        this.viewmodel.Dispose();
+        this.connection.Close();
+        this.connection.Dispose();
     }
 
     [Fact]
@@ -189,9 +192,10 @@ public class ArticleListTests : IDisposable
         var nonDefaultSortIdentifier = this.viewmodel.Sorts.First((s) => s.Identifier != ArticleList.DefaultSortIdentifier).Identifier;
         this.settings.SortIdentifier = nonDefaultSortIdentifier;
 
-        var alternativeViewModel = new ArticleList(
+        using var alternativeViewModel = new ArticleList(
             this.databases.Folders,
             this.databases.Articles,
+            this.clearingHouse,
             this.settings
         );
 
@@ -205,5 +209,16 @@ public class ArticleListTests : IDisposable
         this.viewmodel.CurrentSort = nonDefaultSort;
 
         Assert.Equal(nonDefaultSort.Identifier, settings.SortIdentifier);
+    }
+
+    [Fact]
+    public void DatabaseChangesAreReflectedInTheFolderList()
+    {
+        var currentFolderCount = this.viewmodel.Folders.Count;
+
+        var newFolder = this.databases.Folders.CreateFolder(nameof(DatabaseChangesAreReflectedInTheFolderList));
+
+        Assert.Equal(currentFolderCount + 1, this.viewmodel.Folders.Count);
+        Assert.Equal(newFolder, this.viewmodel.Folders.Last());
     }
 }

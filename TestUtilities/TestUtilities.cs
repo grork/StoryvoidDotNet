@@ -155,16 +155,16 @@ public static class TestUtilities
                      IFolderDatabase FolderDB,
                      IFolderChangesDatabase FolderChangeDB,
                      IArticleDatabase ArticleDB,
-                     IArticleChangesDatabase ArticleChangeDB) GetEmptyDatabase()
+                     IArticleChangesDatabase ArticleChangeDB) GetEmptyDatabase(IDatabaseEventSource? eventSource = null)
     {
         // Setup local database
         var connection = new SqliteConnection("Data Source=:memory:");
         connection.Open();
         connection.CreateDatabaseIfNeeded();
 
-        var folderDb = connection.GetFolderDatabase();
+        var folderDb = connection.GetFolderDatabase(eventSource);
         var folderChangesDb = connection.GetFolderChangesDatabase();
-        var articleDb = connection.GetArticleDatabase();
+        var articleDb = connection.GetArticleDatabase(eventSource);
         var articleChangesDb = connection.GetArticleChangesDatabase();
 
         return (connection, folderDb, folderChangesDb, articleDb, articleChangesDb);
@@ -174,9 +174,9 @@ public static class TestUtilities
                    IFolderDatabase FolderDB,
                    IFolderChangesDatabase FolderChangeDB,
                    IArticleDatabase ArticleDB,
-                   IArticleChangesDatabase ArticleChangeDB) GetDatabases()
+                   IArticleChangesDatabase ArticleChangeDB) GetDatabases(IDatabaseEventSource? eventSource = null)
     {
-        var (localConnection, folderDb, folderChangesDb, articleDb, articleChangesDb) = GetEmptyDatabase();
+        var (localConnection, folderDb, folderChangesDb, articleDb, articleChangesDb) = GetEmptyDatabase(eventSource);
         PopulateDatabase(folderDb, articleDb);
 
         return (

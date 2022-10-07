@@ -33,16 +33,18 @@ public record SortOption(
 /// Represents a primary view of articles for the given selected criteria of
 /// viewing folder & applied sort.
 /// </summary>
-public class ArticleList : INotifyPropertyChanged
+public class ArticleList : INotifyPropertyChanged, IDisposable
 {
     public readonly static string DefaultSortIdentifier = "OldestToNewest";
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private readonly IFolderDatabase folderDatabase;
     private readonly IArticleDatabase articleDatabase;
+    private readonly IDatabaseEventSink eventSink;
     private DatabaseFolder currentFolder;
     private SortOption currentSort;
     private IArticleListSettings settings;
+    private FolderListChangeProcessor folderChangeProcessor;
     private ObservableCollection<DatabaseFolder> folders;
     private ObservableCollection<DatabaseArticle>? articles;
 
@@ -53,14 +55,18 @@ public class ArticleList : INotifyPropertyChanged
     public ArticleList(
         IFolderDatabase folderDatabase,
         IArticleDatabase articleDatabase,
+        IDatabaseEventSink eventSink,
         IArticleListSettings settings
     )
     {
         this.folderDatabase = folderDatabase;
         this.articleDatabase = articleDatabase;
+        this.eventSink = eventSink;
         this.settings = settings;
         this.currentFolder = this.folderDatabase.GetFolderByLocalId(WellKnownLocalFolderIds.Unread)!;
-        this.folders = new ObservableCollection<DatabaseFolder>(this.folderDatabase.ListAllFolders());
+        this.folders = new ObservableCollection<DatabaseFolder>(this.folderDatabase.ListAllFolders().OrderBy((f) => f, new FolderComparer()));
+
+        this.folderChangeProcessor = new FolderListChangeProcessor(this.folders, this.eventSink);
 
         this.Sorts = new List<SortOption>
         {
@@ -97,6 +103,11 @@ public class ArticleList : INotifyPropertyChanged
     {
         var handler = this.PropertyChanged;
         handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public void Dispose()
+    {
+        this.folderChangeProcessor.Dispose();
     }
 
     /// <summary>

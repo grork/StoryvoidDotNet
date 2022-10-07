@@ -107,9 +107,9 @@ public static class InstapaperDatabase
         }
     }
 
-    public static IFolderDatabase GetFolderDatabase(this IDbConnection connection)
+    public static IFolderDatabase GetFolderDatabase(this IDbConnection connection, IDatabaseEventSource? eventSource = null)
     {
-        return new FolderDatabase(connection);
+        return new FolderDatabase(connection, eventSource);
     }
 
     public static IFolderChangesDatabase GetFolderChangesDatabase(this IDbConnection connection)
@@ -117,9 +117,9 @@ public static class InstapaperDatabase
         return new FolderChanges(connection);
     }
 
-    public static IArticleDatabase GetArticleDatabase(this IDbConnection connection)
+    public static IArticleDatabase GetArticleDatabase(this IDbConnection connection, IDatabaseEventSource? eventSource = null)
     {
-        return new ArticleDatabase(connection);
+        return new ArticleDatabase(connection, eventSource);
     }
 
     public static IArticleChangesDatabase GetArticleChangesDatabase(this IDbConnection connection)
@@ -131,12 +131,12 @@ public static class InstapaperDatabase
     {
         IFolderDatabaseWithTransactionEvents? folderDbWithEvents = folderDb as IFolderDatabaseWithTransactionEvents;
         IArticleDatabaseWithTransactionEvents? articleDbWithEvents = articleDb as IArticleDatabaseWithTransactionEvents;
-        if(folderDbWithEvents is null)
+        if (folderDbWithEvents is null)
         {
             throw new ArgumentException("Folder database must support events to use the ledger", nameof(folderDb));
         }
 
-        if(articleDbWithEvents is null)
+        if (articleDbWithEvents is null)
         {
             throw new ArgumentException("Article database must support events to use the ledger", nameof(articleDb));
         }
