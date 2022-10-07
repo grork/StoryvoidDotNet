@@ -45,6 +45,7 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
     private SortOption currentSort;
     private IArticleListSettings settings;
     private FolderListChangeProcessor folderChangeProcessor;
+    private ArticleListChangeProcessor? articleListChangeProcessor;
     private ObservableCollection<DatabaseFolder> folders;
     private ObservableCollection<DatabaseArticle>? articles;
 
@@ -108,6 +109,7 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
     public void Dispose()
     {
         this.folderChangeProcessor.Dispose();
+        this.articleListChangeProcessor?.Dispose();
     }
 
     /// <summary>
@@ -128,9 +130,9 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
             }
 
             this.currentFolder = value;
-            this.articles = null;
             this.RaisePropertyChanged();
-            this.RaisePropertyChanged(nameof(Articles));
+
+            this.ResetArticleList();
         }
     }
 
@@ -148,12 +150,22 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
         {
             if (this.articles == null)
             {
+                Debug.Assert(this.articleListChangeProcessor == null);
                 var articles = this.articleDatabase.ListArticlesForLocalFolder(this.CurrentFolder.LocalId).OrderBy((a) => a, this.CurrentSort.Comparer);
                 this.articles = new ObservableCollection<DatabaseArticle>(articles);
+                this.articleListChangeProcessor = new ArticleListChangeProcessor(this.articles, this.CurrentFolder.LocalId, this.eventSink, this.currentSort.Comparer);
             }
 
             return this.articles;
         }
+    }
+
+    private void ResetArticleList()
+    {
+        this.articleListChangeProcessor?.Dispose();
+        this.articleListChangeProcessor = null;
+        this.articles = null;
+        this.RaisePropertyChanged(nameof(this.Articles));
     }
 
     /// <summary>
@@ -179,10 +191,9 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
             Debug.Assert(this.Sorts.Contains(value));
 
             this.currentSort = value;
-            this.articles = null;
             this.settings.SortIdentifier = value.Identifier;
             this.RaisePropertyChanged();
-            this.RaisePropertyChanged("Articles");
+            this.ResetArticleList();
         }
     }
 }

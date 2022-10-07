@@ -214,11 +214,41 @@ public class ArticleListTests : IDisposable
     [Fact]
     public void DatabaseChangesAreReflectedInTheFolderList()
     {
-        var currentFolderCount = this.viewmodel.Folders.Count;
+        var originalFolderCount = this.viewmodel.Folders.Count;
 
         var newFolder = this.databases.Folders.CreateFolder(nameof(DatabaseChangesAreReflectedInTheFolderList));
 
-        Assert.Equal(currentFolderCount + 1, this.viewmodel.Folders.Count);
+        Assert.Equal(originalFolderCount + 1, this.viewmodel.Folders.Count);
         Assert.Equal(newFolder, this.viewmodel.Folders.Last());
+    }
+
+    [Fact]
+    public void DatabaseChangesAreReflectedInTheArticleList()
+    {
+        var originalArticleCount = this.viewmodel.Articles.Count;
+
+        var newArticle = this.databases.Articles.AddArticleToFolder(TestUtilities.GetRandomArticle(), this.viewmodel.CurrentFolder.LocalId);
+
+        Assert.Equal(originalArticleCount + 1, this.viewmodel.Articles.Count);
+        Assert.Contains(newArticle, this.viewmodel.Articles);
+    }
+
+    [Fact]
+    public void DatabaseChangesAreOnlyReflectedInTheNewListWhenChangingSorts()
+    {
+        var originalList = this.viewmodel.Articles;
+        var originalArticleCount = this.viewmodel.Articles.Count;
+
+        this.viewmodel.CurrentSort = this.viewmodel.Sorts.First((s) => s != this.viewmodel.CurrentSort);
+
+        var newList = this.viewmodel.Articles;
+
+        var newArticle = this.databases.Articles.AddArticleToFolder(TestUtilities.GetRandomArticle(), this.viewmodel.CurrentFolder.LocalId);
+
+        Assert.Equal(originalArticleCount, originalList.Count);
+        Assert.DoesNotContain(newArticle, originalList);
+
+        Assert.Equal(originalArticleCount + 1, this.viewmodel.Articles.Count);
+        Assert.Contains(newArticle, this.viewmodel.Articles);
     }
 }
