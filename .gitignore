@@ -405,5 +405,5 @@ ASALocalRun/
 .localhistory/
 
 # Ignore API Key files
-InstapaperAPIKey.cs
+InstapaperAPIKey*.cs
 TwitterAPIKey.cs
