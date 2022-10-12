@@ -1,0 +1,87 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 17
+VisualStudioVersion = 17.3.32922.545
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OAuthLibrary", "OAuthLibrary\OAuthLibrary.csproj", "{FD3B4348-539A-4C6C-A50A-55AE7F23CABB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OAuthLibraryTests", "OAuthLibraryTests\OAuthLibraryTests.csproj", "{9E7A8954-D72E-4679-A011-1C07E1414752}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B45A572C-D84A-4818-B61B-2109D6F696ED}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+		InstapaperAPIKey.cs = InstapaperAPIKey.cs
+		TwitterAPIKey.cs = TwitterAPIKey.cs
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstapaperApi", "InstapaperApi\InstapaperApi.csproj", "{89F277FD-2746-48D3-A7B0-177E78CC3434}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstapaperApiTests", "InstapaperApiTests\InstapaperApiTests.csproj", "{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Database", "Database\Database.csproj", "{69FF03C9-3B63-479B-9D82-3448C81E99CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseTests", "DatabaseTests\DatabaseTests.csproj", "{C53F5205-0875-4EBD-861B-1495B765D151}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sync", "Sync\Sync.csproj", "{1DD04D63-9F53-406C-A082-2FC40FC626DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncTests", "SyncTests\SyncTests.csproj", "{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModels", "ViewModels\ViewModels.csproj", "{27DB371F-09B8-47DA-B9A4-C0B199E7D300}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModelsTests", "ViewModelsTests\ViewModelsTests.csproj", "{1E8E5B97-4686-496E-A303-FC44A9136956}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtilitiesTests", "TestUtilities\TestUtilitiesTests.csproj", "{B4B03A8A-AAEF-4F15-9ED7-658640423C90}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FD3B4348-539A-4C6C-A50A-55AE7F23CABB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD3B4348-539A-4C6C-A50A-55AE7F23CABB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD3B4348-539A-4C6C-A50A-55AE7F23CABB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD3B4348-539A-4C6C-A50A-55AE7F23CABB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E7A8954-D72E-4679-A011-1C07E1414752}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E7A8954-D72E-4679-A011-1C07E1414752}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E7A8954-D72E-4679-A011-1C07E1414752}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E7A8954-D72E-4679-A011-1C07E1414752}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89F277FD-2746-48D3-A7B0-177E78CC3434}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89F277FD-2746-48D3-A7B0-177E78CC3434}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89F277FD-2746-48D3-A7B0-177E78CC3434}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89F277FD-2746-48D3-A7B0-177E78CC3434}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB402E0C-0AE8-4C06-BF7B-0752A1BBDFAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69FF03C9-3B63-479B-9D82-3448C81E99CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69FF03C9-3B63-479B-9D82-3448C81E99CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69FF03C9-3B63-479B-9D82-3448C81E99CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69FF03C9-3B63-479B-9D82-3448C81E99CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C53F5205-0875-4EBD-861B-1495B765D151}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C53F5205-0875-4EBD-861B-1495B765D151}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C53F5205-0875-4EBD-861B-1495B765D151}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C53F5205-0875-4EBD-861B-1495B765D151}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DD04D63-9F53-406C-A082-2FC40FC626DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DD04D63-9F53-406C-A082-2FC40FC626DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DD04D63-9F53-406C-A082-2FC40FC626DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DD04D63-9F53-406C-A082-2FC40FC626DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7942D4FE-AD2A-4088-BDD2-934CDDB2620F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27DB371F-09B8-47DA-B9A4-C0B199E7D300}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27DB371F-09B8-47DA-B9A4-C0B199E7D300}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27DB371F-09B8-47DA-B9A4-C0B199E7D300}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27DB371F-09B8-47DA-B9A4-C0B199E7D300}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E8E5B97-4686-496E-A303-FC44A9136956}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E8E5B97-4686-496E-A303-FC44A9136956}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E8E5B97-4686-496E-A303-FC44A9136956}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E8E5B97-4686-496E-A303-FC44A9136956}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4B03A8A-AAEF-4F15-9ED7-658640423C90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4B03A8A-AAEF-4F15-9ED7-658640423C90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4B03A8A-AAEF-4F15-9ED7-658640423C90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4B03A8A-AAEF-4F15-9ED7-658640423C90}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

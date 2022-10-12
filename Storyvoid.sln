@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
+# Visual Studio 17
+VisualStudioVersion = 17.3.32922.545
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OAuthLibrary", "OAuthLibrary\OAuthLibrary.csproj", "{FD3B4348-539A-4C6C-A50A-55AE7F23CABB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OAuthLibraryTests", "OAuthLibraryTests\OAuthLibraryTests.csproj", "{9E7A8954-D72E-4679-A011-1C07E1414752}"
