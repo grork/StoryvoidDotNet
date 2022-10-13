@@ -56,6 +56,7 @@ public class Authenticator : INotifyPropertyChanged
 
             this.isWorking = value;
             this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(this.CanVerify));
         }
     }
 
@@ -110,7 +111,7 @@ public class Authenticator : INotifyPropertyChanged
     /// Does this instance have enough information to be able to attempt
     /// verificiation of these credentials
     /// </summary>
-    public bool CanVerify => !String.IsNullOrWhiteSpace(this.Email);
+    public bool CanVerify => !String.IsNullOrWhiteSpace(this.Email) && !this.IsWorking;
 
     /// <summary>
     /// E-mail (E.g. account name) to be used when verifying the account.
@@ -130,7 +131,7 @@ public class Authenticator : INotifyPropertyChanged
 
             // Verification capability might change; make callers request it to
             // work out if they can verify.
-            this.RaisePropertyChanged("CanVerify");
+            this.RaisePropertyChanged(nameof(this.CanVerify));
         }
     }
 
@@ -144,7 +145,7 @@ public class Authenticator : INotifyPropertyChanged
     {
         if (!this.CanVerify)
         {
-            throw new InvalidOperationException("No e-email provided");
+            throw new InvalidOperationException("No e-email provided or already trying to authenticate");
         }
 
         ClientInformation? clientInformation = null;

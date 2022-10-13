@@ -139,6 +139,36 @@ public class AuthenticatorTests
     }
 
     [Fact]
+    public async void AuthenticatingSetsCanVerifyToTrueAndThenFalseWithSuccessfulAuthentication()
+    {
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
+
+        var isWorkingSetToTrue = false;
+        var canVerifySetToFalse = false;
+
+        this.authenticator.PropertyChanged += (_, name) =>
+        {
+            if ((name.PropertyName == "IsWorking") && this.authenticator.IsWorking)
+            {
+                isWorkingSetToTrue = true;
+            }
+
+            if((name.PropertyName == "CanVerify") && this.authenticator.IsWorking)
+            {
+                canVerifySetToFalse = !this.authenticator.CanVerify;
+            }
+        };
+
+        _ = await this.authenticator.Authenticate();
+
+        Assert.True(isWorkingSetToTrue);
+        Assert.True(canVerifySetToFalse);
+        Assert.False(this.authenticator.IsWorking);
+        Assert.True(this.authenticator.CanVerify);
+    }
+
+    [Fact]
     public async void AuthenticatingWithInvalidCredentialsDoesNotReturnClientInformation()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
