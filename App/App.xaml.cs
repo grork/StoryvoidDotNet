@@ -25,6 +25,7 @@ public partial class Launcher : Application
         // message if we do. Normal app startup shouldn't happen in this
         // scenario.
         Window? mainWindow = null;
+#pragma warning disable CS0162
         if (InstapaperAPIKey.CONSUMER_KEY_SECRET == "PLACEHOLDER"
          || InstapaperAPIKey.CONSUMER_KEY == "PLACEHOLDER")
         {
@@ -32,7 +33,6 @@ public partial class Launcher : Application
         }
         else
         {
-#pragma warning disable CS0162
             mainWindow = new MainWindow();
 #pragma warning restore
         }
