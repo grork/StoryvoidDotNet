@@ -1,7 +1,10 @@
-﻿using Codevoid.Instapaper;
-using Codevoid.Storyvoid.App.Implementations;
+﻿using Codevoid.Storyvoid.App.Implementations;
+using Codevoid.Storyvoid.Controls;
 using Codevoid.Storyvoid.ViewModels;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Windows.UI.Text;
 
 namespace Codevoid.Storyvoid.App;
 
@@ -11,25 +14,34 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         this.InitializeComponent();
-        var accounts = new Accounts(settings.GetTokens()!);
-        this.ViewModel = new Authenticator(accounts, settings);
 
         if (settings.HasTokens)
         {
-            this.AlreadyAuthedTextBlock.Text = "Already Has Credentials";
-        }
-    }
+            var label = new TextBlock()
+            {
+                Text = "Have Creds",
+                FontSize = 72,
+                FontWeight = FontWeights.ExtraLight,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.WrapWholeWords
+            };
 
-    public Authenticator ViewModel { get; private set; }
+            var button = new Button()
+            {
+                Content = "Clear Credentials"
+            };
+            button.Click += ClearCredentials_Click;
 
-    private async void Authenticate_Click(object sender, RoutedEventArgs e)
-    {
-        if (!this.ViewModel.CanVerify)
-        {
+            var content = new StackPanel();
+            content.Children.Add(label);
+            content.Children.Add(button);
+
+            this.Content = content;
+
             return;
         }
-
-        await this.ViewModel.Authenticate();
+        this.Content = new AuthenticationControl();
     }
 
     private void ClearCredentials_Click(object sender, RoutedEventArgs e)

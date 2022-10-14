@@ -1,0 +1,98 @@
+﻿<UserControl x:Class="Codevoid.Storyvoid.Controls.AuthenticationControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <Thickness x:Key="StandardMargin">0,8,0,8</Thickness>
+        <Style TargetType="TextBox"
+               BasedOn="{StaticResource DefaultTextBoxStyle}">
+            <Setter Property="Margin"
+                    Value="{StaticResource StandardMargin}" />
+            <Setter Property="HorizontalAlignment"
+                    Value="Stretch" />
+            <Setter Property="FontSize"
+                    Value="18" />
+        </Style>
+
+        <Style TargetType="PasswordBox"
+               BasedOn="{StaticResource DefaultPasswordBoxStyle}">
+            <Setter Property="Margin"
+                    Value="{StaticResource StandardMargin}" />
+            <Setter Property="HorizontalAlignment"
+                    Value="Stretch" />
+            <Setter Property="FontSize"
+                    Value="18" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid TabFocusNavigation="Cycle">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="24px" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="24px" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Uid="Authenticator/Title"
+                   Grid.Column="0"
+                   Grid.ColumnSpan="3"
+                   FontSize="72"
+                   FontWeight="ExtraBold"
+                   CharacterSpacing="-50"
+                   HorizontalAlignment="Center" />
+
+        <StackPanel Grid.Column="1"
+                    Grid.Row="1"
+                    HorizontalAlignment="Stretch"
+                    Margin="{StaticResource StandardMargin}">
+
+            <TextBox x:Uid="Authenticator/AccountInput"
+                     x:Name="AccountTextBox"
+                     InputScope="EmailSmtpAddress"
+                     IsSpellCheckEnabled="False"
+                     IsTextPredictionEnabled="False"
+                     IsEnabled="{x:Bind ViewModel.IsWorking, Mode=OneWay, Converter={StaticResource InverseBooleanConverter}}"
+                     Text="{x:Bind ViewModel.Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     KeyDown="InputBox_KeyDown" />
+
+            <PasswordBox x:Uid="Authenticator/PasswordInput"
+                         Password="{x:Bind ViewModel.Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{x:Bind ViewModel.IsWorking, Mode=OneWay, Converter={StaticResource InverseBooleanConverter}}"
+                         KeyDown="InputBox_KeyDown" />
+
+            <Button x:Uid="Authenticator/LoginButton"
+                    HorizontalAlignment="Center"
+                    Margin="{StaticResource StandardMargin}"
+                    Style="{StaticResource AccentButtonStyle}"
+                    MinWidth="150"
+                    IsEnabled="{x:Bind ViewModel.CanVerify, Mode=OneWay}"
+                    Click="Authenticate_Click" />
+
+            <TextBlock HorizontalAlignment="Stretch"
+                       TextWrapping="WrapWholeWords"
+                       Margin="{StaticResource StandardMargin}"
+                       Visibility="{x:Bind ViewModel.FriendlyErrorMessage, Mode=OneWay, Converter={StaticResource StringVisibilityConverter}}"
+                       Text="{x:Bind ViewModel.FriendlyErrorMessage, Mode=OneWay}" />
+
+            <TextBlock x:Uid="Authenticator/Description"
+                       HorizontalAlignment="Stretch"
+                       TextWrapping="WrapWholeWords"
+                       Margin="{StaticResource StandardMargin}" />
+
+        </StackPanel>
+
+        <ProgressRing Grid.Row="0"
+                      Grid.RowSpan="2"
+                      Grid.Column="0"
+                      Grid.ColumnSpan="3"
+                      IsActive="{x:Bind ViewModel.IsWorking, Mode=OneWay}"
+                      Width="75"
+                      Height="75"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch" />
+    </Grid>
+</UserControl>
