@@ -41,10 +41,12 @@ internal class AccountSettings : IAccountSettings
     public ClientInformation? GetTokens()
     {
         var (tokenValue, tokenSecret) = this.GetStoredTokenAndSecret();
-        return new ClientInformation(InstapaperAPIKey.CONSUMER_KEY,
+        return new ClientInformation(
+            InstapaperAPIKey.CONSUMER_KEY,
             InstapaperAPIKey.CONSUMER_KEY_SECRET,
             tokenValue,
-            tokenSecret);
+            tokenSecret
+        );
     }
 
     public void SetTokens(ClientInformation tokens)
