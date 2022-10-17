@@ -18,9 +18,6 @@
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
-  <ItemGroup>
-    <None Remove="Controls\AuthenticationControl.xaml" />
-  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -49,11 +46,6 @@
   <ItemGroup>
     <ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
     <ProjectReference Include="..\ViewModels\ViewModels.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Page Update="Controls\AuthenticationControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
 
   <!-- 
