@@ -5,6 +5,7 @@ using Microsoft.Windows.ApplicationModel.Resources;
 using System.Diagnostics;
 
 namespace Codevoid.Storyvoid.App;
+using Strings = Codevoid.Storyvoid.Resources;
 
 /// <summary>
 /// Main entrypoint into the application that handles deciding what initial UI
@@ -12,7 +13,6 @@ namespace Codevoid.Storyvoid.App;
 /// </summary>
 public partial class Launcher : Application
 {
-    private ResourceLoader _resourceLoader = new ResourceLoader();
     public Launcher()
     {
         this.InitializeComponent();
@@ -44,7 +44,7 @@ public partial class Launcher : Application
 
     private Window GetNoApiKeysWindow()
     {
-        var errorMessage = this._resourceLoader.GetString("Errors/NoApiKeysSet");
+        var errorMessage = Strings.Errors.NoApiKeysSet;
         Debug.Fail(errorMessage); // Force break into the debugger
 
         return new Window()
