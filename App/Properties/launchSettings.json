@@ -2,7 +2,7 @@
   "profiles": {
     "App (Package)": {
       "commandName": "MsixPackage",
-      "nativeDebugging": true
+      "nativeDebugging": false
     },
     "App (Unpackaged)": {
       "commandName": "Project"
