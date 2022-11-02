@@ -4,9 +4,9 @@
              xmlns:db="using:Codevoid.Storyvoid">
 
     <Grid>
-        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Folders}">
+        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Articles, Mode=OneWay}">
             <ItemsRepeater.ItemTemplate>
-                <DataTemplate x:DataType="db:DatabaseFolder">
+                <DataTemplate x:DataType="db:DatabaseArticle">
                     <TextBlock Text="{x:Bind Title}" />
                 </DataTemplate>
             </ItemsRepeater.ItemTemplate>

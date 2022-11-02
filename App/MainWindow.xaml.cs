@@ -1,6 +1,9 @@
-﻿using Codevoid.Storyvoid.App.Implementations;
+﻿using Codevoid.Instapaper;
+using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Controls;
+using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.ViewModels;
+using Codevoid.Utilities.OAuth;
 using Microsoft.Data.Sqlite;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
@@ -26,7 +29,7 @@ public sealed partial class MainWindow : Window
         this.SwitchToSignedOut();
     }
 
-    private void AuthenticationControl_SuccessfullyAuthenticated(object? sender, Utilities.OAuth.ClientInformation e)
+    private void AuthenticationControl_SuccessfullyAuthenticated(object? sender, ClientInformation e)
     {
         var authenticator = sender as AuthenticationControl;
         authenticator!.SuccessfullyAuthenticated -= AuthenticationControl_SuccessfullyAuthenticated;
@@ -50,20 +53,23 @@ public sealed partial class MainWindow : Window
 
     private IArticleDatabase? articleDatabase;
     private IFolderDatabase? folderDatabase;
+    private DispatcherDatabaseEvents? dbEvents;
     private IDbConnection? connection;
 
     [MemberNotNull(nameof(articleDatabase))]
     [MemberNotNull(nameof(folderDatabase))]
+    [MemberNotNull(nameof(dbEvents))]
     private void OpenDatabase()
     {
-        var connection = new SqliteConnection("Data Source=:memory:");
+        var connection = new SqliteConnection("Data Source=StaysInMemory;Mode=Memory;Cache=Shared");
         connection.Open(); 
         connection.CreateDatabaseIfNeeded();
 
         this.connection = connection;
+        this.dbEvents = new DispatcherDatabaseEvents(this.DispatcherQueue);
 
-        this.articleDatabase = InstapaperDatabase.GetArticleDatabase(connection);
-        this.folderDatabase = InstapaperDatabase.GetFolderDatabase(connection);
+        this.articleDatabase = InstapaperDatabase.GetArticleDatabase(connection, this.dbEvents);
+        this.folderDatabase = InstapaperDatabase.GetFolderDatabase(connection, this.dbEvents);
     }
 
     private void CleanupDB()
@@ -83,11 +89,11 @@ public sealed partial class MainWindow : Window
             TextWrapping = TextWrapping.WrapWholeWords
         };
 
-        var clearCredsButton = new Button()
-        {
-            Content = "Clear Credentials"
-        };
+        var clearCredsButton = new Button() { Content = "Clear Credentials" };
         clearCredsButton.Click += ClearCredentials_Click;
+
+        var performSyncButton = new Button() { Content = "Sync" };
+        performSyncButton.Click += PerformSync_Click;
 
         var buttons = new StackPanel()
         {
@@ -95,15 +101,26 @@ public sealed partial class MainWindow : Window
         };
 
         buttons.Children.Add(clearCredsButton);
+        buttons.Children.Add(performSyncButton);
 
         // Open the database for use in the article list
         this.OpenDatabase();
         var articleList = new ArticleList(
             this.folderDatabase,
             this.articleDatabase,
-            new DispatcherDatabaseEvents(this.DispatcherQueue),
+            this.dbEvents,
             new ArticleListSettings()
         );
+
+        var switchToArchive = new Button() { Content = "Archive" };
+        switchToArchive.Click += (s, e) => articleList.CurrentFolder = articleList.Folders.First((f) => f.LocalId == WellKnownLocalFolderIds.Archive);
+
+        var switchToHome = new Button() { Content = "Home" };
+        switchToHome.Click += (s, e) => articleList.CurrentFolder = articleList.Folders.First((f) => f.LocalId == WellKnownLocalFolderIds.Unread);
+
+        buttons.Children.Add(switchToArchive);
+        buttons.Children.Add(switchToHome);
+
 
         var articleListControl = new ArticleListControl(articleList);
 
@@ -113,5 +130,34 @@ public sealed partial class MainWindow : Window
         content.Children.Add(articleListControl);
 
         this.Content = content;
+    }
+
+    private async void PerformSync_Click(object sender, RoutedEventArgs e)
+    {
+        var button = (Button)sender;
+
+        var tokens = this.settings.GetTokens()!;
+        using var syncConnection = new SqliteConnection(this.connection!.ConnectionString);
+        syncConnection.Open();
+
+        var folders = InstapaperDatabase.GetFolderDatabase(syncConnection, this.dbEvents);
+        var folderChanges = InstapaperDatabase.GetFolderChangesDatabase(syncConnection);
+        var articles = InstapaperDatabase.GetArticleDatabase(syncConnection, this.dbEvents);
+        var articleChanges = InstapaperDatabase.GetArticleChangesDatabase(syncConnection);
+        var foldersClient = new FoldersClient(tokens);
+        var bookmarksClient = new BookmarksClient(tokens);
+
+        var sync = new InstapaperSync(folders, folderChanges, foldersClient, articles, articleChanges, bookmarksClient);
+
+        button.IsEnabled = false;
+        try
+        {
+            await sync.SyncEverythingAsync();
+        }
+        finally
+        {
+            button.IsEnabled = true;
+            syncConnection.Close();
+        }
     }
 }
