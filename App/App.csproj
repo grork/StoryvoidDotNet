@@ -45,6 +45,7 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Database\Database.csproj" />
     <ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
     <ProjectReference Include="..\ViewModels\ViewModels.csproj" />
   </ItemGroup>

@@ -1,8 +1,8 @@
 ﻿using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.Windows.ApplicationModel.Resources;
 using System.Diagnostics;
+using Windows.ApplicationModel;
 
 namespace Codevoid.Storyvoid.App;
 using Strings = Codevoid.Storyvoid.Resources;
@@ -15,6 +15,12 @@ public partial class Launcher : Application
 {
     public Launcher()
     {
+        // Set the working directory to where our current assembly is located.
+        // This is because we want to _read_ datafiles co-located with the app
+        // binaries + dependencies. However, windows now defaults to
+        // %WINDIR%\System32. See more here:
+        // https://github.com/microsoft/WindowsAppSDK/discussions/2195
+        Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
         this.InitializeComponent();
     }
 
@@ -38,7 +44,7 @@ public partial class Launcher : Application
         }
 
         // Source the window title from the manifest, so we have a single source
-        mainWindow.Title = Windows.ApplicationModel.AppInfo.Current.DisplayInfo.DisplayName;
+        mainWindow.Title = AppInfo.Current.DisplayInfo.DisplayName;
         mainWindow.Activate();
     }
 

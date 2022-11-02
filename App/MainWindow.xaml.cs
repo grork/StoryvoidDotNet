@@ -1,10 +1,12 @@
 ﻿using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Controls;
 using Codevoid.Storyvoid.ViewModels;
+using Microsoft.Data.Sqlite;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.UI.Text;
+using System.Data;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Codevoid.Storyvoid.App;
 
@@ -42,6 +44,31 @@ public sealed partial class MainWindow : Window
         var authenticationControl = new AuthenticationControl();
         authenticationControl.SuccessfullyAuthenticated += AuthenticationControl_SuccessfullyAuthenticated;
         this.Content = authenticationControl;
+
+        this.CleanupDB();
+    }
+
+    private IArticleDatabase? articleDatabase;
+    private IFolderDatabase? folderDatabase;
+    private IDbConnection? connection;
+
+    [MemberNotNull(nameof(articleDatabase))]
+    [MemberNotNull(nameof(folderDatabase))]
+    private void OpenDatabase()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open(); 
+        connection.CreateDatabaseIfNeeded();
+
+        this.connection = connection;
+
+        this.articleDatabase = InstapaperDatabase.GetArticleDatabase(connection);
+        this.folderDatabase = InstapaperDatabase.GetFolderDatabase(connection);
+    }
+
+    private void CleanupDB()
+    {
+        this.connection?.Dispose();
     }
 
     private void SwitchToSignedIn()
@@ -56,15 +83,34 @@ public sealed partial class MainWindow : Window
             TextWrapping = TextWrapping.WrapWholeWords
         };
 
-        var button = new Button()
+        var clearCredsButton = new Button()
         {
             Content = "Clear Credentials"
         };
-        button.Click += ClearCredentials_Click;
+        clearCredsButton.Click += ClearCredentials_Click;
+
+        var buttons = new StackPanel()
+        {
+            Orientation = Orientation.Horizontal
+        };
+
+        buttons.Children.Add(clearCredsButton);
+
+        // Open the database for use in the article list
+        this.OpenDatabase();
+        var articleList = new ArticleList(
+            this.folderDatabase,
+            this.articleDatabase,
+            new DispatcherDatabaseEvents(this.DispatcherQueue),
+            new ArticleListSettings()
+        );
+
+        var articleListControl = new ArticleListControl(articleList);
 
         var content = new StackPanel();
         content.Children.Add(label);
-        content.Children.Add(button);
+        content.Children.Add(buttons);
+        content.Children.Add(articleListControl);
 
         this.Content = content;
     }
