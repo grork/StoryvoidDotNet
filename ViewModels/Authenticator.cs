@@ -33,6 +33,20 @@ public class Authenticator : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
+    /// Instantiates the class.
+    /// </summary>
+    /// <param name="accountsService">
+    /// Accounts service to use to verify & validate
+    /// </param>
+    public Authenticator(IAccounts accountsService, IAccountSettings settings)
+    {
+        this.accountsService = accountsService;
+        this.settings = settings;
+        this.email = String.Empty;
+        this.Password = String.Empty;
+    }
+
+    /// <summary>
     /// Password to be used to verify credentials.
     ///
     /// Note, this can be an empty string since Instapaper does not require
@@ -77,20 +91,6 @@ public class Authenticator : INotifyPropertyChanged
             this.friendlyErrorMessage = value;
             this.RaisePropertyChanged();
         }
-    }
-
-    /// <summary>
-    /// Instantiates the class.
-    /// </summary>
-    /// <param name="accountsService">
-    /// Accounts service to use to verify & validate
-    /// </param>
-    public Authenticator(IAccounts accountsService, IAccountSettings settings)
-    {
-        this.accountsService = accountsService;
-        this.settings = settings;
-        this.email = String.Empty;
-        this.Password = String.Empty;
     }
 
     /// <summary>
