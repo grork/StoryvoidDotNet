@@ -88,6 +88,20 @@ public class AuthenticatorTests
         var clientInfo = await this.authenticator.Authenticate();
         Assert.NotNull(clientInfo);
     }
+    
+    [Fact]
+    public async void AuthenticatingWithValidCredentialsRaisesSuccessfullyAuthenticatedEvent()
+    {
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
+        var successfulEventRaised = false;
+
+        this.authenticator.SuccessfullyAuthenticated += (o, e) => successfulEventRaised = true;
+
+        _ = await this.authenticator.Authenticate();
+        Assert.True(successfulEventRaised, "Event wasn't raised");
+
+    }
 
     [Fact]
     public async void AuthenticatingWithValidCredentialsReturnsValidClientInformationMatchingSavedInformation()
@@ -218,6 +232,18 @@ public class AuthenticatorTests
 
         var clientInfo = await this.authenticator.Authenticate();
         Assert.False(String.IsNullOrEmpty(this.authenticator.FriendlyErrorMessage));
+    }
+    
+    [Fact]
+    public async void AuthenticatingWithInvalidCredentialsDoesNotRaiseSuccessfulEvent()
+    {
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        var successfulEventRaised = false;
+
+        this.authenticator.SuccessfullyAuthenticated += (o, e) => successfulEventRaised = true;
+
+        var clientInfo = await this.authenticator.Authenticate();
+        Assert.False(successfulEventRaised, "Event shouldn't have been raised");
     }
 
     [Fact]
