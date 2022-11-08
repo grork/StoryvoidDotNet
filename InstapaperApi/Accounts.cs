@@ -104,11 +104,16 @@ public sealed class Accounts : IAccounts, IDisposable
             throw new InvalidOperationException("No token returned");
         }
 
-        return new ClientInformation(
+        var newClientInformation = new ClientInformation(
             this.clientInformation.ConsumerKey,
             this.clientInformation.ConsumerKeySecret,
             token,
             secret);
+
+        newClientInformation.ProductVersion = this.clientInformation.ProductVersion;
+        newClientInformation.ProductName = this.clientInformation.ProductName;
+
+        return newClientInformation;
     }
 
     /// <inheritdoc/>

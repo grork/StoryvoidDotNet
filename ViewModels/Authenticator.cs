@@ -13,7 +13,7 @@ namespace Codevoid.Storyvoid.ViewModels;
 public interface IAccountSettings
 {
     bool HasTokens { get; }
-    ClientInformation? GetTokens();
+    ClientInformation GetTokens();
     void SetTokens(ClientInformation tokens);
     void ClearTokens();
 }

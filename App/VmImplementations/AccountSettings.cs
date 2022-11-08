@@ -1,5 +1,7 @@
 ﻿using Codevoid.Storyvoid.ViewModels;
 using Codevoid.Utilities.OAuth;
+using System.Reflection;
+using Windows.ApplicationModel;
 using Windows.Storage;
 
 namespace Codevoid.Storyvoid.App.Implementations;
@@ -14,39 +16,43 @@ internal class AccountSettings : IAccountSettings
     private static readonly string TOKEN_CONTAINER_KEY = "usertokens";
     private static readonly string TOKEN_TOKEN_KEY = "token";
     private static readonly string TOKEN_SECRET_KEY = "secret";
+    private ClientInformation? clientInformation = null;
 
     public bool HasTokens
     {
         get
         {
-            var stored = this.GetStoredTokenAndSecret();
-            return (stored.Token != null && stored.Secret != null);
+            var stored = this.GetTokens();
+            return (stored.Token != null && stored.TokenSecret != null);
         }
     }
 
-    private (string? Token, string? Secret) GetStoredTokenAndSecret()
+    public ClientInformation GetTokens()
     {
-        var tokenSetting = ApplicationData.Current.LocalSettings.Values[TOKEN_CONTAINER_KEY] as ApplicationDataCompositeValue;
-        String? tokenValue = null;
-        String? tokenSecret = null;
-        if (tokenSetting != null)
+        if (this.clientInformation == null)
         {
-            tokenValue = tokenSetting[TOKEN_TOKEN_KEY] as String;
-            tokenSecret = tokenSetting[TOKEN_SECRET_KEY] as String;
+            var tokenSetting = ApplicationData.Current.LocalSettings.Values[TOKEN_CONTAINER_KEY] as ApplicationDataCompositeValue;
+            String? tokenValue = null;
+            String? tokenSecret = null;
+            if (tokenSetting != null)
+            {
+                tokenValue = tokenSetting[TOKEN_TOKEN_KEY] as String;
+                tokenSecret = tokenSetting[TOKEN_SECRET_KEY] as String;
+            }
+
+            var newClientInformation = new ClientInformation(
+                InstapaperAPIKey.CONSUMER_KEY,
+                InstapaperAPIKey.CONSUMER_KEY_SECRET,
+                tokenValue,
+                tokenSecret
+            );
+
+            newClientInformation.ProductVersion = AppInfo.Current.Package.Id.Version.ToString()!;
+            newClientInformation.ProductName = AppInfo.Current.DisplayInfo.DisplayName;
+            this.clientInformation = newClientInformation;
         }
 
-        return (tokenValue, tokenSecret);
-    }
-
-    public ClientInformation? GetTokens()
-    {
-        var (tokenValue, tokenSecret) = this.GetStoredTokenAndSecret();
-        return new ClientInformation(
-            InstapaperAPIKey.CONSUMER_KEY,
-            InstapaperAPIKey.CONSUMER_KEY_SECRET,
-            tokenValue,
-            tokenSecret
-        );
+        return clientInformation;
     }
 
     public void SetTokens(ClientInformation tokens)
@@ -56,10 +62,12 @@ internal class AccountSettings : IAccountSettings
         tokenSetting[TOKEN_SECRET_KEY] = tokens.TokenSecret;
 
         ApplicationData.Current.LocalSettings.Values[TOKEN_CONTAINER_KEY] = tokenSetting;
+        this.clientInformation = null;
     }
 
     public void ClearTokens()
     {
         ApplicationData.Current.LocalSettings.Values.Remove(TOKEN_CONTAINER_KEY);
+        this.clientInformation = null;
     }
 }

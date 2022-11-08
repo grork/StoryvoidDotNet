@@ -202,7 +202,9 @@ public class AuthenticatorTests
         Assert.Null(clientInfo);
 
         Assert.False(this.settings.HasTokens);
-        Assert.Null(this.settings.GetTokens());
+        var clientInformation = this.settings.GetTokens();
+        Assert.Null(clientInformation.Token);
+        Assert.Null(clientInformation.TokenSecret);
     }
 
     [Fact]

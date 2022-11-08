@@ -32,10 +32,16 @@ public sealed class AuthenticationTests : IDisposable
     [Fact]
     public async Task CanGetAccessToken()
     {
+        var PRODUCT_VERSION = "1.2.3.4";
+        var PRODUCT_NAME = "ApiTests";
+
         var clientInfoWithoutAccessToken = new ClientInformation(
             InstapaperAPIKey.CONSUMER_KEY,
             InstapaperAPIKey.CONSUMER_KEY_SECRET
         );
+
+        clientInfoWithoutAccessToken.ProductVersion = PRODUCT_VERSION;
+        clientInfoWithoutAccessToken.ProductName = PRODUCT_NAME;
 
         using var accounts = new Accounts(clientInfoWithoutAccessToken);
 
@@ -47,6 +53,8 @@ public sealed class AuthenticationTests : IDisposable
         Assert.NotNull(clientInfoWithAccessToken); // Client info wasn't returned
         Assert.Equal(clientInfoWithoutAccessToken.ConsumerKey, clientInfoWithAccessToken.ConsumerKey); // Client ID didn't match
         Assert.Equal(clientInfoWithoutAccessToken.ConsumerKeySecret, clientInfoWithAccessToken.ConsumerKeySecret); // Client Secret didn't match
+        Assert.Equal(PRODUCT_VERSION, clientInfoWithAccessToken.ProductVersion); // Version didn't match
+        Assert.Equal(PRODUCT_NAME, clientInfoWithAccessToken.ProductName); // Name didn't match
         Assert.False(String.IsNullOrWhiteSpace(clientInfoWithAccessToken.Token)); // Token missing
         Assert.False(String.IsNullOrWhiteSpace(clientInfoWithAccessToken.TokenSecret)); // Secret Missing
 
