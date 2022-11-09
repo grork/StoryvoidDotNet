@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
-
-namespace Codevoid.Storyvoid.ViewModels;
+﻿namespace Codevoid.Storyvoid.ViewModels;
 
 /// <summary>
 /// Listens for changes from an <see cref="IDatabaseEventSink" /> and applies

@@ -1,6 +1,5 @@
 ﻿using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.ViewModels;
-using Codevoid.Test.Storyvoid;
 using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;

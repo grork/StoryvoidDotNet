@@ -1,7 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.ViewModels;
-using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;
 

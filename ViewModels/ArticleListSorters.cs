@@ -1,5 +1,4 @@
-﻿using System;
-namespace Codevoid.Storyvoid.ViewModels;
+﻿namespace Codevoid.Storyvoid.ViewModels;
 
 /// <summary>
 /// Sorts smaller IDs higher in the list, larger lower
