@@ -1,5 +1,6 @@
 using Codevoid.Storyvoid.ViewModels;
 using Codevoid.Utilities.OAuth;
+using System.Windows.Input;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;
 
@@ -8,6 +9,20 @@ public class AuthenticatorTests
     private Authenticator authenticator;
     private IAccountSettings settings;
     private MockAccountService accountService;
+
+    private void AssertCanExecuteChangedRaised(Action action, bool expectedCanExecuteValue)
+    {
+        var wasRaised = false;
+        this.authenticator.CanExecuteChanged += (o, a) => wasRaised = true;
+
+        action();
+
+        Assert.True(wasRaised, "CanExecute was not raised");
+        if(wasRaised)
+        {
+            Assert.Equal(expectedCanExecuteValue, this.authenticator.CanExecute(null));
+        }
+    }
 
     public AuthenticatorTests()
     {
@@ -55,9 +70,24 @@ public class AuthenticatorTests
     }
 
     [Fact]
+    public void CanExecuteChangedNotRaisedIfAssignedValueIsSameAsCurrentValue()
+    {
+        this.authenticator.Email = "test@example.com";
+        this.authenticator.CanExecuteChanged += (_, _) => Assert.Fail("Should not have event raised");
+
+        this.authenticator.Email = "test@example.com";
+    }
+
+    [Fact]
     public void CanVerifyRaisesPropertyChangedWhenEmailSetFromDefaultState()
     {
         Assert.PropertyChanged(this.authenticator, "CanVerify", () => this.authenticator.Email = "test@example.com");
+    }
+
+    [Fact]
+    public void CanExecuteChangedRaisedWhenEmailSetFromDefaultState()
+    {
+        this.AssertCanExecuteChangedRaised(() => this.authenticator.Email = "test@example.com", true);
     }
 
     [Fact]
@@ -68,10 +98,24 @@ public class AuthenticatorTests
     }
 
     [Fact]
+    public void CanExecuteChangedRaisedWhenEmailSetFromExistingValue()
+    {
+        this.authenticator.Email = "test2@example.com";
+        this.AssertCanExecuteChangedRaised(() => this.authenticator.Email = "test@example.com", true);
+    }
+
+    [Fact]
     public void CanVerifyRaisesPropertyChangedWhenEmailSetToEmpty()
     {
         this.authenticator.Email = "test@example.com";
         Assert.PropertyChanged(this.authenticator, "CanVerify", () => this.authenticator.Email = String.Empty);
+    }
+
+    [Fact]
+    public void CanVerifyRaisesCanExecuteChangedWhenEmailSetToEmpty()
+    {
+        this.authenticator.Email = "test@example.com";
+        this.AssertCanExecuteChangedRaised(() => this.authenticator.Email = String.Empty, false);
     }
 
     [Fact]
@@ -102,7 +146,21 @@ public class AuthenticatorTests
         var clientInformation = await this.authenticator.Authenticate();
         Assert.NotNull(clientInfoFromEvent);
         Assert.Equal(clientInformation, clientInfoFromEvent);
+    }
 
+    [Fact]
+    public async void AuthenticatingWithUsingICommandInterfaceRaisesSuccessfullyAuthenticatedEvent()
+    {
+        this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
+        this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
+        var completionSource = new TaskCompletionSource<ClientInformation>();
+
+        this.authenticator.SuccessfullyAuthenticated += (o, e) => completionSource.SetResult(e);
+
+        this.authenticator.Execute(null);
+
+        var clientInformation = await completionSource.Task;
+        Assert.NotNull(clientInformation);
     }
 
     [Fact]

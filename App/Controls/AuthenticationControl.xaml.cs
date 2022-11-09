@@ -5,6 +5,7 @@ using Codevoid.Utilities.OAuth;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using System.Windows.Input;
 using Windows.System;
 
 namespace Codevoid.Storyvoid.Controls;
@@ -18,11 +19,6 @@ public sealed partial class AuthenticationControl : UserControl
         this.ViewModel = authenticator;
 
         this.InitializeComponent();
-    }
-
-    private void Authenticate_Click(object sender, RoutedEventArgs e)
-    {
-        this.AuthenticateHelper();
     }
 
     private void InputBox_KeyDown(object sender, KeyRoutedEventArgs e)

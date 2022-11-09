@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
 
@@ -22,7 +23,7 @@ public interface IAccountSettings
 /// Manages authentication lifecycle, including enablement of login,
 /// verifiication, error handling, and cached-credential restoration.
 /// </summary>
-public class Authenticator : INotifyPropertyChanged
+public class Authenticator : INotifyPropertyChanged, ICommand
 {
     private readonly IAccounts accountsService;
     private readonly IAccountSettings settings;
@@ -71,7 +72,7 @@ public class Authenticator : INotifyPropertyChanged
 
             this.isWorking = value;
             this.RaisePropertyChanged();
-            this.RaisePropertyChanged(nameof(this.CanVerify));
+            this.RaiseCanVerifyChanged();
         }
     }
 
@@ -108,6 +109,12 @@ public class Authenticator : INotifyPropertyChanged
         handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
+    private void RaiseCanVerifyChanged()
+    {
+        this.RaisePropertyChanged(nameof(this.CanVerify));
+        this.CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     /// <summary>
     /// Does this instance have enough information to be able to attempt
     /// verificiation of these credentials
@@ -132,7 +139,7 @@ public class Authenticator : INotifyPropertyChanged
 
             // Verification capability might change; make callers request it to
             // work out if they can verify.
-            this.RaisePropertyChanged(nameof(this.CanVerify));
+            this.RaiseCanVerifyChanged();
         }
     }
 
@@ -172,5 +179,17 @@ public class Authenticator : INotifyPropertyChanged
         }
 
         return clientInformation;
+    }
+
+    public event EventHandler? CanExecuteChanged;
+
+    public bool CanExecute(object? parameter)
+    {
+        return this.CanVerify;
+    }
+
+    public async void Execute(object? parameter)
+    {
+        await this.Authenticate();
     }
 }
