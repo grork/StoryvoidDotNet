@@ -31,7 +31,7 @@ public class Authenticator : INotifyPropertyChanged
     private string friendlyErrorMessage = String.Empty;
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    public event EventHandler? SuccessfullyAuthenticated;
+    public event EventHandler<ClientInformation>? SuccessfullyAuthenticated;
 
     /// <summary>
     /// Instantiates the class.
@@ -156,7 +156,7 @@ public class Authenticator : INotifyPropertyChanged
             this.FriendlyErrorMessage = String.Empty;
             clientInformation = await this.accountsService.GetAccessTokenAsync(this.Email, this.Password);
             this.settings.SetTokens(clientInformation);
-            this.SuccessfullyAuthenticated?.Invoke(this, EventArgs.Empty);
+            this.SuccessfullyAuthenticated?.Invoke(this, clientInformation);
         }
         catch (AuthenticationFailedException)
         {

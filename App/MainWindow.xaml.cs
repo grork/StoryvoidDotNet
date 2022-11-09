@@ -31,7 +31,7 @@ public sealed partial class MainWindow : Window
 
     private void AuthenticationControl_SuccessfullyAuthenticated(object? sender, ClientInformation e)
     {
-        var authenticator = sender as AuthenticationControl;
+        var authenticator = sender as Authenticator;
         authenticator!.SuccessfullyAuthenticated -= AuthenticationControl_SuccessfullyAuthenticated;
         this.SwitchToSignedIn();
     }
@@ -44,8 +44,11 @@ public sealed partial class MainWindow : Window
 
     private void SwitchToSignedOut()
     {
-        var authenticationControl = new AuthenticationControl();
-        authenticationControl.SuccessfullyAuthenticated += AuthenticationControl_SuccessfullyAuthenticated;
+        var accounts = new Accounts(this.settings.GetTokens()!);
+        var authenticator = new Authenticator(accounts, this.settings);
+        authenticator.SuccessfullyAuthenticated += AuthenticationControl_SuccessfullyAuthenticated;
+
+        var authenticationControl = new AuthenticationControl(authenticator);
         this.Content = authenticationControl;
 
         this.CleanupDB();

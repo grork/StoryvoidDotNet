@@ -13,17 +13,9 @@ public sealed partial class AuthenticationControl : UserControl
 {
     public Authenticator ViewModel { get; private set; }
 
-    /// <summary>
-    /// Raised when we have successfully authenticated, allowing listeners to
-    /// react with an appropriate experience.
-    /// </summary>
-    public event EventHandler<ClientInformation>? SuccessfullyAuthenticated;
-
-    public AuthenticationControl()
+    public AuthenticationControl(Authenticator authenticator)
     {
-        var settings = new AccountSettings();
-        var accounts = new Accounts(settings.GetTokens()!);
-        this.ViewModel = new Authenticator(accounts, settings);
+        this.ViewModel = authenticator;
 
         this.InitializeComponent();
     }
@@ -55,7 +47,5 @@ public sealed partial class AuthenticationControl : UserControl
             this.AccountTextBox.Focus(FocusState.Programmatic);
             return;
         }
-
-        this.SuccessfullyAuthenticated?.Invoke(this, result!);
     }
 }

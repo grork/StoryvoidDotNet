@@ -1,4 +1,5 @@
 using Codevoid.Storyvoid.ViewModels;
+using Codevoid.Utilities.OAuth;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;
 
@@ -94,12 +95,13 @@ public class AuthenticatorTests
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
-        var successfulEventRaised = false;
+        ClientInformation? clientInfoFromEvent = null;
 
-        this.authenticator.SuccessfullyAuthenticated += (o, e) => successfulEventRaised = true;
+        this.authenticator.SuccessfullyAuthenticated += (o, e) => clientInfoFromEvent = e;
 
-        _ = await this.authenticator.Authenticate();
-        Assert.True(successfulEventRaised, "Event wasn't raised");
+        var clientInformation = await this.authenticator.Authenticate();
+        Assert.NotNull(clientInfoFromEvent);
+        Assert.Equal(clientInformation, clientInfoFromEvent);
 
     }
 
