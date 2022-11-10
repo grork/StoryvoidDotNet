@@ -1,5 +1,4 @@
-﻿using System;
-using Codevoid.Storyvoid;
+﻿using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.ViewModels;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;

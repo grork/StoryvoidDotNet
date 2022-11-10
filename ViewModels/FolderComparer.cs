@@ -1,5 +1,4 @@
-﻿using System;
-namespace Codevoid.Storyvoid.ViewModels;
+﻿namespace Codevoid.Storyvoid.ViewModels;
 
 /// <summary>
 /// Sorts folders so that they follow unread/archive/synced/local only ordering
