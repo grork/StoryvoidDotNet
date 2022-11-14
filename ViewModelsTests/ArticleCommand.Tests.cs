@@ -1,14 +1,37 @@
+using System.Diagnostics.CodeAnalysis;
 using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.ViewModels.Commands;
 using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;
 
-public class ArticleCommandTests : IDisposable
+internal abstract class CommandTestHelper<TCommand> : IDisposable where TCommand : ArticleCommand
 {
     private SqliteConnection connection;
-    private MockArticleCommand command;
+    internal IArticleDatabase articleDatabase;
+    internal IFolderDatabase folderDatabase;
+    internal TCommand command;
 
+    protected CommandTestHelper()
+    {
+        var (connection, folders, _, articles, _) = TestUtilities.GetDatabases();
+        this.connection = connection;
+        this.articleDatabase = articles;
+        this.folderDatabase = folders;
+        this.command = this.MakeCommand();
+    }
+
+    protected abstract TCommand MakeCommand();
+
+    public void Dispose()
+    {
+        this.connection?.Close();
+        this.connection?.Dispose();
+    }
+}
+
+public class ArticleCommandTests : IDisposable
+{
     private class MockArticleCommand : ArticleCommand
     {
         public event EventHandler<long>? Executed;
@@ -22,35 +45,34 @@ public class ArticleCommandTests : IDisposable
         }
     }
 
-    public ArticleCommandTests()
+    private class Helper : CommandTestHelper<MockArticleCommand>
     {
-        var (connection, _, _, articles, _) = TestUtilities.GetDatabases();
-        this.command = new MockArticleCommand(articles);
-        this.connection = connection;
+        protected override MockArticleCommand MakeCommand() => new MockArticleCommand(this.articleDatabase);
     }
+
+    private Helper helper = new Helper();
 
     public void Dispose()
     {
-        this.connection?.Close();
-        this.connection?.Dispose();
+        this.helper.Dispose();
     }
 
     private void AssertExecutedNotCalled(object? parameter)
     {
-        this.command.Executed += (o, arg) => Assert.Fail("Shouldn't be called");
+        this.helper.command.Executed += (o, arg) => Assert.Fail("Shouldn't be called");
     }
 
     private void AssertExecutedCalledWithCorrectParamter(long parameter)
     {
         var wasRaised = false;
         var value = 0L;
-        this.command.Executed += (o, a) =>
+        this.helper.command.Executed += (o, a) =>
         {
             wasRaised = true;
             value = a;
         };
 
-        this.command.Execute(parameter);
+        this.helper.command.Execute(parameter);
 
         Assert.True(wasRaised);
         Assert.Equal(parameter, value);
@@ -60,57 +82,57 @@ public class ArticleCommandTests : IDisposable
     public void CallingRaiseCanExecuteChangedRaisesEvent()
     {
         var wasRaised = false;
-        this.command.CanExecuteChanged += (o, a) => wasRaised = true;
-        this.command.RaiseCanExecuteChanged();
+        this.helper.command.CanExecuteChanged += (o, a) => wasRaised = true;
+        this.helper.command.RaiseCanExecuteChanged();
         Assert.True(wasRaised);
     }
 
     [Fact]
     public void PassingNullToCanExecuteReturnsFalse()
     {
-        Assert.False(this.command.CanExecute(null));
+        Assert.False(this.helper.command.CanExecute(null));
     }
 
     [Fact]
     public void PassingNonLongToCanExecuteReturnsFalse()
     {
-        Assert.False(this.command.CanExecute(String.Empty));
+        Assert.False(this.helper.command.CanExecute(String.Empty));
     }
 
     [Fact]
     public void PassingZeroToCanExecuteReturnsFalse()
     {
-        Assert.False(this.command.CanExecute(0L));
+        Assert.False(this.helper.command.CanExecute(0L));
     }
 
     [Fact]
     public void PassingBelowZeroToCanExecuteReturnsFalse()
     {
-        Assert.False(this.command.CanExecute(-1L));
+        Assert.False(this.helper.command.CanExecute(-1L));
     }
 
     [Fact]
     public void ExecutingCommandWithNullNoListenerSucceeds()
     {
-        this.command.Execute(null);
+        this.helper.command.Execute(null);
     }
 
     [Fact]
     public void ExecutingCommandWithNoLongNoListenerSucceeds()
     {
-        this.command.Execute(String.Empty);
+        this.helper.command.Execute(String.Empty);
     }
 
     [Fact]
     public void ExecutingCommandWithZeroNoListenerSucceeds()
     {
-        this.command.Execute(0L);
+        this.helper.command.Execute(0L);
     }
 
     [Fact]
     public void ExecutingCommandWithBelowZeroNoListenerSucceeds()
     {
-        this.command.Execute(-1L);
+        this.helper.command.Execute(-1L);
     }
 
     [Fact]
