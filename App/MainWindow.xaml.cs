@@ -1,6 +1,7 @@
 ﻿using Codevoid.Instapaper;
 using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Controls;
+using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.ViewModels;
 using Codevoid.Utilities.OAuth;
@@ -19,6 +20,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         this.InitializeComponent();
+        this.InitialNavigation();
 
         if (settings.HasTokens)
         {
@@ -49,7 +51,7 @@ public sealed partial class MainWindow : Window
         authenticator.SuccessfullyAuthenticated += AuthenticationControl_SuccessfullyAuthenticated;
 
         var authenticationControl = new AuthenticationControl(authenticator);
-        this.Content = authenticationControl;
+        this.DebugContent.Content = authenticationControl;
 
         this.CleanupDB();
     }
@@ -132,7 +134,7 @@ public sealed partial class MainWindow : Window
         content.Children.Add(buttons);
         content.Children.Add(articleListControl);
 
-        this.Content = content;
+        this.DebugContent.Content = content;
     }
 
     private async void PerformSync_Click(object sender, RoutedEventArgs e)
@@ -162,5 +164,10 @@ public sealed partial class MainWindow : Window
             button.IsEnabled = true;
             syncConnection.Close();
         }
+    }
+
+    private void InitialNavigation()
+    {
+        this.MainThing.Navigate(typeof(PlaceholderPage));
     }
 }
