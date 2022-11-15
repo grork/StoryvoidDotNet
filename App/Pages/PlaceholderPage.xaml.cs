@@ -10,10 +10,9 @@ namespace Codevoid.Storyvoid.Pages;
 /// provides access to some simple generic operations such as back, forward,
 /// and clearing of the stack. Allows clearing of the saved account too.
 /// </summary>
-public sealed partial class PlaceholderPage : Page
+internal sealed partial class PlaceholderPage : Page
 {
-    private AppUtilities? utilities;
-
+    private IAppUtilities? utilities;
     public PlaceholderPage()
     {
         this.InitializeComponent();
@@ -21,10 +20,15 @@ public sealed partial class PlaceholderPage : Page
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
-        base.OnNavigatedTo(e);
-        this.utilities = new AppUtilities(this.Frame);
+        object? parameter = null;
+        var args = e.Parameter as NavigationParameter;
+        if(args != null)
+        {
+            this.utilities = args.Utilities;
+            parameter = args.Parameter;
+        }
 
-        this.ParameterContent.Text = (e.Parameter != null) ? e.Parameter.ToString() : "No Parameter";
+        this.ParameterContent.Text = (parameter != null) ? parameter.ToString() : "No Parameter";
     }
 
     private void GoBack_Click(object sender, RoutedEventArgs e) => this.Frame.GoBack();
