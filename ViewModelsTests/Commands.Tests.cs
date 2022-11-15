@@ -113,3 +113,44 @@ public class MoveCommandTests : IDisposable
         Assert.NotNull(articleThatShouldntHaveMoved);
     }
 }
+
+public class ArchiveCommandTests : IDisposable
+{
+    private class Helper : CommandTestHelper<ArchiveCommand>
+    {
+        protected override ArchiveCommand MakeCommand() => new ArchiveCommand(this.articleDatabase);
+    }
+
+    private Helper helper = new Helper();
+
+    public void Dispose()
+    {
+        this.helper.Dispose();
+    }
+
+    [Fact]
+    public void CanArchiveArticle()
+    {
+        var articleToMove = this.helper.articleDatabase.FirstArticleInFolder(WellKnownLocalFolderIds.Unread)!.Id;
+
+        Assert.True(this.helper.command.CanExecute(articleToMove));
+
+        this.helper.command.Execute(articleToMove);
+
+        var articleInDestinationFolder = this.helper.articleDatabase.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First((a) => articleToMove == a.Id);
+        Assert.NotNull(articleInDestinationFolder);
+    }
+
+    [Fact]
+    public void ArchivingArticleThatIsAlreadyArchivedDoesNothing()
+    {
+        var articleToMove = this.helper.articleDatabase.FirstArticleInFolder(WellKnownLocalFolderIds.Archive)!.Id;
+
+        Assert.True(this.helper.command.CanExecute(articleToMove));
+
+        this.helper.command.Execute(articleToMove);
+
+        var articleThatShouldntHaveMoved = this.helper.articleDatabase.ListArticlesForLocalFolder(WellKnownLocalFolderIds.Archive).First((a) => a.Id == articleToMove);
+        Assert.NotNull(articleThatShouldntHaveMoved);
+    }
+}
