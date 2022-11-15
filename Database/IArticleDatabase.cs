@@ -189,6 +189,14 @@ public interface IArticleDatabase
     /// </param>
     /// <returns>The updated details</returns>
     DatabaseLocalOnlyArticleState UpdateLocalOnlyArticleState(DatabaseLocalOnlyArticleState updatedLocalOnlyArticleState);
+
+    /// <summary>
+    /// Returns the local folder ID of the article, if it's present in a folder.
+    /// If the article orphaned, null will be returned.
+    /// </summary>
+    /// <param name="articleId">Article ID to get the folder for</param>
+    /// <returns>Local folder ID if in a folder</returns>
+    long? GetLocalFolderIdForArticle(long articleId);
 }
 
 /// <summary>

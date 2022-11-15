@@ -423,19 +423,10 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
 
         // Check and see if the article is already in the destination folder. If
         // it is, it means we have nothing to do, and we can just go home.
-        using (var isAlreadyInTargetFolder = c.CreateCommand(@"
-            SELECT count(*) FROM article_to_folder
-            WHERE article_id = @articleId AND local_folder_id = @localFolderId
-        "))
+        var currentLocalFolderId = GetLocalFolderIdForArticle(c, articleId);
+        if (currentLocalFolderId == localFolderId)
         {
-            isAlreadyInTargetFolder.AddParameter("@articleId", articleId);
-            isAlreadyInTargetFolder.AddParameter("@localFolderId", localFolderId);
-
-            var folderPairs = (long)(isAlreadyInTargetFolder.ExecuteScalar()!);
-            if (folderPairs == 1)
-            {
-                return (false, null);
-            }
+            return (false, null);
         }
 
         // If there *is* a folder reference, we need to delete it first, so we
@@ -543,6 +534,28 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
         t?.Commit();
 
         return wasDeleted && wasInFolder;
+    }
+
+    /// <inheritdoc/>
+    public long? GetLocalFolderIdForArticle(long articleId)
+    {
+        return GetLocalFolderIdForArticle(this.connection, articleId);
+    }
+
+    private static long? GetLocalFolderIdForArticle(IDbConnection c, long articleId)
+    {
+        using var query = c.CreateCommand(@"
+            SELECT local_folder_id
+            FROM article_to_folder
+            WHERE article_id = @articleId
+        ");
+
+        query.AddParameter("@articleId", articleId);
+
+        var rawFolderId = query.ExecuteScalar();
+        var folderId = rawFolderId as long?;
+
+        return folderId;
     }
 
     #region Event Helpers
