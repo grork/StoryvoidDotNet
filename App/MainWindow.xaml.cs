@@ -3,6 +3,7 @@ using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Controls;
 using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.Sync;
+using Codevoid.Storyvoid.Utilities;
 using Codevoid.Storyvoid.ViewModels;
 using Codevoid.Utilities.OAuth;
 using Microsoft.Data.Sqlite;
@@ -17,9 +18,11 @@ namespace Codevoid.Storyvoid.App;
 public sealed partial class MainWindow : Window
 {
     private readonly IAccountSettings settings = new AccountSettings();
+    private readonly AppUtilities utilities;
     public MainWindow()
     {
         this.InitializeComponent();
+        this.utilities = new AppUtilities(this.MainThing);
         this.InitialNavigation();
 
         if (settings.HasTokens)
@@ -168,6 +171,12 @@ public sealed partial class MainWindow : Window
 
     private void InitialNavigation()
     {
-        this.MainThing.Navigate(typeof(PlaceholderPage));
+        if(!this.settings.HasTokens)
+        {
+            this.utilities.ShowLogin();
+            return;
+        }
+
+        this.utilities.ShowList();
     }
 }
