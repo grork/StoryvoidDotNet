@@ -9,8 +9,8 @@ internal class DeleteCommand : ArticleCommand
     { }
 
     /// <inheritdoc />
-    protected override void CoreExecute(long articleId)
+    protected override void CoreExecute(DatabaseArticle article)
     {
-        this.database.DeleteArticle(articleId);
+        this.database.DeleteArticle(article.Id);
     }
 }

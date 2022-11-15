@@ -6,7 +6,7 @@ namespace Codevoid.Storyvoid.ViewModels.Commands;
 /// <summary>
 /// Base class to simplify implementing commands that work against articles.
 /// Handles <see ref="CanExecute" /> behaviour for enablement when a valid
-/// article ID has been supplied.
+/// article has been supplied.
 /// 
 /// Additionally only called <see ref="CoreExecute" /> if the command can be
 /// executed.
@@ -35,20 +35,30 @@ internal abstract class ArticleCommand : ICommand
     /// <inheritdoc />
     public bool CanExecute(object? parameter)
     {
-        long? articleId = parameter as long?;
-        return this.CoreCanExecute(articleId);
+        var article = parameter as DatabaseArticle;
+        if(article is null)
+        {
+            return false;
+        }
+
+        return this.CoreCanExecute(article);
     }
 
     /// <inheritdoc />
     public void Execute(object? parameter)
     {
-        long? articleId = parameter as long?;
-        if(!this.CoreCanExecute(articleId))
+        var article = parameter as DatabaseArticle;
+        if(article is null)
         {
             return;
         }
 
-        this.CoreExecute(articleId!.Value);
+        if(!this.CoreCanExecute(article))
+        {
+            return;
+        }
+
+        this.CoreExecute(article);
     }
     #endregion
 
@@ -56,17 +66,17 @@ internal abstract class ArticleCommand : ICommand
     /// Derived classes can override this to provide custom logic on deciding
     /// if they should be enabled or not
     /// </summary>
-    /// <param name="articleId">Article ID being checked for execution</param>
+    /// <param name="articleId">Article being checked for execution</param>
     /// <returns>True if can be executed, false otherwise</returns>
-    protected virtual bool CoreCanExecute(long? articleId)
+    protected virtual bool CoreCanExecute(DatabaseArticle article)
     {
-        return articleId.HasValue && articleId.Value > 0;
+        return true;
     }
 
     /// <summary>
     /// Required to be overridden. Actually performs the work of the command.
     /// Only called if <see ref="CanExecute" /> is true.
     /// </summary>
-    /// <param name="articleId">Article ID to operate on</param>
-    protected abstract void CoreExecute(long articleId);
+    /// <param name="articleId">Article to operate on</param>
+    protected abstract void CoreExecute(DatabaseArticle article);
 }

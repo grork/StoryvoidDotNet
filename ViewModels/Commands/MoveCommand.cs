@@ -15,9 +15,9 @@ internal class MoveCommand : ArticleCommand
     { }
 
     /// <inheritdoc />
-    protected override bool CoreCanExecute(long? articleId)
+    protected override bool CoreCanExecute(DatabaseArticle article)
     {
-        var baseValid = base.CoreCanExecute(articleId);
+        var baseValid = base.CoreCanExecute(article);
 
         if(!baseValid)
         {
@@ -28,11 +28,11 @@ internal class MoveCommand : ArticleCommand
     }
 
     /// <inheritdoc />
-    protected override void CoreExecute(long articleId)
+    protected override void CoreExecute(DatabaseArticle article)
     {
         try
         {
-            this.database.MoveArticleToFolder(articleId, this.DestinationLocalFolderId);
+            this.database.MoveArticleToFolder(article.Id, this.DestinationLocalFolderId);
         }
         catch (FolderNotFoundException)
         // When the folder doesn't exist, an exception is raised. We don't want

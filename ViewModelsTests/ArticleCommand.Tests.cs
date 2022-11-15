@@ -39,9 +39,9 @@ public class ArticleCommandTests : IDisposable
         public MockArticleCommand(IArticleDatabase database) : base(database)
         { }
         
-        protected override void CoreExecute(long articleId)
+        protected override void CoreExecute(DatabaseArticle article)
         {
-            this.Executed?.Invoke(this, articleId);
+            this.Executed?.Invoke(this, article.Id);
         }
     }
 
@@ -62,7 +62,7 @@ public class ArticleCommandTests : IDisposable
         this.helper.command.Executed += (o, arg) => Assert.Fail("Shouldn't be called");
     }
 
-    private void AssertExecutedCalledWithCorrectParamter(long parameter)
+    private void AssertExecutedCalledWithCorrectParamter(DatabaseArticle parameter)
     {
         var wasRaised = false;
         var value = 0L;
@@ -75,7 +75,7 @@ public class ArticleCommandTests : IDisposable
         this.helper.command.Execute(parameter);
 
         Assert.True(wasRaised);
-        Assert.Equal(parameter, value);
+        Assert.Equal(parameter.Id, value);
     }
 
     [Fact]
@@ -156,6 +156,7 @@ public class ArticleCommandTests : IDisposable
     [Fact]
     public void ExecutingCommandWithValidArticleIdExecutedWithCorrectParameter()
     {
-        this.AssertExecutedCalledWithCorrectParamter(1L);
+        var realArticle = this.helper.articleDatabase.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.AssertExecutedCalledWithCorrectParamter(realArticle);
     }
 }

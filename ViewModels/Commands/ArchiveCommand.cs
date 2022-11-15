@@ -4,9 +4,9 @@ internal class ArchiveCommand : ArticleCommand
 {
     public ArchiveCommand(IArticleDatabase database) : base(database)
     { }
-    
-    protected override void CoreExecute(long articleId)
+
+    protected override void CoreExecute(DatabaseArticle article)
     {
-        this.database.MoveArticleToFolder(articleId, WellKnownLocalFolderIds.Archive);
+        this.database.MoveArticleToFolder(article.Id, WellKnownLocalFolderIds.Archive);
     }
 }
