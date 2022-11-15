@@ -1091,4 +1091,43 @@ public sealed class ArticleDatabaseTests : IDisposable
             );
         });
     }
+
+    [Fact]
+    public void LocalFolderIdIsReturnedForArticleInUnread()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        var folderId = this.db.GetLocalFolderIdForArticle(article.Id);
+        Assert.Equal(WellKnownLocalFolderIds.Unread, folderId);
+    }
+
+    [Fact]
+    public void LcoalFolderIdIsReturneForArticleInArchive()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Archive);
+        var folderId = this.db.GetLocalFolderIdForArticle(article.Id);
+        Assert.Equal(WellKnownLocalFolderIds.Archive, folderId);
+    }
+
+    [Fact]
+    public void LocalFolderIdIsReturnedForArticleInCustomFolder()
+    {
+        var article = this.AddRandomArticleToFolder(this.CustomFolder1.LocalId);
+        var folderId = this.db.GetLocalFolderIdForArticle(article.Id);
+        Assert.Equal(this.CustomFolder1.LocalId, folderId);
+    }
+
+    [Fact]
+    public void LocalFolderIdIsNotReturnedForNonExistantArticle()
+    {
+        Assert.Null(this.db.GetLocalFolderIdForArticle(1L));
+    }
+
+    [Fact]
+    public void LocalFolderIdIsNotReturnedForArticleThatIsntInAFolder()
+    {
+        var article = this.AddRandomArticleToFolder(WellKnownLocalFolderIds.Unread);
+        this.db.RemoveArticleFromAnyFolder(article.Id);
+
+        Assert.Null(this.db.GetLocalFolderIdForArticle(article.Id));
+    }
 }
