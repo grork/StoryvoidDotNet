@@ -17,14 +17,7 @@ internal class MoveCommand : ArticleCommand
     /// <inheritdoc />
     protected override bool CoreCanExecute(DatabaseArticle article)
     {
-        var baseValid = base.CoreCanExecute(article);
-
-        if(!baseValid)
-        {
-            return false;
-        }
-
-        return this.DestinationLocalFolderId > 0;
+        return base.CoreCanExecute(article) && this.DestinationLocalFolderId > 0;
     }
 
     /// <inheritdoc />
