@@ -1,5 +1,4 @@
 ﻿using Codevoid.Storyvoid.ViewModels;
-using Microsoft.UI.Xaml.Controls;
 
 namespace Codevoid.Storyvoid.Controls;
 

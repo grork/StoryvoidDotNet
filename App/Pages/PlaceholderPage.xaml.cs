@@ -1,7 +1,5 @@
 using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Utilities;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 
 namespace Codevoid.Storyvoid.Pages;

@@ -1,6 +1,5 @@
 ﻿using Codevoid.Storyvoid.ViewModels;
 using Codevoid.Utilities.OAuth;
-using System.Reflection;
 using Windows.ApplicationModel;
 using Windows.Storage;
 

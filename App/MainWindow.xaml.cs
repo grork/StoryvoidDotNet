@@ -1,15 +1,12 @@
 ﻿using Codevoid.Instapaper;
 using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Controls;
-using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.Utilities;
 using Codevoid.Storyvoid.ViewModels;
 using Codevoid.Utilities.OAuth;
 using Microsoft.Data.Sqlite;
 using Microsoft.UI.Text;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 

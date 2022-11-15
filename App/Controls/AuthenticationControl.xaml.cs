@@ -1,11 +1,5 @@
-﻿using Codevoid.Instapaper;
-using Codevoid.Storyvoid.App.Implementations;
-using Codevoid.Storyvoid.ViewModels;
-using Codevoid.Utilities.OAuth;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
+﻿using Codevoid.Storyvoid.ViewModels;
 using Microsoft.UI.Xaml.Input;
-using System.Windows.Input;
 using Windows.System;
 
 namespace Codevoid.Storyvoid.Controls;
