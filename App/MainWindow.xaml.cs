@@ -16,11 +16,11 @@ public sealed partial class MainWindow : Window
 {
     private readonly IAccountSettings settings = new AccountSettings();
     private readonly AppUtilities utilities;
-    public MainWindow()
+    public MainWindow(Task<SqliteConnection> dbTask)
     {
         this.InitializeComponent();
-        this.utilities = new AppUtilities(this.MainThing);
-        this.InitialNavigation();
+        this.utilities = new AppUtilities(this.MainThing, dbTask);
+        this.utilities.ShowFirstPage();
 
         if (settings.HasTokens)
         {
@@ -59,30 +59,21 @@ public sealed partial class MainWindow : Window
     private IArticleDatabase? articleDatabase;
     private IFolderDatabase? folderDatabase;
     private DispatcherDatabaseEvents? dbEvents;
-    private IDbConnection? connection;
 
-    [MemberNotNull(nameof(articleDatabase))]
-    [MemberNotNull(nameof(folderDatabase))]
-    [MemberNotNull(nameof(dbEvents))]
-    private void OpenDatabase()
+    private async Task OpenDatabase()
     {
-        var connection = new SqliteConnection("Data Source=StaysInMemory;Mode=Memory;Cache=Shared");
-        connection.Open(); 
-        connection.CreateDatabaseIfNeeded();
-
-        this.connection = connection;
-        this.dbEvents = new DispatcherDatabaseEvents(this.DispatcherQueue);
-
-        this.articleDatabase = InstapaperDatabase.GetArticleDatabase(connection, this.dbEvents);
-        this.folderDatabase = InstapaperDatabase.GetFolderDatabase(connection, this.dbEvents);
+        var dataLayer = await this.utilities.GetDataLayer();
+        this.dbEvents = dataLayer.Events;
+        this.articleDatabase = dataLayer.Articles;
+        this.folderDatabase = dataLayer.Folders;
     }
 
     private void CleanupDB()
     {
-        this.connection?.Dispose();
+        this.utilities.Dispose();
     }
 
-    private void SwitchToSignedIn()
+    private async void SwitchToSignedIn()
     {
         var label = new TextBlock()
         {
@@ -109,11 +100,11 @@ public sealed partial class MainWindow : Window
         buttons.Children.Add(performSyncButton);
 
         // Open the database for use in the article list
-        this.OpenDatabase();
+        await this.OpenDatabase();
         var articleList = new ArticleList(
-            this.folderDatabase,
-            this.articleDatabase,
-            this.dbEvents,
+            this.folderDatabase!,
+            this.articleDatabase!,
+            this.dbEvents!,
             new ArticleListSettings()
         );
 
@@ -142,7 +133,7 @@ public sealed partial class MainWindow : Window
         var button = (Button)sender;
 
         var tokens = this.settings.GetTokens()!;
-        using var syncConnection = new SqliteConnection(this.connection!.ConnectionString);
+        using var syncConnection = new SqliteConnection(this.utilities!.ConnectionString());
         syncConnection.Open();
 
         var folders = InstapaperDatabase.GetFolderDatabase(syncConnection, this.dbEvents);
@@ -164,16 +155,5 @@ public sealed partial class MainWindow : Window
             button.IsEnabled = true;
             syncConnection.Close();
         }
-    }
-
-    private void InitialNavigation()
-    {
-        if(!this.settings.HasTokens)
-        {
-            this.utilities.ShowLogin();
-            return;
-        }
-
-        this.utilities.ShowList();
     }
 }

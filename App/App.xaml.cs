@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Text;
+﻿using Microsoft.Data.Sqlite;
+using Microsoft.UI.Text;
 using System.Diagnostics;
 using Windows.ApplicationModel;
 
@@ -37,7 +38,18 @@ public partial class Launcher : Application
         }
         else
         {
-            mainWindow = new MainWindow();
+            // Initiate DB opening on a separate thread, so that by the time we
+            // actually want it, it shuld be complete.
+            var dbTask = Task.Run(() =>
+            {
+                var connection = new SqliteConnection("Data Source=StaysInMemory;Mode=Memory;Cache=Shared");
+                connection.Open();
+                connection.CreateDatabaseIfNeeded();
+
+                return connection;
+            });
+
+            mainWindow = new MainWindow(dbTask);
 #pragma warning restore
         }
 

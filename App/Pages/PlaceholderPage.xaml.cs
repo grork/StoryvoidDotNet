@@ -4,6 +4,8 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Codevoid.Storyvoid.Pages;
 
+internal record PlaceholderParameter(object? Parameter, Task<IFolderDatabase> FolderDatabase);
+
 /// <summary>
 /// Page that serves as a placeholder for other pages that have not yet been
 /// implemented. Displays the parameter supplied, or a number. Additionally
@@ -13,22 +15,24 @@ namespace Codevoid.Storyvoid.Pages;
 internal sealed partial class PlaceholderPage : Page
 {
     private IAppUtilities? utilities;
+    private IFolderDatabase? folders;
+
     public PlaceholderPage()
     {
         this.InitializeComponent();
     }
 
-    protected override void OnNavigatedTo(NavigationEventArgs e)
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
-        object? parameter = null;
-        var args = e.Parameter as NavigationParameter;
-        if(args != null)
-        {
-            this.utilities = args.Utilities;
-            parameter = args.Parameter;
-        }
+        var args = (NavigationParameter)e.Parameter;
+     
+        this.utilities = args.Utilities;
+        var placeholderParam = (PlaceholderParameter)(args.Parameter!);
+        var parameter = placeholderParam.Parameter;
 
         this.ParameterContent.Text = (parameter != null) ? parameter.ToString() : "No Parameter";
+
+        this.folders = await placeholderParam.FolderDatabase;
     }
 
     private void GoBack_Click(object sender, RoutedEventArgs e) => this.Frame.GoBack();
@@ -48,4 +52,6 @@ internal sealed partial class PlaceholderPage : Page
         this.Frame.BackStack.Clear();
         this.Frame.ForwardStack.Clear();
     }
+
+    private void CreateRandomFolder_Click(object sender, RoutedEventArgs e) => this.folders?.CreateFolder(DateTime.Now.Ticks.ToString());
 }
