@@ -1,4 +1,4 @@
-<Window x:Class="Codevoid.Test.Storyvoid.MainWindow"
+<Window x:Class="Codevoid.Test.Storyvoid.TestWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Frame />

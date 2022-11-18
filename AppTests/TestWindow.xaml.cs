@@ -1,6 +1,6 @@
 namespace Codevoid.Test.Storyvoid;
 
-public sealed partial class MainWindow : Window
+public sealed partial class TestWindow : Window
 {
-    public MainWindow() => this.InitializeComponent();
+    public TestWindow() => this.InitializeComponent();
 }

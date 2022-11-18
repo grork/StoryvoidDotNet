@@ -11,7 +11,7 @@ public partial class App : Application
     {
         UnitTestClient.CreateDefaultUI();
 
-        m_window = new MainWindow();
+        m_window = new TestWindow();
         m_window.Activate();
 
         UITestMethodAttribute.DispatcherQueue = m_window.DispatcherQueue;
