@@ -148,7 +148,7 @@ internal class OAuthSigningHelper
             foreach (var kvp in requestPayload)
             {
                 Debug.Assert(kvp.Value.Count == 1, "Unexpected number of values in the payload");
-                merged.Add(kvp.Key, kvp.Value[0]);
+                merged.Add(kvp.Key, kvp.Value[0]!);
             }
         }
         else
