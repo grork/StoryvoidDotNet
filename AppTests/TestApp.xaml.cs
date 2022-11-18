@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestPlatform.TestExecutor;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
+using System.ComponentModel;
 
 [assembly:WinUITestTarget(typeof(Codevoid.Test.Storyvoid.App))]
 
@@ -7,20 +8,35 @@ namespace Codevoid.Test.Storyvoid;
 
 public partial class App : Application
 {
-    public App() => this.InitializeComponent();
+    internal static App? Instance { get; private set; }
+
+    public App()
+    {
+        App.Instance = this;
+        this.InitializeComponent();
+    }
 
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         UnitTestClient.CreateDefaultUI();
 
-        m_window = new TestWindow();
-        m_window.Activate();
+        TestWindow = new TestWindowWithFrame();
+        TestWindow.Activate();
 
-        UITestMethodAttribute.DispatcherQueue = m_window.DispatcherQueue;
+        UITestMethodAttribute.DispatcherQueue = TestWindow.DispatcherQueue;
 
         // Replace back with e.Arguments when https://github.com/microsoft/microsoft-ui-xaml/issues/3368 is fixed
         UnitTestClient.Run(Environment.CommandLine);
     }
 
-    private Window? m_window;
+    internal TestWindowWithFrame? TestWindow { get; private set; }
+}
+
+internal class TestWindowWithFrame : Window
+{
+    internal readonly Frame Frame;
+    internal TestWindowWithFrame(): base()
+    {
+        this.Frame = new Frame();
+    }
 }

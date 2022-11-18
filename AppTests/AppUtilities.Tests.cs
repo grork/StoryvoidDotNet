@@ -1,4 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
+﻿using Codevoid.Storyvoid.Utilities;
+using Microsoft.Data.Sqlite;
+using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 
 namespace Codevoid.Test.Storyvoid;
 
@@ -6,8 +8,13 @@ namespace Codevoid.Test.Storyvoid;
 public class AppUtilitiesTests
 {
     [UITestMethod]
-    public void FirstTest()
+    public void CanInstantiate()
     {
-        Assert.AreEqual(0, 0);
+        var utilities = new AppUtilities(
+            App.Instance!.TestWindow!.Frame,
+            Task.FromResult(new SqliteConnection())
+        );
+
+        Assert.IsNotNull(utilities);
     }
 }

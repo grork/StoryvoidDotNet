@@ -41,7 +41,7 @@
     So, rather than making the app the odd duck, lets just rename the file used
     here.
     -->
-    <!--<ProjectPriFileName>TestResources.pri</ProjectPriFileName>-->
+    <ProjectPriFileName>TestResources.pri</ProjectPriFileName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -91,5 +91,9 @@
       <Generator>MSBuild:Compile</Generator>
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
     </ApplicationDefinition>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\App\App.csproj" />
   </ItemGroup>
 </Project>
