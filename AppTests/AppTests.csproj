@@ -17,6 +17,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    
+    <!--
+    Referencing another WinUI app as a project dependency will merge in the
+    resources from that dependency. Since the resource merging requires the
+    resources to be uniquely named this causes a problem when you merge them.
+    
+    So, rather than making the app the odd duck, lets just rename the file used
+    here.
+    -->
+    <ProjectPriFileName>TestResources.pri</ProjectPriFileName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -58,5 +68,9 @@
 
   <ItemGroup>
     <ProjectCapability Include="TestContainer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\App\App.csproj" />
   </ItemGroup>
 </Project>
