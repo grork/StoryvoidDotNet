@@ -19,6 +19,21 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     
     <!--
+    Enable the WinApps SDK unit test stuff to work. See
+    https://github.com/microsoft/testfx/issues/1127 for more details
+    -->
+    <WindowsAppContainer>True</WindowsAppContainer>
+    <EnablePreviewMsixTooling>true</EnablePreviewMsixTooling>
+    
+    <!--
+    To help prevent a clash with the project reference to the app, we want
+    to rename the default app XAML file. Except this is implicitly imported
+    by the SDK targets files. So, we need to disable that. See further down
+    for the ApplicationDefinition that pulls things in correctly
+    -->
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+
+    <!--
     Referencing another WinUI app as a project dependency will merge in the
     resources from that dependency. Since the resource merging requires the
     resources to be uniquely named this causes a problem when you merge them.
@@ -26,7 +41,7 @@
     So, rather than making the app the odd duck, lets just rename the file used
     here.
     -->
-    <ProjectPriFileName>TestResources.pri</ProjectPriFileName>
+    <!--<ProjectPriFileName>TestResources.pri</ProjectPriFileName>-->
   </PropertyGroup>
 
   <ItemGroup>
@@ -71,6 +86,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\App\App.csproj" />
+    <Page Remove="TestApp.xaml" />
+    <ApplicationDefinition Include="TestApp.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+    </ApplicationDefinition>
   </ItemGroup>
 </Project>

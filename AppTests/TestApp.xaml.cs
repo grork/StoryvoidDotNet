@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestPlatform.TestExecutor;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 
+[assembly:WinUITestTarget(typeof(Codevoid.Test.Storyvoid.App))]
+
 namespace Codevoid.Test.Storyvoid;
 
 public partial class App : Application
