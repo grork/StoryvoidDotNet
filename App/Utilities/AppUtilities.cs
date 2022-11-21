@@ -1,13 +1,8 @@
 ﻿using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.ViewModels;
-using Codevoid.Utilities.OAuth;
 using Microsoft.Data.Sqlite;
-using Microsoft.UI.Dispatching;
-using System.Data;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 namespace Codevoid.Storyvoid.Utilities;
 
