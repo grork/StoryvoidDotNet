@@ -52,8 +52,6 @@ public sealed partial class MainWindow : Window
 
         var authenticationControl = new AuthenticationControl(authenticator);
         this.DebugContent.Content = authenticationControl;
-
-        this.CleanupDB();
     }
 
     private IArticleDatabase? articleDatabase;
@@ -66,11 +64,6 @@ public sealed partial class MainWindow : Window
         this.dbEvents = dataLayer.Events;
         this.articleDatabase = dataLayer.Articles;
         this.folderDatabase = dataLayer.Folders;
-    }
-
-    private void CleanupDB()
-    {
-        this.utilities.Dispose();
     }
 
     private async void SwitchToSignedIn()
