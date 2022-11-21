@@ -1,5 +1,7 @@
-﻿using Codevoid.Storyvoid.App.Implementations;
+﻿using Codevoid.Instapaper;
+using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Pages;
+using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
 using System.Diagnostics;
@@ -26,6 +28,11 @@ interface IAppUtilities
     /// </summary>
     /// <param name="parameter">Optional parameter</param>
     void ShowPlaceholder(object? parameter = null);
+
+    /// <summary>
+    /// Performs a sync of articles, without the article download
+    /// </summary>
+    void PerformSyncWithoutDownloads(IDatabaseSyncEventSource eventSource);
 }
 
 /// <summary>
@@ -169,6 +176,32 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     internal string ConnectionString()
     {
         return this.dataLayer!.Connection.ConnectionString;
+    }
+
+    /// <inheritdoc />
+    public async void PerformSyncWithoutDownloads(IDatabaseSyncEventSource eventSource)
+    {
+        var tokens = this.accountSettings.GetTokens();
+        using var syncConnection = new SqliteConnection(this.ConnectionString());
+        syncConnection.Open();
+
+        var folders = InstapaperDatabase.GetFolderDatabase(syncConnection, this.dataLayer!.Events);
+        var folderChanges = InstapaperDatabase.GetFolderChangesDatabase(syncConnection);
+        var articles = InstapaperDatabase.GetArticleDatabase(syncConnection, this.dataLayer!.Events);
+        var articleChanges = InstapaperDatabase.GetArticleChangesDatabase(syncConnection);
+        var foldersClient = new FoldersClient(tokens);
+        var bookmarksClient = new BookmarksClient(tokens);
+
+        var sync = new InstapaperSync(folders, folderChanges, foldersClient, articles, articleChanges, bookmarksClient, eventSource);
+
+        try
+        {
+            await sync.SyncEverythingAsync();
+        }
+        finally
+        {
+            syncConnection.Close();
+        }
     }
 
     public void Dispose()

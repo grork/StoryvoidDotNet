@@ -1,6 +1,7 @@
 using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Utilities;
 using Microsoft.UI.Xaml.Navigation;
+using System.Collections.ObjectModel;
 
 namespace Codevoid.Storyvoid.Pages;
 
@@ -16,6 +17,7 @@ internal sealed partial class PlaceholderPage : Page
 {
     private IAppUtilities? utilities;
     private IFolderDatabase? folders;
+    public readonly IList<string> OperationLog = new ObservableCollection<string>();
 
     public PlaceholderPage()
     {
@@ -54,4 +56,20 @@ internal sealed partial class PlaceholderPage : Page
     }
 
     private void CreateRandomFolder_Click(object sender, RoutedEventArgs e) => this.folders?.CreateFolder(DateTime.Now.Ticks.ToString());
+
+    private void SyncNoDownload_Click(object sender, RoutedEventArgs e)
+    {
+        var button = (Button)sender;
+        button.IsEnabled = false;
+
+        var syncEvents = new DispatcherSyncEvents(this.DispatcherQueue);
+        syncEvents.SyncStarted += (o,a) => this.OperationLog.Add("Sync Started");
+        syncEvents.SyncEnded += (o, a) =>
+        {
+            this.OperationLog.Add("Sync Ended");
+            button.IsEnabled = true;
+        };
+
+        this.utilities!.PerformSyncWithoutDownloads(syncEvents);
+    }
 }

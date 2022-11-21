@@ -22,6 +22,17 @@
                        HorizontalAlignment="Center" />
         </StackPanel>
 
+        <ItemsControl Grid.Row="0"
+                      VerticalAlignment="Bottom"
+                      HorizontalAlignment="Stretch"
+                      ItemsSource="{x:Bind OperationLog}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                    <TextBlock Text="{x:Bind}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
@@ -39,6 +50,7 @@
             <Button Click="NewPlaceholder_Click">New Placeholder</Button>
             <Button Click="ClearCredentials_Click">Clear Credentials</Button>
             <Button Click="CreateRandomFolder_Click">Create Random Folder</Button>
+            <Button Click="SyncNoDownload_Click">Sync (no download)</Button>
         </StackPanel>
     </Grid>
 </Page>
