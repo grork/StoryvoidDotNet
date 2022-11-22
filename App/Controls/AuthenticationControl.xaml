@@ -42,8 +42,8 @@
                    Grid.Column="0"
                    Grid.ColumnSpan="3"
                    FontSize="72"
-                   FontWeight="ExtraBold"
-                   CharacterSpacing="-50"
+                   FontWeight="Black"
+                   CharacterSpacing="-20"
                    HorizontalAlignment="Center" />
 
         <StackPanel Grid.Column="1"
