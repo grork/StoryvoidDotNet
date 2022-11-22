@@ -3,6 +3,7 @@ using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.ViewModels;
+using Codevoid.Utilities.OAuth;
 using Microsoft.Data.Sqlite;
 using System.Diagnostics;
 
@@ -66,7 +67,19 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     }
 
     /// <inheritdoc />
-    public void ShowLogin() => this.ShowPlaceholder("Login");
+    public void ShowLogin()
+    {
+        var authenticator = new Authenticator(new Accounts(this.accountSettings.GetTokens()), this.accountSettings);
+
+        authenticator.SuccessfullyAuthenticated += Authenticator_SuccessfullyAuthenticated;
+        this.frame.Navigate(typeof(LoginPage), authenticator);
+    }
+
+    private void Authenticator_SuccessfullyAuthenticated(object? sender, ClientInformation clientInformation)
+    {
+        this.ShowList();
+        this.frame.BackStack.Clear();
+    }
 
     /// <inheritdoc/>
     public void ShowList()

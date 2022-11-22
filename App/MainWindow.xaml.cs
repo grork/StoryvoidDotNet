@@ -24,25 +24,6 @@ public sealed partial class MainWindow : Window
             this.SwitchToSignedIn();
             return;
         }
-
-        this.SwitchToSignedOut();
-    }
-
-    private void AuthenticationControl_SuccessfullyAuthenticated(object? sender, ClientInformation e)
-    {
-        var authenticator = sender as Authenticator;
-        authenticator!.SuccessfullyAuthenticated -= AuthenticationControl_SuccessfullyAuthenticated;
-        this.SwitchToSignedIn();
-    }
-
-    private void SwitchToSignedOut()
-    {
-        var accounts = new Accounts(this.settings.GetTokens()!);
-        var authenticator = new Authenticator(accounts, this.settings);
-        authenticator.SuccessfullyAuthenticated += AuthenticationControl_SuccessfullyAuthenticated;
-
-        var authenticationControl = new AuthenticationControl(authenticator);
-        this.DebugContent.Content = authenticationControl;
     }
 
     private IArticleDatabase? articleDatabase;

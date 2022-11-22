@@ -6,12 +6,10 @@ namespace Codevoid.Storyvoid.Controls;
 
 public sealed partial class AuthenticationControl : UserControl
 {
-    public Authenticator ViewModel { get; private set; }
+    public Authenticator? ViewModel { get; set; }
 
-    public AuthenticationControl(Authenticator authenticator)
+    public AuthenticationControl()
     {
-        this.ViewModel = authenticator;
-
         this.InitializeComponent();
     }
 
@@ -31,7 +29,7 @@ public sealed partial class AuthenticationControl : UserControl
     /// </summary>
     private async void AuthenticateHelper()
     {
-        var result = await this.ViewModel.Authenticate();
+        var result = await this.ViewModel!.Authenticate();
         if(result == null)
         {
             this.AccountTextBox.Focus(FocusState.Programmatic);
