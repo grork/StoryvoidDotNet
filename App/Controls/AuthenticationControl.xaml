@@ -68,7 +68,7 @@
             <Button x:Uid="Authenticator/LoginButton"
                     HorizontalAlignment="Center"
                     Margin="{StaticResource StandardMargin}"
-                    Style="{StaticResource AccentButtonStyle}"
+                    Style="{ThemeResource AccentButtonStyle}"
                     MinWidth="150"
                     Command="{x:Bind ViewModel}" />
 

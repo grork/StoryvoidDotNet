@@ -70,6 +70,11 @@ internal sealed partial class PlaceholderPage : Page
             button.IsEnabled = true;
         };
 
-        this.utilities!.PerformSyncWithoutDownloads(syncEvents);
+        this.utilities?.PerformSyncWithoutDownloads(syncEvents);
+    }
+
+    private void ShowLogin_Click(object sender, RoutedEventArgs e)
+    {
+        this.utilities?.ShowLogin();
     }
 }

@@ -7,9 +7,9 @@
         <Border HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 CornerRadius="8"
-                Background="{StaticResource CardBackgroundFillColorDefaultBrush}"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                 BorderThickness="1"
-                BorderBrush="{StaticResource ControlElevationBorderBrush}"
+                BorderBrush="{ThemeResource ControlElevationBorderBrush}"
                 Width="450"
                 Height="450">
             <localControls:AuthenticationControl x:Name="Control"

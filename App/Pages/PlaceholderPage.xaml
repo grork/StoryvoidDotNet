@@ -1,7 +1,6 @@
 <Page x:Class="Codevoid.Storyvoid.Pages.PlaceholderPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -48,6 +47,7 @@
             <Button IsEnabled="{x:Bind Frame.CanGoForward}" Click="GoForward_Click">Go Forward</Button>
             <Button Click="ClearStack_Click">Clear Stack</Button>
             <Button Click="NewPlaceholder_Click">New Placeholder</Button>
+            <Button Click="ShowLogin_Click">Show Login</Button>
             <Button Click="ClearCredentials_Click">Clear Credentials</Button>
             <Button Click="CreateRandomFolder_Click">Create Random Folder</Button>
             <Button Click="SyncNoDownload_Click">Sync (no download)</Button>
