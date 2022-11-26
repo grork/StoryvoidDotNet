@@ -10,11 +10,11 @@
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                 BorderThickness="1"
                 BorderBrush="{ThemeResource ControlElevationBorderBrush}"
-                Width="450"
-                Height="450">
+                Width="452"
+                Height="452">
             <localControls:AuthenticationControl x:Name="Control"
-                                                 Width="350"
-                                                 Height="350" />
+                                                 Width="352"
+                                                 Height="352" />
         </Border>
     </Grid>
 </Page>

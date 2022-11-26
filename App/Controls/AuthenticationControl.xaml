@@ -69,7 +69,7 @@
                     HorizontalAlignment="Center"
                     Margin="{StaticResource StandardMargin}"
                     Style="{ThemeResource AccentButtonStyle}"
-                    MinWidth="150"
+                    MinWidth="152"
                     Command="{x:Bind ViewModel}" />
 
             <TextBlock HorizontalAlignment="Stretch"
@@ -90,8 +90,8 @@
                       Grid.Column="0"
                       Grid.ColumnSpan="3"
                       IsActive="{x:Bind ViewModel.IsWorking}"
-                      Width="75"
-                      Height="75"
+                      Width="76"
+                      Height="76"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch" />
     </Grid>
