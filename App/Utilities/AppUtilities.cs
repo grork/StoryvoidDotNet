@@ -45,6 +45,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         IArticleDatabase Articles,
         IFolderDatabase Folders,
         DispatcherDatabaseEvents Events,
+        IDisposable Ledger,
         SqliteConnection Connection
     );
 
@@ -141,7 +142,8 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             var events = new DispatcherDatabaseEvents(this.frame.DispatcherQueue);
             var articleDB = InstapaperDatabase.GetArticleDatabase(dbConnection, events);
             var folderDB = InstapaperDatabase.GetFolderDatabase(dbConnection, events);
-            var databases = new DataLayer(articleDB, folderDB, events, dbConnection);
+            var ledger = InstapaperDatabase.GetLedger(folderDB, articleDB);
+            var databases = new DataLayer(articleDB, folderDB, events, ledger, dbConnection);
 
             lock (this.dataLayerLock)
             {

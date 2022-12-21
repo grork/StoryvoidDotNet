@@ -115,4 +115,19 @@ public class AppUtilitiesTests
 
         datalayer = await utilities.GetDataLayer();
     }
+
+    [TestMethod]
+    public async Task LedgerCreatedAndCapturesChanges()
+    {
+        await DispatcherQueueThreadSwitcher.SwitchToDispatcher();
+
+        var utilities = this.GetAppUtilities();
+        var dataLayer = await utilities.GetDataLayer();
+        var connection = await this.connectionTask.Value;
+        var folderChanges = InstapaperDatabase.GetFolderChangesDatabase(connection);
+
+        Assert.AreEqual(0, folderChanges.ListPendingFolderAdds().Count());
+        dataLayer.Folders.CreateFolder(DateTime.Now.Ticks.ToString());
+        Assert.AreEqual(1, folderChanges.ListPendingFolderAdds().Count());
+    }
 }
