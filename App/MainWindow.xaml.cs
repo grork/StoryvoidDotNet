@@ -4,6 +4,7 @@ using Codevoid.Storyvoid.Utilities;
 using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
 using Microsoft.UI.Text;
+using Microsoft.UI.Xaml.Input;
 
 namespace Codevoid.Storyvoid.App;
 
@@ -19,12 +20,25 @@ public sealed partial class MainWindow : Window
 
         this.backdropHelper = new SystemBackdropHelper(this, this.MainThing);
         this.utilities = new AppUtilities(this.MainThing, dbTask);
+
+#if DEBUG
+        // We want to make it easy -- at least in debug mode -- to be able to
+        // get to the placeholder page 'cause a) it's useful to nav b) it has
+        // utility buttons on it.
+        var placeholderShortcut = new KeyboardAccelerator()
+        {
+            Modifiers = Windows.System.VirtualKeyModifiers.Control,
+            Key = Windows.System.VirtualKey.P
+        };
+        placeholderShortcut.Invoked += (s, a) => this.utilities.ShowPlaceholder();
+        this.MainThing.KeyboardAccelerators.Add(placeholderShortcut);
+#endif
+
         this.utilities.ShowFirstPage();
 
         if (settings.HasTokens)
         {
             this.SwitchToSignedIn();
-            return;
         }
     }
 

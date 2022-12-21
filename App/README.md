@@ -16,3 +16,7 @@ from the [Instapaper](https://www.instapaper.com/main/request_oauth_consumer_tok
 3. Save the file to the <solution root>\App folder
 
 You are now good to go!
+
+## Getting to the placeholder page
+When in debug mode, it's possible to get to our debug page by pressing `Ctrl +
+P`. This **only** works in debug mode.
