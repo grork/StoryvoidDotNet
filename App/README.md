@@ -20,3 +20,11 @@ You are now good to go!
 ## Getting to the placeholder page
 When in debug mode, it's possible to get to our debug page by pressing `Ctrl +
 P`. This **only** works in debug mode.
+
+## Using In-Memory Database
+Hold down `Shift` while launching the application to use an in-memory database,
+leaving the one on disk intact.
+
+## Resetting the Database
+Hold down `Alt` while launching the application to delete any local database
+before creating a new, clean database.

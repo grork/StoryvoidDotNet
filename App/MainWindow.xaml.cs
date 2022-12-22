@@ -20,6 +20,7 @@ public sealed partial class MainWindow : Window
 
         this.backdropHelper = new SystemBackdropHelper(this, this.MainThing);
         this.utilities = new AppUtilities(this.MainThing, dbTask);
+        this.Closed += MainWindow_Closed;
 
 #if DEBUG
         // We want to make it easy -- at least in debug mode -- to be able to
@@ -40,6 +41,14 @@ public sealed partial class MainWindow : Window
         {
             this.SwitchToSignedIn();
         }
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        // When the main window is closed, we need to dispose the database to
+        // give it a chance to do a full clean up & flush to disk. Without it,
+        // it can recover, but it leaves the DB in a 'recovery' needed state
+        this.utilities?.Dispose();
     }
 
     private IArticleDatabase? articleDatabase;
