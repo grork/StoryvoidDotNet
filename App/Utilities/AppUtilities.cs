@@ -3,9 +3,10 @@ using Codevoid.Storyvoid.App.Implementations;
 using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.ViewModels;
-using Codevoid.Utilities.OAuth;
 using Microsoft.Data.Sqlite;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Windows.Storage;
 
 namespace Codevoid.Storyvoid.Utilities;
 
@@ -55,6 +56,11 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     /// </summary>
     private static int placeholderCount = 1;
 
+    /// <summary>
+    /// Default filename for the database stored in the local file system
+    /// </summary>
+    private static readonly string DATABASE_FILE_NAME = "storyvoid";
+
     private bool disposed = false;
     private Frame frame;
     private IAccountSettings accountSettings = new AccountSettings();
@@ -72,14 +78,12 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     {
         var authenticator = new Authenticator(new Accounts(this.accountSettings.GetTokens()), this.accountSettings);
 
-        authenticator.SuccessfullyAuthenticated += Authenticator_SuccessfullyAuthenticated;
+        authenticator.SuccessfullyAuthenticated += (sender, clientInformation) =>
+        {
+            this.ShowList();
+            this.frame.BackStack.Clear();
+        };
         this.frame.Navigate(typeof(LoginPage), authenticator);
-    }
-
-    private void Authenticator_SuccessfullyAuthenticated(object? sender, ClientInformation clientInformation)
-    {
-        this.ShowList();
-        this.frame.BackStack.Clear();
     }
 
     /// <inheritdoc/>
@@ -240,4 +244,75 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
 
         this.dataLayer = null;
     }
+
+    /// <summary>
+    /// Opens or creates a local database file. If the database is present, it
+    /// will be opened. If it's not present, it will be created and initialized
+    /// with the default tables etc.
+    /// </summary>
+    /// <returns>Connection to the database</returns>
+    static internal SqliteConnection OpenDatabaseAsync()
+    {
+        var localCacheFolder = ApplicationData.Current.LocalCacheFolder;
+        var databaseFile = Path.Combine(localCacheFolder.Path, $"{DATABASE_FILE_NAME}.db");
+        var connectionString = $"Data Source={databaseFile}";
+
+#if DEBUG
+        // Enable external quick-and-simple switch to using an in memory
+        // database, or deletion of the existing database file & any
+        // state that it might have.
+        var useInMemoryDatabase = KeyStateChecker.IsKeyPressed(KeyStateChecker.Keys.VK_SHIFT);
+        var deleteLocalDatabaseFirst = KeyStateChecker.IsKeyPressed(KeyStateChecker.Keys.VK_ALT);
+        if (useInMemoryDatabase)
+        {
+            connectionString = "Data Source=StaysInMemory;Mode=Memory;Cache=Shared";
+        }
+
+        if (deleteLocalDatabaseFirst)
+        {
+            // Use the database filename stub to find all the files that
+            // are part of the SQLite database, so all the DB state is
+            // deleted.
+            foreach (var dbFile in Directory.GetFiles(localCacheFolder.Path, $"{DATABASE_FILE_NAME}.*", SearchOption.TopDirectoryOnly))
+            {
+                File.Delete(dbFile);
+            }
+        }
+#endif
+
+        var connection = new SqliteConnection(connectionString);
+        connection.Open();
+        connection.CreateDatabaseIfNeeded();
+
+        return connection;
+    }
+
+#if DEBUG
+    /// <summary>
+    /// Simple checker for keys being pressed. Intended to only be used during
+    /// app launch for debugging purposes.
+    /// 
+    /// See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeystate
+    /// for more details.
+    /// </summary>
+    private static class KeyStateChecker
+    {
+        public enum Keys
+        {
+            VK_SHIFT = 0x10,
+            VK_ALT = 0x12
+        }
+
+        private const int KEY_PRESSED = 0x8000;
+
+        [DllImport("USER32.dll")]
+        private static extern short GetKeyState(int nVirtKey);
+
+        public static bool IsKeyPressed(Keys keyToCheckForBeingPressed)
+        {
+            var state = GetKeyState((int)keyToCheckForBeingPressed);
+            return ((state & 0x8000) != 0);
+        }
+    }
+#endif
 }
