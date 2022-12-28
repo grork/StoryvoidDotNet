@@ -10,8 +10,18 @@ using Windows.Storage;
 
 namespace Codevoid.Storyvoid.Utilities;
 
+/// <summary>
+/// Container type for passing parameters to pages where they all need an
+/// <see cref="IAppUtilities"/> instance
+/// </summary>
+/// <param name="Parameter">Page-implementation specific parameter</param>
+/// <param name="Utilities">Utilities instance</param>
 internal record NavigationParameter(object? Parameter, IAppUtilities Utilities);
 
+/// <summary>
+/// Utilities that the majority of pages / components will need. Intended to
+/// hide the complexity of the implementation classes from consumers.
+/// </summary>
 interface IAppUtilities
 {
     /// <summary>
@@ -238,11 +248,32 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     }
 
     /// <inheritdoc/>
-    public void Signout()
+    public async void Signout()
     {
+        // Immediately navigate to the signing out page, and clear any other
+        // pages.
         this.ShowSigningOut();
         this.frame.BackStack.Clear();
         this.frame.ForwardStack.Clear();
+
+        // Clear any credentials
+        this.accountSettings.ClearTokens();
+
+        // Clean up the database in the background, 
+        var cleanUpTask = Task.Run(() =>
+        {
+            this.CloseDatabase();
+            AppUtilities.DeleteLocalDatabaseFiles();
+        });
+        
+        // Make sure we show the signing out page for a minimum time
+        await Task.WhenAll(cleanUpTask, Task.Delay(1000));
+
+        // Initiate the new, empty, database
+        this.dbTask = Task.Run(AppUtilities.OpenDatabaseAsync);
+
+        // Navigate to our default page
+        this.ShowFirstPage();
     }
 
     public void Dispose()
@@ -252,8 +283,12 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             return;
         }
 
+        this.CloseDatabase();
         this.disposed = true;
+    }
 
+    private void CloseDatabase()
+    {
         // Yes, I know this will block. Yes, thats the point.
         var localDataLayer = this.dataLayerTask?.Result;
         this.dataLayerTask?.Dispose();
@@ -264,7 +299,34 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             localDataLayer.Connection.Dispose();
         }
 
+        // See: https://github.com/dotnet/efcore/issues/26580#issuecomment-963938116
+        SqliteConnection.ClearAllPools();
+
         this.dataLayer = null;
+    }
+
+    /// <summary>
+    /// Get the folder where we store local data. This is expected to be
+    /// persistent and save across updates
+    /// </summary>
+    private static string LocalDataFolderPath => ApplicationData.Current.LocalCacheFolder.Path;
+
+    /// <summary>
+    /// Deletes the files that make up the local database from the data folder.
+    /// 
+    /// Ensure you've closed all connections to the database, or this will fail
+    /// </summary>
+    internal static void DeleteLocalDatabaseFiles()
+    {
+        var localDataPath = AppUtilities.LocalDataFolderPath;
+
+        // Use the database filename stub to find all the files that
+        // are part of the SQLite database, so all the DB state is
+        // deleted.
+        foreach (var dbFile in Directory.GetFiles(localDataPath, $"{DATABASE_FILE_NAME}.*", SearchOption.TopDirectoryOnly))
+        {
+            File.Delete(dbFile);
+        }
     }
 
     /// <summary>
@@ -275,8 +337,8 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     /// <returns>Connection to the database</returns>
     static internal SqliteConnection OpenDatabaseAsync()
     {
-        var localCacheFolder = ApplicationData.Current.LocalCacheFolder;
-        var databaseFile = Path.Combine(localCacheFolder.Path, $"{DATABASE_FILE_NAME}.db");
+        var localDataPath = AppUtilities.LocalDataFolderPath;
+        var databaseFile = Path.Combine(localDataPath, $"{DATABASE_FILE_NAME}.db");
         var connectionString = $"Data Source={databaseFile}";
 
 #if DEBUG
@@ -292,13 +354,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
 
         if (deleteLocalDatabaseFirst)
         {
-            // Use the database filename stub to find all the files that
-            // are part of the SQLite database, so all the DB state is
-            // deleted.
-            foreach (var dbFile in Directory.GetFiles(localCacheFolder.Path, $"{DATABASE_FILE_NAME}.*", SearchOption.TopDirectoryOnly))
-            {
-                File.Delete(dbFile);
-            }
+            AppUtilities.DeleteLocalDatabaseFiles();
         }
 #endif
 

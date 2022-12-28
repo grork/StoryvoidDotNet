@@ -2,6 +2,7 @@
 using Codevoid.Storyvoid.Utilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
+using Windows.Storage;
 
 namespace Codevoid.Test.Storyvoid;
 
@@ -129,5 +130,31 @@ public class AppUtilitiesTests
         Assert.AreEqual(0, folderChanges.ListPendingFolderAdds().Count());
         dataLayer.Folders.CreateFolder(DateTime.Now.Ticks.ToString());
         Assert.AreEqual(1, folderChanges.ListPendingFolderAdds().Count());
+    }
+
+    [TestMethod]
+    public async Task DatabaseCanBeDeletedAfterClosingDatabase()
+    {
+        // Cleanup the in-memory database since we don't want that, we want
+        // a real, local file
+        var connection = this.connectionTask.Value.Result;
+        connection.Close();
+        connection.Dispose();
+
+        this.connectionTask = new Lazy<Task<SqliteConnection>>(Task.Run(AppUtilities.OpenDatabaseAsync));
+
+        await DispatcherQueueThreadSwitcher.SwitchToDispatcher();
+
+        string datasourcePath = String.Empty;
+        using (var utilities = this.GetAppUtilities())
+        {
+            var dataLayer = await utilities.GetDataLayer();
+            datasourcePath = dataLayer.Connection.DataSource;
+            Assert.IsTrue(File.Exists(datasourcePath));
+            Assert.IsNotNull(dataLayer.Articles);
+        }
+
+        AppUtilities.DeleteLocalDatabaseFiles();
+        Assert.IsFalse(File.Exists(datasourcePath));
     }
 }
