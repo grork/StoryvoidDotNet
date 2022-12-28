@@ -43,10 +43,9 @@ internal sealed partial class PlaceholderPage : Page
 
     private void NewPlaceholder_Click(object sender, RoutedEventArgs e) => this.utilities?.ShowPlaceholder();
 
-    private void ClearCredentials_Click(object sender, RoutedEventArgs e)
+    private void Signout_Click(object sender, RoutedEventArgs e)
     {
-        var accountSettings = new AccountSettings();
-        accountSettings.ClearTokens();
+        this.utilities?.Signout();
     }
 
     private void ClearStack_Click(object sender , RoutedEventArgs e)

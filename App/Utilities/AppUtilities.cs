@@ -35,6 +35,12 @@ interface IAppUtilities
     /// Performs a sync of articles, without the article download
     /// </summary>
     void PerformSyncWithoutDownloads(IDatabaseSyncEventSource eventSource);
+
+    /// <summary>
+    /// Clears the credentials, local database + files, and displays the login
+    /// page once complete.
+    /// </summary>
+    void Signout();
 }
 
 /// <summary>
@@ -90,6 +96,14 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     public void ShowList()
     {
         this.ShowPlaceholder("List");
+    }
+
+    /// <summary>
+    /// Show the signing out page
+    /// </summary>
+    public void ShowSigningOut()
+    {
+        this.frame.Navigate(typeof(SigningOutPage));
     }
 
     /// <inheritdoc/>
@@ -221,6 +235,14 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         {
             syncConnection.Close();
         }
+    }
+
+    /// <inheritdoc/>
+    public void Signout()
+    {
+        this.ShowSigningOut();
+        this.frame.BackStack.Clear();
+        this.frame.ForwardStack.Clear();
     }
 
     public void Dispose()

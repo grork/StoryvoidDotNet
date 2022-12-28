@@ -48,7 +48,7 @@
             <Button Click="ClearStack_Click">Clear Stack</Button>
             <Button Click="NewPlaceholder_Click">New Placeholder</Button>
             <Button Click="ShowLogin_Click">Show Login</Button>
-            <Button Click="ClearCredentials_Click">Clear Credentials</Button>
+            <Button Click="Signout_Click">Signout</Button>
             <Button Click="CreateRandomFolder_Click">Create Random Folder</Button>
             <Button Click="SyncNoDownload_Click">Sync (no download)</Button>
         </StackPanel>
