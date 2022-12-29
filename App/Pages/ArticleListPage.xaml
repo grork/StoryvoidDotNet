@@ -8,10 +8,10 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Text="{x:Bind ViewModel.CurrentFolder.Title}" />
+        <ComboBox Grid.Row="0"
+                  ItemsSource="{x:Bind ViewModel.Folders}"
+                  SelectedItem="{x:Bind ViewModel.CurrentFolder, Mode=TwoWay}"
+                  DisplayMemberPath="Title" />
         <controls:ArticleListControl Grid.Row="1"
                                      ViewModel="{x:Bind ViewModel, Mode=OneTime}" />
     </Grid>
