@@ -1,0 +1,18 @@
+<Page x:Class="Codevoid.Storyvoid.Pages.ArticleListPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:controls="using:Codevoid.Storyvoid.Controls"
+      x:DefaultBindMode="OneWay">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Text="{x:Bind ViewModel.CurrentFolder.Title}" />
+        <controls:ArticleListControl Grid.Row="1"
+                                     ViewModel="{x:Bind ViewModel, Mode=OneTime}" />
+    </Grid>
+</Page>

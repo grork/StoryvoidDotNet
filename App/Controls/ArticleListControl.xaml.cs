@@ -7,11 +7,10 @@ namespace Codevoid.Storyvoid.Controls;
 /// </summary>
 public sealed partial class ArticleListControl : UserControl
 {
-    public ArticleList ViewModel { get; private set; }
+    public ArticleList? ViewModel { get; set; }
 
-    public ArticleListControl(ArticleList articleList)
+    public ArticleListControl()
     {
-        this.ViewModel = articleList;
         this.InitializeComponent();
     }
 }

@@ -103,9 +103,17 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     }
 
     /// <inheritdoc/>
-    public void ShowList()
+    public async void ShowList()
     {
-        this.ShowPlaceholder("List");
+        var dataLayer = await this.GetDataLayer();
+        var articleList = new ArticleList(
+            dataLayer.Folders,
+            dataLayer.Articles,
+            dataLayer.Events,
+            new ArticleListSettings()
+        );
+
+        this.frame.Navigate(typeof(ArticleListPage), articleList);
     }
 
     /// <summary>

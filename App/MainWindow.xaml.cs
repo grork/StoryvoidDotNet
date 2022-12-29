@@ -36,11 +36,6 @@ public sealed partial class MainWindow : Window
 #endif
 
         this.utilities.ShowFirstPage();
-
-        if (settings.HasTokens)
-        {
-            this.SwitchToSignedIn();
-        }
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
@@ -49,47 +44,5 @@ public sealed partial class MainWindow : Window
         // give it a chance to do a full clean up & flush to disk. Without it,
         // it can recover, but it leaves the DB in a 'recovery' needed state
         this.utilities?.Dispose();
-    }
-
-    private IArticleDatabase? articleDatabase;
-    private IFolderDatabase? folderDatabase;
-    private DispatcherDatabaseEvents? dbEvents;
-
-    private async Task OpenDatabase()
-    {
-        var dataLayer = await this.utilities.GetDataLayer();
-        this.dbEvents = dataLayer.Events;
-        this.articleDatabase = dataLayer.Articles;
-        this.folderDatabase = dataLayer.Folders;
-    }
-
-    private async void SwitchToSignedIn()
-    {
-        var label = new TextBlock()
-        {
-            Text = "Have Creds",
-            FontSize = 72,
-            FontWeight = FontWeights.ExtraLight,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            TextWrapping = TextWrapping.WrapWholeWords
-        };
-
-        // Open the database for use in the article list
-        await this.OpenDatabase();
-        var articleList = new ArticleList(
-            this.folderDatabase!,
-            this.articleDatabase!,
-            this.dbEvents!,
-            new ArticleListSettings()
-        );
-
-        var articleListControl = new ArticleListControl(articleList);
-
-        var content = new StackPanel();
-        content.Children.Add(label);
-        content.Children.Add(articleListControl);
-
-        this.DebugContent.Content = content;
     }
 }
