@@ -157,6 +157,35 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         this.ShowList();
     }
 
+    /// <inheritdoc/>
+    public async void Signout()
+    {
+        // Immediately navigate to the signing out page, and clear any other
+        // pages.
+        this.ShowSigningOut();
+        this.frame.BackStack.Clear();
+        this.frame.ForwardStack.Clear();
+
+        // Clear any credentials
+        this.accountSettings.ClearTokens();
+
+        // Clean up the database in the background, 
+        var cleanUpTask = Task.Run(() =>
+        {
+            this.CloseDatabase();
+            AppUtilities.DeleteLocalDatabaseFiles();
+        });
+
+        // Make sure we show the signing out page for a minimum time
+        await Task.WhenAll(cleanUpTask, Task.Delay(1000));
+
+        // Initiate the new, empty, database
+        this.dbTask = Task.Run(AppUtilities.OpenDatabaseAsync);
+
+        // Navigate to our default page
+        this.ShowFirstPage();
+    }
+
     /// <summary>
     /// Lock for making sure we rendezvous multiple calls to getting the
     /// layer if it's not been created yet.
@@ -253,35 +282,6 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         {
             syncConnection.Close();
         }
-    }
-
-    /// <inheritdoc/>
-    public async void Signout()
-    {
-        // Immediately navigate to the signing out page, and clear any other
-        // pages.
-        this.ShowSigningOut();
-        this.frame.BackStack.Clear();
-        this.frame.ForwardStack.Clear();
-
-        // Clear any credentials
-        this.accountSettings.ClearTokens();
-
-        // Clean up the database in the background, 
-        var cleanUpTask = Task.Run(() =>
-        {
-            this.CloseDatabase();
-            AppUtilities.DeleteLocalDatabaseFiles();
-        });
-        
-        // Make sure we show the signing out page for a minimum time
-        await Task.WhenAll(cleanUpTask, Task.Delay(1000));
-
-        // Initiate the new, empty, database
-        this.dbTask = Task.Run(AppUtilities.OpenDatabaseAsync);
-
-        // Navigate to our default page
-        this.ShowFirstPage();
     }
 
     public void Dispose()
