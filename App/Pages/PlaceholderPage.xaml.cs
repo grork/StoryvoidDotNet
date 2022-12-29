@@ -34,6 +34,8 @@ internal sealed partial class PlaceholderPage : Page
 
         this.ParameterContent.Text = (parameter != null) ? parameter.ToString() : "No Parameter";
 
+        base.OnNavigatedTo(e);
+
         this.folders = await placeholderParam.FolderDatabase;
     }
 
