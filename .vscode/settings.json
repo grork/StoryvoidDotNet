@@ -1,5 +1,5 @@
 {
-    "dotnet-test-explorer.testProjectPath": "**/*Tests.csproj",
+    "dotnet-test-explorer.testProjectPath": "**/+(DatabaseTests|InstapaperApiTests|OAuthLibraryTests|SyncTests|TestUtilities|ViewModelsTests).csproj",
     "files.exclude": {
         "**/Makefile.in": true,
         "**/*.userprefs": true,
