@@ -957,6 +957,7 @@ public class ArticleDownloaderTests : IDisposable
     public async Task CanInitiateDownloadOfAllArticlesMissingLocalState()
     {
         this.articleDatabase.DeleteArticle(MISSING_REMOTE_ARTICLE_2);
+        this.articleDatabase.DeleteArticle(LARGE_ARTICLE_NO_IMAGES); // It takes a while, lets skip it for this test
         var articlesWithoutLocalStatePreDownload = this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article);
 
         await this.articleDownloader.DownloadAllArticlesWithoutLocalStateAsync();
