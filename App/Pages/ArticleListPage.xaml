@@ -18,7 +18,8 @@
                   SelectedItem="{x:Bind ViewModel.CurrentFolder, Mode=TwoWay}"
                   DisplayMemberPath="Title" />
 
-        <CommandBar DefaultLabelPosition="Right">
+        <CommandBar Grid.Column="1"
+                    DefaultLabelPosition="Right">
             <AppBarButton Icon="Sort"
                           Label="{x:Bind ViewModel.CurrentSort.Label}">
                 <AppBarButton.Flyout>
