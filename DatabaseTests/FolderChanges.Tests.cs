@@ -23,7 +23,7 @@ public sealed class FolderChangesTests : IDisposable
     public void Dispose()
     {
         this.connection.Close();
-        this.connection.Dispose(); 
+        this.connection.Dispose();
     }
 
     [Fact]

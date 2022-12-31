@@ -22,18 +22,18 @@ internal class AccountSettings : IAccountSettings
         get
         {
             var stored = this.GetTokens();
-            return (stored.Token != null && stored.TokenSecret != null);
+            return (stored.Token is not null && stored.TokenSecret is not null);
         }
     }
 
     public ClientInformation GetTokens()
     {
-        if (this.clientInformation == null)
+        if (this.clientInformation is null)
         {
             var tokenSetting = ApplicationData.Current.LocalSettings.Values[TOKEN_CONTAINER_KEY] as ApplicationDataCompositeValue;
             String? tokenValue = null;
             String? tokenSecret = null;
-            if (tokenSetting != null)
+            if (tokenSetting is not null)
             {
                 tokenValue = tokenSetting[TOKEN_TOKEN_KEY] as String;
                 tokenSecret = tokenSetting[TOKEN_SECRET_KEY] as String;

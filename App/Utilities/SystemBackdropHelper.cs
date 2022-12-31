@@ -41,7 +41,7 @@ internal class SystemBackdropHelper
         IntPtr m_dispatcherQueueController = IntPtr.Zero;
         public void EnsureWindowsSystemDispatcherQueueController()
         {
-            if (Windows.System.DispatcherQueue.GetForCurrentThread() != null)
+            if (Windows.System.DispatcherQueue.GetForCurrentThread() is not null)
             {
                 // one already exists, so we'll just use it.
                 return;
@@ -106,7 +106,7 @@ internal class SystemBackdropHelper
     /// </summary>
     private void SetupBackdrop()
     {
-        if (this.backdropController != null)
+        if (this.backdropController is not null)
         {
             // Already created, don't need to do it again
             return;

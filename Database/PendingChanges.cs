@@ -108,12 +108,12 @@ public sealed record PendingArticleAdd
         var url = new Uri(urlString);
         String? title = null;
 
-        if(!row.IsDBNull("title"))
+        if (!row.IsDBNull("title"))
         {
             title = row.GetString("title");
         }
 
-        return new ()
+        return new()
         {
             Url = url,
             Title = title

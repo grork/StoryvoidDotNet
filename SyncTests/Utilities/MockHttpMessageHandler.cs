@@ -11,12 +11,12 @@ internal sealed class FileSystemMappedHttpHandler : HttpMessageHandler
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        if(request.RequestUri is null)
+        if (request.RequestUri is null)
         {
             throw new NotSupportedException("Must supply a URL");
         }
 
-        if(!request.RequestUri.IsAbsoluteUri)
+        if (!request.RequestUri.IsAbsoluteUri)
         {
             throw new NotSupportedException("Only absolute URIs are supported");
         }
@@ -27,7 +27,7 @@ internal sealed class FileSystemMappedHttpHandler : HttpMessageHandler
         var localPath = Path.Join(this.root.FullName, filename);
 
         // Map missing local files to 404.
-        if(!File.Exists(localPath))
+        if (!File.Exists(localPath))
         {
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
         }
@@ -35,22 +35,22 @@ internal sealed class FileSystemMappedHttpHandler : HttpMessageHandler
         // Try to extract the extension. Some of our image paths don't have
         // extensions, but the do have a - that indicates the file extension
         var extension = Path.GetExtension(localPath);
-        if(extension.Length > 0)
+        if (extension.Length > 0)
         {
             extension = extension.Substring(1);
         }
 
-        if(String.IsNullOrWhiteSpace(extension))
+        if (String.IsNullOrWhiteSpace(extension))
         {
             var lastHypen = localPath.LastIndexOf('-');
-            if(lastHypen == -1)
+            if (lastHypen == -1)
             {
                 throw new InvalidOperationException("File has no extension, nor a - to guess it");
             }
 
             extension = localPath.Substring(lastHypen + 1);
 
-            if(extension == "svg")
+            if (extension == "svg")
             {
                 // If we didn't extract the extension from the file directly,
                 // and found it with the hypen, we don't want to respond with a
@@ -60,12 +60,12 @@ internal sealed class FileSystemMappedHttpHandler : HttpMessageHandler
             }
         }
 
-        if(this.FileRequested is not null)
+        if (this.FileRequested is not null)
         {
             this.FileRequested(this, request.RequestUri);
         }
 
-        if(cancellationToken.IsCancellationRequested)
+        if (cancellationToken.IsCancellationRequested)
         {
             return Task.FromCanceled<HttpResponseMessage>(cancellationToken);
         }

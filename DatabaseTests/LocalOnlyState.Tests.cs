@@ -334,7 +334,7 @@ public class LocalOnlyStateTests : IDisposable
         Assert.True(articleExpectedToHaveState.HasLocalState);
         Assert.NotNull(articleExpectedToHaveState.LocalOnlyState);
     }
-    
+
     [Fact]
     public void ArticleUpdatedEventRaisedWhenLocalStateIsAdded()
     {

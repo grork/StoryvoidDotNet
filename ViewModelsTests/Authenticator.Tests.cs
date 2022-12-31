@@ -1,6 +1,5 @@
 using Codevoid.Storyvoid.ViewModels;
 using Codevoid.Utilities.OAuth;
-using System.Windows.Input;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;
 
@@ -18,7 +17,7 @@ public class AuthenticatorTests
         action();
 
         Assert.True(wasRaised, "CanExecute was not raised");
-        if(wasRaised)
+        if (wasRaised)
         {
             Assert.Equal(expectedCanExecuteValue, this.authenticator.CanExecute(null));
         }
@@ -133,7 +132,7 @@ public class AuthenticatorTests
         var clientInfo = await this.authenticator.Authenticate();
         Assert.NotNull(clientInfo);
     }
-    
+
     [Fact]
     public async void AuthenticatingWithValidCredentialsRaisesSuccessfullyAuthenticatedEvent()
     {
@@ -228,7 +227,7 @@ public class AuthenticatorTests
                 isWorkingSetToTrue = true;
             }
 
-            if((name.PropertyName == "CanVerify") && this.authenticator.IsWorking)
+            if ((name.PropertyName == "CanVerify") && this.authenticator.IsWorking)
             {
                 canVerifySetToFalse = !this.authenticator.CanVerify;
             }
@@ -295,7 +294,7 @@ public class AuthenticatorTests
         var clientInfo = await this.authenticator.Authenticate();
         Assert.False(String.IsNullOrEmpty(this.authenticator.FriendlyErrorMessage));
     }
-    
+
     [Fact]
     public async void AuthenticatingWithInvalidCredentialsDoesNotRaiseSuccessfulEvent()
     {

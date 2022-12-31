@@ -293,7 +293,7 @@ internal sealed class FolderDatabase : IFolderDatabaseWithTransactionEvents
         }
 
         var (wasDeleted, folder) = DeleteFolder(this.connection, localFolderId, this);
-        if(wasDeleted)
+        if (wasDeleted)
         {
             this.eventSource?.RaiseFolderDeleted(folder!);
         }

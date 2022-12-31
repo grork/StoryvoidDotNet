@@ -1443,7 +1443,7 @@ public class BookmarkSyncTests : BaseSyncTest
     {
         var articleToMove = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         var destinationFolder = this.databases.FolderDB.FirstCompleteUserFolder();
-        
+
         var ledger = this.GetLedger();
         this.databases.ArticleDB.MoveArticleToFolder(articleToMove.Id, destinationFolder.LocalId);
         ledger.Dispose();
@@ -1467,7 +1467,7 @@ public class BookmarkSyncTests : BaseSyncTest
     {
         var articleToMove = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         var destinationFolder = this.databases.FolderDB.FirstCompleteUserFolder();
-        
+
         var ledger = this.GetLedger();
         this.databases.ArticleDB.MoveArticleToFolder(articleToMove.Id, destinationFolder.LocalId);
         ledger.Dispose();
@@ -1536,7 +1536,7 @@ public class BookmarkSyncTests : BaseSyncTest
     {
         var localArticleToLike = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
 
-        using(var ledger = this.GetLedger())
+        using (var ledger = this.GetLedger())
         {
             localArticleToLike = this.databases.ArticleDB.LikeArticle(localArticleToLike.Id);
         }
@@ -1556,7 +1556,7 @@ public class BookmarkSyncTests : BaseSyncTest
         var localArticleToLike = this.databases.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         var localArticleToLike2 = this.databases.ArticleDB.FirstUnlikedArticleInfolder(this.databases.FolderDB.FirstCompleteUserFolder().LocalId);
 
-        using(var ledger = this.GetLedger())
+        using (var ledger = this.GetLedger())
         {
             localArticleToLike = this.databases.ArticleDB.LikeArticle(localArticleToLike.Id);
             localArticleToLike2 = this.databases.ArticleDB.LikeArticle(localArticleToLike2.Id);

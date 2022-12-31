@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.ViewModels.Commands;
 using Microsoft.Data.Sqlite;
@@ -38,7 +37,7 @@ public class ArticleCommandTests : IDisposable
 
         public MockArticleCommand(IArticleDatabase database) : base(database)
         { }
-        
+
         protected override void CoreExecute(DatabaseArticle article)
         {
             this.Executed?.Invoke(this, article.Id);

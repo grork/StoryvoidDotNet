@@ -2,7 +2,7 @@ using Microsoft.VisualStudio.TestPlatform.TestExecutor;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using System.ComponentModel;
 
-[assembly:WinUITestTarget(typeof(Codevoid.Test.Storyvoid.App))]
+[assembly: WinUITestTarget(typeof(Codevoid.Test.Storyvoid.App))]
 
 namespace Codevoid.Test.Storyvoid;
 
@@ -35,7 +35,7 @@ public partial class App : Application
 internal class TestWindowWithFrame : Window
 {
     internal readonly Frame Frame;
-    internal TestWindowWithFrame(): base()
+    internal TestWindowWithFrame() : base()
     {
         this.Frame = new Frame();
     }

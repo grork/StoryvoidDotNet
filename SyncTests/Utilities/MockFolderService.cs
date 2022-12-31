@@ -70,7 +70,7 @@ public class MockFolderService : IFoldersClient
                 position: folder.Position,
                 shouldSync: folder.SyncToMobile);
         }
-        catch(DuplicateNameException)
+        catch (DuplicateNameException)
         {
             // Map the database exception in to the same as a service exception
             throw new DuplicateFolderException();
@@ -82,14 +82,14 @@ public class MockFolderService : IFoldersClient
     public Task DeleteAsync(long folderId)
     {
         var folder = this.FolderDB.GetFolderByServiceId(folderId);
-        if(folder is null)
+        if (folder is null)
         {
             // Folder was already missing, so throw appropriate exception
             throw new EntityNotFoundException();
         }
 
         // We need to deleted contained articles first, to mimic what the service does
-        foreach(var articleInFolder in this.ArticleDB.ListArticlesForLocalFolder(folder.LocalId))
+        foreach (var articleInFolder in this.ArticleDB.ListArticlesForLocalFolder(folder.LocalId))
         {
             this.ArticleDB.DeleteArticle(articleInFolder.Id);
         }

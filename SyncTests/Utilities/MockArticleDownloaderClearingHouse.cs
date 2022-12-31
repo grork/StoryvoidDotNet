@@ -10,22 +10,22 @@ internal sealed class MockArticleDownloaderEventClearingHouse : IArticleDownload
 
     /// <inheritdoc />
     public event EventHandler<DatabaseArticle>? ArticleStarted;
-    
+
     /// <inheritdoc />
     public event EventHandler<long>? ImagesStarted;
-    
+
     /// <inheritdoc />
     public event EventHandler<Uri>? ImageStarted;
-    
+
     /// <inheritdoc />
     public event EventHandler<Uri>? ImageCompleted;
-    
+
     /// <inheritdoc />
     public event EventHandler<long>? ImagesCompleted;
-    
+
     /// <inheritdoc />
     public event EventHandler<DatabaseArticle>? ArticleCompleted;
-    
+
     /// <inheritdoc />
     public event EventHandler? DownloadingCompleted;
 

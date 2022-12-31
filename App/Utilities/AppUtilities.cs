@@ -212,7 +212,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
 
             lock (this.dataLayerLock)
             {
-                Debug.Assert(this.dataLayer == null);
+                Debug.Assert(this.dataLayer is null);
                 this.dataLayer = databases;
             }
 
@@ -223,7 +223,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         // don't need to perform any operations, we can just return the result.
         var localDataLayer = this.dataLayer;
         Task<DataLayer>? localDataLayerTask = null;
-        if (localDataLayer != null)
+        if (localDataLayer is not null)
         {
             return Task.FromResult(localDataLayer);
         }
@@ -301,7 +301,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         var localDataLayer = this.dataLayerTask?.Result;
         this.dataLayerTask?.Dispose();
 
-        if (localDataLayer != null)
+        if (localDataLayer is not null)
         {
             localDataLayer.Connection.Close();
             localDataLayer.Connection.Dispose();

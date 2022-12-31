@@ -9,9 +9,9 @@ public class ChunkinatorTests
 
     public IEnumerable<int> ExplodingAfterN(uint size, uint explodeAtIndex)
     {
-        for (var index = 0; index < size; index +=1)
+        for (var index = 0; index < size; index += 1)
         {
-            if(index >= explodeAtIndex)
+            if (index >= explodeAtIndex)
             {
                 throw new InvalidOperationException("I am bad");
             }
@@ -42,7 +42,7 @@ public class ChunkinatorTests
     public void AllOriginalElementsAreReturnedForExactMultipleOfChunkSize()
     {
         var seenValues = new List<int>();
-        foreach(var chunk in MULTIPLE_CHUNK_SIZE_SAMPLE.Chunk(5))
+        foreach (var chunk in MULTIPLE_CHUNK_SIZE_SAMPLE.Chunk(5))
         {
             seenValues.AddRange(chunk);
         }
@@ -55,7 +55,7 @@ public class ChunkinatorTests
     {
         const int CHUNK_SIZE = 5;
         var seenValues = new List<int>();
-        foreach(var chunk in MULTIPLE_CHUNK_SIZE_SAMPLE.Chunk(CHUNK_SIZE))
+        foreach (var chunk in MULTIPLE_CHUNK_SIZE_SAMPLE.Chunk(CHUNK_SIZE))
         {
             Assert.Equal(CHUNK_SIZE, chunk.Count());
             seenValues.AddRange(chunk);
@@ -68,7 +68,7 @@ public class ChunkinatorTests
     public void AllOriginalElementsAreReturnedForNotExactMultipleOfChunkSize()
     {
         var seenValues = new List<int>();
-        foreach(var chunk in NON_MULTIPLE_CHUNK_SIZE_SAMPLE.Chunk(5))
+        foreach (var chunk in NON_MULTIPLE_CHUNK_SIZE_SAMPLE.Chunk(5))
         {
             seenValues.AddRange(chunk);
         }
@@ -80,7 +80,7 @@ public class ChunkinatorTests
     public void AllOriginalElementsAreReturnedWhenChunkSizeBiggerThanSourceData()
     {
         var seenValues = new List<int>();
-        foreach(var chunk in MULTIPLE_CHUNK_SIZE_SAMPLE.Chunk(MULTIPLE_CHUNK_SIZE_SAMPLE.Length * 2))
+        foreach (var chunk in MULTIPLE_CHUNK_SIZE_SAMPLE.Chunk(MULTIPLE_CHUNK_SIZE_SAMPLE.Length * 2))
         {
             seenValues.AddRange(chunk);
         }
@@ -113,7 +113,7 @@ public class ChunkinatorTests
     {
         var source = new List<int>();
         var seenValues = new List<int>();
-        foreach(var chunk in source.Chunk(5))
+        foreach (var chunk in source.Chunk(5))
         {
             Assert.False(true, "Shouldn't have been evaluated");
             seenValues.AddRange(chunk);

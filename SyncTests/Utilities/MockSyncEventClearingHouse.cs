@@ -6,19 +6,19 @@ internal sealed class SyncEventClearingHouse : IDatabaseSyncEventSink, IDatabase
 {
     /// <inheritdoc />
     public event EventHandler? SyncStarted;
-    
+
     /// <inheritdoc />
     public event EventHandler? FoldersStarted;
-    
+
     /// <inheritdoc />
     public event EventHandler? FoldersEnded;
-    
+
     /// <inheritdoc />
     public event EventHandler? ArticlesStarted;
-    
+
     /// <inheritdoc />
     public event EventHandler? ArticlesEnded;
-    
+
     /// <inheritdoc />
     public event EventHandler? SyncEnded;
 
@@ -28,28 +28,28 @@ internal sealed class SyncEventClearingHouse : IDatabaseSyncEventSink, IDatabase
         var handler = this.SyncStarted;
         handler?.Invoke(this, EventArgs.Empty);
     }
-    
+
     /// <inheritdoc />
     public void RaiseFoldersStarted()
     {
         var handler = this.FoldersStarted;
         handler?.Invoke(this, EventArgs.Empty);
     }
-    
+
     /// <inheritdoc />
     public void RaiseFoldersEnded()
     {
         var handler = this.FoldersEnded;
         handler?.Invoke(this, EventArgs.Empty);
     }
-    
+
     /// <inheritdoc />
     public void RaiseArticlesStarted()
     {
         var handler = this.ArticlesStarted;
         handler?.Invoke(this, EventArgs.Empty);
     }
-    
+
     /// <inheritdoc />
     public void RaiseArticlesEnded()
     {

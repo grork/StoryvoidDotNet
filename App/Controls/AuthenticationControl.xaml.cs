@@ -15,7 +15,7 @@ public sealed partial class AuthenticationControl : UserControl
 
     private void InputBox_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if(e.Key != VirtualKey.Enter)
+        if (e.Key != VirtualKey.Enter)
         {
             return;
         }
@@ -30,7 +30,7 @@ public sealed partial class AuthenticationControl : UserControl
     private async void AuthenticateHelper()
     {
         var result = await this.ViewModel!.Authenticate();
-        if(result == null)
+        if (result is null)
         {
             this.AccountTextBox.Focus(FocusState.Programmatic);
             return;

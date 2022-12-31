@@ -169,7 +169,7 @@ public class Authenticator : INotifyPropertyChanged, ICommand
         {
             this.FriendlyErrorMessage = Resources.AuthenticationFailed_Message;
         }
-        catch (TaskCanceledException e) when (e.InnerException != null && e.InnerException.GetType() == typeof(TimeoutException))
+        catch (TaskCanceledException e) when (e.InnerException is not null && e.InnerException.GetType() == typeof(TimeoutException))
         {
             this.FriendlyErrorMessage = Resources.AuthenticationTimeout_Message;
         }

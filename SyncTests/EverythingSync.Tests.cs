@@ -108,8 +108,8 @@ public class EverythingSyncTests : BaseSyncTest
         remoteArticleToUpdate = this.service.BookmarksClient.ArticleDB.UpdateReadProgressForArticle(remoteArticleToUpdate.ReadProgress + 0.4F, DateTime.Now, remoteArticleToUpdate.Id);
         remoteArticleToUpdate = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteArticleToUpdate.Id);
         this.service.BookmarksClient.ArticleDB.MoveArticleToFolder(remoteArticleToMove.Id, remoteFolderToMoveTo.LocalId);
-        
-        foreach(var remoteArticleToDelete in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFolderToDelete.LocalId))
+
+        foreach (var remoteArticleToDelete in this.service.BookmarksClient.ArticleDB.ListArticlesForLocalFolder(remoteFolderToDelete.LocalId))
         {
             this.service.BookmarksClient.ArticleDB.DeleteArticle(remoteArticleToDelete.Id);
         }
@@ -117,7 +117,7 @@ public class EverythingSyncTests : BaseSyncTest
         this.service.FoldersClient.FolderDB.DeleteFolder(remoteFolderToDelete.LocalId);
 
         // Perform local changes
-        using(this.GetLedger())
+        using (this.GetLedger())
         {
             this.databases.FolderDB.DeleteFolder(localFolderToDelete.LocalId);
             localArticleToUpdate = this.databases.ArticleDB.UpdateReadProgressForArticle(localArticleToUpdate.ReadProgress + 0.8F, DateTime.Now, localArticleToUpdate.Id);

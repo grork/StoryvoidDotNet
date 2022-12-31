@@ -148,7 +148,7 @@ public sealed class ArticleTransactionTests : IDisposable
         Assert.Single(articles);
         Assert.Equal(articleToAdd.id, articles.First()!.Article.Id);
     }
-    
+
     [Fact]
     public void ExceptionDuringArticleLikingEventRollsBackEntireChange()
     {

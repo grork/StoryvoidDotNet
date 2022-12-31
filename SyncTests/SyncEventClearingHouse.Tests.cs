@@ -1,5 +1,3 @@
-using Codevoid.Storyvoid;
-
 namespace Codevoid.Test.Storyvoid.Sync;
 
 public sealed class SyncEventClearingHouseTests

@@ -148,9 +148,9 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
     {
         get
         {
-            if (this.articles == null)
+            if (this.articles is null)
             {
-                Debug.Assert(this.articleListChangeProcessor == null);
+                Debug.Assert(this.articleListChangeProcessor is null);
                 var articles = this.articleDatabase.ListArticlesForLocalFolder(this.CurrentFolder.LocalId).OrderBy((a) => a, this.CurrentSort.Comparer);
                 this.articles = new ObservableCollection<DatabaseArticle>(articles);
                 this.articleListChangeProcessor = new ArticleListChangeProcessor(this.articles, this.CurrentFolder.LocalId, this.eventSink, this.currentSort.Comparer);

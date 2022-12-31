@@ -1,5 +1,4 @@
-﻿using Codevoid.Utilities.OAuth;
-using Xunit.Extensions.Ordering;
+﻿using Xunit.Extensions.Ordering;
 using Xunit.Sdk;
 
 // Tests in this assembly are ordered due to their dependency on the service

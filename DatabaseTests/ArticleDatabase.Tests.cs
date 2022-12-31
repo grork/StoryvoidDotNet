@@ -495,7 +495,7 @@ public sealed class ArticleDatabaseTests : IDisposable
         _ = this.db.UnlikeArticle(likedArticleOriginal.Id);
         Assert.False(eventWasRaised);
     }
-    
+
     [Fact]
     public void CanUpdateArticleProgressWithTimeStamp()
     {

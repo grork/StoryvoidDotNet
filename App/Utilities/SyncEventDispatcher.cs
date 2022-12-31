@@ -53,7 +53,7 @@ internal class DispatcherSyncEvents : IDatabaseSyncEventSink, IDatabaseSyncEvent
     public void RaiseArticlesEnded()
     {
         var handler = this.ArticlesEnded;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -65,7 +65,7 @@ internal class DispatcherSyncEvents : IDatabaseSyncEventSink, IDatabaseSyncEvent
     public void RaiseArticlesStarted()
     {
         var handler = this.ArticlesStarted;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -77,7 +77,7 @@ internal class DispatcherSyncEvents : IDatabaseSyncEventSink, IDatabaseSyncEvent
     public void RaiseFoldersEnded()
     {
         var handler = this.FoldersEnded;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -89,7 +89,7 @@ internal class DispatcherSyncEvents : IDatabaseSyncEventSink, IDatabaseSyncEvent
     public void RaiseFoldersStarted()
     {
         var handler = this.FoldersStarted;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -101,7 +101,7 @@ internal class DispatcherSyncEvents : IDatabaseSyncEventSink, IDatabaseSyncEvent
     public void RaiseSyncEnded()
     {
         var handler = this.SyncEnded;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -113,7 +113,7 @@ internal class DispatcherSyncEvents : IDatabaseSyncEventSink, IDatabaseSyncEvent
     public void RaiseSyncStarted()
     {
         var handler = this.SyncStarted;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }

@@ -31,7 +31,7 @@ internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSour
     /// <param name="operation">Encapsulated operation to perform</param>
     private void PerformOnDispatcher(DispatcherQueueHandler operation)
     {
-        if(this.queue.HasThreadAccess)
+        if (this.queue.HasThreadAccess)
         {
             // If we're already on the right thread, we can just invoke the
             // operation directly.
@@ -67,7 +67,7 @@ internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSour
     public void RaiseArticleAdded(DatabaseArticle added, long toLocalId)
     {
         var handler = this.ArticleAdded;
-        if(handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -79,7 +79,7 @@ internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSour
     public void RaiseArticleDeleted(long articleId)
     {
         var handler = this.ArticleDeleted;
-        if(handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -91,7 +91,7 @@ internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSour
     public void RaiseArticleMoved(DatabaseArticle article, long toLocalId)
     {
         var handler = this.ArticleMoved;
-        if(handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -103,7 +103,7 @@ internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSour
     public void RaiseArticleUpdated(DatabaseArticle updated)
     {
         var handler = this.ArticleUpdated;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -115,7 +115,7 @@ internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSour
     public void RaiseFolderAdded(DatabaseFolder added)
     {
         var handler = this.FolderAdded;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -127,7 +127,7 @@ internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSour
     public void RaiseFolderDeleted(DatabaseFolder deleted)
     {
         var handler = this.FolderDeleted;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }
@@ -139,7 +139,7 @@ internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSour
     public void RaiseFolderUpdated(DatabaseFolder updated)
     {
         var handler = this.FolderUpdated;
-        if (handler == null)
+        if (handler is null)
         {
             return;
         }

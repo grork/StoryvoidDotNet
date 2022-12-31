@@ -467,7 +467,7 @@ internal sealed partial class ArticleDatabase : IArticleDatabaseWithTransactionE
     public void RemoveArticleFromAnyFolder(long articleId)
     {
         var wasRemoved = RemoveArticleFromAnyFolder(this.connection, articleId);
-        if(!wasRemoved)
+        if (!wasRemoved)
         {
             return;
         }

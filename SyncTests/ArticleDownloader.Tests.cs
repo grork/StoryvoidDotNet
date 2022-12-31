@@ -168,7 +168,7 @@ public class ArticleDownloaderTests : IDisposable
         Assert.True(localState!.AvailableLocally);
         Assert.False(localState!.ArticleUnavailable);
 
-        if(localState.FirstImageLocalPath is not null)
+        if (localState.FirstImageLocalPath is not null)
         {
             var firstImageExists = Path.Join(this.testFolder.FullName, localState.ArticleId.ToString(), localState.FirstImageLocalPath.ToString());
         }
@@ -484,7 +484,7 @@ public class ArticleDownloaderTests : IDisposable
         this.ResetArticleDownloader(clearingHouse);
 
         clearingHouse.ArticleStarted += (_, args) => articleStarting = args;
-        clearingHouse.ImagesStarted += (_, articleId) =>imagesStarted = articleId;
+        clearingHouse.ImagesStarted += (_, articleId) => imagesStarted = articleId;
 
         clearingHouse.ImageStarted += (_, uri) =>
         {
@@ -939,7 +939,7 @@ public class ArticleDownloaderTests : IDisposable
         clearingHouse.ArticleStarted += (_, _) =>
         {
             seenArticles += 1;
-            if(seenArticles > 2)
+            if (seenArticles > 2)
             {
                 cancellationSource.Cancel();
             }
@@ -970,7 +970,7 @@ public class ArticleDownloaderTests : IDisposable
     {
         this.articleDatabase.DeleteArticle(MISSING_REMOTE_ARTICLE);
         this.articleDatabase.DeleteArticle(UNAVAILABLE_ARTICLE);
-        foreach(var article in this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article))
+        foreach (var article in this.articleDatabase.ListAllArticlesInAFolder().Where((d) => !d.Article.HasLocalState).Select((d) => d.Article))
         {
             this.articleDatabase.AddLocalOnlyStateForArticle(new DatabaseLocalOnlyArticleState()
             {
@@ -984,7 +984,7 @@ public class ArticleDownloaderTests : IDisposable
         this.ResetArticleDownloader(clearingHouse);
 
         var downloadsStarted = false;
-        clearingHouse.DownloadingStarted += (_,_) => downloadsStarted = true;
+        clearingHouse.DownloadingStarted += (_, _) => downloadsStarted = true;
 
         await this.articleDownloader.DownloadAllArticlesWithoutLocalStateAsync();
 
@@ -1101,7 +1101,7 @@ public class ArticleDownloaderTests : IDisposable
 
         await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
 
-        foreach(var id in articleIds)
+        foreach (var id in articleIds)
         {
             this.articleDatabase.DeleteArticle(id);
         }
@@ -1137,7 +1137,7 @@ public class ArticleDownloaderTests : IDisposable
         articleDownloader.DeleteDownloadsWithNoDatabaseArticle();
 
         // Verify the basic set of articles we downloaded have their files present
-        foreach(var id in articleIds)
+        foreach (var id in articleIds)
         {
             var article = this.articleDatabase.GetArticleById(id)!;
             this.AssertAvailableLocallyAndFileExists(article.LocalOnlyState!);

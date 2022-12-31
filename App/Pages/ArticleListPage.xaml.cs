@@ -17,7 +17,7 @@ public sealed partial class ArticleListPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         this.ViewModel = (ArticleList)e.Parameter;
-        
+
         // Create the current sort menu, and start reacting to changes on the
         // view model.
         this.CreateSortMenuItems(this.ViewModel.Sorts);
@@ -37,7 +37,7 @@ public sealed partial class ArticleListPage : Page
 
     private void OnPropertyChanged(object? source, PropertyChangedEventArgs args)
     {
-        switch(args.PropertyName)
+        switch (args.PropertyName)
         {
             case nameof(this.ViewModel.CurrentSort):
                 this.UpdateSortMenuItemsCheckedState();
@@ -54,7 +54,7 @@ public sealed partial class ArticleListPage : Page
     private void CreateSortMenuItems(IReadOnlyCollection<SortOption> sorts)
     {
         var menu = this.SortsFlyout;
-        foreach(var sort in sorts)
+        foreach (var sort in sorts)
         {
             var menuItem = new ToggleMenuFlyoutItem()
             {
@@ -72,7 +72,7 @@ public sealed partial class ArticleListPage : Page
     private void MenuItem_Click(object sender, RoutedEventArgs e)
     {
         var tag = (sender as ToggleMenuFlyoutItem)?.Tag as SortOption;
-        if(tag == null)
+        if (tag is null)
         {
             return;
         }
@@ -91,10 +91,10 @@ public sealed partial class ArticleListPage : Page
     private void UpdateSortMenuItemsCheckedState()
     {
         var currentSort = this.ViewModel!.CurrentSort;
-        foreach(var menuItem in this.SortsFlyout.Items)
+        foreach (var menuItem in this.SortsFlyout.Items)
         {
             var toggleMenuItem = menuItem as ToggleMenuFlyoutItem;
-            if(toggleMenuItem == null)
+            if (toggleMenuItem is null)
             {
                 continue;
             }

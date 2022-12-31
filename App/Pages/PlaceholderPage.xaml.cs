@@ -27,12 +27,12 @@ internal sealed partial class PlaceholderPage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         var args = (NavigationParameter)e.Parameter;
-     
+
         this.utilities = args.Utilities;
         var placeholderParam = (PlaceholderParameter)(args.Parameter!);
         var parameter = placeholderParam.Parameter;
 
-        this.ParameterContent.Text = (parameter != null) ? parameter.ToString() : "No Parameter";
+        this.ParameterContent.Text = (parameter is not null) ? parameter.ToString() : "No Parameter";
 
         base.OnNavigatedTo(e);
 
@@ -40,7 +40,7 @@ internal sealed partial class PlaceholderPage : Page
     }
 
     private void GoBack_Click(object sender, RoutedEventArgs e) => this.Frame.GoBack();
-    
+
     private void GoForward_Click(object sender, RoutedEventArgs e) => this.Frame.GoForward();
 
     private void NewPlaceholder_Click(object sender, RoutedEventArgs e) => this.utilities?.ShowPlaceholder();
@@ -50,7 +50,7 @@ internal sealed partial class PlaceholderPage : Page
         this.utilities?.Signout();
     }
 
-    private void ClearStack_Click(object sender , RoutedEventArgs e)
+    private void ClearStack_Click(object sender, RoutedEventArgs e)
     {
         this.Frame.BackStack.Clear();
         this.Frame.ForwardStack.Clear();
@@ -64,7 +64,7 @@ internal sealed partial class PlaceholderPage : Page
         button.IsEnabled = false;
 
         var syncEvents = new DispatcherSyncEvents(this.DispatcherQueue);
-        syncEvents.SyncStarted += (o,a) => this.OperationLog.Add("Sync Started");
+        syncEvents.SyncStarted += (o, a) => this.OperationLog.Add("Sync Started");
         syncEvents.SyncEnded += (o, a) =>
         {
             this.OperationLog.Add("Sync Ended");

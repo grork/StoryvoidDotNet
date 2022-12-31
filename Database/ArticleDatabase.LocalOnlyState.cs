@@ -61,7 +61,7 @@ internal sealed partial class ArticleDatabase
     {
         var updatedState = AddLocalOnlyStateForArticle(this.connection, localOnlyArticleState);
 
-        if(this.eventSource is not null)
+        if (this.eventSource is not null)
         {
             var article = this.GetArticleById(localOnlyArticleState.ArticleId)!;
             this.eventSource.RaiseArticleUpdated(article);
@@ -131,7 +131,7 @@ internal sealed partial class ArticleDatabase
     public void DeleteLocalOnlyArticleState(long articleId)
     {
         var wasDeleted = DeleteLocalOnlyArticleState(this.connection, articleId);
-        if(wasDeleted && this.eventSource is not null)
+        if (wasDeleted && this.eventSource is not null)
         {
             var article = this.GetArticleById(articleId);
             this.eventSource.RaiseArticleUpdated(article!);
@@ -157,7 +157,7 @@ internal sealed partial class ArticleDatabase
         }
 
         var updatedState = UpdateLocalOnlyArticleState(this.connection, updatedLocalOnlyArticleState);
-        if(this.eventSource is not null)
+        if (this.eventSource is not null)
         {
             var article = this.GetArticleById(updatedState.ArticleId);
             this.eventSource.RaiseArticleUpdated(article!);
