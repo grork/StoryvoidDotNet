@@ -93,6 +93,7 @@ public class ArticleDownloader : IDisposable
     private IArticleDatabase articleDatabase;
     private IBookmarksClient bookmarksClient;
     private IArticleDownloaderEventSource? eventSource;
+    private IDictionary<long, Task<DatabaseLocalOnlyArticleState?>> inProgressDownloads = new Dictionary<long, Task<DatabaseLocalOnlyArticleState?>>();
 
     /// <summary>
     /// Create a downloader instance
@@ -146,7 +147,10 @@ public class ArticleDownloader : IDisposable
 
     private DatabaseLocalOnlyArticleState ApplyLocalStateToArticle(DatabaseArticle article, DatabaseLocalOnlyArticleState state)
     {
-        if (article.HasLocalState)
+        // HasLocalState is only accurate at the time the instance of article
+        // was read from the database. It's possible something has written the
+        // local state since then, and we need to update, rather than insert.
+        if (this.articleDatabase.GetLocalOnlyStateByArticleId(article.Id) is not null)
         {
             return this.articleDatabase.UpdateLocalOnlyArticleState(state);
         }
@@ -217,13 +221,44 @@ public class ArticleDownloader : IDisposable
     /// Downloads the article from the service, processes any images (including
     /// downloading them) if present in the document. The updates are written to
     /// the database and returned, indicating the state of the article (e.g. was
-    /// it available, any images, local paths etc)
+    /// it available, any images, local paths etc).
+    ///
+    /// If a download for this article has already been started, a new one will
+    /// not be started – the in-progress one will be returned instead.
     /// </summary>
     /// <param name="article">Article to download</param>
     /// <returns>Updated local state information</returns>
     public Task<DatabaseLocalOnlyArticleState?> DownloadArticleAsync(DatabaseArticle article, CancellationToken cancellationToken = default)
     {
-        return this.DownloadArticleCoreAsync(article, cancellationToken);
+        Task<DatabaseLocalOnlyArticleState?>? downloadTask = null;
+        // We want to make sure we only have one download per article at any
+        // given time. Two articles can be concurrent, but if we've started the
+        // download for a specific article, lets not start another. We still want
+        // callers to await the result, so we're going to squirrel away the task
+        // if there isn't already one. To do that, we need a lock -- other wise
+        // it'll be chaos.
+        lock (this.inProgressDownloads)
+        {
+            // Only if we didn't find a task do we need to create one.
+            if (!this.inProgressDownloads.TryGetValue(article.Id, out downloadTask))
+            {
+                // Note: We are *not* awaiting the task here, just initating it.
+                // We'll insert it in the dictionary and return it to the caller
+                // who will do the await.
+                downloadTask = this.DownloadArticleCoreAsync(article, cancellationToken);
+                this.inProgressDownloads[article.Id] = downloadTask;
+
+                // But wait, I hear you ask. Where is it *removed* from the
+                // dictionary? Thats actually handled in
+                // DownloadArticleCoreAsync so that it's guarenteed to clean up
+                // in the face of errors -- using ContinueWith requires handling
+                // of cancellations, exceptions, etc. It seems simpler to do
+                // it in that one location, rather than effectively duplicate it
+                // here.
+            }
+        }
+
+        return downloadTask;
     }
 
     private async Task<DatabaseLocalOnlyArticleState?> DownloadArticleCoreAsync(DatabaseArticle article, CancellationToken cancellationToken)
@@ -279,7 +314,7 @@ public class ArticleDownloader : IDisposable
                 FirstImageRemoteUri = firstImage?.FirstRemoteImage
             };
 
-            return this.ApplyLocalStateToArticle(article, localState); ;
+            return this.ApplyLocalStateToArticle(article, localState);
         }
         catch (TaskCanceledException)
         {
@@ -288,7 +323,18 @@ public class ArticleDownloader : IDisposable
             // operation so task-infra handles it right.
             throw new OperationCanceledException();
         }
-        finally { this.eventSource?.RaiseArticleCompleted(article); }
+        finally
+        {
+            // Make sure we remove any tasks for this article ID from the in
+            // progress list to ensure that if a download is requested *after*
+            // completion, we'll actually do the work there.
+            lock (this.inProgressDownloads)
+            {
+                this.inProgressDownloads.Remove(article.Id);
+            }
+
+            this.eventSource?.RaiseArticleCompleted(article);
+        }
     }
 
     /// <summary>

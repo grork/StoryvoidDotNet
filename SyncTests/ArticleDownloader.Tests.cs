@@ -187,6 +187,17 @@ public class ArticleDownloaderTests : IDisposable
     }
 
     [Fact]
+    public async Task DownloadingArticleTwiceSucceedsEvenWhenTheArticleInstanceIsTheSame()
+    {
+        var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
+        AssertAvailableLocallyAndFileExists(localState!);
+
+        localState = await this.articleDownloader.DownloadArticleAsync(article);
+        AssertAvailableLocallyAndFileExists(localState!);
+    }
+
+    [Fact]
     public async Task LocalFileContainsOnlyTheBody()
     {
         var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
@@ -1003,6 +1014,67 @@ public class ArticleDownloaderTests : IDisposable
     }
     #endregion
 
+    #region Concurrent Downloading
+    [Fact]
+    public async Task InitiatingTwoDownloadsOfTheSameArticleReturnsSameTask()
+    {
+        var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
+        var firstDownload = this.articleDownloader.DownloadArticleAsync(article);
+        var secondDownload = this.articleDownloader.DownloadArticleAsync(article);
+        Assert.Equal(firstDownload, secondDownload);
+
+        var firstLocalState = await firstDownload;
+        var secondLocalState = await secondDownload;
+
+        AssertAvailableLocallyAndFileExists(firstLocalState!);
+        AssertAvailableLocallyAndFileExists(secondLocalState!);
+    }
+
+    [Fact]
+    public async Task InitiatingTwoDownloadsOfTheSameArticleOnlyRaisesEventsOnce()
+    {
+        var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
+
+        var articlesStarted = 0;
+        var articlesEnded = 0;
+
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        clearingHouse.ArticleStarted += (s, a) => articlesStarted += 1;
+        clearingHouse.ArticleCompleted += (s, a) => articlesEnded += 1;
+
+        var firstDownload = this.articleDownloader.DownloadArticleAsync(article);
+        var secondDownload = this.articleDownloader.DownloadArticleAsync(article);
+        Assert.Equal(firstDownload, secondDownload);
+
+        var firstLocalState = await firstDownload;
+        var secondLocalState = await secondDownload;
+
+        AssertAvailableLocallyAndFileExists(firstLocalState!);
+        AssertAvailableLocallyAndFileExists(secondLocalState!);
+
+        Assert.Equal(1, articlesStarted);
+        Assert.Equal(1, articlesEnded);
+    }
+
+    [Fact]
+    public async Task DownloadingSameArticleTwiceReturnsNewTaskTheSecondTime()
+    {
+        var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
+        var firstDownload = this.articleDownloader.DownloadArticleAsync(article);
+
+        var firstLocalState = await firstDownload;
+        AssertAvailableLocallyAndFileExists(firstLocalState!);
+
+        var secondDownload = this.articleDownloader.DownloadArticleAsync(article);
+        Assert.NotEqual(firstDownload, secondDownload);
+
+        var secondLocalState = await secondDownload;
+        AssertAvailableLocallyAndFileExists(secondLocalState!);
+    }
+    #endregion
+
     #region Orphaned downloads cleanup
     [Fact]
     public void CanCleaupWhenNoDownloadedArticles()
@@ -1020,11 +1092,11 @@ public class ArticleDownloaderTests : IDisposable
     public async Task CanCleanupCompletelyWhenAllArticlesAreMissing()
     {
         var articleIds = new long[] {
-            BASIC_ARTICLE_NO_IMAGES,
-            IMAGES_ARTICLE,
-            YOUTUBE_ARTICLE,
-            FIRST_IMAGE_JPG
-        };
+        BASIC_ARTICLE_NO_IMAGES,
+        IMAGES_ARTICLE,
+        YOUTUBE_ARTICLE,
+        FIRST_IMAGE_JPG
+    };
         var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
 
         await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
@@ -1043,10 +1115,10 @@ public class ArticleDownloaderTests : IDisposable
     public async Task OnlyFilesFromMissingArticlesAreCleanedup()
     {
         var articleIds = new long[] {
-            IMAGES_WITH_QUERY_STRINGS,
-            YOUTUBE_ARTICLE,
-            FIRST_IMAGE_JPG
-        };
+        IMAGES_WITH_QUERY_STRINGS,
+        YOUTUBE_ARTICLE,
+        FIRST_IMAGE_JPG
+    };
         var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
         articlesToDownload.Add(this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!);
         articlesToDownload.Add(this.articleDatabase.GetArticleById(IMAGES_ARTICLE)!);
@@ -1099,24 +1171,24 @@ public class SampleDataDownloadingHelper
 
         var bookmarksClient = new BookmarksClient(TestUtilities.GetClientInformation());
         var samplePages = new List<string>()
-        {
-            "ArticleWithAnimatedGIFFirstImage.html",
-            "ArticleWithAnimatedPNGFirstImage.html",
-            "ArticleWithFirstImageLessThan150px.html",
-            "ArticleWithImages.html",
-            "ArticleWithImagesAlt.html", // Instapaper caches content forever, so edits require a new url
-            "ArticleWithImagesAndQueryStrings.html",
-            "ArticleWithInlineDataImages.html",
-            "ArticleWithJPGFirstImage.html",
-            "ArticleWithPNGFirstImage.html",
-            "ArticleWithStaticGIFFirstImage.html",
-            "ArticleWithSVGFirstImage.html",
-            "ArticleWithWebPFirstImage.html",
-            "BasicArticleNoImage.html",
-            "EmptyArticle.html",
-            "LargeArticleNoImage.html",
-            "ShortArticleNoImage.html"
-        };
+    {
+        "ArticleWithAnimatedGIFFirstImage.html",
+        "ArticleWithAnimatedPNGFirstImage.html",
+        "ArticleWithFirstImageLessThan150px.html",
+        "ArticleWithImages.html",
+        "ArticleWithImagesAlt.html", // Instapaper caches content forever, so edits require a new url
+        "ArticleWithImagesAndQueryStrings.html",
+        "ArticleWithInlineDataImages.html",
+        "ArticleWithJPGFirstImage.html",
+        "ArticleWithPNGFirstImage.html",
+        "ArticleWithStaticGIFFirstImage.html",
+        "ArticleWithSVGFirstImage.html",
+        "ArticleWithWebPFirstImage.html",
+        "BasicArticleNoImage.html",
+        "EmptyArticle.html",
+        "LargeArticleNoImage.html",
+        "ShortArticleNoImage.html"
+    };
 
         foreach (var fileName in samplePages)
         {
