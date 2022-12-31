@@ -30,6 +30,6 @@ struct DispatcherQueueThreadSwitcher : INotifyCompletion
 
     public static DispatcherQueueThreadSwitcher SwitchToDispatcher()
     {
-        return new DispatcherQueueThreadSwitcher(UITestMethodAttribute.DispatcherQueue);
+        return new DispatcherQueueThreadSwitcher(UITestMethodAttribute.DispatcherQueue!);
     }
 }
