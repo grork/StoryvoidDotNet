@@ -180,21 +180,16 @@ public class ArticleDownloader : IDisposable
 
             foreach (var article in articles)
             {
-                DatabaseLocalOnlyArticleState? localState = null;
                 try
                 {
-                    this.eventSource?.RaiseArticleStarted(article);
-                    localState = await this.DownloadArticleCoreAsync(article, cancellationToken).ConfigureAwait(false);
-
-                    if (localState is not null)
+                    var localState = await this.DownloadArticleAsync(article, cancellationToken).ConfigureAwait(false);
+                    if (localState is null)
                     {
-                        this.ApplyLocalStateToArticle(article, localState);
+                        continue;
                     }
                 }
                 catch (EntityNotFoundException)
                 { /* If the article isn't found, we'll attempt another time */ }
-                finally
-                { this.eventSource?.RaiseArticleCompleted(article); }
             }
         }
         finally
@@ -226,20 +221,9 @@ public class ArticleDownloader : IDisposable
     /// </summary>
     /// <param name="article">Article to download</param>
     /// <returns>Updated local state information</returns>
-    public async Task<DatabaseLocalOnlyArticleState?> DownloadArticleAsync(DatabaseArticle article, CancellationToken cancellationToken = default)
+    public Task<DatabaseLocalOnlyArticleState?> DownloadArticleAsync(DatabaseArticle article, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            this.eventSource?.RaiseArticleStarted(article);
-            var localState = await this.DownloadArticleCoreAsync(article, cancellationToken);
-            if (localState is null)
-            {
-                return null;
-            }
-
-            return this.ApplyLocalStateToArticle(article, localState);
-        }
-        finally { this.eventSource?.RaiseArticleCompleted(article); }
+        return this.DownloadArticleCoreAsync(article, cancellationToken);
     }
 
     private async Task<DatabaseLocalOnlyArticleState?> DownloadArticleCoreAsync(DatabaseArticle article, CancellationToken cancellationToken)
@@ -252,6 +236,11 @@ public class ArticleDownloader : IDisposable
 
         try
         {
+            // Make sure you raise this before checking for cancellation. Tests
+            // make use of this opportunity to inject failure to test certain
+            // scenarios.
+            this.eventSource?.RaiseArticleStarted(article);
+
             cancellationToken.ThrowIfCancellationRequested();
 
             try
@@ -290,12 +279,16 @@ public class ArticleDownloader : IDisposable
                 FirstImageRemoteUri = firstImage?.FirstRemoteImage
             };
 
-            return localState;
+            return this.ApplyLocalStateToArticle(article, localState); ;
         }
         catch (TaskCanceledException)
         {
+            // If the network request itself failed because of a cancel-like
+            // case (e.g. timeout, network failure), map to a cancelled
+            // operation so task-infra handles it right.
             throw new OperationCanceledException();
         }
+        finally { this.eventSource?.RaiseArticleCompleted(article); }
     }
 
     /// <summary>
