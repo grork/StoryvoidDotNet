@@ -36,6 +36,12 @@ public class MockFolderService : IFoldersClient
     internal IFolderDatabase FolderDB { get; init; }
     private IArticleDatabase ArticleDB { get; init; }
 
+    /// <summary>
+    /// When performing async operations (e.g. most of the interface
+    /// implementation), actually delay them so we get the full async flow.
+    /// </summary>
+    public bool DelayAsyncOperations = false;
+
     internal MockFolderService(IFolderDatabase folderDb, IArticleDatabase articleDb)
     {
         this.FolderDB = folderDb;
@@ -50,9 +56,25 @@ public class MockFolderService : IFoldersClient
         return (max!.Value + 1);
     }
 
-    #region IFoldersClient Implementation
-    public Task<IInstapaperFolder> AddAsync(string folderTitle)
+    /// <summary>
+    /// Returns a task with a delay if the <see cref="DelayAsyncOperations"/>
+    /// is true. Otherwise just returns an already completed task.
+    /// </summary>
+    private Task MaybeDelay()
     {
+        if (!this.DelayAsyncOperations)
+        {
+            return Task.CompletedTask;
+        }
+
+        return Task.Delay(1);
+    }
+
+    #region IFoldersClient Implementation
+    public async Task<IInstapaperFolder> AddAsync(string folderTitle)
+    {
+        await this.MaybeDelay();
+
         var nextId = this.NextServiceId();
         var folder = new MockFolder()
         {
@@ -76,11 +98,12 @@ public class MockFolderService : IFoldersClient
             throw new DuplicateFolderException();
         }
 
-        return Task.FromResult<IInstapaperFolder>(folder);
+        return folder;
     }
 
-    public Task DeleteAsync(long folderId)
+    public async Task DeleteAsync(long folderId)
     {
+        await this.MaybeDelay();
         var folder = this.FolderDB.GetFolderByServiceId(folderId);
         if (folder is null)
         {
@@ -95,14 +118,14 @@ public class MockFolderService : IFoldersClient
         }
 
         this.FolderDB.DeleteFolder(folder.LocalId);
-        return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<IInstapaperFolder>> ListAsync()
+    public async Task<IEnumerable<IInstapaperFolder>> ListAsync()
     {
+        await this.MaybeDelay();
         var localFolders = this.FolderDB.ListAllCompleteUserFolders();
 
-        return Task.FromResult<IEnumerable<IInstapaperFolder>>(localFolders.Select((f) => f.ToInstapaperFolder()));
+        return localFolders.Select((f) => f.ToInstapaperFolder());
     }
     #endregion
 }

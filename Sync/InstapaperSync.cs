@@ -115,6 +115,7 @@ public class InstapaperSync
     private IArticleChangesDatabase articleChangesDb;
     private IBookmarksClient bookmarksClient;
     private IDatabaseSyncEventSource? clearingHouse;
+    private Task? currentSync = null;
 
     public InstapaperSync(IFolderDatabase folderDb,
                           IFolderChangesDatabase folderChangesDb,
@@ -146,7 +147,7 @@ public class InstapaperSync
     internal event EventHandler? __Hook_ArticleSyncPreFolder;
     #endregion
 
-    public async Task SyncEverythingAsync(CancellationToken cancellationToken = default)
+    private async Task SyncEverythingInternalAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -160,8 +161,48 @@ public class InstapaperSync
         }
         finally
         {
+            lock (this)
+            {
+                this.currentSync = null;
+            }
             this.clearingHouse?.RaiseSyncEnded();
         }
+    }
+
+    /// <summary>
+    /// Sync everything in the database (but don't download the article bodies,
+    /// to do that use <see cref="ArticleDownloder"/>.
+    ///
+    /// If a sync is already in progress on this instance, we'll return that
+    /// in-progress sync, and not start another one.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// Cancellation token if we are actually starting a new sync
+    /// </param>
+    /// <returns>Task that completes when the sync is completed.</returns>
+    public Task SyncEverythingAsync(CancellationToken cancellationToken = default)
+    {
+        Task? inProgressSync = null;
+        lock (this)
+        {
+            inProgressSync = this.currentSync;
+            if (inProgressSync is null)
+            {
+                // Only start a new sync if there isn't already a sync in
+                // progress.
+                inProgressSync = this.SyncEverythingInternalAsync(cancellationToken);
+
+                // If the sync completed synchronously, don't save it -- it
+                // compelted so we're safe to start another one.
+                if (!inProgressSync.IsCompleted)
+                {
+                    this.currentSync = inProgressSync;
+                }
+            }
+        }
+
+        Debug.Assert(inProgressSync is not null);
+        return inProgressSync!;
     }
 
     /// <summary>

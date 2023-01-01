@@ -146,4 +146,39 @@ public class EverythingSyncTests : BaseSyncTest
         Assert.NotEmpty(this.databases.FolderDB.ListAllCompleteUserFolders());
         Assert.NotEmpty(this.databases.ArticleDB.ListAllArticles());
     }
+
+    [Fact]
+    public async Task InitiatingSyncSecondTimeBeforeFirstCompletesReturnsSameTask()
+    {
+        this.SwitchToEmptyLocalDatabase();
+        this.service.FoldersClient.DelayAsyncOperations = true;
+
+        var firstSync = this.syncEngine.SyncEverythingAsync();
+        var secondSync = this.syncEngine.SyncEverythingAsync();
+
+        Assert.Same(firstSync, secondSync);
+
+        await firstSync;
+        await secondSync;
+
+        this.AssertServerAndClientMatch();
+    }
+
+    [Fact]
+    public async Task InitiatingSyncTwiceAfterFirstCompletesReturnsDifferentTask()
+    {
+        this.SwitchToEmptyLocalDatabase();
+        this.service.FoldersClient.DelayAsyncOperations = true;
+
+        var firstSync = this.syncEngine.SyncEverythingAsync();
+        await firstSync;
+
+        var secondSync = this.syncEngine.SyncEverythingAsync();
+
+        Assert.NotSame(firstSync, secondSync);
+
+        await secondSync;
+
+        this.AssertServerAndClientMatch();
+    }
 }
