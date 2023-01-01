@@ -1165,7 +1165,7 @@ public class SampleDataDownloadingHelper
 {
     private static readonly Uri SAMPLE_BASE_URI = new Uri("https://www.codevoid.net/storyvoidtest/");
 
-    [Fact(Skip = "I shouldn't be enabled; I'm only for testing")]
+    [Fact(Skip = "I shouldn't be enabled; I'm only for generating data for other tests when needed")]
     public async Task AddSampleArticlesAndGetTextOnThemToSaveLocally()
     {
         DirectoryInfo? outputFolder = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, "TestPageOutput"));
