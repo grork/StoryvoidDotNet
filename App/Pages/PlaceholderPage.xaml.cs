@@ -5,7 +5,11 @@ using System.Collections.ObjectModel;
 
 namespace Codevoid.Storyvoid.Pages;
 
-internal record PlaceholderParameter(object? Parameter, Task<IFolderDatabase> FolderDatabase);
+internal record PlaceholderParameter(
+    object? Parameter,
+    Task<IFolderDatabase> FolderDatabase,
+    IList<string> OperationLog
+);
 
 /// <summary>
 /// Page that serves as a placeholder for other pages that have not yet been
@@ -17,7 +21,7 @@ internal sealed partial class PlaceholderPage : Page
 {
     private IAppUtilities? utilities;
     private IFolderDatabase? folders;
-    public readonly IList<string> OperationLog = new ObservableCollection<string>();
+    public IList<string>? OperationLog { get; private set; }
 
     public PlaceholderPage()
     {
@@ -33,6 +37,7 @@ internal sealed partial class PlaceholderPage : Page
         var parameter = placeholderParam.Parameter;
 
         this.ParameterContent.Text = (parameter is not null) ? parameter.ToString() : "No Parameter";
+        this.OperationLog = placeholderParam.OperationLog;
 
         base.OnNavigatedTo(e);
 
@@ -60,18 +65,7 @@ internal sealed partial class PlaceholderPage : Page
 
     private void SyncNoDownload_Click(object sender, RoutedEventArgs e)
     {
-        var button = (Button)sender;
-        button.IsEnabled = false;
-
-        var syncEvents = new DispatcherSyncEvents(this.DispatcherQueue);
-        syncEvents.SyncStarted += (o, a) => this.OperationLog.Add("Sync Started");
-        syncEvents.SyncEnded += (o, a) =>
-        {
-            this.OperationLog.Add("Sync Ended");
-            button.IsEnabled = true;
-        };
-
-        this.utilities?.PerformSyncWithoutDownloads(syncEvents);
+        this.utilities?.PerformSyncWithoutDownloads();
     }
 
     private void ShowLogin_Click(object sender, RoutedEventArgs e)

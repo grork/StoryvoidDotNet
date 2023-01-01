@@ -4,6 +4,7 @@ using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Storage;
@@ -44,7 +45,7 @@ interface IAppUtilities
     /// <summary>
     /// Performs a sync of articles, without the article download
     /// </summary>
-    void PerformSyncWithoutDownloads(IDatabaseSyncEventSource eventSource);
+    void PerformSyncWithoutDownloads();
 
     /// <summary>
     /// Clears the credentials, local database + files, and displays the login
@@ -61,8 +62,9 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     internal record DataLayer(
         IArticleDatabase Articles,
         IFolderDatabase Folders,
-        DispatcherDatabaseEvents Events,
+        DispatcherDatabaseEvents DatabaseEvents,
         IDisposable Ledger,
+        DispatcherSyncEvents SyncEvents,
         SqliteConnection Connection
     );
 
@@ -82,6 +84,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     private IAccountSettings accountSettings = new AccountSettings();
     private DataLayer? dataLayer;
     private Task<SqliteConnection>? dbTask;
+    private IList<string> OperationLog = new ObservableCollection<string>();
 
     internal AppUtilities(Frame frame, Task<SqliteConnection> connection)
     {
@@ -109,7 +112,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         var articleList = new ArticleList(
             dataLayer.Folders,
             dataLayer.Articles,
-            dataLayer.Events,
+            dataLayer.DatabaseEvents,
             new ArticleListSettings()
         );
 
@@ -133,7 +136,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             return dataLayer.Folders;
         }
 
-        var placeholderParameter = new PlaceholderParameter(parameter ?? placeholderCount++, LocalWork());
+        var placeholderParameter = new PlaceholderParameter(parameter ?? placeholderCount++, LocalWork(), this.OperationLog);
 
         var navigationParameter = new NavigationParameter(placeholderParameter, this);
         this.frame.Navigate(typeof(PlaceholderPage), navigationParameter);
@@ -204,11 +207,15 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             this.dbTask = null;
 
             // Create our data layer
-            var events = new DispatcherDatabaseEvents(this.frame.DispatcherQueue);
-            var articleDB = InstapaperDatabase.GetArticleDatabase(dbConnection, events);
-            var folderDB = InstapaperDatabase.GetFolderDatabase(dbConnection, events);
+            var databaseEvents = new DispatcherDatabaseEvents(this.frame.DispatcherQueue);
+            var articleDB = InstapaperDatabase.GetArticleDatabase(dbConnection, databaseEvents);
+            var folderDB = InstapaperDatabase.GetFolderDatabase(dbConnection, databaseEvents);
             var ledger = InstapaperDatabase.GetLedger(folderDB, articleDB);
-            var databases = new DataLayer(articleDB, folderDB, events, ledger, dbConnection);
+            var syncEvents = new DispatcherSyncEvents(this.frame.DispatcherQueue);
+            var databases = new DataLayer(articleDB, folderDB, databaseEvents, ledger, syncEvents, dbConnection);
+
+            syncEvents.SyncStarted += (o, a) => this.OperationLog.Add("Sync Started");
+            syncEvents.SyncEnded += (o, a) => this.OperationLog.Add("Sync Ended");
 
             lock (this.dataLayerLock)
             {
@@ -259,20 +266,20 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     }
 
     /// <inheritdoc />
-    public async void PerformSyncWithoutDownloads(IDatabaseSyncEventSource eventSource)
+    public async void PerformSyncWithoutDownloads()
     {
         var tokens = this.accountSettings.GetTokens();
         using var syncConnection = new SqliteConnection(this.ConnectionString());
         syncConnection.Open();
 
-        var folders = InstapaperDatabase.GetFolderDatabase(syncConnection, this.dataLayer!.Events);
+        var folders = InstapaperDatabase.GetFolderDatabase(syncConnection, this.dataLayer!.DatabaseEvents);
         var folderChanges = InstapaperDatabase.GetFolderChangesDatabase(syncConnection);
-        var articles = InstapaperDatabase.GetArticleDatabase(syncConnection, this.dataLayer!.Events);
+        var articles = InstapaperDatabase.GetArticleDatabase(syncConnection, this.dataLayer!.DatabaseEvents);
         var articleChanges = InstapaperDatabase.GetArticleChangesDatabase(syncConnection);
         var foldersClient = new FoldersClient(tokens);
         var bookmarksClient = new BookmarksClient(tokens);
 
-        var sync = new InstapaperSync(folders, folderChanges, foldersClient, articles, articleChanges, bookmarksClient, eventSource);
+        var sync = new InstapaperSync(folders, folderChanges, foldersClient, articles, articleChanges, bookmarksClient, this.dataLayer.SyncEvents);
 
         try
         {
