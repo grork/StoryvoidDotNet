@@ -1022,7 +1022,7 @@ public class ArticleDownloaderTests : IDisposable
         var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
         var firstDownload = this.articleDownloader.DownloadArticleAsync(article);
         var secondDownload = this.articleDownloader.DownloadArticleAsync(article);
-        Assert.Equal(firstDownload, secondDownload);
+        Assert.Same(firstDownload, secondDownload);
 
         var firstLocalState = await firstDownload;
         var secondLocalState = await secondDownload;
@@ -1047,7 +1047,7 @@ public class ArticleDownloaderTests : IDisposable
 
         var firstDownload = this.articleDownloader.DownloadArticleAsync(article);
         var secondDownload = this.articleDownloader.DownloadArticleAsync(article);
-        Assert.Equal(firstDownload, secondDownload);
+        Assert.Same(firstDownload, secondDownload);
 
         var firstLocalState = await firstDownload;
         var secondLocalState = await secondDownload;
@@ -1069,7 +1069,7 @@ public class ArticleDownloaderTests : IDisposable
         AssertAvailableLocallyAndFileExists(firstLocalState!);
 
         var secondDownload = this.articleDownloader.DownloadArticleAsync(article);
-        Assert.NotEqual(firstDownload, secondDownload);
+        Assert.NotSame(firstDownload, secondDownload);
 
         var secondLocalState = await secondDownload;
         AssertAvailableLocallyAndFileExists(secondLocalState!);

@@ -246,7 +246,14 @@ public class ArticleDownloader : IDisposable
                 // We'll insert it in the dictionary and return it to the caller
                 // who will do the await.
                 downloadTask = this.DownloadArticleCoreAsync(article, cancellationToken);
-                this.inProgressDownloads[article.Id] = downloadTask;
+
+                // There are scenarios where the download *may* complete
+                // synchronously. In that case we don't want to add it to the
+                // map because it's *not* in progress.
+                if (!downloadTask.IsCompleted)
+                {
+                    this.inProgressDownloads[article.Id] = downloadTask;
+                }
 
                 // But wait, I hear you ask. Where is it *removed* from the
                 // dictionary? Thats actually handled in
