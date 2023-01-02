@@ -171,26 +171,15 @@ public class ArticleDownloader : IDisposable
     {
         this.eventSource?.RaiseDownloadingStarted(articles.Count());
 
-        // Make sure we have an easy look up of articles. This is 'cause when we
-        // get the local state back from the download, we don't know if we need
-        // to Update or Add to the database. Having the article itself *does*
-        // tell us that, which we can use later to make that decision
-        var articleLookup = articles.ToDictionary((a) => a.Id)!;
-
         try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var localstates = new List<DatabaseLocalOnlyArticleState>();
+            cancellationToken.ThrowIfCancellationRequested();;
 
             foreach (var article in articles)
             {
                 try
                 {
-                    var localState = await this.DownloadArticleAsync(article, cancellationToken).ConfigureAwait(false);
-                    if (localState is null)
-                    {
-                        continue;
-                    }
+                    _ = await this.DownloadArticleAsync(article, cancellationToken).ConfigureAwait(false);
                 }
                 catch (EntityNotFoundException)
                 { /* If the article isn't found, we'll attempt another time */ }
