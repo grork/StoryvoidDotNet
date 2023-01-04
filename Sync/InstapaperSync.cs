@@ -4,6 +4,27 @@ using System.Diagnostics;
 namespace Codevoid.Storyvoid.Sync;
 
 /// <summary>
+/// Represents syncing the database content with the instapaper service. 
+/// Created primarily to streamline testing, rather than a deeper interface
+/// to allow alternate sync engines to be supplied.
+/// </summary>
+public interface IInstapaperSync
+{
+    /// <summary>
+    /// Sync everything in the database (but don't download the article bodies,
+    /// to do that use <see cref="ArticleDownloder"/>.
+    ///
+    /// If a sync is already in progress on this instance, we'll return that
+    /// in-progress sync, and not start another one.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// Cancellation token if we are actually starting a new sync
+    /// </param>
+    /// <returns>Task that completes when the sync is completed.</returns>
+    public Task SyncEverythingAsync(CancellationToken cancellationToken = default);
+}
+
+/// <summary>
 /// Extensions to simplify working with the folders database in sync scenarios.
 /// 
 /// Most of these are contained here because sync is the interface between the
@@ -98,7 +119,7 @@ internal static class ArticleDatabaseExtensions
 /// service, as well as enumerating service changes that need to be applied
 /// locally.
 /// </summary>
-public class InstapaperSync
+public class InstapaperSync : IInstapaperSync
 {
     /// <summary>
     /// The number of articles per folder to sync. This will limit the total
@@ -169,17 +190,7 @@ public class InstapaperSync
         }
     }
 
-    /// <summary>
-    /// Sync everything in the database (but don't download the article bodies,
-    /// to do that use <see cref="ArticleDownloder"/>.
-    ///
-    /// If a sync is already in progress on this instance, we'll return that
-    /// in-progress sync, and not start another one.
-    /// </summary>
-    /// <param name="cancellationToken">
-    /// Cancellation token if we are actually starting a new sync
-    /// </param>
-    /// <returns>Task that completes when the sync is completed.</returns>
+    /// <inheritdoc />
     public Task SyncEverythingAsync(CancellationToken cancellationToken = default)
     {
         Task? inProgressSync = null;

@@ -63,10 +63,51 @@ internal static class ChunkinatorExtension
 }
 
 /// <summary>
+/// Article Downloader interface that exposes the public operations for syncing
+/// article content.
+/// 
+/// This is intended to smooth testability of consumers of the article
+/// downloader, not a generic interface for multiple implementations of a
+/// downloader.
+/// </summary>
+public interface IArticleDownloader
+{
+    /// <summary>
+    /// Given a set of articles, will download the body + images for those
+    /// articles, updating the database along the way.
+    /// </summary>
+    /// <param name="articles">Articles to be downloaded</param>
+    /// <returns>
+    /// Task that completes when supplied articles &amp; their images
+    /// completed
+    /// </returns>
+    public Task DownloadArticlesAsync(IEnumerable<DatabaseArticle> articles, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Downloads articles which do not have any local state.
+    /// </summary>
+    /// <returns>Task that completes when articles have been processed</returns>
+    public Task DownloadAllArticlesWithoutLocalStateAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Downloads the article from the service, processes any images (including
+    /// downloading them) if present in the document. The updates are written to
+    /// the database and returned, indicating the state of the article (e.g. was
+    /// it available, any images, local paths etc).
+    ///
+    /// If a download for this article has already been started, a new one will
+    /// not be started – the in-progress one will be returned instead.
+    /// </summary>
+    /// <param name="article">Article to download</param>
+    /// <returns>Updated local state information</returns>
+    public Task<DatabaseLocalOnlyArticleState?> DownloadArticleAsync(DatabaseArticle article, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
 /// Downloads Articles (and images) from the service, and updates the local
 /// state to reflect download success and local file paths
 /// </summary>
-public class ArticleDownloader : IDisposable
+public class ArticleDownloader : IArticleDownloader, IDisposable
 {
     private record FirstImageInformaton(Uri FirstLocalImage, Uri FirstRemoteImage);
     private record ProcessedArticleInformation(string Body, string ExtractedDescription, FirstImageInformaton? FirstImage);
@@ -158,16 +199,8 @@ public class ArticleDownloader : IDisposable
         return this.articleDatabase.AddLocalOnlyStateForArticle(state);
     }
 
-    /// <summary>
-    /// Given a set of articles, will download the body + images for those
-    /// articles, updating the database along the way.
-    /// </summary>
-    /// <param name="articles">Articles to be downloaded</param>
-    /// <returns>
-    /// Task that completes when supplied articles &amp; their images
-    /// completed
-    /// </returns>
-    internal async Task DownloadArticlesAsync(IEnumerable<DatabaseArticle> articles, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task DownloadArticlesAsync(IEnumerable<DatabaseArticle> articles, CancellationToken cancellationToken = default)
     {
         this.eventSource?.RaiseDownloadingStarted(articles.Count());
 
@@ -191,11 +224,8 @@ public class ArticleDownloader : IDisposable
         }
     }
 
-    /// <summary>
-    /// Downloads articles which do not have any local state.
-    /// </summary>
-    /// <returns>Task that completes when articles have been processed</returns>
-    internal async Task DownloadAllArticlesWithoutLocalStateAsync()
+    /// <inheritdoc />
+    public async Task DownloadAllArticlesWithoutLocalStateAsync(CancellationToken cancellationToken = default)
     {
         var articlesToDownload = this.articleDatabase.ListArticlesWithoutLocalOnlyState();
         if (articlesToDownload.Count() == 0)
@@ -203,20 +233,10 @@ public class ArticleDownloader : IDisposable
             return;
         }
 
-        await this.DownloadArticlesAsync(articlesToDownload).ConfigureAwait(false);
+        await this.DownloadArticlesAsync(articlesToDownload, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Downloads the article from the service, processes any images (including
-    /// downloading them) if present in the document. The updates are written to
-    /// the database and returned, indicating the state of the article (e.g. was
-    /// it available, any images, local paths etc).
-    ///
-    /// If a download for this article has already been started, a new one will
-    /// not be started – the in-progress one will be returned instead.
-    /// </summary>
-    /// <param name="article">Article to download</param>
-    /// <returns>Updated local state information</returns>
+    /// <inheritdoc />
     public Task<DatabaseLocalOnlyArticleState?> DownloadArticleAsync(DatabaseArticle article, CancellationToken cancellationToken = default)
     {
         Task<DatabaseLocalOnlyArticleState?>? downloadTask = null;
