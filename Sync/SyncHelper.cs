@@ -3,7 +3,7 @@ using System.Data;
 using System.Diagnostics;
 using Codevoid.Storyvoid.Sync;
 
-namespace Codevoid.Storyvoid.ViewModels;
+namespace Codevoid.Storyvoid.Sync;
 
 /// <summary>
 /// Syncing is complicated with the need for an transactionally-isolated
@@ -75,7 +75,7 @@ public class SyncHelper : INotifyPropertyChanged
     public async Task SyncDatabaseAndArticles()
     {
         // Don't initiate another sync if we already have one in progress
-        if(this.IsSyncing)
+        if (this.IsSyncing)
         {
             return;
         }
@@ -84,7 +84,7 @@ public class SyncHelper : INotifyPropertyChanged
 
         // Create the canellation source to allow this to be cancelled. This
         // will assign the cancellation token source so that it can be cancelled
-        using(this.cts = new CancellationTokenSource())
+        using (this.cts = new CancellationTokenSource())
         {
             // Inform listeners that the syncing state has changed
             this.RaiseIsSyncingChanged();

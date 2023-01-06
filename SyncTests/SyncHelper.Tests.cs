@@ -1,7 +1,6 @@
 using System.Data;
 using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.Sync;
-using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
 
 namespace Codevoid.Test.Storyvoid.Sync;
@@ -143,7 +142,7 @@ public class SyncHelperTests
 
         helper.PropertyChanged += (o, a) =>
         {
-            if(a.PropertyName != nameof(helper.IsSyncing))
+            if (a.PropertyName != nameof(helper.IsSyncing))
             {
                 return;
             }
