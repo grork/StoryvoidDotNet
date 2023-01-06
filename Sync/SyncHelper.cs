@@ -65,6 +65,13 @@ public class SyncHelper : INotifyPropertyChanged
     /// </summary>
     public bool IsSyncing => this.cts != null;
 
+    /// <summary>
+    /// During a sync, should articles be downloaded or not. Intended for
+    /// development purposes, rather than shipping.
+    ///
+    /// Enabled by default.
+    /// </summary>
+    public bool DownloadArticles = true;
 
     /// <summary>
     /// Initate a sync of the database _and_ download missing article bodies.
@@ -115,7 +122,10 @@ public class SyncHelper : INotifyPropertyChanged
                     // If we successfully synced, immediately start downloading
                     // the article content that does not currently have any
                     // local state available.
-                    await this.downloader.DownloadAllArticlesWithoutLocalStateAsync(cts.Token);
+                    if (this.DownloadArticles)
+                    {
+                        await this.downloader.DownloadAllArticlesWithoutLocalStateAsync(cts.Token);
+                    }
                 });
             }
             finally

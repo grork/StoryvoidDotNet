@@ -28,9 +28,24 @@ public class SyncHelperTests
         private TaskCompletionSource downloadAllArticles = new TaskCompletionSource();
         private TaskCompletionSource<DatabaseLocalOnlyArticleState?> downloadSingleArticleState = new TaskCompletionSource<DatabaseLocalOnlyArticleState?>();
 
-        public Task DownloadAllArticlesWithoutLocalStateAsync(CancellationToken cancellationToken = default) => this.downloadAllWithoutState.Task;
-        public Task<DatabaseLocalOnlyArticleState?> DownloadArticleAsync(DatabaseArticle article, CancellationToken cancellationToken = default) => this.downloadSingleArticleState.Task;
-        public Task DownloadArticlesAsync(IEnumerable<DatabaseArticle> articles, CancellationToken cancellationToken = default) => this.downloadAllArticles.Task;
+        public async Task DownloadAllArticlesWithoutLocalStateAsync(CancellationToken cancellationToken = default)
+        {
+            await this.downloadAllWithoutState.Task;
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        public async Task<DatabaseLocalOnlyArticleState?> DownloadArticleAsync(DatabaseArticle article, CancellationToken cancellationToken = default)
+        {
+            var result = await this.downloadSingleArticleState.Task;
+            cancellationToken.ThrowIfCancellationRequested();
+            return result;
+        }
+
+        public async Task DownloadArticlesAsync(IEnumerable<DatabaseArticle> articles, CancellationToken cancellationToken = default)
+        {
+            await this.downloadAllArticles.Task;
+            cancellationToken.ThrowIfCancellationRequested();
+        }
 
         public void TriggerAll()
         {
@@ -137,7 +152,6 @@ public class SyncHelperTests
     {
         var (helper, downloader, sync) = this.GetHelper();
 
-
         List<bool> isSyncingValueChanges = new List<bool>();
 
         helper.PropertyChanged += (o, a) =>
@@ -177,4 +191,38 @@ public class SyncHelperTests
 
         Assert.False(helper.IsSyncing);
     }
+
+    [Fact]
+    public async Task SyncCompletedWhenDownloadingArticlesDisabled()
+    {
+        var (helper, downloader, sync) = this.GetHelper();
+        helper.DownloadArticles = false;
+
+        sync.TriggerSyncEverythingComplete();
+
+        await helper.SyncDatabaseAndArticles();
+    }
+
+    [Fact]
+    public async Task SyncDoesntCompleteIfDownloadsArentCompletedWhenDownloadingArticlesEnabled()
+    {
+        var (helper, downloader, sync) = this.GetHelper();
+        helper.DownloadArticles = true;
+
+        // Start the task, and trigger moving to the download tasks
+        var syncTask = helper.SyncDatabaseAndArticles();
+        sync.TriggerSyncEverythingComplete();
+
+        // Download task will block on waiting for the task, if we cancel it now
+        // the mocks will throw when the tasks are completed, causing the cancel
+        // to propogate correctly.
+        //
+        // We're only cancelling to get the task to complete!
+        helper.Cancel();
+        downloader.TriggerAll();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => syncTask);
+
+    }
+
 }
