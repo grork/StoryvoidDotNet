@@ -121,7 +121,11 @@ public class SyncHelper : INotifyPropertyChanged
 
                     // If we successfully synced, immediately start downloading
                     // the article content that does not currently have any
-                    // local state available.
+                    // local state available. While this doesn't use the the
+                    // same database connection as sync, it is on the non-UI
+                    // thread. This uses the default threading model of SQLite
+                    // to ensure serialized access to the database. This is
+                    // obviously a small risk, but the writes should be small.
                     if (this.DownloadArticles)
                     {
                         await this.downloader.DownloadAllArticlesWithoutLocalStateAsync(cts.Token);
