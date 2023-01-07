@@ -7,29 +7,10 @@ namespace Codevoid.Storyvoid.Utilities;
 /// Implementation of the Sync event sink/source that marshalls events onto the
 /// dispatcher for easy UI-interactions
 /// </summary>
-internal class DispatcherSyncEvents : IDatabaseSyncEventSink, IDatabaseSyncEventSource
+internal class DispatcherSyncEvents : EventDispatcherBase, IDatabaseSyncEventSink, IDatabaseSyncEventSource
 {
-    private readonly DispatcherQueue queue;
-    internal DispatcherSyncEvents(DispatcherQueue queue) => this.queue = queue;
-
-    /// <summary>
-    /// Invokes the supplied operation on the dispatcher. If we're already on
-    /// the dispatcher, we will execute it directly. Otherwise we'll queue it on
-    /// our dispatcher queue for later execution.
-    /// </summary>
-    /// <param name="operation">Encapsulated operation to perform</param>
-    private void PerformOnDispatcher(DispatcherQueueHandler operation)
-    {
-        if (this.queue.HasThreadAccess)
-        {
-            // If we're already on the right thread, we can just invoke the
-            // operation directly.
-            operation();
-            return;
-        }
-
-        this.queue.TryEnqueue(operation);
-    }
+    internal DispatcherSyncEvents(DispatcherQueue queue) : base(queue)
+    { }
 
     /// <inheritdoc />
     public event EventHandler? SyncStarted;

@@ -1,6 +1,7 @@
-﻿using Microsoft.UI.Dispatching;
+﻿using Codevoid.Storyvoid.Utilities;
+using Microsoft.UI.Dispatching;
 
-namespace Codevoid.Storyvoid;
+namespace Codevoid.Storyvoid.Utilities;
 
 /// <summary>
 /// Handles database events being raised, and ensures that listeners are handled
@@ -10,37 +11,14 @@ namespace Codevoid.Storyvoid;
 /// This is intended to help with events that impact the *UI*, and thus need to
 /// be executed on the event 
 /// </summary>
-internal class DispatcherDatabaseEvents : IDatabaseEventSink, IDatabaseEventSource
+internal class DispatcherDatabaseEvents : EventDispatcherBase, IDatabaseEventSink, IDatabaseEventSource
 {
-    private readonly DispatcherQueue queue;
-
     /// <summary>
     /// Instantiate w/ the supplied dispatcher
     /// </summary>
-    /// <param name="targetDispatcherQueue"></param>
-    internal DispatcherDatabaseEvents(DispatcherQueue targetDispatcherQueue)
-    {
-        this.queue = targetDispatcherQueue;
-    }
-
-    /// <summary>
-    /// Invokes the supplied operation on the dispatcher. If we're already on
-    /// the dispatcher, we will execute it directly. Otherwise we'll queue it on
-    /// our dispatcher queue for later execution.
-    /// </summary>
-    /// <param name="operation">Encapsulated operation to perform</param>
-    private void PerformOnDispatcher(DispatcherQueueHandler operation)
-    {
-        if (this.queue.HasThreadAccess)
-        {
-            // If we're already on the right thread, we can just invoke the
-            // operation directly.
-            operation();
-            return;
-        }
-
-        this.queue.TryEnqueue(operation);
-    }
+    /// <param name="targetDispatcherQueue">Dispatcher to raise events on</param>
+    internal DispatcherDatabaseEvents(DispatcherQueue targetDispatcherQueue) : base(targetDispatcherQueue)
+    { }
 
     /// <inheritdoc />
     public event EventHandler<DatabaseFolder>? FolderAdded;
