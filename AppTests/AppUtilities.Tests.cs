@@ -154,7 +154,7 @@ public class AppUtilitiesTests
             Assert.IsNotNull(dataLayer.Articles);
         }
 
-        AppUtilities.DeleteLocalDatabaseFiles();
+        AppUtilities.DeleteLocalFiles();
         Assert.IsFalse(File.Exists(datasourcePath));
     }
 }

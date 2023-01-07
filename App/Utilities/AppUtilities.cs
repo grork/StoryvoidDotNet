@@ -43,11 +43,6 @@ interface IAppUtilities
     void ShowPlaceholder(object? parameter = null);
 
     /// <summary>
-    /// Performs a sync of articles, without the article download
-    /// </summary>
-    void PerformSyncWithoutDownloads();
-
-    /// <summary>
     /// Clears the credentials, local database + files, and displays the login
     /// page once complete.
     /// </summary>
@@ -64,7 +59,10 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         IFolderDatabase Folders,
         DispatcherDatabaseEvents DatabaseEvents,
         IDisposable Ledger,
+        SyncHelper SyncHelper,
         DispatcherSyncEvents SyncEvents,
+        ArticleDownloader ArticleDownloader,
+        ArticleDownloaderEvents DownloderEvents,
         SqliteConnection Connection
     );
 
@@ -78,6 +76,11 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     /// Default filename for the database stored in the local file system
     /// </summary>
     private static readonly string DATABASE_FILE_NAME = "storyvoid";
+
+    /// <summary>
+    /// Default folder for the downloaded articles in the local file system
+    /// </summary>
+    private static readonly string ARTICLE_DOWNLOADS_FOLDER = "articles";
 
     private bool disposed = false;
     private Frame frame;
@@ -130,10 +133,10 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     /// <inheritdoc/>
     public void ShowPlaceholder(object? parameter = null)
     {
-        async Task<IFolderDatabase> LocalWork()
+        async Task<(IFolderDatabase, SyncHelper)> LocalWork()
         {
             var dataLayer = await this.GetDataLayer();
-            return dataLayer.Folders;
+            return (dataLayer.Folders, dataLayer.SyncHelper);
         }
 
         var placeholderParameter = new PlaceholderParameter(parameter ?? placeholderCount++, LocalWork(), this.OperationLog);
@@ -176,7 +179,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         var cleanUpTask = Task.Run(() =>
         {
             this.CloseDatabase();
-            AppUtilities.DeleteLocalDatabaseFiles();
+            AppUtilities.DeleteLocalFiles();
         });
 
         // Make sure we show the signing out page for a minimum time
@@ -206,16 +209,81 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             this.dbTask?.Dispose();
             this.dbTask = null;
 
+            // Get inputs for the data layer
+            var connectionStringForSync = dbConnection.ConnectionString;
+            var clientInformation = this.accountSettings.GetTokens();
+
             // Create our data layer
             var databaseEvents = new DispatcherDatabaseEvents(this.frame.DispatcherQueue);
             var articleDB = InstapaperDatabase.GetArticleDatabase(dbConnection, databaseEvents);
             var folderDB = InstapaperDatabase.GetFolderDatabase(dbConnection, databaseEvents);
             var ledger = InstapaperDatabase.GetLedger(folderDB, articleDB);
+            var downloaderEvents = new ArticleDownloaderEvents(this.frame.DispatcherQueue);
+            var articleDownloader = new ArticleDownloader(
+                AppUtilities.LocalArticlesFolderPath,
+                articleDB,
+                new BookmarksClient(clientInformation),
+                clientInformation,
+                downloaderEvents
+            );
             var syncEvents = new DispatcherSyncEvents(this.frame.DispatcherQueue);
-            var databases = new DataLayer(articleDB, folderDB, databaseEvents, ledger, syncEvents, dbConnection);
+            var syncHelper = new SyncHelper(articleDownloader, async () =>
+            {
+                // Syncing should happen against a separate DB connection to
+                // keep the transactions isolated & prevent dirty-reads. We also
+                // want to open the DB on a separate thread so that any disk
+                // delays don't hold up the caller.
+                //
+                // Note, per the contract of sync helper, it will be responsible
+                // for closing the database when it's done.
+                var syncDb = await Task.Run(() =>
+                {
+                    var syncConnection = new SqliteConnection(connectionStringForSync);
+                    syncConnection.Open();
 
+                    return syncConnection;
+                });
+
+                // Create the sync instance itself
+                var folders = InstapaperDatabase.GetFolderDatabase(syncDb, databaseEvents);
+                var folderChanges = InstapaperDatabase.GetFolderChangesDatabase(syncDb);
+                var articles = InstapaperDatabase.GetArticleDatabase(syncDb, databaseEvents);
+                var articleChanges = InstapaperDatabase.GetArticleChangesDatabase(syncDb);
+                var foldersClient = new FoldersClient(clientInformation);
+                var bookmarksClient = new BookmarksClient(clientInformation);
+
+                var sync = new InstapaperSync(
+                    folders,
+                    folderChanges,
+                    foldersClient,
+                    articles,
+                    articleChanges,
+                    bookmarksClient,
+                    syncEvents
+                );
+
+                return (sync, syncDb);
+            })
+            { DownloadArticles = true }; // Remove when we start downloading articles
+
+            var databases = new DataLayer(
+                articleDB,
+                folderDB,
+                databaseEvents,
+                ledger,
+                syncHelper,
+                syncEvents,
+                articleDownloader,
+                downloaderEvents,
+                dbConnection
+            );
+
+            // Log some of the events in sync, database, download to the
+            // operation log so it's easy to see whats going on
             syncEvents.SyncStarted += (o, a) => this.OperationLog.Add("Sync Started");
             syncEvents.SyncEnded += (o, a) => this.OperationLog.Add("Sync Ended");
+            downloaderEvents.DownloadingStarted += (o, a) => this.OperationLog.Add("Article Download Started");
+            downloaderEvents.DownloadingCompleted += (o, a) => this.OperationLog.Add("Article Download Completed");
 
             lock (this.dataLayerLock)
             {
@@ -265,32 +333,6 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         return this.dataLayer!.Connection.ConnectionString;
     }
 
-    /// <inheritdoc />
-    public async void PerformSyncWithoutDownloads()
-    {
-        var tokens = this.accountSettings.GetTokens();
-        using var syncConnection = new SqliteConnection(this.ConnectionString());
-        syncConnection.Open();
-
-        var folders = InstapaperDatabase.GetFolderDatabase(syncConnection, this.dataLayer!.DatabaseEvents);
-        var folderChanges = InstapaperDatabase.GetFolderChangesDatabase(syncConnection);
-        var articles = InstapaperDatabase.GetArticleDatabase(syncConnection, this.dataLayer!.DatabaseEvents);
-        var articleChanges = InstapaperDatabase.GetArticleChangesDatabase(syncConnection);
-        var foldersClient = new FoldersClient(tokens);
-        var bookmarksClient = new BookmarksClient(tokens);
-
-        var sync = new InstapaperSync(folders, folderChanges, foldersClient, articles, articleChanges, bookmarksClient, this.dataLayer.SyncEvents);
-
-        try
-        {
-            await sync.SyncEverythingAsync();
-        }
-        finally
-        {
-            syncConnection.Close();
-        }
-    }
-
     public void Dispose()
     {
         if (this.disposed)
@@ -322,16 +364,22 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
 
     /// <summary>
     /// Get the folder where we store local data. This is expected to be
-    /// persistent and save across updates
+    /// persistent and saved across updates
     /// </summary>
     private static string LocalDataFolderPath => ApplicationData.Current.LocalCacheFolder.Path;
+
+    /// <summary>
+    /// Gets the folder where downloaded articles are stored. This is expected
+    /// to be persistent and saved across updates
+    /// </summary>
+    private static string LocalArticlesFolderPath => Path.Combine(AppUtilities.LocalDataFolderPath, ARTICLE_DOWNLOADS_FOLDER);
 
     /// <summary>
     /// Deletes the files that make up the local database from the data folder.
     /// 
     /// Ensure you've closed all connections to the database, or this will fail
     /// </summary>
-    internal static void DeleteLocalDatabaseFiles()
+    internal static void DeleteLocalFiles()
     {
         var localDataPath = AppUtilities.LocalDataFolderPath;
 
@@ -342,6 +390,12 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         {
             File.Delete(dbFile);
         }
+
+        try
+        {
+            Directory.Delete(AppUtilities.LocalArticlesFolderPath, true);
+        }
+        catch { };
     }
 
     /// <summary>
@@ -369,7 +423,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
 
         if (deleteLocalDatabaseFirst)
         {
-            AppUtilities.DeleteLocalDatabaseFiles();
+            AppUtilities.DeleteLocalFiles();
         }
 #endif
 

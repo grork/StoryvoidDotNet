@@ -50,7 +50,7 @@
             <Button Click="ShowLogin_Click">Show Login</Button>
             <Button Click="Signout_Click">Signout</Button>
             <Button Click="CreateRandomFolder_Click">Create Random Folder</Button>
-            <Button Click="SyncNoDownload_Click">Sync (no download)</Button>
+            <Button x:Name="SyncButton">Sync (no download)</Button>
         </StackPanel>
     </Grid>
 </Page>

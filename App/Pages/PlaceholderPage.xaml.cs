@@ -1,13 +1,13 @@
-using Codevoid.Storyvoid.App.Implementations;
+using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.Utilities;
+using Codevoid.Storyvoid.ViewModels.Commands;
 using Microsoft.UI.Xaml.Navigation;
-using System.Collections.ObjectModel;
 
 namespace Codevoid.Storyvoid.Pages;
 
 internal record PlaceholderParameter(
     object? Parameter,
-    Task<IFolderDatabase> FolderDatabase,
+    Task<(IFolderDatabase Folders, SyncHelper Sync)> DataLayer,
     IList<string> OperationLog
 );
 
@@ -41,7 +41,9 @@ internal sealed partial class PlaceholderPage : Page
 
         base.OnNavigatedTo(e);
 
-        this.folders = await placeholderParam.FolderDatabase;
+        var dataLayer = await placeholderParam.DataLayer;
+        this.folders = dataLayer.Folders;
+        this.SyncButton.Command = new SyncCommand(dataLayer.Sync);
     }
 
     private void GoBack_Click(object sender, RoutedEventArgs e) => this.Frame.GoBack();
@@ -62,11 +64,6 @@ internal sealed partial class PlaceholderPage : Page
     }
 
     private void CreateRandomFolder_Click(object sender, RoutedEventArgs e) => this.folders?.CreateFolder(DateTime.Now.Ticks.ToString());
-
-    private void SyncNoDownload_Click(object sender, RoutedEventArgs e)
-    {
-        this.utilities?.PerformSyncWithoutDownloads();
-    }
 
     private void ShowLogin_Click(object sender, RoutedEventArgs e)
     {
