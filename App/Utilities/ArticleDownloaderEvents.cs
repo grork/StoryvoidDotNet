@@ -1,10 +1,5 @@
 ﻿using Codevoid.Storyvoid.Sync;
 using Microsoft.UI.Dispatching;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Codevoid.Storyvoid.Utilities;
 
@@ -12,9 +7,9 @@ namespace Codevoid.Storyvoid.Utilities;
 /// Implementation of the article downloader event sink/source that marshalls
 /// events onto the dispatcher for easy UI-interactions
 /// </summary>
-internal class ArticleDownloaderEventDispatcher : EventDispatcherBase, IArticleDownloaderEventSink, IArticleDownloaderEventSource
+internal class ArticleDownloaderEvents : EventDispatcherBase, IArticleDownloaderEventSink, IArticleDownloaderEventSource
 {
-    internal ArticleDownloaderEventDispatcher(DispatcherQueue queue) : base(queue)
+    internal ArticleDownloaderEvents(DispatcherQueue queue) : base(queue)
     { }
 
     /// <inheritdoc/>
