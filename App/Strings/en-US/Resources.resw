@@ -121,6 +121,9 @@
     <value>Storyvoid</value>
     <comment>App name, shown on tile / start menu / window title</comment>
   </data>
+  <data name="ArticleList_SyncCommand.Label" xml:space="preserve">
+    <value>Sync</value>
+  </data>
   <data name="Authenticator.AccountInput.PlaceholderText" xml:space="preserve">
     <value>Username (e.g. you@example.com)</value>
   </data>

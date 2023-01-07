@@ -1,6 +1,8 @@
 ﻿using Codevoid.Storyvoid;
+using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
+using System.Data;
 
 namespace Codevoid.Test.Storyvoid.ViewModels;
 
@@ -11,17 +13,22 @@ public class ArticleListTests : IDisposable
     private SqliteConnection connection;
     private ArticleList viewmodel;
     private MockArticleListSettings settings = new MockArticleListSettings();
+    private SyncHelper syncHelper;
 
     public ArticleListTests()
     {
         var (connection, folders, _, articles, _) = TestUtilities.GetDatabases(this.clearingHouse);
         this.databases = (folders, articles);
         this.connection = connection;
+        this.syncHelper = new SyncHelper(new MockArticleDownloader(),
+            () => Task.FromResult<(IInstapaperSync, IDbConnection)>((new MockInstapaperSync(), connection)));
+
         this.viewmodel = new ArticleList(
             this.databases.Folders,
             this.databases.Articles,
             this.clearingHouse,
-            this.settings
+            this.settings,
+            this.syncHelper
         );
     }
 
@@ -195,7 +202,8 @@ public class ArticleListTests : IDisposable
             this.databases.Folders,
             this.databases.Articles,
             this.clearingHouse,
-            this.settings
+            this.settings,
+            this.syncHelper
         );
 
         Assert.Equal(nonDefaultSortIdentifier, alternativeViewModel.CurrentSort.Identifier);

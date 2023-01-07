@@ -26,8 +26,14 @@
                     <MenuFlyout x:Name="SortsFlyout" />
                 </AppBarButton.Flyout>
             </AppBarButton>
+            <CommandBar.SecondaryCommands>
+                <AppBarButton x:Uid="ArticleList_SyncCommand"
+                              Command="{x:Bind ViewModel.SyncCommand, Mode=OneTime}"
+                              Icon="Sync"
+                              Label="Sync" />
+            </CommandBar.SecondaryCommands>
         </CommandBar>
-        
+
         <controls:ArticleListControl Grid.Row="1"
                                      Grid.ColumnSpan="2"
                                      ViewModel="{x:Bind ViewModel, Mode=OneTime}" />

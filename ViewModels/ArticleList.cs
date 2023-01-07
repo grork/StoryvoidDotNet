@@ -1,7 +1,10 @@
-﻿using System.Collections.ObjectModel;
+﻿using Codevoid.Storyvoid.Sync;
+using Codevoid.Storyvoid.ViewModels.Commands;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace Codevoid.Storyvoid.ViewModels;
 
@@ -37,6 +40,7 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
 {
     public readonly static string DefaultSortIdentifier = "OldestToNewest";
     public event PropertyChangedEventHandler? PropertyChanged;
+    public readonly ICommand SyncCommand;
 
     private readonly IFolderDatabase folderDatabase;
     private readonly IArticleDatabase articleDatabase;
@@ -57,7 +61,8 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
         IFolderDatabase folderDatabase,
         IArticleDatabase articleDatabase,
         IDatabaseEventSink eventSink,
-        IArticleListSettings settings
+        IArticleListSettings settings,
+        SyncHelper syncHelper
     )
     {
         this.folderDatabase = folderDatabase;
@@ -90,6 +95,9 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
 
         // Set the default sort to match that supplied from settings.
         this.currentSort = this.Sorts.First((s) => s.Identifier == settings.SortIdentifier);
+
+        // Create the sync command from the supplied sync helper
+        this.SyncCommand = new SyncCommand(syncHelper);
     }
 
     /// <summary>
@@ -110,6 +118,7 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
     {
         this.folderChangeProcessor.Dispose();
         this.articleListChangeProcessor?.Dispose();
+        (this.SyncCommand as IDisposable)?.Dispose();
     }
 
     /// <summary>

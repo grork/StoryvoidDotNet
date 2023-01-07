@@ -116,7 +116,8 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             dataLayer.Folders,
             dataLayer.Articles,
             dataLayer.DatabaseEvents,
-            new ArticleListSettings()
+            new ArticleListSettings(),
+            dataLayer.SyncHelper
         );
 
         this.frame.Navigate(typeof(ArticleListPage), articleList);
