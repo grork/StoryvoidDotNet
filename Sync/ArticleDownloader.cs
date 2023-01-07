@@ -305,6 +305,7 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
 
                 cancellationToken.ThrowIfCancellationRequested();
 
+                Directory.CreateDirectory(this.workingRoot);
                 File.WriteAllText(articleAbsoluteFilePath, body, Encoding.UTF8);
 
                 // We have successfully processed the article, so we can update the

@@ -18,7 +18,7 @@ public class ArticleDownloaderTests : IDisposable
     private readonly Codevoid.Utilities.OAuth.ClientInformation clientInformation;
     private readonly FileSystemMappedHttpHandler localFileHttpHandler;
 
-    private readonly DirectoryInfo testFolder;
+    private DirectoryInfo testFolder;
     private readonly string mockResponsesFolder = Path.Join(Environment.CurrentDirectory, "mockbookmarkresponses");
 
     #region Mock Article IDs
@@ -63,8 +63,13 @@ public class ArticleDownloaderTests : IDisposable
     }
 
     [MemberNotNull(nameof(articleDownloader))]
-    private void ResetArticleDownloader(IArticleDownloaderEventSource? eventSource = null)
+    private void ResetArticleDownloader(IArticleDownloaderEventSource? eventSource = null, string workingRootSubfolder = "")
     {
+        if (!String.IsNullOrWhiteSpace(workingRootSubfolder))
+        {
+            this.testFolder = new DirectoryInfo(Path.Join(this.testFolder.FullName, workingRootSubfolder));
+        }
+
         this.articleDownloader = new ArticleDownloader(
             this.localFileHttpHandler,
             this.testFolder.FullName,
@@ -181,6 +186,16 @@ public class ArticleDownloaderTests : IDisposable
     [Fact]
     public async Task CanDownloadArticleWithoutImages()
     {
+        var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
+        var localState = await this.articleDownloader.DownloadArticleAsync(article);
+        AssertAvailableLocallyAndFileExists(localState!);
+    }
+
+    [Fact]
+    public async Task CanDownloadArticleWhenWorkingRootDoesntExist()
+    {
+        var testFolderSubFolderThatDoesntExist = Guid.NewGuid().ToString();
+        this.ResetArticleDownloader(null, testFolderSubFolderThatDoesntExist);
         var article = this.articleDatabase.GetArticleById(BASIC_ARTICLE_NO_IMAGES)!;
         var localState = await this.articleDownloader.DownloadArticleAsync(article);
         AssertAvailableLocallyAndFileExists(localState!);
