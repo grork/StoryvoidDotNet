@@ -14,7 +14,7 @@ internal sealed class SyncEventClearingHouse : IDatabaseSyncEventSink, IDatabase
     public event EventHandler? FoldersEnded;
 
     /// <inheritdoc />
-    public event EventHandler? FoldersError;
+    public event EventHandler<Exception?>? FoldersError;
 
     /// <inheritdoc />
     public event EventHandler? ArticlesStarted;
@@ -23,13 +23,13 @@ internal sealed class SyncEventClearingHouse : IDatabaseSyncEventSink, IDatabase
     public event EventHandler? ArticlesEnded;
 
     /// <inheritdoc />
-    public event EventHandler? ArticlesError;
+    public event EventHandler<Exception?>? ArticlesError;
 
     /// <inheritdoc />
     public event EventHandler? SyncEnded;
 
     /// <inheritdoc />
-    public event EventHandler? SyncError;
+    public event EventHandler<Exception?>? SyncError;
 
     /// <inheritdoc />
     public void RaiseSyncStarted()
@@ -53,10 +53,10 @@ internal sealed class SyncEventClearingHouse : IDatabaseSyncEventSink, IDatabase
     }
 
     /// <inheritdoc />
-    public void RaiseFoldersError()
+    public void RaiseFoldersError(Exception? exception)
     {
         var handler = this.FoldersError;
-        handler?.Invoke(this, EventArgs.Empty);
+        handler?.Invoke(this, exception);
     }
 
     /// <inheritdoc />
@@ -74,10 +74,10 @@ internal sealed class SyncEventClearingHouse : IDatabaseSyncEventSink, IDatabase
     }
 
     /// <inheritdoc />
-    public void RaiseArticlesError()
+    public void RaiseArticlesError(Exception? exception)
     {
         var handler = this.ArticlesError;
-        handler?.Invoke(this, EventArgs.Empty);
+        handler?.Invoke(this, exception);
     }
 
     /// <inheritdoc />
@@ -88,9 +88,9 @@ internal sealed class SyncEventClearingHouse : IDatabaseSyncEventSink, IDatabase
     }
 
     /// <inheritdoc />
-    public void RaiseSyncError()
+    public void RaiseSyncError(Exception? exception)
     {
         var handler = this.SyncError;
-        handler?.Invoke(this, EventArgs.Empty);
+        handler?.Invoke(this, exception);
     }
 }

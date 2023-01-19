@@ -183,8 +183,9 @@ public class InstapaperSync : IInstapaperSync
         }
         catch(Exception e)
         {
-            this.clearingHouse?.RaiseSyncError();
-            ExceptionDispatchInfo.Capture(e).Throw();
+            var error = ExceptionDispatchInfo.Capture(e);
+            this.clearingHouse?.RaiseSyncError(error.SourceException);
+            error.Throw();
         }
         finally
         {
@@ -282,8 +283,9 @@ public class InstapaperSync : IInstapaperSync
         }
         catch(Exception e)
         {
-            this.clearingHouse?.RaiseFoldersError();
-            ExceptionDispatchInfo.Capture(e).Throw();
+            var exceptionInfo = ExceptionDispatchInfo.Capture(e);
+            this.clearingHouse?.RaiseFoldersError(exceptionInfo.SourceException);
+            exceptionInfo.Throw();
         }
         finally
         {
@@ -399,8 +401,9 @@ public class InstapaperSync : IInstapaperSync
         }
         catch(Exception e)
         {
-            this.clearingHouse?.RaiseArticlesError();
-            ExceptionDispatchInfo.Capture(e).Throw();
+            var exceptionInfo = ExceptionDispatchInfo.Capture(e);
+            this.clearingHouse?.RaiseArticlesError(exceptionInfo.SourceException);
+            exceptionInfo.Throw();
         }
         finally
         {

@@ -36,7 +36,7 @@ public sealed class SyncEventClearingHouseTests
     {
         var wasRaised = false;
         this.clearingHouse.FoldersError += (_, _) => wasRaised = true;
-        this.clearingHouse.RaiseFoldersError();
+        this.clearingHouse.RaiseFoldersError(new Exception());
         Assert.True(wasRaised);
     }
 
@@ -63,7 +63,7 @@ public sealed class SyncEventClearingHouseTests
     {
         var wasRaised = false;
         this.clearingHouse.ArticlesError += (_, _) => wasRaised = true;
-        this.clearingHouse.RaiseArticlesError();
+        this.clearingHouse.RaiseArticlesError(new Exception());
         Assert.True(wasRaised);
     }
 
@@ -81,7 +81,7 @@ public sealed class SyncEventClearingHouseTests
     {
         var wasRaised = false;
         this.clearingHouse.SyncError += (_, _) => wasRaised = true;
-        this.clearingHouse.RaiseSyncError();
+        this.clearingHouse.RaiseSyncError(new Exception());
         Assert.True(wasRaised);
     }
 }

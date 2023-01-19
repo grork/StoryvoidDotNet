@@ -28,7 +28,7 @@ public interface IDatabaseSyncEventSink
     /// <summary>
     /// An error occured while syncing folders
     /// </summary>
-    event EventHandler FoldersError;
+    event EventHandler<Exception?> FoldersError;
 
     /// <summary>
     /// Syncing of articles, across all folders (added, removed, changed) has
@@ -45,7 +45,7 @@ public interface IDatabaseSyncEventSink
     /// <summary>
     /// An error occured while syncing articles
     /// </summary>
-    event EventHandler ArticlesError;
+    event EventHandler<Exception?> ArticlesError;
 
     /// <summary>
     /// A Sync has completed (Either successfully, or in error)
@@ -55,7 +55,7 @@ public interface IDatabaseSyncEventSink
     /// <summary>
     /// An error occured during the sync
     /// </summary>
-    event EventHandler SyncError;
+    event EventHandler<Exception?> SyncError;
 }
 
 /// <summary>
@@ -81,7 +81,7 @@ public interface IDatabaseSyncEventSource
     /// <summary>
     /// Raise that an error occured while syncing folders
     /// </summary>
-    void RaiseFoldersError();
+    void RaiseFoldersError(Exception? exception);
 
     /// <summary>
     /// Raise that syncing of articles has begun
@@ -96,7 +96,7 @@ public interface IDatabaseSyncEventSource
     /// <summary>
     /// Raise that an error occured during the syncing of articles
     /// </summary>
-    void RaiseArticlesError();
+    void RaiseArticlesError(Exception? exception);
 
     /// <summary>
     /// Raise that the syncing has completed
@@ -106,5 +106,5 @@ public interface IDatabaseSyncEventSource
     /// <summary>
     /// Raise that an error occured in syncing
     /// </summary>
-    void RaiseSyncError();
+    void RaiseSyncError(Exception? exception);
 }
