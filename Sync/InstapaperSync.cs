@@ -1,5 +1,6 @@
 ﻿using Codevoid.Instapaper;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 
 namespace Codevoid.Storyvoid.Sync;
 
@@ -162,10 +163,10 @@ public class InstapaperSync : IInstapaperSync
     internal event EventHandler? __Hook_FolderSync_PostProcessList;
     internal event EventHandler? __Hook_ArticleSync_PrePendingAdd;
     internal event EventHandler? __Hook_ArticleSync_PrePendingDelete;
-    internal event EventHandler? __Hook_ArticleSyncPrePendingMove;
-    internal event EventHandler? __Hook_ArticleSyncPreLike;
-    internal event EventHandler? __Hook_ArticleSyncPreRemoteLikeFolderSync;
-    internal event EventHandler? __Hook_ArticleSyncPreFolder;
+    internal event EventHandler? __Hook_ArticleSync_PrePendingMove;
+    internal event EventHandler? __Hook_ArticleSync_PreLike;
+    internal event EventHandler? __Hook_ArticleSync_PreRemoteLikeFolderSync;
+    internal event EventHandler? __Hook_ArticleSync_PreFolder;
     #endregion
 
     private async Task SyncEverythingInternalAsync(CancellationToken cancellationToken = default)
@@ -179,6 +180,11 @@ public class InstapaperSync : IInstapaperSync
             await this.SyncArticlesAsync(cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             this.CleanupOrphanedArticles();
+        }
+        catch(Exception e)
+        {
+            this.clearingHouse?.RaiseSyncError();
+            ExceptionDispatchInfo.Capture(e).Throw();
         }
         finally
         {
@@ -273,6 +279,11 @@ public class InstapaperSync : IInstapaperSync
 
                 this.folderDb.DeleteFolder(lf.LocalId);
             }
+        }
+        catch(Exception e)
+        {
+            this.clearingHouse?.RaiseFoldersError();
+            ExceptionDispatchInfo.Capture(e).Throw();
         }
         finally
         {
@@ -386,6 +397,11 @@ public class InstapaperSync : IInstapaperSync
             cancellationToken.ThrowIfCancellationRequested();
             await this.SyncArticleLikeStatusesAsync(cancellationToken);
         }
+        catch(Exception e)
+        {
+            this.clearingHouse?.RaiseArticlesError();
+            ExceptionDispatchInfo.Capture(e).Throw();
+        }
         finally
         {
             this.clearingHouse?.RaiseArticlesEnded();
@@ -430,7 +446,7 @@ public class InstapaperSync : IInstapaperSync
         var moves = this.articleChangesDb.ListPendingArticleMoves();
         foreach (var move in moves)
         {
-            this.__Hook_ArticleSyncPrePendingMove?.Invoke(this, EventArgs.Empty);
+            this.__Hook_ArticleSync_PrePendingMove?.Invoke(this, EventArgs.Empty);
             cancellationToken.ThrowIfCancellationRequested();
 
             var destinationFolder = this.folderDb.GetFolderByLocalId(move.DestinationFolderLocalId);
@@ -554,7 +570,7 @@ public class InstapaperSync : IInstapaperSync
         await SyncPendingArticleLikeStatusChangesAsync(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
-        this.__Hook_ArticleSyncPreRemoteLikeFolderSync?.Invoke(this, EventArgs.Empty);
+        this.__Hook_ArticleSync_PreRemoteLikeFolderSync?.Invoke(this, EventArgs.Empty);
         await SyncArticleLikedArticlesWithServiceAsync(cancellationToken);
     }
 
@@ -613,7 +629,7 @@ public class InstapaperSync : IInstapaperSync
         var statusChanges = this.articleChangesDb.ListPendingArticleStateChanges();
         foreach (var stateChange in statusChanges)
         {
-            this.__Hook_ArticleSyncPreLike?.Invoke(this, EventArgs.Empty);
+            this.__Hook_ArticleSync_PreLike?.Invoke(this, EventArgs.Empty);
             cancellationToken.ThrowIfCancellationRequested();
             IInstapaperBookmark? updatedBookmark = null;
             try
@@ -663,7 +679,7 @@ public class InstapaperSync : IInstapaperSync
                 continue;
             }
 
-            this.__Hook_ArticleSyncPreFolder?.Invoke(this, EventArgs.Empty);
+            this.__Hook_ArticleSync_PreFolder?.Invoke(this, EventArgs.Empty);
 
             cancellationToken.ThrowIfCancellationRequested();
             var articles = this.articleDb.ListArticlesForLocalFolder(folder.LocalId);

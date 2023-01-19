@@ -181,4 +181,246 @@ public class EverythingSyncTests : BaseSyncTest
 
         this.AssertServerAndClientMatch();
     }
+
+    #region Cancellation
+    [Fact]
+    public async Task CancellingSyncAtArticlesPrePendingAddCompletesWithOperationCancelledException()
+    {
+        this.databases.ArticleChangesDB.CreatePendingArticleAdd(TestUtilities.GetRandomUrl(), null);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingAdd += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPrePendingDeleteCompletesWithOperationCancelledException()
+    {
+        var article = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.databases.ArticleChangesDB.CreatePendingArticleDelete(article.Id);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingDelete += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPrePendingMoveCompletesWithOperationCancelledException()
+    {
+        var article = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.databases.ArticleChangesDB.CreatePendingArticleMove(article.Id, WellKnownLocalFolderIds.Archive);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingMove += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPrePendingLikeCompletesWithOperationCancelledException()
+    {
+        var article = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.databases.ArticleChangesDB.CreatePendingArticleStateChange(article.Id, true);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreLike += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPreRemoteLikeFolderSyncCompletesWithOperationCancelledException()
+    {
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreRemoteLikeFolderSync += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPreFolderCompletesWithOperationCancelledException()
+    {
+        var article = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.databases.ArticleChangesDB.CreatePendingArticleDelete(article.Id);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreFolder += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtFolderPreAddCompletesWithOperationCancelledException()
+    {
+        var newFolder = this.databases.FolderDB.CreateFolder("Wibble");
+        this.databases.FolderChangesDB.CreatePendingFolderAdd(newFolder.LocalId);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_FolderSync_PreSingleAdd += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtFolderPreDeleteCompletesWithOperationCancelledException()
+    {
+        var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        this.databases.FolderChangesDB.CreatePendingFolderDelete(firstFolder.ServiceId!.Value, firstFolder.Title);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_FolderSync_PreSingleDelete += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPrePendingAddRaisesSyncError()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+        var errorRaised = false;
+        clearingHouse.SyncError += (_, _) => errorRaised = true;
+
+        this.databases.ArticleChangesDB.CreatePendingArticleAdd(TestUtilities.GetRandomUrl(), null);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingAdd += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPrePendingDeleteRaisesSyncError()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+        var errorRaised = false;
+        clearingHouse.SyncError += (_, _) => errorRaised = true;
+
+        var article = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.databases.ArticleChangesDB.CreatePendingArticleDelete(article.Id);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingDelete += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPrePendingMoveRaisesSyncError()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+        var errorRaised = false;
+        clearingHouse.SyncError += (_, _) => errorRaised = true;
+
+        var article = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.databases.ArticleChangesDB.CreatePendingArticleMove(article.Id, WellKnownLocalFolderIds.Archive);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingMove += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPrePendingLikeRaisesSyncError()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+        var errorRaised = false;
+        clearingHouse.SyncError += (_, _) => errorRaised = true;
+
+        var article = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.databases.ArticleChangesDB.CreatePendingArticleStateChange(article.Id, true);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreLike += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPreRemoteLikeFolderSyncRaisesSyncError()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+        var errorRaised = false;
+        clearingHouse.SyncError += (_, _) => errorRaised = true;
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreRemoteLikeFolderSync += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtArticlesPreFolderRaisesSyncError()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+        var errorRaised = false;
+        clearingHouse.SyncError += (_, _) => errorRaised = true;
+
+        var article = this.databases.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
+        this.databases.ArticleChangesDB.CreatePendingArticleDelete(article.Id);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreFolder += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtFolderPreAddRaisesSyncError()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+        var errorRaised = false;
+        clearingHouse.SyncError += (_, _) => errorRaised = true;
+
+        var newFolder = this.databases.FolderDB.CreateFolder("Wibble");
+        this.databases.FolderChangesDB.CreatePendingFolderAdd(newFolder.LocalId);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_FolderSync_PreSingleAdd += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
+
+    [Fact]
+    public async Task CancellingSyncAtFolderPreDeleteRaisesSyncError()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+        var errorRaised = false;
+        clearingHouse.SyncError += (_, _) => errorRaised = true;
+
+        var firstFolder = this.databases.FolderDB.FirstCompleteUserFolder();
+        this.databases.FolderChangesDB.CreatePendingFolderDelete(firstFolder.ServiceId!.Value, firstFolder.Title);
+
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_FolderSync_PreSingleDelete += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncEverythingAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
+    #endregion
 }

@@ -26,6 +26,11 @@ public interface IDatabaseSyncEventSink
     event EventHandler FoldersEnded;
 
     /// <summary>
+    /// An error occured while syncing folders
+    /// </summary>
+    event EventHandler FoldersError;
+
+    /// <summary>
     /// Syncing of articles, across all folders (added, removed, changed) has
     /// begun
     /// </summary>
@@ -38,9 +43,19 @@ public interface IDatabaseSyncEventSink
     event EventHandler ArticlesEnded;
 
     /// <summary>
+    /// An error occured while syncing articles
+    /// </summary>
+    event EventHandler ArticlesError;
+
+    /// <summary>
     /// A Sync has completed (Either successfully, or in error)
     /// </summary>
     event EventHandler SyncEnded;
+
+    /// <summary>
+    /// An error occured during the sync
+    /// </summary>
+    event EventHandler SyncError;
 }
 
 /// <summary>
@@ -64,6 +79,11 @@ public interface IDatabaseSyncEventSource
     void RaiseFoldersEnded();
 
     /// <summary>
+    /// Raise that an error occured while syncing folders
+    /// </summary>
+    void RaiseFoldersError();
+
+    /// <summary>
     /// Raise that syncing of articles has begun
     /// </summary>
     void RaiseArticlesStarted();
@@ -74,7 +94,17 @@ public interface IDatabaseSyncEventSource
     void RaiseArticlesEnded();
 
     /// <summary>
+    /// Raise that an error occured during the syncing of articles
+    /// </summary>
+    void RaiseArticlesError();
+
+    /// <summary>
     /// Raise that the syncing has completed
     /// </summary>
     void RaiseSyncEnded();
+
+    /// <summary>
+    /// Raise that an error occured in syncing
+    /// </summary>
+    void RaiseSyncError();
 }

@@ -551,5 +551,38 @@ public sealed class FolderSyncTests : BaseSyncTest
         var localFolderThatShouldntBeChanged = this.databases.FolderDB.GetFolderByLocalId(toBeChangedRemoteFolder.LocalId);
         Assert.Equal(toBeChangedRemoteFolder, localFolderThatShouldntBeChanged);
     }
+
+    [Fact]
+    public async Task ThrowingExceptionDuringFolderSyncRaisesFoldersErrorAndCompletesWithExceptionThrown()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+
+        var errorRaised = false;
+        clearingHouse.FoldersError += (_, _) => errorRaised = true;
+
+        this.syncEngine.__Hook_FolderSync_PostProcessList += (_, _) => throw new ArgumentException();
+
+        await Assert.ThrowsAsync<ArgumentException>(() => this.syncEngine.SyncFoldersAsync());
+
+        Assert.True(errorRaised);
+    }
+
+    [Fact]
+    public async Task CancellingDuringFolderSyncRaisesFoldersErrorAndCompletesWithCancellation()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+
+        var source = new CancellationTokenSource();
+        var errorRaised = false;
+        clearingHouse.FoldersError += (_, _) => errorRaised = true;
+
+        this.syncEngine.__Hook_FolderSync_PostProcessList += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncFoldersAsync(source.Token));
+
+        Assert.True(errorRaised);
+    }
     #endregion
 }

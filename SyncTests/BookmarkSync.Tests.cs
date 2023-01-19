@@ -1351,7 +1351,7 @@ public class BookmarkSyncTests : BaseSyncTest
 
         this.databases.ArticleChangesDB.CreatePendingArticleAdd(TestUtilities.GetRandomUrl(), null);
 
-        CancellationTokenSource source = new CancellationTokenSource();
+        var source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSync_PrePendingAdd += (_, _) => source.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
@@ -1370,7 +1370,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.databases.ArticleChangesDB.CreatePendingArticleAdd(addedUrl, null);
         this.databases.ArticleChangesDB.CreatePendingArticleAdd(TestUtilities.GetRandomUrl(), null);
 
-        CancellationTokenSource source = new CancellationTokenSource();
+        var source = new CancellationTokenSource();
         var eventCount = 0;
         this.syncEngine.__Hook_ArticleSync_PrePendingAdd += (_, _) =>
         {
@@ -1396,7 +1396,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.databases.ArticleDB.DeleteArticle(articleToDelete.Id);
         ledger.Dispose();
 
-        CancellationTokenSource source = new CancellationTokenSource();
+        var source = new CancellationTokenSource();
         this.syncEngine.__Hook_ArticleSync_PrePendingDelete += (_, _) => source.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
@@ -1418,7 +1418,7 @@ public class BookmarkSyncTests : BaseSyncTest
         this.databases.ArticleDB.DeleteArticle(articleToDelete2.Id);
         ledger.Dispose();
 
-        CancellationTokenSource source = new CancellationTokenSource();
+        var source = new CancellationTokenSource();
         var eventCount = 0;
 
         this.syncEngine.__Hook_ArticleSync_PrePendingDelete += (_, _) =>
@@ -1448,8 +1448,8 @@ public class BookmarkSyncTests : BaseSyncTest
         this.databases.ArticleDB.MoveArticleToFolder(articleToMove.Id, destinationFolder.LocalId);
         ledger.Dispose();
 
-        CancellationTokenSource source = new CancellationTokenSource();
-        this.syncEngine.__Hook_ArticleSyncPrePendingMove += (_, _) => source.Cancel();
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingMove += (_, _) => source.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
@@ -1472,8 +1472,8 @@ public class BookmarkSyncTests : BaseSyncTest
         this.databases.ArticleDB.MoveArticleToFolder(articleToMove.Id, destinationFolder.LocalId);
         ledger.Dispose();
 
-        CancellationTokenSource source = new CancellationTokenSource();
-        this.syncEngine.__Hook_ArticleSyncPrePendingMove += (_, _) => source.Cancel();
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PrePendingMove += (_, _) => source.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
@@ -1492,8 +1492,8 @@ public class BookmarkSyncTests : BaseSyncTest
         var remoteArticleToMutate = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(WellKnownLocalFolderIds.Unread);
         remoteArticleToMutate = this.service.BookmarksClient.ArticleDB.UpdateReadProgressForArticle(0.9F, DateTime.Now, remoteArticleToMutate.Id);
 
-        CancellationTokenSource source = new CancellationTokenSource();
-        this.syncEngine.__Hook_ArticleSyncPreFolder += (_, _) => source.Cancel();
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreFolder += (_, _) => source.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
@@ -1510,10 +1510,10 @@ public class BookmarkSyncTests : BaseSyncTest
         var remoteArticleToMutate2 = this.service.BookmarksClient.ArticleDB.FirstArticleInFolder(this.service.FoldersClient.FolderDB.FirstCompleteUserFolder().LocalId);
         remoteArticleToMutate2 = this.service.BookmarksClient.ArticleDB.UpdateReadProgressForArticle(0.1F, DateTime.Now, remoteArticleToMutate2.Id);
 
-        CancellationTokenSource source = new CancellationTokenSource();
+        var source = new CancellationTokenSource();
 
         var eventCount = 0;
-        this.syncEngine.__Hook_ArticleSyncPreFolder += (_, _) =>
+        this.syncEngine.__Hook_ArticleSync_PreFolder += (_, _) =>
         {
             eventCount += 1;
             if (eventCount == 2)
@@ -1541,8 +1541,8 @@ public class BookmarkSyncTests : BaseSyncTest
             localArticleToLike = this.databases.ArticleDB.LikeArticle(localArticleToLike.Id);
         }
 
-        CancellationTokenSource source = new CancellationTokenSource();
-        this.syncEngine.__Hook_ArticleSyncPreLike += (_, _) => source.Cancel();
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreLike += (_, _) => source.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
@@ -1562,10 +1562,10 @@ public class BookmarkSyncTests : BaseSyncTest
             localArticleToLike2 = this.databases.ArticleDB.LikeArticle(localArticleToLike2.Id);
         }
 
-        CancellationTokenSource source = new CancellationTokenSource();
+        var source = new CancellationTokenSource();
         var eventCount = 0;
 
-        this.syncEngine.__Hook_ArticleSyncPreLike += (_, _) =>
+        this.syncEngine.__Hook_ArticleSync_PreLike += (_, _) =>
         {
             eventCount += 1;
 
@@ -1593,13 +1593,47 @@ public class BookmarkSyncTests : BaseSyncTest
         var remoteLikedArticle = this.service.BookmarksClient.ArticleDB.FirstUnlikedArticleInfolder(WellKnownLocalFolderIds.Unread);
         remoteLikedArticle = this.service.BookmarksClient.ArticleDB.LikeArticle(remoteLikedArticle.Id);
 
-        CancellationTokenSource source = new CancellationTokenSource();
-        this.syncEngine.__Hook_ArticleSyncPreRemoteLikeFolderSync += (_, _) => source.Cancel();
+        var source = new CancellationTokenSource();
+        this.syncEngine.__Hook_ArticleSync_PreRemoteLikeFolderSync += (_, _) => source.Cancel();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
 
         var localArticle = this.databases.ArticleDB.GetArticleById(remoteLikedArticle.Id)!;
         Assert.False(localArticle.Liked);
+    }
+
+    [Fact]
+    public async Task ThrowingDuringArticleSyncRaisesSyncErrorAndTaskStillCompletesWithException()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+
+        var errorWasRaised = false;
+        clearingHouse.ArticlesError += (_, _) => errorWasRaised = true;
+
+        this.syncEngine.__Hook_ArticleSync_PreFolder += (_, _) => throw new ArgumentException();
+
+        await Assert.ThrowsAsync<ArgumentException>(() => this.syncEngine.SyncArticlesAsync());
+
+        Assert.True(errorWasRaised);
+    }
+
+    [Fact]
+    public async Task CancellingArticleSyncRaisedSyncErrorAndTaskStillCompletesWithThrownException()
+    {
+        var clearingHouse = new SyncEventClearingHouse();
+        this.SetSyncEngineFromDatabases(clearingHouse);
+
+        var errorWasRaised = false;
+        var source = new CancellationTokenSource();
+
+        clearingHouse.ArticlesError += (_, _) => errorWasRaised = true;
+
+        this.syncEngine.__Hook_ArticleSync_PreFolder += (_, _) => source.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => this.syncEngine.SyncArticlesAsync(source.Token));
+
+        Assert.True(errorWasRaised);
     }
     #endregion
 }
