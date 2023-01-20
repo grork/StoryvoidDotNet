@@ -7,6 +7,7 @@ using AngleSharpConfiguration = AngleSharp.Configuration;
 using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
 using SixLabors.ImageSharp;
+using System.Runtime.ExceptionServices;
 
 namespace Codevoid.Storyvoid.Sync;
 
@@ -313,11 +314,12 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
                 localPath = new Uri(articleFilename, UriKind.Relative);
                 articleDownloaded = true;
             }
-            catch (BookmarkContentsUnavailableException)
+            catch (BookmarkContentsUnavailableException e)
             {
                 // Contents weren't available, so we should mark it as a failure
                 articleDownloaded = false;
                 contentsUnavailable = true;
+                this.eventSource?.RaiseArticleError(article, e);
             }
 
             var localState = new DatabaseLocalOnlyArticleState()
@@ -339,6 +341,13 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
             // case (e.g. timeout, network failure), map to a cancelled
             // operation so task-infra handles it right.
             throw new OperationCanceledException();
+        }
+        catch(Exception e)
+        {
+            var exceptionInfo = ExceptionDispatchInfo.Capture(e);
+            this.eventSource?.RaiseArticleError(article, exceptionInfo.SourceException);
+            exceptionInfo.Throw();
+            return null; // Keep compiler happy since it can't see the Throw() as a throw. CS0161
         }
         finally
         {
@@ -516,6 +525,14 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
                     // need to clean up the temporary file we created
                     targetStream.Close();
                     File.Delete(tempFilepath);
+                    try
+                    {
+                        imageResponse.EnsureSuccessStatusCode();
+                    }
+                    catch(Exception e)
+                    {
+                        this.eventSource?.RaiseImageError(imageUri, e);
+                    }
                     return null;
                 }
 
@@ -592,6 +609,13 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
                 new Uri(relativePath, UriKind.Relative),
                 new Uri(originalUrl, UriKind.Absolute)
             );
+        }
+        catch(Exception e)
+        {
+            var exceptionInfo = ExceptionDispatchInfo.Capture(e);
+            this.eventSource?.RaiseImageError(imageUri, exceptionInfo.SourceException);
+            exceptionInfo.Throw();
+            return null; // Keep compiler happy since it can't see the Throw() as a throw. CS0161
         }
         finally
         {

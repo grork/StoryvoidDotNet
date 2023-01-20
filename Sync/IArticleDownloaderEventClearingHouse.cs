@@ -36,6 +36,11 @@ public interface IArticleDownloaderEventSink
     event EventHandler<Uri> ImageCompleted;
 
     /// <summary>
+    /// An error occured during downloading of a specific image
+    /// </summary>
+    event EventHandler<(Uri Uri, Exception? Error)> ImageError;
+
+    /// <summary>
     /// Images for a specific article have completed
     /// </summary>
     event EventHandler<long> ImagesCompleted;
@@ -44,6 +49,11 @@ public interface IArticleDownloaderEventSink
     /// Downloading of a specific article is complete
     /// </summary>
     event EventHandler<DatabaseArticle> ArticleCompleted;
+
+    /// <summary>
+    /// An error occured during article download
+    /// </summary>
+    event EventHandler<(DatabaseArticle Article, Exception? Error)> ArticleError;
 
     /// <summary>
     /// Downloading of articles is complete.
@@ -93,6 +103,13 @@ public interface IArticleDownloaderEventSource
     void RaiseImageCompleted(Uri imageUrl);
 
     /// <summary>
+    /// When an error occurs while downloading an image
+    /// </summary>
+    /// <param name="imageUrl">Image URL that the error occured for</param>
+    /// <param name="error">Error that occured</param>
+    void RaiseImageError(Uri imageUrl, Exception? error);
+
+    /// <summary>
     /// Images for a specific article have completed downloading
     /// </summary>
     /// <param name="articleIdContainingImages">
@@ -107,6 +124,13 @@ public interface IArticleDownloaderEventSource
     /// Information about the article that has completed
     /// </param>
     void RaiseArticleCompleted(DatabaseArticle article);
+
+    /// <summary>
+    /// An error occured while downloading a specific article
+    /// </summary>
+    /// <param name="article">Article for which the error occured</param>
+    /// <param name="exception">Error that occured</param>
+    void RaiseArticleError(DatabaseArticle article, Exception? exception);
 
     /// <summary>
     /// Raise that downloading of all articles has completed

@@ -708,6 +708,78 @@ public class ArticleDownloaderTests : IDisposable
         Assert.Equal(articleIds.Length, articlesCompleted.Count());
         Assert.True(downloadCompleted);
     }
+
+    [Fact]
+    public async Task DownloadingArticleThatIsntOnTheServiceFailsRaisesError()
+    {
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        var errorSeen = false;
+        clearingHouse.ArticleError += (_, _) => errorSeen = true;
+
+        var article = this.articleDatabase.GetArticleById(MISSING_REMOTE_ARTICLE)!;
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => this.articleDownloader.DownloadArticleAsync(article));
+        Assert.True(errorSeen);
+    }
+
+    [Fact]
+    public async Task ArticleWithSomeMissingImagesDownloadsCorrectlyRaisesError()
+    {
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        var imageErrorSeen = false;
+        clearingHouse.ImageError += (_, _) => imageErrorSeen = true;
+
+        var article = this.articleDatabase.GetArticleById(MISSING_IMAGE)!;
+        await this.articleDownloader.DownloadArticleAsync(article); // We shouldn't get an exception on the *download* for images being missing
+        Assert.True(imageErrorSeen);
+    }
+
+    [Fact]
+    public async Task DownloadingMultipleArticlesWhereOneIsUnavailableDownloadsTheRestRaisesError()
+    {
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            UNAVAILABLE_ARTICLE,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        var articleErrorRaised = false;
+        clearingHouse.ArticleError += (_, _) => articleErrorRaised = true;
+
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
+        Assert.True(articleErrorRaised);
+    }
+
+    [Fact]
+    public async Task DownloadingMultipleArticlesWhereOneIsMissingDownloadsTheRestRaisesError()
+    {
+        var clearingHouse = new MockArticleDownloaderEventClearingHouse();
+        this.ResetArticleDownloader(clearingHouse);
+
+        var articleIds = new long[] {
+            BASIC_ARTICLE_NO_IMAGES,
+            MISSING_REMOTE_ARTICLE,
+            MISSING_REMOTE_ARTICLE_2,
+            YOUTUBE_ARTICLE,
+            FIRST_IMAGE_JPG
+        };
+        var articlesToDownload = articleIds.Select((id) => articleDatabase.GetArticleById(id)!).ToList();
+
+        var articleErrorWasRaised = false;
+        clearingHouse.ArticleError += (_, _) => articleErrorWasRaised = true;
+
+        await this.articleDownloader.DownloadArticlesAsync(articlesToDownload);
+
+        Assert.True(articleErrorWasRaised);
+    }
     #endregion
 
     #region Cancellation

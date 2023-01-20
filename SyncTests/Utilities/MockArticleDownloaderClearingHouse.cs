@@ -21,10 +21,16 @@ internal sealed class MockArticleDownloaderEventClearingHouse : IArticleDownload
     public event EventHandler<Uri>? ImageCompleted;
 
     /// <inheritdoc />
+    public event EventHandler<(Uri Uri, Exception? Error)>? ImageError;
+
+    /// <inheritdoc />
     public event EventHandler<long>? ImagesCompleted;
 
     /// <inheritdoc />
     public event EventHandler<DatabaseArticle>? ArticleCompleted;
+
+    /// <inheritdoc />
+    public event EventHandler<(DatabaseArticle Article, Exception? Error)>? ArticleError;
 
     /// <inheritdoc />
     public event EventHandler? DownloadingCompleted;
@@ -83,5 +89,19 @@ internal sealed class MockArticleDownloaderEventClearingHouse : IArticleDownload
     {
         var handler = this.ImageStarted;
         handler?.Invoke(this, imageUrl);
+    }
+
+    /// <inheritdoc />
+    public void RaiseImageError(Uri imageUrl, Exception? exception)
+    {
+        var handler = this.ImageError;
+        handler?.Invoke(this, (imageUrl, exception));
+    }
+
+    /// <inheritdoc />
+    public void RaiseArticleError(DatabaseArticle article, Exception? exception)
+    {
+        var handler = this.ArticleError;
+        handler?.Invoke(this, (article, exception));
     }
 }
