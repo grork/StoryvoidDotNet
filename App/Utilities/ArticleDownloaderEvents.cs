@@ -27,11 +27,18 @@ internal class ArticleDownloaderEvents : EventDispatcherBase, IArticleDownloader
     /// <inheritdoc/>
     public event EventHandler<Uri>? ImageCompleted;
 
+
+    /// <inheritdoc/>
+    public event EventHandler<(Uri Uri, Exception? Error)>? ImageError;
+
     /// <inheritdoc/>
     public event EventHandler<long>? ImagesCompleted;
 
     /// <inheritdoc/>
     public event EventHandler<DatabaseArticle>? ArticleCompleted;
+
+    /// <inheritdoc/>
+    public event EventHandler<(DatabaseArticle Article, Exception? Error)>? ArticleError;
 
     /// <inheritdoc/>
     public event EventHandler? DownloadingCompleted;
@@ -46,6 +53,17 @@ internal class ArticleDownloaderEvents : EventDispatcherBase, IArticleDownloader
         }
 
         this.PerformOnDispatcher(() => handler.Invoke(this, article));
+    }
+
+    public void RaiseArticleError(DatabaseArticle article, Exception? error)
+    {
+        var handler = this.ArticleError;
+        if (handler == null)
+        {
+            return;
+        }
+
+        this.PerformOnDispatcher(() => handler.Invoke(this, (article, error)));
     }
 
     /// <inheritdoc/>
@@ -94,6 +112,17 @@ internal class ArticleDownloaderEvents : EventDispatcherBase, IArticleDownloader
         }
 
         this.PerformOnDispatcher(() => handler.Invoke(this, imageUrl));
+    }
+
+    public void RaiseImageError(Uri imageUrl, Exception? error)
+    {
+        var handler = this.ImageError;
+        if (handler == null)
+        {
+            return;
+        }
+
+        this.PerformOnDispatcher(() => handler.Invoke(this, (imageUrl, error)));
     }
 
     /// <inheritdoc/>

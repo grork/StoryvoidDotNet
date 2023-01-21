@@ -21,14 +21,22 @@ internal class DispatcherSyncEvents : EventDispatcherBase, IDatabaseSyncEventSin
     /// <inheritdoc />
     public event EventHandler? FoldersEnded;
 
+    /// <inheritdoc/>
+    public event EventHandler<Exception?>? FoldersError;
+
     /// <inheritdoc />
     public event EventHandler? ArticlesStarted;
 
     /// <inheritdoc />
     public event EventHandler? ArticlesEnded;
 
+    /// <inheritdoc/>
+    public event EventHandler<Exception?>? ArticlesError;
+
     /// <inheritdoc />
     public event EventHandler? SyncEnded;
+
+    public event EventHandler<Exception?>? SyncError;
 
     /// <inheritdoc />
     public void RaiseArticlesEnded()
@@ -40,6 +48,18 @@ internal class DispatcherSyncEvents : EventDispatcherBase, IDatabaseSyncEventSin
         }
 
         this.PerformOnDispatcher(() => handler.Invoke(this, EventArgs.Empty));
+    }
+
+    /// <inheritdoc/>
+    public void RaiseArticlesError(Exception? exception)
+    {
+        var handler = this.ArticlesError;
+        if(handler is null)
+        {
+            return;
+        }
+
+        this.PerformOnDispatcher(() => handler.Invoke(this, exception));
     }
 
     /// <inheritdoc />
@@ -66,6 +86,17 @@ internal class DispatcherSyncEvents : EventDispatcherBase, IDatabaseSyncEventSin
         this.PerformOnDispatcher(() => handler.Invoke(this, EventArgs.Empty));
     }
 
+    public void RaiseFoldersError(Exception? exception)
+    {
+        var handler = this.FoldersError;
+        if (handler is null)
+        {
+            return;
+        }
+
+        this.PerformOnDispatcher(() => handler.Invoke(this, exception));
+    }
+
     /// <inheritdoc />
     public void RaiseFoldersStarted()
     {
@@ -88,6 +119,17 @@ internal class DispatcherSyncEvents : EventDispatcherBase, IDatabaseSyncEventSin
         }
 
         this.PerformOnDispatcher(() => handler.Invoke(this, EventArgs.Empty));
+    }
+
+    public void RaiseSyncError(Exception? exception)
+    {
+        var handler = this.SyncError;
+        if (handler is null)
+        {
+            return;
+        }
+
+        this.PerformOnDispatcher(() => handler.Invoke(this, exception));
     }
 
     /// <inheritdoc />

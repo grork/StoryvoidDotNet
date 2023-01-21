@@ -130,7 +130,7 @@ public interface IArticleDownloaderEventSource
     /// </summary>
     /// <param name="article">Article for which the error occured</param>
     /// <param name="exception">Error that occured</param>
-    void RaiseArticleError(DatabaseArticle article, Exception? exception);
+    void RaiseArticleError(DatabaseArticle article, Exception? error);
 
     /// <summary>
     /// Raise that downloading of all articles has completed

@@ -283,8 +283,11 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             // operation log so it's easy to see whats going on
             syncEvents.SyncStarted += (o, a) => this.OperationLog.Add("Sync Started");
             syncEvents.SyncEnded += (o, a) => this.OperationLog.Add("Sync Ended");
+            syncEvents.SyncError += (o, e) => this.OperationLog.Add($"Sync Error: {e?.ToString()}");
             downloaderEvents.DownloadingStarted += (o, a) => this.OperationLog.Add("Article Download Started");
             downloaderEvents.DownloadingCompleted += (o, a) => this.OperationLog.Add("Article Download Completed");
+            downloaderEvents.ImageError += (o, e) => this.OperationLog.Add($"Image Download failed. URL: {e.Uri.ToString()}");
+            downloaderEvents.ArticleError += (o, e) => this.OperationLog.Add($"Article Body Failed. ID: {e.Article.Id}, Title: {e.Article.Title}, Error: {e.Error?.ToString()}");
 
             lock (this.dataLayerLock)
             {
