@@ -5,9 +5,26 @@
 
     <Grid>
         <ItemsRepeater ItemsSource="{x:Bind ViewModel.Articles, Mode=OneWay}">
+            <ItemsRepeater.Layout>
+                <UniformGridLayout MinItemWidth="248"
+                                   MinItemHeight="248"
+                                   MinColumnSpacing="20" 
+                                   MinRowSpacing="20"
+                                   />
+            </ItemsRepeater.Layout>
             <ItemsRepeater.ItemTemplate>
                 <DataTemplate x:DataType="db:DatabaseArticle">
-                    <TextBlock Text="{x:Bind Title}" />
+                    <Border HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Background="LightGray"
+                            Padding="8"
+                            CornerRadius="8">
+                        <StackPanel>
+                            <TextBlock Text="{x:Bind Title}" />
+                            <TextBlock Text="{x:Bind LocalOnlyState.ExtractedDescription}"
+                                       TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+                    </Border>
                 </DataTemplate>
             </ItemsRepeater.ItemTemplate>
         </ItemsRepeater>
