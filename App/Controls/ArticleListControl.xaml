@@ -2,15 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:db="using:Codevoid.Storyvoid">
-
-    <Grid>
-        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Articles, Mode=OneWay}">
+    <ScrollViewer HorizontalScrollMode="Disabled">
+        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Articles, Mode=OneWay}"
+                       Margin="20,0,20,0">
             <ItemsRepeater.Layout>
                 <UniformGridLayout MinItemWidth="248"
                                    MinItemHeight="248"
-                                   MinColumnSpacing="20" 
-                                   MinRowSpacing="20"
-                                   />
+                                   MinColumnSpacing="20"
+                                   MinRowSpacing="20" />
             </ItemsRepeater.Layout>
             <ItemsRepeater.ItemTemplate>
                 <DataTemplate x:DataType="db:DatabaseArticle">
@@ -28,5 +27,5 @@
                 </DataTemplate>
             </ItemsRepeater.ItemTemplate>
         </ItemsRepeater>
-    </Grid>
+    </ScrollViewer>
 </UserControl>
