@@ -1,10 +1,10 @@
 ﻿using Codevoid.Storyvoid.App.Implementations;
-using Codevoid.Storyvoid.Controls;
 using Codevoid.Storyvoid.Utilities;
 using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
-using Microsoft.UI.Text;
-using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Input;
+using Windows.System;
+using Windows.UI.Core;
 
 namespace Codevoid.Storyvoid.App;
 
@@ -26,13 +26,15 @@ public sealed partial class MainWindow : Window
         // We want to make it easy -- at least in debug mode -- to be able to
         // get to the placeholder page 'cause a) it's useful to nav b) it has
         // utility buttons on it.
-        var placeholderShortcut = new KeyboardAccelerator()
+        this.MainThing.KeyDown += (s, a) =>
         {
-            Modifiers = Windows.System.VirtualKeyModifiers.Control,
-            Key = Windows.System.VirtualKey.P
+            if (!(a.Key == VirtualKey.P && InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control) == CoreVirtualKeyStates.Down))
+            {
+                return;
+            }
+
+            this.utilities.ShowPlaceholder();
         };
-        placeholderShortcut.Invoked += (s, a) => this.utilities.ShowPlaceholder();
-        this.MainThing.KeyboardAccelerators.Add(placeholderShortcut);
 #endif
 
         this.utilities.ShowFirstPage();
