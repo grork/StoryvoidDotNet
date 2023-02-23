@@ -24,7 +24,9 @@
             <TextBlock Grid.Row="2"
                        HorizontalAlignment="Right"
                        Style="{ThemeResource CaptionTextBlockStyle}">
-                <Run>Liked:</Run>
+                <Run>Progress: </Run>
+                <Run Text="{x:Bind Model.ReadProgress}" />
+                <Run>, Liked:</Run>
                 <Run Text="{x:Bind Model.Liked}" />
             </TextBlock>
         </Grid>
