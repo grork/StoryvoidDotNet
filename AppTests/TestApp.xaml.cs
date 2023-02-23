@@ -1,8 +1,5 @@
 using Microsoft.VisualStudio.TestPlatform.TestExecutor;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
-using System.ComponentModel;
-
-[assembly: WinUITestTarget(typeof(Codevoid.Test.Storyvoid.App))]
 
 namespace Codevoid.Test.Storyvoid;
 
@@ -16,7 +13,7 @@ public partial class App : Application
         this.InitializeComponent();
     }
 
-    protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         UnitTestClient.CreateDefaultUI();
 

@@ -19,13 +19,6 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     
     <!--
-    Enable the WinApps SDK unit test stuff to work. See
-    https://github.com/microsoft/testfx/issues/1127 for more details
-    -->
-    <WindowsAppContainer>True</WindowsAppContainer>
-    <EnablePreviewMsixTooling>true</EnablePreviewMsixTooling>
-    
-    <!--
     To help prevent a clash with the project reference to the app, we want
     to rename the default app XAML file. Except this is implicitly imported
     by the SDK targets files. So, we need to disable that. See further down
