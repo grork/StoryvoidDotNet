@@ -152,7 +152,10 @@ public abstract class BaseListChangeProcessor<T>
         if (asObservable is not null)
         {
             asObservable[originalIndex] = updatedItem;
-            asObservable.Move(originalIndex, targetIndex);
+            if (originalIndex != targetIndex)
+            {
+                asObservable.Move(originalIndex, targetIndex);
+            }
             return;
         }
 

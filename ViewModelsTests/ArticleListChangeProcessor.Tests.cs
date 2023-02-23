@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.ViewModels;
 
@@ -17,7 +18,8 @@ public class ArticleListChangeProcessorTests
         var progress = 0.01F;
         foreach (var iteration in Enumerable.Range(1, 10))
         {
-            // Discard 5
+            // Discard 5 to provide ID space for additional items we want to
+            // add in front of this list
             foreach (var _ in Enumerable.Range(1, 5))
             {
                 TestUtilities.GetMockDatabaseArticle();
@@ -36,8 +38,18 @@ public class ArticleListChangeProcessorTests
     [Fact]
     public void NewItemWithEmptyListIsAdded()
     {
+        var articles = new ObservableCollection<DatabaseArticle>();
+        var eventCount = 0;
+        articles.CollectionChanged += (s, args) =>
+        {
+            eventCount += 1;
+            Assert.Equal(NotifyCollectionChangedAction.Add, args.Action);
+            Assert.Equal(0, args.NewStartingIndex);
+            Assert.Equal(1, args.NewItems!.Count);
+            Assert.Equal(-1, args.OldStartingIndex);
+            Assert.Null(args.OldItems);
+        };
         var sort = this.OldestToNewest;
-        var articles = new List<DatabaseArticle>();
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleToAdd = TestUtilities.GetMockDatabaseArticle();
@@ -46,14 +58,27 @@ public class ArticleListChangeProcessorTests
 
         Assert.Single(articles);
         Assert.Equal(articleToAdd, articles.First());
+
+        Assert.Equal(1, eventCount);
     }
 
     [Fact]
     public void NewArticleItemAddedAtEnd()
     {
+        var eventCount = 0;
         var sort = this.OldestToNewest;
-        var articles = GetSortedArticleListFor(sort);
+        var articles = new ObservableCollection<DatabaseArticle>(GetSortedArticleListFor(sort));
         var priorCount = articles.Count;
+
+        articles.CollectionChanged += (s, args) =>
+        {
+            eventCount += 1;
+            Assert.Equal(NotifyCollectionChangedAction.Add, args.Action);
+            Assert.Equal(priorCount, args.NewStartingIndex);
+            Assert.Equal(1, args.NewItems!.Count);
+            Assert.Equal(-1, args.OldStartingIndex);
+            Assert.Null(args.OldItems);
+        };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleToAdd = TestUtilities.GetMockDatabaseArticle() with { Id = articles.Max((a) => a.Id) + 1 };
@@ -62,6 +87,7 @@ public class ArticleListChangeProcessorTests
 
         Assert.Equal(priorCount + 1, articles.Count);
         Assert.Equal(articleToAdd, articles.Last());
+        Assert.Equal(1, eventCount);
     }
 
     [Fact]
@@ -73,23 +99,47 @@ public class ArticleListChangeProcessorTests
 
         for (var index = 0; index < baseArticles.Count; index += 1)
         {
-            var articles = new List<DatabaseArticle>(baseArticles);
+            var articles = new ObservableCollection<DatabaseArticle>(baseArticles);
+            var eventCount = 0;
             using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
             var articleToAdd = articles[index] with { Id = articles[index].Id + 1 };
+            var expectedNewIndex = index + 1;
+
+            articles.CollectionChanged += (s, args) =>
+            {
+                eventCount += 1;
+                Assert.Equal(NotifyCollectionChangedAction.Add, args.Action);
+                Assert.Equal(expectedNewIndex, args.NewStartingIndex);
+                Assert.Equal(1, args.NewItems!.Count);
+                Assert.Equal(-1, args.OldStartingIndex);
+                Assert.Null(args.OldItems);
+            };
 
             this.clearingHouse.RaiseArticleAdded(articleToAdd, WellKnownLocalFolderIds.Unread);
 
             Assert.Equal(priorCount + 1, articles.Count);
-            Assert.Equal(articleToAdd, articles[index + 1]);
+            Assert.Equal(articleToAdd, articles[expectedNewIndex]);
+            Assert.Equal(1, eventCount);
         }
     }
 
     [Fact]
     public void OldestArticleAddedAtStart()
     {
+        var eventCount = 0;
         var sort = this.OldestToNewest;
-        var articles = GetSortedArticleListFor(sort);
+        var articles = new ObservableCollection<DatabaseArticle>(GetSortedArticleListFor(sort));
         var priorCount = articles.Count;
+
+        articles.CollectionChanged += (s, args) =>
+        {
+            eventCount += 1;
+            Assert.Equal(NotifyCollectionChangedAction.Add, args.Action);
+            Assert.Equal(0, args.NewStartingIndex);
+            Assert.Equal(1, args.NewItems!.Count);
+            Assert.Equal(-1, args.OldStartingIndex);
+            Assert.Null(args.OldItems);
+        };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleToAdd = TestUtilities.GetMockDatabaseArticle() with { Id = articles.Min((a) => a.Id) - 1 };
@@ -98,6 +148,7 @@ public class ArticleListChangeProcessorTests
 
         Assert.Equal(priorCount + 1, articles.Count);
         Assert.Equal(articleToAdd, articles.First());
+        Assert.Equal(1, eventCount);
     }
     #endregion
 
@@ -105,8 +156,17 @@ public class ArticleListChangeProcessorTests
     [Fact]
     public void UpdatedArticleInSingleArticleList()
     {
+        var eventCount = 0;
         var sort = this.ProgressDescending;
-        var articles = new List<DatabaseArticle> { TestUtilities.GetMockDatabaseArticle() };
+        var articles = new ObservableCollection<DatabaseArticle> { TestUtilities.GetMockDatabaseArticle() };
+        articles.CollectionChanged += (s, args) =>
+        {
+            eventCount += 1;
+            Assert.Equal(NotifyCollectionChangedAction.Replace, args.Action);
+            Assert.Equal(1, args.NewItems!.Count);
+            Assert.Equal(0, args.NewStartingIndex);
+            Assert.NotNull(args.OldItems);
+        };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleUpdated = articles.First() with { ReadProgress = 0.0F };
@@ -115,13 +175,16 @@ public class ArticleListChangeProcessorTests
 
         Assert.Single(articles);
         Assert.Equal(articleUpdated, articles.First());
+        Assert.Equal(1, eventCount);
     }
 
     [Fact]
     public void UpdatedArticleInEmptyArticleList()
     {
+        var eventCount = 0;
         var sort = this.ProgressDescending;
-        var articles = new List<DatabaseArticle>();
+        var articles = new ObservableCollection<DatabaseArticle>();
+        articles.CollectionChanged += (_, _) => eventCount += 1;
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleUpdated = TestUtilities.GetMockDatabaseArticle();
@@ -129,14 +192,17 @@ public class ArticleListChangeProcessorTests
         this.clearingHouse.RaiseArticleUpdated(articleUpdated);
 
         Assert.Empty(articles);
+        Assert.Equal(0, eventCount);
     }
 
     [Fact]
     public void UpdatedArticleNotInSetIsIgnored()
     {
+        var eventCount = 0;
         var sort = this.ProgressDescending;
         var originalArticle = TestUtilities.GetMockDatabaseArticle();
-        var articles = new List<DatabaseArticle> { originalArticle };
+        var articles = new ObservableCollection<DatabaseArticle> { originalArticle };
+        articles.CollectionChanged += (_, _) => eventCount += 1;
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleUpdated = TestUtilities.GetMockDatabaseArticle();
@@ -145,14 +211,27 @@ public class ArticleListChangeProcessorTests
 
         Assert.Single(articles);
         Assert.Equal(originalArticle, articles.First());
+        Assert.Equal(0, eventCount);
     }
 
     [Fact]
     public void UpdatedArticleMovesFromFirstToLast()
     {
+        var events = new List<NotifyCollectionChangedAction>();
         var sort = this.ProgressDescending;
-        var articles = GetSortedArticleListFor(sort);
+        var articles = new ObservableCollection<DatabaseArticle>(GetSortedArticleListFor(sort));
         var priorCount = articles.Count;
+        articles.CollectionChanged += (s, args) =>
+        {
+            events.Add(args.Action);
+            if (NotifyCollectionChangedAction.Move == args.Action)
+            {
+                Assert.Equal(articles.Count - 1, args.NewStartingIndex);
+                Assert.Equal(0, args.OldStartingIndex);
+                Assert.Equal(1, args.NewItems!.Count);
+                Assert.Equal(1, args.OldItems!.Count);
+            }
+        };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleUpdated = articles.First() with { ReadProgress = 0.0F };
@@ -161,14 +240,31 @@ public class ArticleListChangeProcessorTests
 
         Assert.Equal(priorCount, articles.Count);
         Assert.Equal(articleUpdated, articles.Last());
+        Assert.Equal(2, events.Count);
+        Assert.Contains(NotifyCollectionChangedAction.Replace, events);
+        Assert.Contains(NotifyCollectionChangedAction.Move, events);
     }
 
     [Fact]
     public void UpdatedArticleMovesFromLastToFirst()
     {
+        var events = new List<NotifyCollectionChangedAction>();
+
         var sort = this.ProgressDescending;
-        var articles = GetSortedArticleListFor(sort);
+        var articles = new ObservableCollection<DatabaseArticle>(GetSortedArticleListFor(sort));
         var priorCount = articles.Count;
+
+        articles.CollectionChanged += (s, args) =>
+        {
+            events.Add(args.Action);
+            if (NotifyCollectionChangedAction.Move == args.Action)
+            {
+                Assert.Equal(articles.Count - 1, args.OldStartingIndex);
+                Assert.Equal(0, args.NewStartingIndex);
+                Assert.Equal(1, args.NewItems!.Count);
+                Assert.Equal(1, args.OldItems!.Count);
+            }
+        };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleUpdated = articles.Last() with { ReadProgress = 1.0F };
@@ -177,6 +273,9 @@ public class ArticleListChangeProcessorTests
 
         Assert.Equal(priorCount, articles.Count);
         Assert.Equal(articleUpdated, articles.First());
+        Assert.Equal(2, events.Count);
+        Assert.Contains(NotifyCollectionChangedAction.Replace, events);
+        Assert.Contains(NotifyCollectionChangedAction.Move, events);
     }
 
     [Fact]
@@ -359,9 +458,20 @@ public class ArticleListChangeProcessorTests
     [Fact]
     public void DeletingFirstExistingArticleRemovesArticleAtStart()
     {
+        var eventCount = 0;
         var sort = this.NewestToOldest;
-        var articles = GetSortedArticleListFor(sort);
+        var articles = new ObservableCollection<DatabaseArticle>(GetSortedArticleListFor(sort));
         var originalCount = articles.Count;
+
+        articles.CollectionChanged += (s, args) =>
+        {
+            eventCount += 1;
+            Assert.Equal(NotifyCollectionChangedAction.Remove, args.Action);
+            Assert.Null(args.NewItems);
+            Assert.Equal(-1, args.NewStartingIndex);
+            Assert.Equal(0, args.OldStartingIndex);
+            Assert.Equal(1, args.OldItems!.Count);
+        };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleToDelete = articles.First();
@@ -370,14 +480,25 @@ public class ArticleListChangeProcessorTests
 
         Assert.Equal(originalCount - 1, articles.Count);
         Assert.DoesNotContain(articleToDelete, articles);
+        Assert.Equal(1, eventCount);
     }
 
     [Fact]
     public void DeletingLastExistingArticleRemovesArticleAtEnd()
     {
+        var eventCount = 0;
         var sort = this.NewestToOldest;
-        var articles = GetSortedArticleListFor(sort);
+        var articles = new ObservableCollection<DatabaseArticle>(GetSortedArticleListFor(sort));
         var originalCount = articles.Count;
+        articles.CollectionChanged += (s, args) =>
+        {
+            eventCount += 1;
+            Assert.Equal(NotifyCollectionChangedAction.Remove, args.Action);
+            Assert.Null(args.NewItems);
+            Assert.Equal(-1, args.NewStartingIndex);
+            Assert.Equal(originalCount - 1, args.OldStartingIndex);
+            Assert.Equal(1, args.OldItems!.Count);
+        };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
         var articleToDelete = articles.Last();
@@ -386,6 +507,7 @@ public class ArticleListChangeProcessorTests
 
         Assert.Equal(originalCount - 1, articles.Count);
         Assert.DoesNotContain(articleToDelete, articles);
+        Assert.Equal(1, eventCount);
     }
 
     [Fact]
@@ -562,7 +684,7 @@ public class ArticleListChangeProcessorTests
     }
 
     [Fact]
-    void ArticleMovedOutOfThisFolderLeavingItEmpty()
+    public void ArticleMovedOutOfThisFolderLeavingItEmpty()
     {
         var sort = this.OldestToNewest;
         var articles = new List<DatabaseArticle> { TestUtilities.GetMockDatabaseArticle() };
