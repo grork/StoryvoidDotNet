@@ -13,4 +13,22 @@ public sealed partial class ArticleListControl : UserControl
     {
         this.InitializeComponent();
     }
+
+    /// <summary>
+    /// Called whenever an element is about to be presented, even if it has been
+    /// previously presented. This leads, potentially, to redundant work.
+    /// </summary>
+    private void ItemsRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    {
+        var listItem = args.Element as ArticleListItem;
+        if(listItem == null)
+        {
+            return;
+        }
+
+        // Move the commands from the viewmodel into the list item so that the
+        // control can leverage the commands in its UI
+        listItem.LikeCommand = this.ViewModel?.LikeCommand;
+        listItem.UnlikeCommand = this.ViewModel?.UnlikeCommand;
+    }
 }

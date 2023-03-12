@@ -5,6 +5,7 @@
              xmlns:controls="using:Codevoid.Storyvoid.Controls">
     <ScrollViewer HorizontalScrollMode="Disabled">
         <ItemsRepeater ItemsSource="{x:Bind ViewModel.Articles, Mode=OneWay}"
+                       ElementPrepared="ItemsRepeater_ElementPrepared"
                        Margin="20,0,20,0">
             <ItemsRepeater.Layout>
                 <UniformGridLayout MinItemWidth="248"

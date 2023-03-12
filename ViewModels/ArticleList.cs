@@ -41,6 +41,8 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
     public readonly static string DefaultSortIdentifier = "OldestToNewest";
     public event PropertyChangedEventHandler? PropertyChanged;
     public readonly ICommand SyncCommand;
+    public readonly ICommand LikeCommand;
+    public readonly ICommand UnlikeCommand;
 
     private readonly IFolderDatabase folderDatabase;
     private readonly IArticleDatabase articleDatabase;
@@ -96,8 +98,10 @@ public class ArticleList : INotifyPropertyChanged, IDisposable
         // Set the default sort to match that supplied from settings.
         this.currentSort = this.Sorts.First((s) => s.Identifier == settings.SortIdentifier);
 
-        // Create the sync command from the supplied sync helper
+        // Create the commands that will be used by the presentation layer
         this.SyncCommand = new SyncCommand(syncHelper);
+        this.LikeCommand = new LikeCommand(articleDatabase);
+        this.UnlikeCommand = new UnlikeCommand(articleDatabase);
     }
 
     /// <summary>
