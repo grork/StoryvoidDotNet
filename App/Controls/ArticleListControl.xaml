@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:db="using:Codevoid.Storyvoid"
              xmlns:controls="using:Codevoid.Storyvoid.Controls">
-    <ScrollViewer HorizontalScrollMode="Disabled">
+    <ScrollViewer AutomationProperties.Name="Articles"
+                  HorizontalScrollMode="Disabled">
         <ItemsRepeater ItemsSource="{x:Bind ViewModel.Articles, Mode=OneWay}"
                        ElementPrepared="ItemsRepeater_ElementPrepared"
                        Margin="20,0,20,0">

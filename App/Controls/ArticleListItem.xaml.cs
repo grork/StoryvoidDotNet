@@ -1,5 +1,7 @@
+using Microsoft.UI.Xaml.Automation.Peers;
 using System.ComponentModel;
 using System.Windows.Input;
+using Strings = Codevoid.Storyvoid.Resources;
 
 namespace Codevoid.Storyvoid.Controls;
 
@@ -9,6 +11,25 @@ namespace Codevoid.Storyvoid.Controls;
 /// </summary>
 public sealed partial class ArticleListItem : UserControl, INotifyPropertyChanged
 {
+    protected override AutomationPeer OnCreateAutomationPeer() => new ArticleListItemAutomationPeer(this);
+
+    private sealed class ArticleListItemAutomationPeer : FrameworkElementAutomationPeer
+    {
+        private readonly ArticleListItem owner;
+
+        public ArticleListItemAutomationPeer(ArticleListItem owner) : base(owner) => this.owner = owner;
+
+        protected override int GetPositionInSetCore()
+          => ((ItemsRepeater)owner.Parent)?.GetElementIndex(this.owner) + 1 ?? base.GetPositionInSetCore();
+
+        protected override int GetSizeOfSetCore()
+          => ((ItemsRepeater)owner.Parent)?.ItemsSourceView?.Count ?? base.GetSizeOfSetCore();
+
+        protected override string GetClassNameCore() => nameof(ArticleListItemAutomationPeer);
+
+        protected override string GetNameCore() => Strings.ArticleListItem_Automation_Name;
+    }
+
     private DatabaseArticle? _model = null;
     private ICommand? _likeCommand = null;
     private ICommand? _unlikeCommand = null;

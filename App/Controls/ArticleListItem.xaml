@@ -20,11 +20,13 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Row="0"
+            <TextBlock AutomationProperties.Name="Title"
+                       Grid.Row="0"
                        Grid.ColumnSpan="2"
                        Style="{ThemeResource SubtitleTextBlockStyle}"
                        Text="{x:Bind Model.Title}" />
-            <TextBlock Grid.Row="1"
+            <TextBlock AutomationProperties.Name="Extract"
+                       Grid.Row="1"
                        Grid.ColumnSpan="2"
                        Text="{x:Bind Model.LocalOnlyState.ExtractedDescription}"
                        TextWrapping="WrapWholeWords" />
