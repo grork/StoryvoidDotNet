@@ -7,6 +7,8 @@
             VerticalAlignment="Stretch"
             Background="LightGray"
             Padding="8"
+            IsTabStop="True"
+            UseSystemFocusVisuals="True"
             CornerRadius="8">
         <Grid>
             <Grid.RowDefinitions>
@@ -25,6 +27,7 @@
                        Grid.ColumnSpan="2"
                        Style="{ThemeResource SubtitleTextBlockStyle}"
                        Text="{x:Bind Model.Title}" />
+            
             <TextBlock AutomationProperties.Name="Extract"
                        Grid.Row="1"
                        Grid.ColumnSpan="2"
