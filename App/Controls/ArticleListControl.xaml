@@ -16,7 +16,7 @@
             </ItemsRepeater.Layout>
             <ItemsRepeater.ItemTemplate>
                 <DataTemplate x:DataType="db:DatabaseArticle">
-                    <controls:ArticleListItem Model="{x:Bind Mode=OneWay}" />
+                    <controls:ArticleListItem Model="{x:Bind}" />
                 </DataTemplate>
             </ItemsRepeater.ItemTemplate>
         </ItemsRepeater>
