@@ -26,7 +26,8 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid TabFocusNavigation="Cycle">
+    <Grid TabFocusNavigation="Cycle"
+          AutomationProperties.Name="Sign-in">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="24px" />
             <ColumnDefinition Width="*" />
