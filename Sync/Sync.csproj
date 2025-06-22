@@ -13,8 +13,8 @@
 		<ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="AngleSharp" Version="0.17.1" />
+		<PackageReference Include="AngleSharp" Version="1.3.0" />
 		<PackageReference Include="AngleSharp.Css" Version="0.16.4" />
-		<PackageReference Include="SixLabors.ImageSharp" Version="2.1.8" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="2.1.10" />
 	</ItemGroup>
 </Project>
