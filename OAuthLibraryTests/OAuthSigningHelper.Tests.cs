@@ -236,7 +236,7 @@ public sealed class OAuthSigningHelperTests
         }
     }
 
-    [Fact]
+    [Fact(Skip = "Twitter removed API access; needs alternative to 'validate' the signing etc works")]
     public async Task CanVerifyTwitterCredentials()
     {
         using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
@@ -247,7 +247,7 @@ public sealed class OAuthSigningHelperTests
         Assert.Equal("CodevoidTest", value.ToString()); // Wrong screen name returned
     }
 
-    [Fact]
+    [Fact(Skip = "Twitter removed API access; needs alternative to 'validate' the signing etc works")]
     public async Task CanPostStatusToTwitter()
     {
         using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
@@ -262,7 +262,7 @@ public sealed class OAuthSigningHelperTests
         Assert.Equal(data["status"], textField.ToString()); // Wrong Status
     }
 
-    [Fact]
+    [Fact(Skip = "Twitter removed API access; needs alternative to 'validate' the signing etc works")]
     public async Task CanMakeGetRequestWithPayload()
     {
         using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
