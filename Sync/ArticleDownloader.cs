@@ -118,9 +118,8 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
 
     private static Lazy<IConfiguration> lazyParserConfiguration = new Lazy<IConfiguration>(() =>
     {
-        // Remove 'dangerous' aspects of AngleSharps API so bad things can't
-        // happen
-        var configuration = AngleSharpConfiguration.Default.WithCss(); // Lets us use GetInnerText()
+        // Remove 'dangerous' aspects of AngleSharps API so bad things can't happen
+        var configuration = AngleSharpConfiguration.Default;
         configuration = configuration.Without<AngleSharp.Dom.Events.IEventFactory>();
         configuration = configuration.Without<AngleSharp.Dom.IAttributeObserver>();
         configuration = configuration.Without<AngleSharp.Browser.INavigationHandler>();
@@ -393,7 +392,7 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
         // the content body. We do that by extracting up to the first 400 chars
         // from the *text* of the body (E.g. exclude markup), and stuffing that
         // in the database.
-        var documentTextContent = document.Body!.GetInnerText() ?? String.Empty;
+        var documentTextContent = document.Body!.Text().Trim() ?? String.Empty;
         var extractedDescription = documentTextContent.Substring(0, Math.Min(documentTextContent.Length, 400));
 
         // We don't want the document to be a 'full' document -- that'll be
