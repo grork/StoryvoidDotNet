@@ -1290,7 +1290,7 @@ public class SampleDataDownloadingHelper
             }
             catch (BookmarkContentsUnavailableException)
             {
-                Assert.False(true, $"Couldn't download: {bookmarkUri.ToString()}");
+                Assert.Fail($"Couldn't download: {bookmarkUri.ToString()}");
             }
         }
 

@@ -115,7 +115,7 @@ public class ChunkinatorTests
         var seenValues = new List<int>();
         foreach (var chunk in source.Chunk(5))
         {
-            Assert.False(true, "Shouldn't have been evaluated");
+            Assert.Fail("Shouldn't have been evaluated");
             seenValues.AddRange(chunk);
         }
 

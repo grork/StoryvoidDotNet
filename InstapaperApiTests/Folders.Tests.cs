@@ -57,10 +57,10 @@ public sealed class FoldersTests
     }
 
     [Fact, Order(4)]
-    public void FolderIdLessThanOneThrows()
+    public async Task FolderIdLessThanOneThrows()
     {
         var client = this.SharedState.FoldersClient;
-        Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.DeleteAsync(0));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.DeleteAsync(0));
     }
 
     [Fact, Order(5)]

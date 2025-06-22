@@ -45,7 +45,7 @@ public class ArticleListChangeProcessorTests
             eventCount += 1;
             Assert.Equal(NotifyCollectionChangedAction.Add, args.Action);
             Assert.Equal(0, args.NewStartingIndex);
-            Assert.Equal(1, args.NewItems!.Count);
+            Assert.Single(args.NewItems!);
             Assert.Equal(-1, args.OldStartingIndex);
             Assert.Null(args.OldItems);
         };
@@ -75,7 +75,7 @@ public class ArticleListChangeProcessorTests
             eventCount += 1;
             Assert.Equal(NotifyCollectionChangedAction.Add, args.Action);
             Assert.Equal(priorCount, args.NewStartingIndex);
-            Assert.Equal(1, args.NewItems!.Count);
+            Assert.Single(args.NewItems!);
             Assert.Equal(-1, args.OldStartingIndex);
             Assert.Null(args.OldItems);
         };
@@ -110,7 +110,7 @@ public class ArticleListChangeProcessorTests
                 eventCount += 1;
                 Assert.Equal(NotifyCollectionChangedAction.Add, args.Action);
                 Assert.Equal(expectedNewIndex, args.NewStartingIndex);
-                Assert.Equal(1, args.NewItems!.Count);
+                Assert.Single(args.NewItems!);
                 Assert.Equal(-1, args.OldStartingIndex);
                 Assert.Null(args.OldItems);
             };
@@ -136,7 +136,7 @@ public class ArticleListChangeProcessorTests
             eventCount += 1;
             Assert.Equal(NotifyCollectionChangedAction.Add, args.Action);
             Assert.Equal(0, args.NewStartingIndex);
-            Assert.Equal(1, args.NewItems!.Count);
+            Assert.Single(args.NewItems!);
             Assert.Equal(-1, args.OldStartingIndex);
             Assert.Null(args.OldItems);
         };
@@ -163,7 +163,7 @@ public class ArticleListChangeProcessorTests
         {
             eventCount += 1;
             Assert.Equal(NotifyCollectionChangedAction.Replace, args.Action);
-            Assert.Equal(1, args.NewItems!.Count);
+            Assert.Single(args.NewItems!);
             Assert.Equal(0, args.NewStartingIndex);
             Assert.NotNull(args.OldItems);
         };
@@ -228,8 +228,8 @@ public class ArticleListChangeProcessorTests
             {
                 Assert.Equal(articles.Count - 1, args.NewStartingIndex);
                 Assert.Equal(0, args.OldStartingIndex);
-                Assert.Equal(1, args.NewItems!.Count);
-                Assert.Equal(1, args.OldItems!.Count);
+                Assert.Single(args.NewItems!);
+                Assert.Single(args.OldItems!);
             }
         };
 
@@ -261,8 +261,8 @@ public class ArticleListChangeProcessorTests
             {
                 Assert.Equal(articles.Count - 1, args.OldStartingIndex);
                 Assert.Equal(0, args.NewStartingIndex);
-                Assert.Equal(1, args.NewItems!.Count);
-                Assert.Equal(1, args.OldItems!.Count);
+                Assert.Single(args.NewItems!);
+                Assert.Single(args.OldItems!);
             }
         };
 
@@ -470,7 +470,7 @@ public class ArticleListChangeProcessorTests
             Assert.Null(args.NewItems);
             Assert.Equal(-1, args.NewStartingIndex);
             Assert.Equal(0, args.OldStartingIndex);
-            Assert.Equal(1, args.OldItems!.Count);
+            Assert.Single(args.OldItems!);
         };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);
@@ -497,7 +497,7 @@ public class ArticleListChangeProcessorTests
             Assert.Null(args.NewItems);
             Assert.Equal(-1, args.NewStartingIndex);
             Assert.Equal(originalCount - 1, args.OldStartingIndex);
-            Assert.Equal(1, args.OldItems!.Count);
+            Assert.Single(args.OldItems!);
         };
 
         using var changeHandler = new ArticleListChangeProcessor(articles, WellKnownLocalFolderIds.Unread, this.clearingHouse, sort);

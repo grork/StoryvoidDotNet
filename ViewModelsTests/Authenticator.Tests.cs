@@ -118,13 +118,13 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AttemptingToAuthenticateWhenNotReadyToVerifyThrowsException()
+    public async Task AttemptingToAuthenticateWhenNotReadyToVerifyThrowsException()
     {
         await Assert.ThrowsAsync<InvalidOperationException>(() => this.authenticator.Authenticate());
     }
 
     [Fact]
-    public async void AuthenticatingWithValidCredentialsReturnsValidClientInformation()
+    public async Task AuthenticatingWithValidCredentialsReturnsValidClientInformation()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
@@ -134,7 +134,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithValidCredentialsRaisesSuccessfullyAuthenticatedEvent()
+    public async Task AuthenticatingWithValidCredentialsRaisesSuccessfullyAuthenticatedEvent()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
@@ -148,7 +148,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithUsingICommandInterfaceRaisesSuccessfullyAuthenticatedEvent()
+    public async Task AuthenticatingWithUsingICommandInterfaceRaisesSuccessfullyAuthenticatedEvent()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
@@ -163,7 +163,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithValidCredentialsReturnsValidClientInformationMatchingSavedInformation()
+    public async Task AuthenticatingWithValidCredentialsReturnsValidClientInformationMatchingSavedInformation()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
@@ -178,7 +178,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithValidCredentialsSetsEmptyErrorMessage()
+    public async Task AuthenticatingWithValidCredentialsSetsEmptyErrorMessage()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
@@ -190,7 +190,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingSetsWorkingToTrueAndThenFalseWithSuccessfulAuthentication()
+    public async Task AuthenticatingSetsWorkingToTrueAndThenFalseWithSuccessfulAuthentication()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
@@ -212,7 +212,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingSetsCanVerifyToTrueAndThenFalseWithSuccessfulAuthentication()
+    public async Task AuthenticatingSetsCanVerifyToTrueAndThenFalseWithSuccessfulAuthentication()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         this.authenticator.Password = MockAccountService.FAKE_PASSWORD;
@@ -242,7 +242,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithInvalidCredentialsDoesNotReturnClientInformation()
+    public async Task AuthenticatingWithInvalidCredentialsDoesNotReturnClientInformation()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
 
@@ -251,7 +251,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithInvalidCredentialsDoesNotReturnClientInformationAndSetsEmptyTokens()
+    public async Task AuthenticatingWithInvalidCredentialsDoesNotReturnClientInformationAndSetsEmptyTokens()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
 
@@ -267,7 +267,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithInvalidCredentialsSetsWorkingToTrueAndThenFalseWithUnsuccessfulAuthentication()
+    public async Task AuthenticatingWithInvalidCredentialsSetsWorkingToTrueAndThenFalseWithUnsuccessfulAuthentication()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
 
@@ -287,7 +287,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithInvalidCredentialsSetsErrorMessage()
+    public async Task AuthenticatingWithInvalidCredentialsSetsErrorMessage()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
 
@@ -296,7 +296,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void AuthenticatingWithInvalidCredentialsDoesNotRaiseSuccessfulEvent()
+    public async Task AuthenticatingWithInvalidCredentialsDoesNotRaiseSuccessfulEvent()
     {
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
         var successfulEventRaised = false;
@@ -308,7 +308,7 @@ public class AuthenticatorTests
     }
 
     [Fact]
-    public async void TimingOutRequestsClearsIsWorkingAndSetsAppropriateErrorMessage()
+    public async Task TimingOutRequestsClearsIsWorkingAndSetsAppropriateErrorMessage()
     {
         this.accountService.TimeoutRequests = true;
         this.authenticator.Email = MockAccountService.FAKE_ACCOUNT;
