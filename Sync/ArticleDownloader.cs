@@ -1,13 +1,14 @@
-﻿using System.Text;
-using System.Diagnostics;
-using AngleSharp;
+﻿using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
-using AngleSharpConfiguration = AngleSharp.Configuration;
 using Codevoid.Instapaper;
 using Codevoid.Utilities.OAuth;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using System.Diagnostics;
 using System.Runtime.ExceptionServices;
+using System.Text;
+using AngleSharpConfiguration = AngleSharp.Configuration;
 
 namespace Codevoid.Storyvoid.Sync;
 
@@ -535,13 +536,21 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
                     return null;
                 }
 
-                contentType = imageResponse.Content.Headers.ContentType.MediaType;
+                contentType = imageResponse.Content.Headers.ContentType?.MediaType ?? "image/unknown";
                 await imageResponse.Content.CopyToAsync(targetStream).ConfigureAwait(false);
             }
 
             // 4. Identify the image format & metadata
             string extension = "unknown";
-            var (imageInfo, imageFormat) = await Image.IdentifyWithFormatAsync(tempFilepath, cancellationToken).ConfigureAwait(false);
+            ImageInfo? imageInfo = null;
+            IImageFormat? imageFormat = null;
+
+            try
+            {
+                imageFormat = await Image.DetectFormatAsync(tempFilepath, cancellationToken).ConfigureAwait(false);
+            }
+            catch (UnknownImageFormatException) { }
+
             if (imageFormat is null)
             {
                 // We couldn't identify it, so we'd better check to see if
@@ -556,6 +565,12 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
             }
             else
             {
+                try
+                {
+                    imageInfo = await Image.IdentifyAsync(tempFilepath).ConfigureAwait(false);
+                }
+                catch (InvalidImageContentException) { }
+
                 extension = imageFormat.FileExtensions.First();
                 // Image sharp thinks 'bm' is a valid bitmap extension
                 // and we don't. So lets fix it up.
@@ -593,12 +608,12 @@ public class ArticleDownloader : IArticleDownloader, IDisposable
             }
 
             // 7. Create first image information to allow caller to pick
-            // SVG doesn't have dimensions, per-se. They also render
-            // well being vector-images. For non-svg images, we don't
-            // want small images
+            //    SVG doesn't have dimensions, per-se. They also render
+            //    well being vector-images. For non-svg images, we don't
+            //    want small images
             if (contentType != SVG_CONTENT_TYPE)
             {
-                if (imageInfo.Width < MINIMUM_IMAGE_DIMENSION || imageInfo.Height < MINIMUM_IMAGE_DIMENSION)
+                if (imageInfo == null || imageInfo.Width < MINIMUM_IMAGE_DIMENSION || imageInfo.Height < MINIMUM_IMAGE_DIMENSION)
                 {
                     return null;
                 }

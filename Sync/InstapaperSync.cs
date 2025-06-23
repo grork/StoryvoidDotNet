@@ -67,7 +67,7 @@ internal static class FolderDatabaseExtensions
                 return WellKnownFolderIds.Archived;
 
             default:
-                return instance.ServiceId.ToString();
+                return instance.ServiceId!.Value.ToString();
         }
     }
 }
