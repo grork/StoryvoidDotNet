@@ -8,7 +8,7 @@ namespace Codevoid.Storyvoid.Converters;
 /// false. Intended to help with binding cases in XAML where you need to disable
 /// something when a value is true.
 /// </summary>
-internal class InverseBooleanConverter : IValueConverter
+internal partial class InverseBooleanConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {

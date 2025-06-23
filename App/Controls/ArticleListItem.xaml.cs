@@ -13,7 +13,7 @@ public sealed partial class ArticleListItem : UserControl, INotifyPropertyChange
 {
     protected override AutomationPeer OnCreateAutomationPeer() => new ArticleListItemAutomationPeer(this);
 
-    private sealed class ArticleListItemAutomationPeer : FrameworkElementAutomationPeer
+    private sealed partial class ArticleListItemAutomationPeer : FrameworkElementAutomationPeer
     {
         private readonly ArticleListItem owner;
 

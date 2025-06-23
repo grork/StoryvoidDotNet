@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows10.0.22000.0</TargetFramework>
+    <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>Codevoid.Storyvoid</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -10,7 +10,7 @@
     <PublishProfile>win10-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
-    <SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion>10.0.26100.0</SupportedOSPlatformVersion>
     <AssemblyName>Storyvoid</AssemblyName>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Nullable>enable</Nullable>
@@ -36,9 +36,9 @@
 
   <ItemGroup>
     <PackageReference Include="Codevoid.Utilities.Reswinator" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.0.1" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.2.221209.1" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.22621.755" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4188" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 

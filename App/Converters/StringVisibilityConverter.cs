@@ -8,7 +8,7 @@ namespace Codevoid.Storyvoid.Converters;
 /// becomes <see cref="Visibility.Visible"/>, all others
 /// <see cref="Visibility.Collapsed"/>
 /// </summary>
-internal class StringVisibilityConverter : IValueConverter
+internal partial class StringVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
