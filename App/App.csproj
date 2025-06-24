@@ -65,5 +65,13 @@
   <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
+
+  <!--
+    Don't let people get confused with missing class names, error early if the
+    API key file is missing
+  -->
+  <Target Name="CheckKeyFilePresent" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(MSBuildProjectDirectory)\InstapaperAPIKey_app.cs')" Text="Please create a InstapaperAPIKey_app.cs in $(MSBuildProjectDirectory). See README.md for more details" />
+  </Target>
 </Project>
  
