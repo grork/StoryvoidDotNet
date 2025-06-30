@@ -4,6 +4,7 @@ using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.Sync;
 using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
+using Microsoft.UI.Dispatching;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -46,8 +47,49 @@ interface IAppUtilities
     /// Clears the credentials, local database + files, and displays the login
     /// page once complete.
     /// </summary>
-    void Signout();
+    Task Signout();
 }
+
+/// <summary>
+/// Helper interface to abstract out the actual navigation of the UI. Why?
+/// Because the <see cref="AppUtilities"/> class has state/logic we want to
+/// test, but we don't want to have to handle the navigation.
+/// </summary>
+internal interface IAppNavigation
+{
+    /// <summary>
+    /// Navigates to the login page, allowing the user to enter credentials
+    /// </summary>
+    /// <param name="authenticator">
+    /// Authenticator instance for this navigation
+    /// </param>
+    void ShowLogin(Authenticator authenticator);
+
+    /// <summary>
+    /// Navigates to the interstitial signing out page, which will be shown
+    /// while the sign out (E.g., db delete) is happening.
+    /// </summary>
+    void ShowSigningOut();
+    
+    /// <summary>
+    /// Navigates to the article list page for the supplied article list
+    /// viewmodel
+    /// </summary>
+    /// <param name="articleList">List to be displayed</param>
+    void ShowList(ArticleList articleList);
+    
+    /// <summary>
+    /// Shows the testing placeholder page
+    /// </summary>
+    /// <param name="navigationParameter">Any navigation parameter payload</param>
+    void ShowPlaceholder(NavigationParameter navigationParameter);
+
+    /// <summary>
+    /// Clears the forward AND backward navigations stack
+    /// </summary>
+    void ClearStack();
+}
+
 
 /// <summary>
 /// Utility Class to allow navigations to be decoupled from the views.
@@ -83,16 +125,18 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     private static readonly string ARTICLE_DOWNLOADS_FOLDER = "articles";
 
     private bool disposed = false;
-    private Frame frame;
     private IAccountSettings accountSettings = new AccountSettings();
     private DataLayer? dataLayer;
     private Task<SqliteConnection>? dbTask;
     private IList<string> OperationLog = new ObservableCollection<string>();
+    private IAppNavigation appNavigation;
+    private DispatcherQueue dispatcherQueue;
 
-    internal AppUtilities(Frame frame, Task<SqliteConnection> connection)
+    internal AppUtilities(IAppNavigation appNavigation, Task<SqliteConnection> connection, DispatcherQueue dispatcher)
     {
         this.dbTask = connection;
-        this.frame = frame;
+        this.appNavigation = appNavigation;
+        this.dispatcherQueue = dispatcher;
     }
 
     /// <inheritdoc />
@@ -103,9 +147,11 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         authenticator.SuccessfullyAuthenticated += (sender, clientInformation) =>
         {
             this.ShowList();
-            this.frame.BackStack.Clear();
+            this.appNavigation.ClearStack();
         };
-        this.frame.Navigate(typeof(LoginPage), authenticator);
+
+
+        this.appNavigation.ShowLogin(authenticator);
     }
 
     /// <inheritdoc/>
@@ -120,7 +166,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             dataLayer.SyncHelper
         );
 
-        this.frame.Navigate(typeof(ArticleListPage), articleList);
+        this.appNavigation.ShowList(articleList);
     }
 
     /// <summary>
@@ -128,7 +174,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     /// </summary>
     public void ShowSigningOut()
     {
-        this.frame.Navigate(typeof(SigningOutPage));
+        this.appNavigation.ShowSigningOut();
     }
 
     /// <inheritdoc/>
@@ -143,7 +189,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         var placeholderParameter = new PlaceholderParameter(parameter ?? placeholderCount++, LocalWork(), this.OperationLog);
 
         var navigationParameter = new NavigationParameter(placeholderParameter, this);
-        this.frame.Navigate(typeof(PlaceholderPage), navigationParameter);
+        this.appNavigation.ShowPlaceholder(navigationParameter);
     }
 
     /// <summary>
@@ -165,13 +211,12 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
     }
 
     /// <inheritdoc/>
-    public async void Signout()
+    public async Task Signout()
     {
         // Immediately navigate to the signing out page, and clear any other
         // pages.
         this.ShowSigningOut();
-        this.frame.BackStack.Clear();
-        this.frame.ForwardStack.Clear();
+        this.appNavigation.ClearStack();
 
         // Clear any credentials
         this.accountSettings.ClearTokens();
@@ -202,6 +247,11 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
 
     internal Task<DataLayer> GetDataLayer()
     {
+        if (this.disposed)
+        {
+            throw new ObjectDisposedException(nameof(AppUtilities));
+        }
+
         async Task<DataLayer> GetDataLayerWork()
         {
             // Get the DB Connection
@@ -215,11 +265,11 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
             var clientInformation = this.accountSettings.GetTokens();
 
             // Create our data layer
-            var databaseEvents = new DispatcherDatabaseEvents(this.frame.DispatcherQueue);
+            var databaseEvents = new DispatcherDatabaseEvents(this.dispatcherQueue);
             var articleDB = InstapaperDatabase.GetArticleDatabase(dbConnection, databaseEvents);
             var folderDB = InstapaperDatabase.GetFolderDatabase(dbConnection, databaseEvents);
             var ledger = InstapaperDatabase.GetLedger(folderDB, articleDB);
-            var downloaderEvents = new ArticleDownloaderEvents(this.frame.DispatcherQueue);
+            var downloaderEvents = new ArticleDownloaderEvents(this.dispatcherQueue);
             var articleDownloader = new ArticleDownloader(
                 AppUtilities.LocalArticlesFolderPath,
                 articleDB,
@@ -227,7 +277,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
                 clientInformation,
                 downloaderEvents
             );
-            var syncEvents = new DispatcherSyncEvents(this.frame.DispatcherQueue);
+            var syncEvents = new DispatcherSyncEvents(this.dispatcherQueue);
             var syncHelper = new SyncHelper(articleDownloader, async () =>
             {
                 // Syncing should happen against a separate DB connection to
@@ -364,6 +414,7 @@ internal sealed class AppUtilities : IAppUtilities, IDisposable
         SqliteConnection.ClearAllPools();
 
         this.dataLayer = null;
+        this.dataLayerTask = null;
     }
 
     /// <summary>

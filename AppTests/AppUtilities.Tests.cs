@@ -1,6 +1,8 @@
 ﻿using Codevoid.Storyvoid;
 using Codevoid.Storyvoid.Utilities;
+using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
+using Microsoft.UI.Dispatching;
 using Microsoft.VisualStudio.TestTools.UnitTesting.AppContainer;
 using Windows.Storage;
 
@@ -23,13 +25,28 @@ public class AppUtilitiesTests
 
     private Lazy<Task<SqliteConnection>> connectionTask = new Lazy<Task<SqliteConnection>>(GetDatabaseTask);
 
+    private class TestAppNavigation : IAppNavigation
+    {
+        public void ClearStack() { }
+
+        public void ShowList(ArticleList articleList) { }
+
+        public void ShowLogin(Authenticator authenticator) { }
+
+        public void ShowPlaceholder(NavigationParameter navigationParameter) { }
+        public void ShowSigningOut() { }
+    }
+
     private AppUtilities GetAppUtilities()
     {
         return new AppUtilities(
-            App.Instance!.TestWindow!.Frame,
-            this.connectionTask.Value
+            new TestAppNavigation(),
+            this.connectionTask.Value,
+            this.DispatcherQueue
         );
     }
+
+    private DispatcherQueue DispatcherQueue => App.Instance!.TestWindow!.DispatcherQueue;
 
     [TestCleanup]
     public void Cleanup()
@@ -45,8 +62,9 @@ public class AppUtilitiesTests
     public void CanInstantiate()
     {
         var utilities = new AppUtilities(
-            App.Instance!.TestWindow!.Frame,
-            this.connectionTask.Value
+            new TestAppNavigation(),
+            this.connectionTask.Value,
+            this.DispatcherQueue
         );
 
         Assert.IsNotNull(utilities);
@@ -92,8 +110,9 @@ public class AppUtilitiesTests
 
         await DispatcherQueueThreadSwitcher.SwitchToDispatcher();
         var utilities = new AppUtilities(
-                App.Instance!.TestWindow!.Frame,
-                ConnectionWithDelay()
+                new TestAppNavigation(),
+                ConnectionWithDelay(),
+                this.DispatcherQueue
             );
 
         var dataLayerTask1 = utilities.GetDataLayer();
@@ -111,10 +130,10 @@ public class AppUtilitiesTests
     {
         await DispatcherQueueThreadSwitcher.SwitchToDispatcher();
         var utilities = this.GetAppUtilities();
-        var datalayer = await utilities.GetDataLayer();
+        _ = await utilities.GetDataLayer();
         utilities.Dispose();
 
-        datalayer = await utilities.GetDataLayer();
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => _ = await utilities.GetDataLayer());
     }
 
     [TestMethod]
@@ -156,5 +175,20 @@ public class AppUtilitiesTests
 
         AppUtilities.DeleteLocalFiles();
         Assert.IsFalse(File.Exists(datasourcePath));
+    }
+
+    [TestMethod]
+    public async Task SigningOutThenSigniningInGetsNewDatabaseSuccessfully()
+    {
+        await DispatcherQueueThreadSwitcher.SwitchToDispatcher();
+        var utilities = this.GetAppUtilities();
+        var ogDataLayer = await utilities.GetDataLayer();
+        await utilities.Signout();
+
+        var newDataLayer = await utilities.GetDataLayer();
+        Assert.AreNotEqual(ogDataLayer, newDataLayer);
+
+
+        Assert.IsTrue(newDataLayer.Folders.ListAllFolders().Any(), "Should be able to run a query and find *some* folders");
     }
 }

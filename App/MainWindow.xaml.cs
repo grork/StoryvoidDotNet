@@ -1,4 +1,5 @@
 ﻿using Codevoid.Storyvoid.App.Implementations;
+using Codevoid.Storyvoid.Pages;
 using Codevoid.Storyvoid.Utilities;
 using Codevoid.Storyvoid.ViewModels;
 using Microsoft.Data.Sqlite;
@@ -8,7 +9,7 @@ using Windows.UI.Core;
 
 namespace Codevoid.Storyvoid.App;
 
-public sealed partial class MainWindow : Window
+internal sealed partial class MainWindow : Window, IAppNavigation
 {
     private readonly IAccountSettings settings = new AccountSettings();
     private readonly AppUtilities utilities;
@@ -17,7 +18,7 @@ public sealed partial class MainWindow : Window
     {
         this.InitializeComponent();
 
-        this.utilities = new AppUtilities(this.MainThing, dbTask);
+        this.utilities = new AppUtilities(this, dbTask, this.DispatcherQueue);
         this.Closed += MainWindow_Closed;
 
 #if DEBUG
@@ -45,4 +46,37 @@ public sealed partial class MainWindow : Window
         // it can recover, but it leaves the DB in a 'recovery' needed state
         this.utilities?.Dispose();
     }
+
+    #region IAppNavigation Implementation
+    /// <inheritdoc/>
+    public void ClearStack()
+    {
+        this.MainThing.BackStack.Clear();
+        this.MainThing.ForwardStack.Clear();
+    }
+
+    /// <inheritdoc/>
+    public void ShowList(ArticleList articleList)
+    {
+        this.MainThing.Navigate(typeof(ArticleListPage), articleList);
+    }
+
+    /// <inheritdoc/>
+    public void ShowLogin(Authenticator authenticator)
+    {
+        this.MainThing.Navigate(typeof(LoginPage), authenticator);
+    }
+
+    /// <inheritdoc/>
+    public void ShowSigningOut()
+    {
+        this.MainThing.Navigate(typeof(SigningOutPage));
+    }
+
+    /// <inheritdoc/>
+    public void ShowPlaceholder(NavigationParameter navigationParameter)
+    {
+        this.MainThing.Navigate(typeof(PlaceholderPage), navigationParameter);
+    }
+    #endregion
 }
