@@ -14,8 +14,8 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>13.0</LangVersion>
   </PropertyGroup>
 
