@@ -1,5 +1,4 @@
-﻿using Xunit.Extensions.Ordering;
-using Xunit.Sdk;
+﻿using Xunit.Sdk;
 
 // Tests in this assembly are ordered due to their dependency on the service
 // So we do not want them to be parallelized
@@ -12,9 +11,9 @@ using Xunit.Sdk;
 // test-orderer so we don't need to specify it multiple times.
 
 // Orders tests relative to eachother
-[assembly: TestCaseOrderer("Xunit.Extensions.Ordering.TestCaseOrderer", "Xunit.Extensions.Ordering")]
+[assembly: TestCaseOrderer("Codevoid.Test.PriorityTestOrderer", "TestUtilitiesTests")]
 // Orders classes & collections relative to eachother
-[assembly: TestCollectionOrderer("Xunit.Extensions.Ordering.CollectionOrderer", "Xunit.Extensions.Ordering")]
+[assembly: TestCollectionOrderer("Codevoid.Test.PriorityTestOrderer", "TestUtilitiesTests")]
 // Enables the actual ordering of collections
 [assembly: TestFramework("Xunit.Extensions.Ordering.TestFramework", "Xunit.Extensions.Ordering")]
 
