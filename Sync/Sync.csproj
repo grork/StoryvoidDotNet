@@ -7,6 +7,7 @@
 		<LangVersion>13.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
+    <Description>Sync Library for Storyvoid</Description>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Database\Database.csproj" />

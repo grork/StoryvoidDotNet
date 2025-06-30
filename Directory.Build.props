@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <!-- Set our copyright info -->
+    <Company>Codevoid</Company>
+    <Copyright>Copyright © $([System.DateTime]::Now.Year) $(Company)</Copyright>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Condition="!Exists('packages.config')">
+      <PrivateAssets>all</PrivateAssets>
+      <Version>3.7.115</Version>
+    </PackageReference>
+  </ItemGroup>
+</Project>

@@ -17,6 +17,7 @@
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <LangVersion>13.0</LangVersion>
+    <Description>Application to sync &amp; read acticles from Instapaper</Description>
   </PropertyGroup>
 
   <ItemGroup>

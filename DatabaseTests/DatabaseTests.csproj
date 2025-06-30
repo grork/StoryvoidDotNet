@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Database\Database.csproj" />
+    <ProjectReference Include="..\InstapaperApi\InstapaperApi.csproj" />
     <ProjectReference Include="..\TestUtilities\TestUtilitiesTests.csproj" />
   </ItemGroup>
 
