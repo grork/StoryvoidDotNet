@@ -2,10 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
     <RootNamespace>Codevoid.Test.Instapaper</RootNamespace>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>13.0</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <ImplicitUsings>true</ImplicitUsings>

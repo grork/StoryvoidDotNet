@@ -370,7 +370,7 @@ internal class ArticleChanges : IArticleChangesDatabase
 
             articleExistsCommand.AddParameter("@articleId", articleId);
 
-            var article = (long)articleExistsCommand.ExecuteScalar();
+            var article = (long)articleExistsCommand.ExecuteScalar()!;
             if (article == 0)
             {
                 throw new ArticleNotFoundException(articleId);

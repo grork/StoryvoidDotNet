@@ -5,7 +5,7 @@
 
     <IsPackable>false</IsPackable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>13.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Codevoid.Test.Storyvoid</RootNamespace>
     <ImplicitUsings>true</ImplicitUsings>

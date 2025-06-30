@@ -285,7 +285,7 @@ internal sealed record Bookmark : IInstapaperBookmark
         var id = bookmarkElement.GetProperty("bookmark_id").GetInt64();
 
         // Url
-        var urlString = bookmarkElement.GetProperty("url").GetString();
+        var urlString = bookmarkElement.GetProperty("url").GetString()!;
         var url = new Uri(urlString);
 
         // Title & Description

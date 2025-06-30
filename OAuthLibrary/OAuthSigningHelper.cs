@@ -141,7 +141,7 @@ internal class OAuthSigningHelper
         // If it's a post, we need to get the parameters that are in the
         // body if it's form encoded
         if (message.Method == HttpMethod.Post
-         && message.Content.Headers.ContentType.MediaType == "application/x-www-form-urlencoded")
+         && message.Content?.Headers?.ContentType?.MediaType == "application/x-www-form-urlencoded")
         {
             var requestContent = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
             var requestPayload = (new FormReader(requestContent)).ReadForm();
@@ -154,16 +154,16 @@ internal class OAuthSigningHelper
         else
         {
             // Assume it's get, and merge in anything in the query params
-            var queryParams = HttpUtility.ParseQueryString(message.RequestUri.Query);
+            var queryParams = HttpUtility.ParseQueryString(message.RequestUri!.Query);
             for (var i = 0; i < queryParams.Count; i++)
             {
-                merged.Add(queryParams.GetKey(i), queryParams.Get(i));
+                merged.Add(queryParams.GetKey(i)!, queryParams.Get(i)!);
             }
         }
 
         // Get the signature of the payload + oauth_headers
         var encodedPayloadToSign = OperationTypeToString(message.Method) + "&"
-            + Uri.EscapeDataString(GetUrlComponentsForSigning(message.RequestUri)) + "&"
+            + Uri.EscapeDataString(GetUrlComponentsForSigning(message.RequestUri!)) + "&"
             + Uri.EscapeDataString(ParameterEncoder.FormEncodeValues(merged));
         var signature = this.SignString(encodedPayloadToSign);
 

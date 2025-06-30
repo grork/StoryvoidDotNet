@@ -4,7 +4,7 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<RootNamespace>Codevoid.Storyvoid.Sync</RootNamespace>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<LangVersion>10.0</LangVersion>
+		<LangVersion>13.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
 	</PropertyGroup>
