@@ -12,13 +12,11 @@ public sealed partial class MainWindow : Window
 {
     private readonly IAccountSettings settings = new AccountSettings();
     private readonly AppUtilities utilities;
-    private SystemBackdropHelper backdropHelper;
 
     public MainWindow(Task<SqliteConnection> dbTask)
     {
         this.InitializeComponent();
 
-        this.backdropHelper = new SystemBackdropHelper(this, this.MainThing);
         this.utilities = new AppUtilities(this.MainThing, dbTask);
         this.Closed += MainWindow_Closed;
 
