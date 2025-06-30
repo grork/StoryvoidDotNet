@@ -42,24 +42,6 @@ public sealed class OAuthSigningHelperTests
                                      tokenSecret: "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE");
     }
 
-    private static ClientInformation GetRealClientInformation()
-    {
-        ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.API_KEY, nameof(TwitterAPIKey.API_KEY));
-        ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.API_SECRET_KEY, nameof(TwitterAPIKey.API_SECRET_KEY));
-        ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.ACCESS_TOKEN, nameof(TwitterAPIKey.ACCESS_TOKEN));
-        ThrowIfValueIsAPIKeyHasntBeenSet(TwitterAPIKey.ACCESS_TOKEN_SECRET, nameof(TwitterAPIKey.ACCESS_TOKEN_SECRET));
-
-        var clientInfo = new ClientInformation(consumerKey: TwitterAPIKey.API_KEY,
-                                     consumerKeySecret: TwitterAPIKey.API_SECRET_KEY,
-                                     token: TwitterAPIKey.ACCESS_TOKEN,
-                                     tokenSecret: TwitterAPIKey.ACCESS_TOKEN_SECRET);
-
-        clientInfo.ProductName = "CodevoidOAuthTests";
-        clientInfo.ProductVersion = "0.1";
-
-        return clientInfo;
-    }
-
     private static HttpRequestMessage GetPostRequestForData(IDictionary<string, string> data, Uri url)
     {
         var content = new FormUrlEncodedContent((IEnumerable<KeyValuePair<string?, string?>>)data);
@@ -234,45 +216,5 @@ public sealed class OAuthSigningHelperTests
         {
             OAuthSigningHelper.EntropyProvider = oldEntropyHelper;
         }
-    }
-
-    [Fact(Skip = "Twitter removed API access; needs alternative to 'validate' the signing etc works")]
-    public async Task CanVerifyTwitterCredentials()
-    {
-        using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
-        var url = new Uri("https://api.twitter.com/1.1/account/verify_credentials.json");
-        var body = await client.GetStringAsync(url);
-        var responsePayload = JsonDocument.Parse(body);
-        Assert.True(responsePayload.RootElement.TryGetProperty("screen_name", out var value)); // screen_name field was missing
-        Assert.Equal("CodevoidTest", value.ToString()); // Wrong screen name returned
-    }
-
-    [Fact(Skip = "Twitter removed API access; needs alternative to 'validate' the signing etc works")]
-    public async Task CanPostStatusToTwitter()
-    {
-        using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
-        var url = new Uri("https://api.twitter.com/1.1/statuses/update.json");
-        var data = new Dictionary<string, string?> { { "status", $"Test@Status % 78 update: {DateTimeOffset.Now.ToUnixTimeSeconds().ToString()}" } };
-        var response = await client.PostAsync(url, new FormUrlEncodedContent((IEnumerable<KeyValuePair<string?, string?>>)data));
-        var rawResponse = await response.Content.ReadAsStringAsync();
-        var responsePayload = JsonDocument.Parse(rawResponse);
-
-        // Get the response out of the nested payload
-        Assert.True(responsePayload.RootElement.TryGetProperty("text", out var textField)); // Text field was missing
-        Assert.Equal(data["status"], textField.ToString()); // Wrong Status
-    }
-
-    [Fact(Skip = "Twitter removed API access; needs alternative to 'validate' the signing etc works")]
-    public async Task CanMakeGetRequestWithPayload()
-    {
-        using var client = OAuthMessageHandler.CreateOAuthHttpClient(GetRealClientInformation());
-        var url = new Uri("https://api.twitter.com/1.1/statuses/home_timeline.json");
-        var data = new Dictionary<string, string> { { "count", "1" } };
-        var body = await client.GetStringAsync(GetUriWithDataAsQueryParams(data, url));
-        var responsePayload = JsonDocument.Parse(body);
-
-        // Get the response out of the nested payload
-        Assert.Equal(JsonValueKind.Array, responsePayload.RootElement.ValueKind); // Root response was not an array
-        Assert.Equal(1, responsePayload.RootElement.GetArrayLength()); // Wrong Number of elements returned
     }
 }
