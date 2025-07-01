@@ -14,8 +14,61 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <Description>Application to sync &amp; read acticles from Instapaper</Description>
+    <AppxManifestSource>Package.appxmanifest</AppxManifestSource>
   </PropertyGroup>
+  
+  <Target Name="PrepareAppxManifest" BeforeTargets="_ValidatePresenceOfAppxManifestItems">
+    <PropertyGroup>
+      <AppxManifestIntermediate>$(IntermediateOutputPath)Package.generated.appxmanifest</AppxManifestIntermediate>
+    </PropertyGroup>
+    
+    <!-- Copy manifest to intermediate folder -->
+    <Copy SourceFiles="$(AppxManifestSource)" DestinationFiles="$(AppxManifestIntermediate)" />
 
+    <!-- Call inline task to modify version -->
+    <UpdateManifestVersion ManifestPath="$(AppxManifestIntermediate)" Version="$(AssemblyVersion)" />
+    <ItemGroup>
+      <!-- Remove existing manifest reference -->
+      <AppxManifest Remove="Package.appxmanifest" />
+      <!-- Add our modified one -->
+      <AppxManifest Include="$(AppxManifestIntermediate)" />
+    </ItemGroup>
+  </Target>
+
+  <UsingTask TaskName="UpdateManifestVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <ManifestPath ParameterType="System.String" Required="true" />
+      <Version ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Reference Include="System.Xml" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+      var doc = new System.Xml.XmlDocument();
+      doc.Load(ManifestPath);
+
+      var nsmgr = new System.Xml.XmlNamespaceManager(doc.NameTable);
+      nsmgr.AddNamespace("ns", "http://schemas.microsoft.com/appx/manifest/foundation/windows10");
+
+      var identityNode = doc.SelectSingleNode("/ns:Package/ns:Identity", nsmgr);
+      if (identityNode == null)
+      {
+          throw new System.Exception("Could not find /Package/Identity in manifest.");
+      }
+
+      var versionAttr = identityNode.Attributes["Version"];
+      if (versionAttr == null)
+      {
+          throw new System.Exception("Identity node does not have a Version attribute.");
+      }
+
+      versionAttr.Value = Version;
+      doc.Save(ManifestPath);
+      ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  
   <ItemGroup>
     <Using Include="Microsoft.UI.Xaml" />
     <Using Include="Microsoft.UI.Xaml.Controls" />
