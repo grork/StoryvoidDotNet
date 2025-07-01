@@ -1,12 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>Codevoid.Storyvoid.ViewModels</RootNamespace>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <LangVersion>13.0</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <Description>View Models Library for Storyvoid</Description>
   </PropertyGroup>
 

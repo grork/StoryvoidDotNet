@@ -12,11 +12,7 @@
     <SupportedOSPlatformVersion>10.0.26100.0</SupportedOSPlatformVersion>
     <AssemblyName>StoryvoidTests</AssemblyName>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <LangVersion>13.0</LangVersion>
     <IsPublishable>false</IsPublishable>
     
     <!--

@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
 		<RootNamespace>Codevoid.Storyvoid.Sync</RootNamespace>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<LangVersion>13.0</LangVersion>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>true</ImplicitUsings>
     <Description>Sync Library for Storyvoid</Description>
 	</PropertyGroup>
 	<ItemGroup>

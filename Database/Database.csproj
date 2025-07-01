@@ -1,12 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>.net9.0</TargetFramework>
     <RootNamespace>Codevoid.Storyvoid</RootNamespace>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <LangVersion>13.0</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>true</ImplicitUsings>
     <Description>Database Access layer for Storyvoid</Description>
   </PropertyGroup>
 
