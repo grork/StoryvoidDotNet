@@ -6,20 +6,9 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-
-            <TextBlock VerticalAlignment="Center"
-                       HorizontalAlignment="Center"
-                       FontWeight="ExtraBlack"
-                       Text="Placeholder" />
-
-            <TextBlock x:Name="ParameterContent"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center" />
-        </StackPanel>
 
         <ItemsControl Grid.Row="0"
                       VerticalAlignment="Bottom"
@@ -32,7 +21,21 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <StackPanel Grid.Row="1"
+        <StackPanel Grid.Row="2"
+                    HorizontalAlignment="Stretch">
+
+            <TextBlock VerticalAlignment="Center"
+                       HorizontalAlignment="Center">
+                <Run FontWeight="ExtraBlack">Placeholder Page</Run>
+                <Run Text="(App Version: " /><Run x:Name="VersionLabel" /><Run>)</Run>
+            </TextBlock>
+
+            <TextBlock x:Name="ParameterContent"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="3"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
                     x:DefaultBindMode="OneWay">
@@ -46,6 +49,7 @@
             <Button IsEnabled="{x:Bind Frame.CanGoBack}" Click="GoBack_Click">Go Back</Button>
             <Button IsEnabled="{x:Bind Frame.CanGoForward}" Click="GoForward_Click">Go Forward</Button>
             <Button Click="ClearStack_Click">Clear Stack</Button>
+            <Button Click="ShowArticleList_Click">Show Article List</Button>
             <Button Click="NewPlaceholder_Click">New Placeholder</Button>
             <Button Click="ShowLogin_Click">Show Login</Button>
             <Button Click="Signout_Click">Signout</Button>

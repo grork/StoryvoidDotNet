@@ -26,6 +26,7 @@ internal sealed partial class PlaceholderPage : Page
     public PlaceholderPage()
     {
         this.InitializeComponent();
+        this.VersionLabel.Text = ThisAssembly.AssemblyVersion;
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -68,5 +69,10 @@ internal sealed partial class PlaceholderPage : Page
     private void ShowLogin_Click(object sender, RoutedEventArgs e)
     {
         this.utilities?.ShowLogin();
+    }
+
+    private void ShowArticleList_Click(object sender, RoutedEventArgs e)
+    {
+        this.utilities?.ShowList();
     }
 }
