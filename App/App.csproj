@@ -35,13 +35,13 @@
     </ItemGroup>
   </Target>
 
-  <UsingTask TaskName="UpdateManifestVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+  <UsingTask TaskName="UpdateManifestVersion" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
     <ParameterGroup>
       <ManifestPath ParameterType="System.String" Required="true" />
       <Version ParameterType="System.String" Required="true" />
     </ParameterGroup>
     <Task>
-      <Reference Include="System.Xml" />
+      <Reference Include="netstandard" />
       <Code Type="Fragment" Language="cs">
         <![CDATA[
       var doc = new System.Xml.XmlDocument();
